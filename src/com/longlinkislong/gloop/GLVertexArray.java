@@ -51,8 +51,7 @@ public class GLVertexArray {
         public void run() {
             if (!GLVertexArray.this.isValid()) {
                 GLVertexArray.this.vaoId = GL30.glGenVertexArrays();
-            }
-            org.lwjgl.opengl.Util.checkGLError();
+            }            
         }
     }
 
@@ -573,7 +572,8 @@ public class GLVertexArray {
                 GL41.glVertexAttribLPointer(
                         this.index,
                         this.size.value,
-                        this.stride, this.offset);
+                        this.type.value,
+                        this.stride, this.offset);                
             } else {
                 GL20.glVertexAttribPointer(
                         this.index,
@@ -582,9 +582,7 @@ public class GLVertexArray {
                         this.normalized,
                         this.stride, this.offset);
             }
-            GL20.glEnableVertexAttribArray(this.index);
-
-            org.lwjgl.opengl.Util.checkGLError();
+            GL20.glEnableVertexAttribArray(this.index);            
         }
     }
 }

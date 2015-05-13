@@ -22,6 +22,7 @@ import com.longlinkislong.gloop.GLVertexArray;
 import com.longlinkislong.gloop.GLVertexAttributeSize;
 import com.longlinkislong.gloop.GLVertexAttributeType;
 import com.longlinkislong.gloop.GLVertexAttributes;
+import com.longlinkislong.gloop.GLWindow;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.ArrayList;
@@ -34,9 +35,8 @@ import java.util.List;
 public class NeHe02 {
 
     public NeHe02() throws IOException {
-        final GLThread thread = GLThread.getDefaultInstance();
-
-        thread.new OpenDisplayTask().glRun();
+        final GLWindow window = new GLWindow();
+        final GLThread thread = window.getThread();
 
         final InputStream inVsh = this.getClass().getResourceAsStream("basic.vs");
         final InputStream inFsh = this.getClass().getResourceAsStream("basic.fs");
@@ -44,7 +44,7 @@ public class NeHe02 {
         final GLShader vSh = new GLShader(GLShaderType.GL_VERTEX_SHADER, GLTools.readAll(inVsh));
         final GLShader fSh = new GLShader(GLShaderType.GL_FRAGMENT_SHADER, GLTools.readAll(inFsh));
 
-        final GLTaskList initTasks = new GLTaskList();
+        final GLTaskList initTasks = new GLTaskList();               
 
         initTasks.add(vSh.new CompileTask());
         initTasks.add(fSh.new CompileTask());
@@ -128,7 +128,9 @@ public class NeHe02 {
         thread.submitGLTask(initTasks);
         thread.scheduleGLTask(drawTriangleTask);
         thread.scheduleGLTask(drawSquareTask);
-        thread.scheduleGLTask(thread.new SyncedUpdateTask(60));
+        thread.scheduleGLTask(window.new UpdateTask());        
+        
+        thread.submitGLTask(window.new SetVisibleTask(true));
     }
 
     public static void main(String[] args) throws Exception {

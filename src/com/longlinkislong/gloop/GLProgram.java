@@ -55,8 +55,7 @@ public class GLProgram {
         } else {
             this.bind();
             final int uLoc = GL20.glGetUniformLocation(programId, uName);            
-            
-            org.lwjgl.opengl.Util.checkGLError();
+                        
             this.uniforms.put(uName, uLoc);
             return uLoc;
         }        
@@ -94,8 +93,7 @@ public class GLProgram {
                             varyings,
                             GL30.GL_SEPARATE_ATTRIBS);
                 }
-            }
-            org.lwjgl.opengl.Util.checkGLError();
+            }            
         }
     }    
 
@@ -135,13 +133,13 @@ public class GLProgram {
 
             switch (this.count) {
                 case 4:
-                    GL40.glUniformMatrix2(uLoc, false, TEMPD);
+                    GL40.glUniformMatrix2dv(uLoc, false, TEMPD);                    
                     break;
                 case 9:
-                    GL40.glUniformMatrix3(uLoc, false, TEMPD);
+                    GL40.glUniformMatrix3dv(uLoc, false, TEMPD);
                     break;
                 case 16:
-                    GL40.glUniformMatrix4(uLoc, false, TEMPD);
+                    GL40.glUniformMatrix4dv(uLoc, false, TEMPD);
                     break;
             }
         }
@@ -199,17 +197,16 @@ public class GLProgram {
 
             switch (this.count) {
                 case 4:
-                    GL20.glUniformMatrix2(uLoc, false, TEMPF);
+                    GL20.glUniformMatrix2fv(uLoc, false, TEMPF);
                     break;
                 case 9:
-                    GL20.glUniformMatrix3(uLoc, false, TEMPF);
+                    GL20.glUniformMatrix3fv(uLoc, false, TEMPF);
                     break;
-                case 16:
-                    GL20.glUniformMatrix4(uLoc, false, TEMPF);
+                case 16:                    
+                    GL20.glUniformMatrix4fv(uLoc, false, TEMPF);
                     break;
             }            
-            TEMPF.clear();
-            org.lwjgl.opengl.Util.checkGLError();
+            TEMPF.clear();            
         }
     }
 
@@ -276,8 +273,7 @@ public class GLProgram {
                 case 4:
                     GL40.glUniform4d(uLoc, this.values[0], this.values[1], this.values[2], this.values[3]);
                     break;
-            }
-            org.lwjgl.opengl.Util.checkGLError();
+            }            
         }
     }
 
@@ -329,8 +325,7 @@ public class GLProgram {
                 case 4:
                     GL20.glUniform4i(uLoc, this.values[0], this.values[1], this.values[2], this.values[3]);
                     break;
-            }
-            org.lwjgl.opengl.Util.checkGLError();
+            }            
         }
     }
 
@@ -397,8 +392,7 @@ public class GLProgram {
                 case 4:
                     GL20.glUniform4f(uLoc, this.values[0], this.values[1], this.values[2], this.values[3]);
                     break;
-            }
-            org.lwjgl.opengl.Util.checkGLError();
+            }            
         }
 
         @Override
@@ -474,9 +468,7 @@ public class GLProgram {
                 for (GLShader shader : this.shaders) {
                     GL20.glDetachShader(GLProgram.this.programId, shader.shaderId);
                 }
-            }
-
-            org.lwjgl.opengl.Util.checkGLError();
+            }            
         }
 
     }
@@ -489,8 +481,7 @@ public class GLProgram {
                 throw new GLException("Cannot reinit GLProgram!");
             }
 
-            GLProgram.this.programId = GL20.glCreateProgram();            
-            org.lwjgl.opengl.Util.checkGLError();
+            GLProgram.this.programId = GL20.glCreateProgram();                        
         }
     }
 

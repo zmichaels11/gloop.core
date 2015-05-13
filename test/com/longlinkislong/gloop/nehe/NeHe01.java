@@ -5,8 +5,8 @@
  */
 package com.longlinkislong.gloop.nehe;
 
-import com.longlinkislong.gloop.GLTask;
 import com.longlinkislong.gloop.GLThread;
+import com.longlinkislong.gloop.GLWindow;
 
 /**
  *
@@ -14,11 +14,12 @@ import com.longlinkislong.gloop.GLThread;
  */
 public class NeHe01 {
 
-    public NeHe01() {
-        GLThread thread = GLThread.getDefaultInstance();
-        GLTask dispCreateTask = thread.new OpenDisplayTask();
-        
-        thread.submitGLTask(dispCreateTask);                
+    public NeHe01() {        
+        GLWindow window = new GLWindow();
+        GLThread thread = window.getThread();
+                
+        thread.submitGLTask(window.new SetVisibleTask(true));
+        thread.scheduleGLTask(window.new UpdateTask());
     }
 
     public static void main(String[] args) {

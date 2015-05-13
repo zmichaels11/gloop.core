@@ -35,8 +35,7 @@ public class GLBuffer {
         public void run() {
             if (!GLBuffer.this.isValid()) {
                 GLBuffer.this.bufferId = GL15.glGenBuffers();
-            }
-            org.lwjgl.opengl.Util.checkGLError();
+            }            
         }
     }
 
@@ -101,8 +100,7 @@ public class GLBuffer {
         @Override
         public void run() {                        
             GL15.glBindBuffer(this.target.value, GLBuffer.this.bufferId);
-            GL15.glBufferData(this.target.value, this.data, this.usage.value);
-            org.lwjgl.opengl.Util.checkGLError();
+            GL15.glBufferData(this.target.value, this.data, this.usage.value);            
         }
     }
 

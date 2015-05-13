@@ -58,9 +58,7 @@ public class GLShader {
                 } catch (Exception ex) {
                     throw new GLException("Error querying cause of exception!", ex);
                 }               
-            }
-
-            org.lwjgl.opengl.Util.checkGLError();
+            }            
         }
     }
 

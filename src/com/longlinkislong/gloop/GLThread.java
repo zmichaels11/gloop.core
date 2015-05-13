@@ -8,9 +8,7 @@ package com.longlinkislong.gloop;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
-import org.lwjgl.LWJGLException;
-import org.lwjgl.opengl.Display;
-import org.lwjgl.opengl.DisplayMode;
+import org.lwjgl.opengl.GLContext;
 
 /**
  *
@@ -56,77 +54,22 @@ public class GLThread {
     private GLThread() {
     }
 
+    protected static GLThread create() {
+        final GLThread thread = new GLThread();
+        
+        if (Holder.INSTANCE == null) {
+            Holder.INSTANCE = thread;
+        }
+        
+        return thread;
+    }
+
     private static final class Holder {
 
-        private static final GLThread INSTANCE = new GLThread();
+        private static GLThread INSTANCE;
     }
 
     public static GLThread getDefaultInstance() {
         return Holder.INSTANCE;
-    }
-
-    public class OpenDisplayTask extends GLTask {
-
-        public final int width;
-        public final int height;
-        public final String title;
-
-        public OpenDisplayTask() {
-            this("GLOOP App", 640, 480);
-        }
-
-        public OpenDisplayTask(
-                final CharSequence title,
-                final int width, final int height) {
-
-            this.width = width;
-            this.height = height;
-            this.title = title.toString();
-        }
-
-        @Override
-        public void run() {
-            try {
-                Display.setDisplayMode(new DisplayMode(this.width, this.height));
-                Display.setTitle(this.title);
-                Display.create();
-                GLThread.this.internalThread = Thread.currentThread();
-            } catch (LWJGLException ex) {
-                throw new GLException("Unable to create Display!", ex);
-            }
-        }
-
-    }
-
-    public class SyncedUpdateTask extends GLTask {
-
-        public final int fps;
-
-        public SyncedUpdateTask(final int fps) {
-            this.fps = fps;
-        }
-
-        @Override
-        public void run() {
-            Display.sync(this.fps);
-            Display.update();
-            if (Display.isCloseRequested()) {
-                Display.destroy();
-            }
-        }
-
-    }
-
-    public class UpdateTask extends GLTask {
-
-        @Override
-        public void run() {
-            Display.update();
-
-            if (Display.isCloseRequested()) {
-                Display.destroy();
-            }
-        }
-
     }
 }
