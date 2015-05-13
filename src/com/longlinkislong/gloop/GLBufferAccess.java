@@ -5,14 +5,16 @@
  */
 package com.longlinkislong.gloop;
 
+import org.lwjgl.opengl.GL15;
+
 /**
  *
  * @author zmichaels
  */
 public enum GLBufferAccess {
-    GL_READ(0x0001),
+    GL_READ(GL15.GL_READ_ONLY),
     GL_WRITE(0x0002),    
-    GL_READ_WRITE(0x0001 | 0x0002);
+    GL_READ_WRITE(GL15.GL_READ_WRITE);
     
     final int value;
     

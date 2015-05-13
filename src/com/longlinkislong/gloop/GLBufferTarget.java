@@ -5,12 +5,14 @@
  */
 package com.longlinkislong.gloop;
 
+import org.lwjgl.opengl.GL15;
+
 /**
  *
  * @author zmichaels
  */
 public enum GLBufferTarget {
-    GL_ARRAY_BUFFER(0x8892),
+    GL_ARRAY_BUFFER(GL15.GL_ARRAY_BUFFER),
     GL_UNIFORM_BUFFER(0xA11),
     GL_ATOMIC_COUNTER_BUFFER(0x92C0),    
     GL_QUERY_BUFFER(0x9192),

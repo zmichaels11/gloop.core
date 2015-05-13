@@ -5,18 +5,21 @@
  */
 package com.longlinkislong.gloop;
 
+import org.lwjgl.opengl.GL20;
+import org.lwjgl.opengl.GL43;
+
 /**
  *
  * @author zmichaels
  */
 public enum GLShaderParameterName {
 
-    GL_SHADER_TYPE(0x8B4F),
-    GL_INFO_LOG_LENGTH(0x8B84),
-    GL_DELETE_STATUS(0x8B80),
-    GL_COMPILE_STATUS(0x8B81),
-    GL_COMPUTE_SHADER(0x91B9),
-    GL_SHADER_SOURCE_LENGTH(0x8B88);
+    GL_SHADER_TYPE(GL20.GL_SHADER_TYPE),
+    GL_INFO_LOG_LENGTH(GL20.GL_INFO_LOG_LENGTH),
+    GL_DELETE_STATUS(GL20.GL_DELETE_STATUS),
+    GL_COMPILE_STATUS(GL20.GL_COMPILE_STATUS),
+    GL_COMPUTE_SHADER(GL43.GL_COMPUTE_SHADER),
+    GL_SHADER_SOURCE_LENGTH(GL20.GL_SHADER_SOURCE_LENGTH);
 
     final int value;
 

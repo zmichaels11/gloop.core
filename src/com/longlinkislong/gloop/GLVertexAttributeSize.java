@@ -5,20 +5,23 @@
  */
 package com.longlinkislong.gloop;
 
-import org.lwjgl.opengl.GL11;
-
 /**
  *
  * @author zmichaels
  */
-public enum GLIndexElementType {
-    GL_UNSIGNED_BYTE(GL11.GL_UNSIGNED_BYTE),
-    GL_UNSIGNED_SHORT(GL11.GL_UNSIGNED_SHORT),
-    GL_UNSIGNED_INT(GL11.GL_UNSIGNED_INT);
+public enum GLVertexAttributeSize {
+
+    BYTE(1),
+    SHORT(1),
+    INT(1),
+    FLOAT(1),
+    VEC2(2),
+    VEC3(3),
+    VEC4(4);
     
     final int value;
-    
-    GLIndexElementType(final int value) {
+
+    GLVertexAttributeSize(final int value) {
         this.value = value;
     }
 }

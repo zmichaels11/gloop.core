@@ -5,13 +5,14 @@
  */
 package com.longlinkislong.gloop;
 
+import org.lwjgl.opengl.GL11;
 import org.lwjgl.opengl.GL20;
 
 /**
  *
  * @author zmichaels
  */
-public class GLShader extends GLObject implements AutoCloseable {
+public class GLShader {
 
     private static final int INVALID_SHADER_ID = -1;
     private final String src;
@@ -21,34 +22,10 @@ public class GLShader extends GLObject implements AutoCloseable {
     public GLShader(final GLShaderType type, final CharSequence src) {
         this.src = src.toString();
         this.type = type;
-        this.init();
-    }
-
-    private void init() {
-        final GLTask task = new InitTask();
-        final GLThread thread = this.getGLThread();
-
-        if (thread.isCurrent()) {
-            task.run();
-        } else {
-            thread.submitGLTask(task);
-        }
     }
 
     public boolean isValid() {
         return this.shaderId != INVALID_SHADER_ID;
-    }
-
-    @Override
-    public void close() throws Exception {
-        final GLTask task = new DeleteTask();
-        final GLThread thread = this.getGLThread();
-
-        if (thread.isCurrent()) {
-            task.run();
-        } else {
-            thread.submitGLTask(task);
-        }
     }
 
     @Override
@@ -60,26 +37,30 @@ public class GLShader extends GLObject implements AutoCloseable {
         return this.src;
     }
 
-    public class InitTask extends GLTask {
+    public class CompileTask extends GLTask {
 
         @Override
         public void run() {
             if (!GLShader.this.isValid()) {
-                GLShader.this.shaderId = GL20.glCreateShader(GLShader.this.shaderId);
+                GLShader.this.shaderId = GL20.glCreateShader(GLShader.this.type.value);                
                 GL20.glShaderSource(GLShader.this.shaderId, GLShader.this.src);
                 GL20.glCompileShader(GLShader.this.shaderId);
 
-                final int compStatus
-                        = new ParameterQuery(GLShaderParameterName.GL_COMPILE_STATUS)
-                        .glCall();
+                try {
+                    final int compStatus = new ParameterQuery(GLShaderParameterName.GL_COMPILE_STATUS)
+                            .call();
 
-                if (compStatus == 0) {
-                    final String info = new InfoLogQuery().glCall();
+                    if (compStatus == GL11.GL_FALSE) {
+                        final String info = new InfoLogQuery().call();
 
-                    throw new GLException(info);
-                }
-
+                        throw new GLException(info);
+                    }
+                } catch (Exception ex) {
+                    throw new GLException("Error querying cause of exception!", ex);
+                }               
             }
+
+            org.lwjgl.opengl.Util.checkGLError();
         }
     }
 

@@ -15,23 +15,13 @@ import org.lwjgl.opengl.GL13;
  *
  * @author zmichaels
  */
-public class GLTexture extends GLObject {
+public class GLTexture {
 
     private static final int INVALID_TEXTURE_ID = -1;
     private int textureId = INVALID_TEXTURE_ID;
     private int width = 0;
     private int height = 0;
-    private int depth = 0;
-
-    public GLTexture() {
-        super();
-    }
-
-    public GLTexture(final GLThread thread) {
-        super(thread);
-
-        this.init();
-    }
+    private int depth = 0;   
 
     public int getWidth() {
         if (this.width == 0) {
@@ -55,18 +45,7 @@ public class GLTexture extends GLObject {
         } else {
             return this.depth;
         }
-    }
-
-    private void init() {
-        final GLTask task = new InitTask();
-        final GLThread thread = this.getGLThread();
-
-        if (thread.isCurrent()) {
-            task.glRun();
-        } else {
-            thread.submitGLTask(task);
-        }
-    }
+    }    
 
     public boolean isValid() {
         return textureId != INVALID_TEXTURE_ID;

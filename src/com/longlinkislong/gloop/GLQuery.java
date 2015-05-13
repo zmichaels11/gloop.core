@@ -17,11 +17,33 @@ public abstract class GLQuery<ReturnType> implements Callable<ReturnType>{
         return thread.submitGLQuery(this);
     }
     
-    public final ReturnType glCall() {
+    public final ReturnType glCall(final GLThread thread) {
+        if(thread == null) {
+            return this.glCall(GLThread.getDefaultInstance());
+        }
+        
         try {
-            return this.call();
+            if(thread.isCurrent()) {
+                return this.call();
+            } else {
+                return thread.submitGLQuery(this).get();
+            }
         } catch(final Exception ex) {
-            throw new GLException(ex);
+            throw new GLException("Unable to call GLQuery!", ex);
+        }
+    }
+    
+    public final ReturnType glCall() {
+        final GLThread thread = GLThread.getDefaultInstance();
+        
+        try {
+            if(thread.isCurrent()) {
+                return this.call();
+            } else {
+                return thread.submitGLQuery(this).get();
+            }
+        } catch(final Exception ex) {
+            throw new GLException("Unable to call GLQuery!", ex);
         }
     }
     

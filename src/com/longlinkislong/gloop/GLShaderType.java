@@ -5,17 +5,22 @@
  */
 package com.longlinkislong.gloop;
 
+import org.lwjgl.opengl.GL20;
+import org.lwjgl.opengl.GL32;
+import org.lwjgl.opengl.GL40;
+import org.lwjgl.opengl.GL43;
+
 /**
  *
  * @author zmichaels
  */
 public enum GLShaderType {
-    GL_VERTEX_SHADER(0x8B31),
-    GL_FRAGMENT_SHADER(0x8B30),
-    GL_GEOMETRY_SHADER(0x8DD9),
-    GL_TESS_CONTROL_SHADER(0x8E88),
-    GL_TESS_EVALUATION_SHADER(0x8E87),
-    GL_COMPUTE_SHADER(0x91B9);
+    GL_VERTEX_SHADER(GL20.GL_VERTEX_SHADER),
+    GL_FRAGMENT_SHADER(GL20.GL_FRAGMENT_SHADER),
+    GL_GEOMETRY_SHADER(GL32.GL_GEOMETRY_SHADER),
+    GL_TESS_CONTROL_SHADER(GL40.GL_TESS_CONTROL_SHADER),
+    GL_TESS_EVALUATION_SHADER(GL40.GL_TESS_EVALUATION_SHADER),
+    GL_COMPUTE_SHADER(GL43.GL_COMPUTE_SHADER);
     
     final int value;
     GLShaderType(final int value) {

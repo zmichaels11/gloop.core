@@ -5,7 +5,6 @@
  */
 package com.longlinkislong.gloop;
 
-import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import org.lwjgl.opengl.GL15;
@@ -15,32 +14,11 @@ import org.lwjgl.opengl.GL31;
  *
  * @author zmichaels
  */
-public class GLBuffer extends GLObject implements AutoCloseable {
+public class GLBuffer {
 
     private static final int INVALID_BUFFER_ID = -1;
     protected int bufferId = INVALID_BUFFER_ID;
-    private ByteBuffer mappedBuffer = null;    
-
-    public GLBuffer() {
-        this.init();
-    }
-
-    public GLBuffer(final GLThread thread) {
-        super(thread);
-
-        this.init();
-    }       
-
-    private void init() {
-        final InitTask task = new InitTask();
-        final GLThread thread = this.getGLThread();
-
-        if (thread.isCurrent()) {
-            task.glRun();
-        } else {
-            thread.submitGLTask(task);
-        }
-    }
+    private ByteBuffer mappedBuffer = null;           
 
     @Override
     public String toString() {
@@ -49,19 +27,7 @@ public class GLBuffer extends GLObject implements AutoCloseable {
 
     public boolean isValid() {
         return this.bufferId != INVALID_BUFFER_ID;
-    }
-
-    @Override
-    public void close() throws IOException {
-        final GLTask task = new DeleteTask();
-        final GLThread thread = this.getGLThread();
-
-        if (thread.isCurrent()) {
-            task.run();
-        } else {
-            thread.submitGLTask(task);
-        }
-    }
+    }    
 
     public class InitTask extends GLTask {
 
@@ -70,6 +36,7 @@ public class GLBuffer extends GLObject implements AutoCloseable {
             if (!GLBuffer.this.isValid()) {
                 GLBuffer.this.bufferId = GL15.glGenBuffers();
             }
+            org.lwjgl.opengl.Util.checkGLError();
         }
     }
 
@@ -128,14 +95,14 @@ public class GLBuffer extends GLObject implements AutoCloseable {
 
             this.target = target;
             this.usage = usage;
-            this.data = data;
-            this.data.flip();
+            this.data = data;            
         }
 
         @Override
-        public void run() {            
+        public void run() {                        
             GL15.glBindBuffer(this.target.value, GLBuffer.this.bufferId);
             GL15.glBufferData(this.target.value, this.data, this.usage.value);
+            org.lwjgl.opengl.Util.checkGLError();
         }
     }
 

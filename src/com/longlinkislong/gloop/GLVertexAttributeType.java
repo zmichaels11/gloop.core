@@ -5,21 +5,21 @@
  */
 package com.longlinkislong.gloop;
 
+import org.lwjgl.opengl.GL11;
+
 /**
  *
  * @author zmichaels
  */
-public enum GLVertexAttributeType {
-    GL_HALF_FLOAT(0x140B, 2),
-    GL_FLOAT(0x1406, 4),
-    GL_DOUBLE(0x140A, 8),
-    GL_FIXED(0x140C, 2),
-    GL_BYTE(0x1400, 1),
-    GL_UNSIGNED_BYTE(0x1401, 1),
-    GL_SHORT(0x1402, 2),
-    GL_UNSIGNED_SHORT(0x1403, 2),
-    GL_INT(0x1404, 4),
-    GL_UNSIGNED_INT(0x1405, 4),
+public enum GLVertexAttributeType {    
+    GL_FLOAT(GL11.GL_FLOAT, 4),
+    GL_DOUBLE(GL11.GL_DOUBLE, 8),    
+    GL_BYTE(GL11.GL_BYTE, 1),
+    GL_UNSIGNED_BYTE(GL11.GL_UNSIGNED_BYTE, 1),
+    GL_SHORT(GL11.GL_SHORT, 2),
+    GL_UNSIGNED_SHORT(GL11.GL_UNSIGNED_SHORT, 2),
+    GL_INT(GL11.GL_INT, 4),
+    GL_UNSIGNED_INT(GL11.GL_UNSIGNED_INT, 4),
     GL_INT_2_10_10_10_REV(0x8D9F, 4),
     GL_UNSIGNED_INT_2_10_10_10_REV(0x8368, 4),
     GL_UNSIGNED_INT_10F_11F_11F_REV(0x8C3B, 4);

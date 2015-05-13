@@ -11,16 +11,20 @@ import java.nio.DoubleBuffer;
 import java.nio.FloatBuffer;
 import java.util.Arrays;
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.Map;
+import java.util.Objects;
+import java.util.Set;
 import org.lwjgl.opengl.GL11;
 import org.lwjgl.opengl.GL20;
+import org.lwjgl.opengl.GL30;
 import org.lwjgl.opengl.GL40;
 
 /**
  *
  * @author zmichaels
  */
-public class GLProgram extends GLObject {
+public class GLProgram {
 
     private static final FloatBuffer TEMPF = ByteBuffer.allocateDirect(16 << 2).order(ByteOrder.nativeOrder()).asFloatBuffer();
     private static final DoubleBuffer TEMPD = ByteBuffer.allocateDirect(16 << 3).order(ByteOrder.nativeOrder()).asDoubleBuffer();
@@ -32,44 +36,68 @@ public class GLProgram extends GLObject {
 
     public boolean isValid() {
         return this.programId != INVALID_PROGRAM_ID;
-    }
-
-    public void close() {
-        final GLTask task = new DeleteTask();
-        final GLThread thread = this.getGLThread();
-
-        if (thread.isCurrent()) {
-            task.run();
-        } else {
-            thread.submitGLTask(task);
-        }
-    }
+    }    
 
     public boolean isCurrent() {
         return CURRENT == this;
+    }
+    
+    protected void bind() {
+        if(!this.isCurrent()) {
+            GL20.glUseProgram(this.programId);
+            GLProgram.CURRENT = this;
+        }
     }
 
     private int getUniformLoc(final String uName) {
         if (this.uniforms.containsKey(uName)) {
             return this.uniforms.get(uName);
         } else {
-            final int uLoc = GL20.glGetUniformLocation(programId, uName);
-
+            this.bind();
+            final int uLoc = GL20.glGetUniformLocation(programId, uName);            
+            
+            org.lwjgl.opengl.Util.checkGLError();
             this.uniforms.put(uName, uLoc);
             return uLoc;
-        }
+        }        
     }
 
-    public class BindTask extends GLTask {
+    public class SetVertexAttributesTask extends GLTask {
+
+        private final GLVertexAttributes attribs;
+
+        public SetVertexAttributesTask(final GLVertexAttributes attrib) {
+            Objects.requireNonNull(this.attribs = attrib);
+        }
 
         @Override
         public void run() {
-            if (GLProgram.this.isValid() && !GLProgram.this.isCurrent()) {
-                GL20.glUseProgram(GLProgram.this.programId);
-                CURRENT = GLProgram.this;
+            if (!GLProgram.this.isValid()) {
+                this.attribs.nameMap.forEach((name, index) -> {
+                    GL20.glBindAttribLocation(
+                            GLProgram.this.programId,
+                            index, name);
+                });
+
+                final Set<String> varyingSet = this.attribs.feedbackVaryings;
+
+                if (!varyingSet.isEmpty()) {
+                    final CharSequence[] varyings = new CharSequence[varyingSet.size()];
+                    final Iterator<String> it = varyingSet.iterator();
+
+                    for (int i = 0; i < varyingSet.size(); i++) {
+                        varyings[i] = it.next();
+                    }
+
+                    GL30.glTransformFeedbackVaryings(
+                            GLProgram.this.programId,
+                            varyings,
+                            GL30.GL_SEPARATE_ATTRIBS);
+                }
             }
+            org.lwjgl.opengl.Util.checkGLError();
         }
-    }
+    }    
 
     public class SetUniformMatrixDTask extends GLTask {
 
@@ -98,10 +126,12 @@ public class GLProgram extends GLObject {
                 throw new GLException("GLProgram is not valid!");
             }
 
+            GLProgram.this.bind();
+            
             final int uLoc = GLProgram.this.getUniformLoc(uName);
 
             TEMPD.clear();
-            TEMPD.put(this.values).flip();
+            TEMPD.put(this.values).flip();                        
 
             switch (this.count) {
                 case 4:
@@ -137,7 +167,7 @@ public class GLProgram extends GLObject {
             this.count = sz * sz;
             this.values = new float[this.count];
 
-            System.arraycopy(mf.data(), mf.offset(), this.values, 0, this.count);
+            System.arraycopy(mf.data(), mf.offset(), this.values, 0, this.count);                        
         }
 
         public SetUniformMatrixFTask(
@@ -161,9 +191,11 @@ public class GLProgram extends GLObject {
                 throw new GLException("GLProgram is not valid!");
             }
 
-            final int uLoc = GLProgram.this.getUniformLoc(this.uName);
-            TEMPF.clear();
-            TEMPF.put(values).flip();
+            GLProgram.this.bind();
+            
+            final int uLoc = GLProgram.this.getUniformLoc(this.uName);            
+            TEMPF.put(values);
+            TEMPF.flip();
 
             switch (this.count) {
                 case 4:
@@ -175,7 +207,9 @@ public class GLProgram extends GLObject {
                 case 16:
                     GL20.glUniformMatrix4(uLoc, false, TEMPF);
                     break;
-            }
+            }            
+            TEMPF.clear();
+            org.lwjgl.opengl.Util.checkGLError();
         }
     }
 
@@ -225,6 +259,8 @@ public class GLProgram extends GLObject {
                 throw new GLException("GLProgram is not valid!");
             }
 
+            GLProgram.this.bind();
+            
             final int uLoc = GLProgram.this.getUniformLoc(this.uName);
 
             switch (this.count) {
@@ -241,7 +277,7 @@ public class GLProgram extends GLObject {
                     GL40.glUniform4d(uLoc, this.values[0], this.values[1], this.values[2], this.values[3]);
                     break;
             }
-
+            org.lwjgl.opengl.Util.checkGLError();
         }
     }
 
@@ -276,6 +312,8 @@ public class GLProgram extends GLObject {
                 throw new GLException("GLProgram is not valid!");
             }
 
+            GLProgram.this.bind();
+            
             final int uLoc = GLProgram.this.getUniformLoc(this.uName);
 
             switch (this.count) {
@@ -292,7 +330,7 @@ public class GLProgram extends GLObject {
                     GL20.glUniform4i(uLoc, this.values[0], this.values[1], this.values[2], this.values[3]);
                     break;
             }
-
+            org.lwjgl.opengl.Util.checkGLError();
         }
     }
 
@@ -342,6 +380,8 @@ public class GLProgram extends GLObject {
                 throw new GLException("GLProgram is not valid!");
             }
 
+            GLProgram.this.bind();
+            
             final int uLoc = GLProgram.this.getUniformLoc(this.uName);
 
             switch (this.count) {
@@ -358,6 +398,7 @@ public class GLProgram extends GLObject {
                     GL20.glUniform4f(uLoc, this.values[0], this.values[1], this.values[2], this.values[3]);
                     break;
             }
+            org.lwjgl.opengl.Util.checkGLError();
         }
 
         @Override
@@ -416,24 +457,26 @@ public class GLProgram extends GLObject {
 
                 GL20.glAttachShader(GLProgram.this.programId, shader.shaderId);
             }
-            
+
             GL20.glLinkProgram(GLProgram.this.programId);
             final int isLinked = GL20.glGetProgrami(
                     GLProgram.this.programId,
                     GL20.GL_LINK_STATUS);
-            
-            if(isLinked == GL11.GL_FALSE) {
+
+            if (isLinked == GL11.GL_FALSE) {
                 final int length = GL20.glGetProgrami(
                         GLProgram.this.programId, GL20.GL_INFO_LOG_LENGTH);
                 final String msg = GL20.glGetProgramInfoLog(
-                        GLProgram.this.programId, length);                                
-                
-                throw new GLException(msg);                
+                        GLProgram.this.programId, length);
+
+                throw new GLException(msg);
             } else {
-                for(GLShader shader : this.shaders) {
+                for (GLShader shader : this.shaders) {
                     GL20.glDetachShader(GLProgram.this.programId, shader.shaderId);
                 }
             }
+
+            org.lwjgl.opengl.Util.checkGLError();
         }
 
     }
@@ -446,7 +489,8 @@ public class GLProgram extends GLObject {
                 throw new GLException("Cannot reinit GLProgram!");
             }
 
-            GLProgram.this.programId = GL20.glCreateProgram();
+            GLProgram.this.programId = GL20.glCreateProgram();            
+            org.lwjgl.opengl.Util.checkGLError();
         }
     }
 
@@ -461,5 +505,5 @@ public class GLProgram extends GLObject {
             GL20.glDeleteProgram(GLProgram.this.programId);
             GLProgram.this.programId = INVALID_PROGRAM_ID;
         }
-    }        
+    }
 }

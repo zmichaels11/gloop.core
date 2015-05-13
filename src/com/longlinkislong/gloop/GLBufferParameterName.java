@@ -5,16 +5,19 @@
  */
 package com.longlinkislong.gloop;
 
+import org.lwjgl.opengl.GL15;
+import org.lwjgl.opengl.GL30;
+
 /**
  *
  * @author zmichaels
  */
 public enum GLBufferParameterName {
-    GL_BUFFER_SIZE(0x8764),
-    GL_BUFFER_USAGE(0x8765),
-    GL_BUFFER_MAPPED(0x88BC),
-    GL_BUFFER_MAP_OFFSET(0x9120),
-    GL_BUFFER_MAP_LENGTH(0x9121);
+    GL_BUFFER_SIZE(GL15.GL_BUFFER_SIZE),
+    GL_BUFFER_USAGE(GL15.GL_BUFFER_USAGE),
+    GL_BUFFER_MAPPED(GL15.GL_BUFFER_MAPPED),
+    GL_BUFFER_MAP_OFFSET(GL30.GL_BUFFER_MAP_OFFSET),
+    GL_BUFFER_MAP_LENGTH(GL30.GL_BUFFER_MAP_LENGTH);
     
     final int value;
     GLBufferParameterName(final int value) {
