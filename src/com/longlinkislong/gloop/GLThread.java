@@ -8,7 +8,7 @@ package com.longlinkislong.gloop;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
-import org.lwjgl.opengl.GLContext;
+import static org.lwjgl.system.MemoryUtil.NULL;
 
 /**
  *
@@ -17,7 +17,7 @@ import org.lwjgl.opengl.GLContext;
 public class GLThread {
 
     private final ExecutorService internalExecutor = Executors.newSingleThreadExecutor();
-    private Thread internalThread = null;
+    private Thread internalThread = null;    
 
     public void shutdown() {
         this.internalExecutor.shutdown();
@@ -51,7 +51,15 @@ public class GLThread {
 
     }
 
-    private GLThread() {
+    protected GLThread() {
+        this.internalExecutor.execute(new InitTask());
+    }
+    
+    private class InitTask implements Runnable {
+        @Override
+        public void run() {
+            GLThread.this.internalThread = Thread.currentThread();
+        }
     }
 
     protected static GLThread create() {
@@ -71,5 +79,5 @@ public class GLThread {
 
     public static GLThread getDefaultInstance() {
         return Holder.INSTANCE;
-    }
+    }        
 }

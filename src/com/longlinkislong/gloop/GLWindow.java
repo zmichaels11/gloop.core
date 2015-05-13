@@ -6,10 +6,6 @@
 package com.longlinkislong.gloop;
 
 import org.lwjgl.glfw.GLFW;
-import org.lwjgl.glfw.GLFWErrorCallback;
-import org.lwjgl.glfw.GLFWKeyCallback;
-import org.lwjgl.opengl.GL;
-import org.lwjgl.opengl.GL11;
 import static org.lwjgl.opengl.GL11.GL_FALSE;
 import static org.lwjgl.opengl.GL11.GL_TRUE;
 import org.lwjgl.opengl.GLContext;
@@ -23,16 +19,12 @@ public class GLWindow {
 
     private static final long INVALID_WINDOW_ID = -1L;
     private static boolean isGLFWInit = false;
-    private long window;
+    private long window = INVALID_WINDOW_ID;
     private final int width;
     private final int height;
     private final String title;
     private GLThread thread = null;
-    private final GLWindow shared;
-
-    static {
-        GLFW.glfwInit();
-    }
+    private final GLWindow shared;    
 
     public GLWindow() {
         this(640, 480, "GLOOP App", null);
@@ -52,7 +44,12 @@ public class GLWindow {
         this.title = title.toString();
         this.shared = shared;
         
-        this.thread = GLThread.create();
+        if(!isGLFWInit) {
+            isGLFWInit = (GLFW.glfwInit() == GL_TRUE);
+            
+        }
+        
+        this.thread = GLThread.create();        
         this.thread.submitGLTask(new InitTask());
     }
 
@@ -73,7 +70,7 @@ public class GLWindow {
 
             if (GLWindow.this.window == NULL) {
                 throw new GLException("Failed to create the GLFW window!");
-            }
+            }                        
 
             GLFW.glfwMakeContextCurrent(GLWindow.this.window);
             GLFW.glfwSwapInterval(1);
@@ -119,5 +116,11 @@ public class GLWindow {
                 GLFW.glfwPollEvents();
             }
         }
+    }
+    
+    public GLThread newWorkerThread() {
+        final GLWindow dummy = new GLWindow(0, 0, "WORKER", this);
+        
+        return dummy.getThread();        
     }
 }
