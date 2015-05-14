@@ -96,8 +96,8 @@ public class GLTexture extends GLObject {
 
     public class BindTask extends GLTask {
 
-        final GLTextureTarget target;
-        final int activeTexture;
+        protected final GLTextureTarget target;
+        protected final int activeTexture;
 
         public BindTask(final GLTextureTarget target, final int activeTexture) {
             this.target = target;
@@ -115,7 +115,7 @@ public class GLTexture extends GLObject {
                 throw new GLException("GLTexture is not valid!");
             }
 
-            GL13.glActiveTexture(this.activeTexture);
+            GL13.glActiveTexture(GL13.GL_TEXTURE0 + this.activeTexture);
             GL11.glBindTexture(this.target.value, GLTexture.this.textureId);
         }
     }
