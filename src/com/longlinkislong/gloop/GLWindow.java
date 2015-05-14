@@ -24,7 +24,7 @@ public class GLWindow {
     private final int height;
     private final String title;
     private GLThread thread = null;
-    private final GLWindow shared;    
+    private final GLWindow shared;
 
     public GLWindow() {
         this(640, 480, "GLOOP App", null);
@@ -43,13 +43,13 @@ public class GLWindow {
         this.height = height;
         this.title = title.toString();
         this.shared = shared;
-        
-        if(!isGLFWInit) {
+
+        if (!isGLFWInit) {
             isGLFWInit = (GLFW.glfwInit() == GL_TRUE);
-            
+
         }
-        
-        this.thread = GLThread.create();        
+
+        this.thread = GLThread.create();
         this.thread.submitGLTask(new InitTask());
     }
 
@@ -70,11 +70,11 @@ public class GLWindow {
 
             if (GLWindow.this.window == NULL) {
                 throw new GLException("Failed to create the GLFW window!");
-            }                        
+            }
 
             GLFW.glfwMakeContextCurrent(GLWindow.this.window);
             GLFW.glfwSwapInterval(1);
-            GLContext.createFromCurrent();                        
+            GLContext.createFromCurrent();
         }
     }
 
@@ -82,6 +82,10 @@ public class GLWindow {
         return (float) this.width / (float) this.height;
     }
 
+    public void setVisible(final boolean isVisible) {
+        new SetVisibleTask(isVisible).glRun(this.getThread());
+    }
+    
     public class SetVisibleTask extends GLTask {
 
         private final boolean visibility;
@@ -104,6 +108,12 @@ public class GLWindow {
         return this.thread;
     }
 
+    private final UpdateTask updateTask = new UpdateTask();
+
+    public void update() {
+        this.updateTask.glRun(this.getThread());
+    }
+
     public class UpdateTask extends GLTask {
 
         @Override
@@ -117,10 +127,10 @@ public class GLWindow {
             }
         }
     }
-    
+
     public GLThread newWorkerThread() {
         final GLWindow dummy = new GLWindow(0, 0, "WORKER", this);
-        
-        return dummy.getThread();        
+
+        return dummy.getThread();
     }
 }

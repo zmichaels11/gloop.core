@@ -5,6 +5,7 @@
  */
 package com.longlinkislong.gloop;
 
+import java.util.Objects;
 import org.lwjgl.opengl.GL11;
 import org.lwjgl.opengl.GL20;
 
@@ -12,7 +13,7 @@ import org.lwjgl.opengl.GL20;
  *
  * @author zmichaels
  */
-public class GLShader {
+public class GLShader extends GLObject{
 
     private static final int INVALID_SHADER_ID = -1;
     private final String src;
@@ -20,8 +21,18 @@ public class GLShader {
     protected int shaderId = INVALID_SHADER_ID;
 
     public GLShader(final GLShaderType type, final CharSequence src) {
+        super();
         this.src = src.toString();
-        this.type = type;
+        Objects.requireNonNull(this.type = type);
+    }
+    
+    public GLShader(
+            final GLThread thread, 
+            final GLShaderType type, final CharSequence src) {
+        
+        super(thread);
+        this.src = src.toString();
+        Objects.requireNonNull(this.type = type);
     }
 
     public boolean isValid() {
@@ -37,6 +48,10 @@ public class GLShader {
         return this.src;
     }
 
+    public void compile() {
+        new CompileTask().glRun(this.getThread());
+    }
+    
     public class CompileTask extends GLTask {
 
         @Override
@@ -62,6 +77,11 @@ public class GLShader {
         }
     }
 
+    private final DeleteTask deleteTask = new DeleteTask();
+    public final void delete() {
+        this.deleteTask.glRun(this.getThread());
+    }
+    
     public class DeleteTask extends GLTask {
 
         @Override
@@ -73,6 +93,19 @@ public class GLShader {
         }
     }
 
+    private ParameterQuery lastParameterQuery = null;
+    public int getParameter(final GLShaderParameterName pName) {
+        if(this.lastParameterQuery != null
+                && this.lastParameterQuery.pName == pName) {
+            
+            return this.lastParameterQuery.glCall(this.getThread());
+        } else {
+            this.lastParameterQuery = new ParameterQuery(pName);
+            
+            return this.lastParameterQuery.glCall(this.getThread());
+        }        
+    }
+    
     public class ParameterQuery extends GLQuery<Integer> {
 
         final GLShaderParameterName pName;
@@ -87,6 +120,11 @@ public class GLShader {
         }
     }
 
+    private final InfoLogQuery infoLogQuery = new InfoLogQuery();
+    public String getInfoLog() {
+        return this.infoLogQuery.glCall(this.getThread());
+    }
+    
     public class InfoLogQuery extends GLQuery<String> {
 
         @Override

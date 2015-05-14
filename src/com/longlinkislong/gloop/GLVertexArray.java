@@ -21,21 +21,24 @@ import org.lwjgl.opengl.GL41;
  *
  * @author zmichaels
  */
-public class GLVertexArray {
-
-    public static final int CHECK_POLYGON_COUNT = -1;
+public class GLVertexArray extends GLObject {
 
     private static GLVertexArray CURRENT_VAO = null;
     private static final int INVALID_VERTEX_ARRAY_ID = -1;
     private int vaoId = INVALID_VERTEX_ARRAY_ID;
-    private int polygons = 0;
+
+    public GLVertexArray() {
+        super();
+        this.init();
+    }
+
+    public GLVertexArray(final GLThread thread) {
+        super(thread);
+        this.init();
+    }
 
     public boolean isValid() {
         return this.vaoId != INVALID_VERTEX_ARRAY_ID;
-    }
-
-    public int count() {
-        return this.polygons;
     }
 
     private void bind() {
@@ -45,13 +48,48 @@ public class GLVertexArray {
         }
     }
 
+    private final InitTask initTask = new InitTask();
+
+    public final void init() {
+        this.initTask.glRun(this.getThread());
+    }
+
     public class InitTask extends GLTask {
 
         @Override
         public void run() {
             if (!GLVertexArray.this.isValid()) {
                 GLVertexArray.this.vaoId = GL30.glGenVertexArrays();
-            }            
+            }
+        }
+    }
+
+    private DrawElementsIndirectTask lastDrawElementsIndirect = null;
+
+    public void drawElementsIndirect(
+            final GLProgram program,
+            final GLDrawMode drawMode,
+            final GLIndexElementType indexType,
+            final GLBuffer indirectCommandBuffer,
+            final long offset) {
+
+        if (this.lastDrawElementsIndirect != null
+                && this.lastDrawElementsIndirect.program == program
+                && this.lastDrawElementsIndirect.indirectCommandBuffer == indirectCommandBuffer
+                && this.lastDrawElementsIndirect.drawMode == drawMode
+                && this.lastDrawElementsIndirect.indexType == indexType
+                && this.lastDrawElementsIndirect.offset == offset) {
+
+            this.lastDrawElementsIndirect.glRun(this.getThread());
+        } else {
+            this.lastDrawElementsIndirect = new DrawElementsIndirectTask(
+                    program,
+                    drawMode,
+                    indexType,
+                    indirectCommandBuffer,
+                    offset);
+
+            this.lastDrawElementsIndirect.glRun(this.getThread());
         }
     }
 
@@ -108,6 +146,24 @@ public class GLVertexArray {
         }
     }
 
+    private DrawArraysIndirectTask lastDrawArraysIndirect = null;
+
+    public void drawArraysIndirect(
+            final GLProgram program,
+            final GLDrawMode drawMode,
+            final GLBuffer indirectCommandBuffer,
+            final long offset) {
+
+        if (this.lastDrawArraysIndirect != null
+                && this.lastDrawArraysIndirect.indirectCommandBuffer == indirectCommandBuffer
+                && this.lastDrawArraysIndirect.program == program
+                && this.lastDrawArraysIndirect.drawMode == drawMode
+                && this.lastDrawArraysIndirect.offset == offset) {
+
+            this.lastDrawArraysIndirect.glRun(this.getThread());
+        }
+    }
+
     public class DrawArraysIndirectTask extends GLTask {
 
         private final GLBuffer indirectCommandBuffer;
@@ -151,6 +207,27 @@ public class GLVertexArray {
         }
     }
 
+    private MultiDrawArraysTask lastMultiDrawArrays = null;
+
+    public void multiDrawArrays(
+            final GLProgram program, final GLDrawMode drawMode,
+            final IntBuffer first, final IntBuffer count) {
+
+        if (this.lastMultiDrawArrays != null
+                && this.lastMultiDrawArrays.program == program
+                && this.lastMultiDrawArrays.first == first
+                && this.lastMultiDrawArrays.count == count
+                && this.lastMultiDrawArrays.drawMode == drawMode) {
+
+            this.lastMultiDrawArrays.glRun(this.getThread());
+        } else {
+            this.lastMultiDrawArrays = new MultiDrawArraysTask(
+                    program, drawMode, first, count);
+
+            this.lastMultiDrawArrays.glRun(this.getThread());
+        }
+    }
+
     public class MultiDrawArraysTask extends GLTask {
 
         private final GLProgram program;
@@ -182,6 +259,30 @@ public class GLVertexArray {
                     this.first,
                     this.count);
 
+        }
+    }
+
+    private DrawElementsInstancedTask lastDrawElementsInstanced = null;
+
+    public void drawElementsInstanced(
+            final GLProgram program, final GLDrawMode drawMode,
+            final int count, final GLIndexElementType indexType,
+            final long offset, final int instanceCount) {
+
+        if (this.lastDrawElementsInstanced != null
+                && this.lastDrawElementsInstanced.program == program
+                && this.lastDrawElementsInstanced.drawMode == drawMode
+                && this.lastDrawElementsInstanced.count == count
+                && this.lastDrawElementsInstanced.type == indexType
+                && this.lastDrawElementsInstanced.offset == offset
+                && this.lastDrawElementsInstanced.instanceCount == instanceCount) {
+
+            this.lastDrawElementsInstanced.glRun(this.getThread());
+        } else {
+            this.lastDrawElementsInstanced = new DrawElementsInstancedTask(
+                    program, drawMode, count, indexType, offset, instanceCount);
+
+            this.lastDrawElementsInstanced.glRun(this.getThread());
         }
     }
 
@@ -225,14 +326,35 @@ public class GLVertexArray {
             this.program.bind();
             GL31.glDrawElementsInstanced(
                     this.drawMode.value,
-                    this.count == CHECK_POLYGON_COUNT
-                            ? GLVertexArray.this.polygons
-                            : this.count,
+                    this.count,
                     this.type.value,
                     this.offset,
                     this.instanceCount);
         }
 
+    }
+
+    private DrawArraysInstancedTask lastDrawArraysInstanced = null;
+
+    public void drawArraysInstanced(
+            final GLProgram program, final GLDrawMode mode,
+            final int first, final int count, final int instanceCount) {
+
+        if (this.lastDrawArraysInstanced != null
+                && this.lastDrawArraysInstanced.program == program
+                && this.lastDrawArraysInstanced.mode == mode
+                && this.lastDrawArraysInstanced.first == first
+                && this.lastDrawArraysInstanced.count == count
+                && this.lastDrawArraysInstanced.instanceCount == instanceCount) {
+
+            this.lastDrawArraysInstanced.glRun(this.getThread());
+        } else {
+            this.lastDrawArraysInstanced = new DrawArraysInstancedTask(
+                    program, mode,
+                    first, count, instanceCount);
+
+            this.lastDrawArraysInstanced.glRun(this.getThread());
+        }
     }
 
     public class DrawArraysInstancedTask extends GLTask {
@@ -242,20 +364,6 @@ public class GLVertexArray {
         private final int first;
         private final int count;
         private final int instanceCount;
-
-        public DrawArraysInstancedTask(
-                final GLProgram program, final int instanceCount) {
-
-            this(program, GLDrawMode.GL_TRIANGLES, 0, CHECK_POLYGON_COUNT, instanceCount);
-        }
-
-        public DrawArraysInstancedTask(
-                final GLProgram program,
-                final GLDrawMode mode,
-                final int instanceCount) {
-
-            this(program, mode, 0, CHECK_POLYGON_COUNT, instanceCount);
-        }
 
         public DrawArraysInstancedTask(
                 final GLProgram program,
@@ -290,10 +398,31 @@ public class GLVertexArray {
             GL31.glDrawArraysInstanced(
                     this.mode.value,
                     this.first,
-                    this.count == CHECK_POLYGON_COUNT
-                            ? GLVertexArray.this.polygons
-                            : this.count,
+                    this.count,
                     this.instanceCount);
+        }
+    }
+
+    private DrawElementsTask lastDrawElements = null;
+
+    public void drawElements(
+            final GLProgram program, final GLDrawMode mode,
+            final int count, final GLIndexElementType type, final long offset) {
+
+        if (this.lastDrawElements != null
+                && this.lastDrawElements.program == program
+                && this.lastDrawElements.mode == mode
+                && this.lastDrawElements.count == count
+                && this.lastDrawElements.type == type
+                && this.lastDrawElements.offset == offset) {
+
+            this.lastDrawElements.glRun(this.getThread());
+        } else {
+            this.lastDrawElements = new DrawElementsTask(
+                    program, mode,
+                    count, type, offset);
+
+            this.lastDrawElements.glRun(this.getThread());
         }
     }
 
@@ -303,7 +432,7 @@ public class GLVertexArray {
         private final GLDrawMode mode;
         private final int count;
         private final GLIndexElementType type;
-        private final long offset;                        
+        private final long offset;
 
         public DrawElementsTask(
                 final GLProgram program,
@@ -316,7 +445,7 @@ public class GLVertexArray {
             Objects.requireNonNull(this.mode = mode);
             Objects.requireNonNull(this.type = type);
 
-            if((this.count = count) < 0) {
+            if ((this.count = count) < 0) {
                 throw new GLException("Count cannot be less than 0!");
             } else if ((this.offset = offset) < 0) {
                 throw new GLException("Offset cannot be less than 0!");
@@ -331,12 +460,31 @@ public class GLVertexArray {
 
             this.program.bind();
             GLVertexArray.this.bind();
-                        
+
             GL11.glDrawElements(
                     this.mode.value,
                     this.count,
                     this.type.value,
                     this.offset);
+        }
+    }
+
+    private DrawArraysTask lastDrawArrays = null;
+
+    public void drawArrays(
+            final GLProgram program, final GLDrawMode mode,
+            final int start, final int count) {
+
+        if (this.lastDrawArrays != null
+                && this.lastDrawArrays.program == program
+                && this.lastDrawArrays.mode == mode
+                && this.lastDrawArrays.start == start
+                && this.lastDrawArrays.count == count) {
+
+            this.lastDrawArrays.glRun(this.getThread());
+        } else {
+            this.lastDrawArrays = new DrawArraysTask(program, mode, start, count);
+            this.lastDrawArrays.glRun(this.getThread());
         }
     }
 
@@ -346,17 +494,6 @@ public class GLVertexArray {
         private final int start;
         private final int count;
         private final GLProgram program;
-
-        public DrawArraysTask(final GLProgram program) {
-            this(program, GLDrawMode.GL_TRIANGLES, 0, CHECK_POLYGON_COUNT);
-        }
-
-        public DrawArraysTask(
-                final GLProgram program,
-                final GLDrawMode mode) {
-
-            this(program, mode, 0, CHECK_POLYGON_COUNT);
-        }
 
         public DrawArraysTask(
                 final GLProgram program,
@@ -382,16 +519,17 @@ public class GLVertexArray {
             this.program.bind();
             GLVertexArray.this.bind();
 
-            GL11.glDrawArrays(
-                    this.mode.value,
-                    this.start,
-                    this.count == CHECK_POLYGON_COUNT
-                            ? GLVertexArray.this.polygons
-                            : this.count);
+            GL11.glDrawArrays(this.mode.value, this.start, this.count);
         }
 
     }
 
+    private final DeleteTask deleteTask = new DeleteTask();
+    
+    public void delete() {
+        this.deleteTask.glRun(this.getThread());
+    }
+    
     public class DeleteTask extends GLTask {
 
         @Override
@@ -402,7 +540,11 @@ public class GLVertexArray {
             }
         }
     }
-
+    
+    public void setDivisor(final int index, final int divisor) {
+        new SetDivisorTask(index, divisor).glRun(this.getThread());
+    }
+    
     public class SetDivisorTask extends GLTask {
 
         private final int index;
@@ -429,6 +571,10 @@ public class GLVertexArray {
         }
     }
 
+    public void attachIndexBuffer(final GLBuffer buffer) {
+        new AttachIndexBufferTask(buffer).glRun(this.getThread());
+    }
+    
     public class AttachIndexBufferTask extends GLTask {
 
         private final GLBuffer buffer;
@@ -453,6 +599,13 @@ public class GLVertexArray {
         }
     }
 
+    public void attachBuffer(
+            final int index, final GLBuffer buffer, 
+            final GLVertexAttributeType type, final GLVertexAttributeSize size) {
+        
+        new AttachBufferTask(index, buffer, type, size).glRun(this.getThread());
+    }
+    
     public class AttachBufferTask extends GLTask {
 
         private final int index;
@@ -527,28 +680,6 @@ public class GLVertexArray {
             }
         }
 
-        private void checkSize() {
-            final int polyCount = GLVertexArray.this.polygons;
-            final boolean sizeSet = (polyCount > 0);
-
-            try {
-                final int bufferSize = this.buffer.new ParameterQuery(
-                        GLBufferTarget.GL_ARRAY_BUFFER,
-                        GLBufferParameterName.GL_BUFFER_SIZE).call();
-
-                final int pointWidth = this.type.width * this.size.value;
-                final int bufferPolyCount = bufferSize / pointWidth;
-
-                if (!sizeSet) {
-                    GLVertexArray.this.polygons = bufferPolyCount;
-                } else {
-                    GLVertexArray.this.polygons = Math.min(polyCount, bufferPolyCount);
-                }
-            } catch (Exception ex) {
-                throw new GLException("Unable to check buffer size!", ex);
-            }
-        }
-
         @Override
         public void run() {
             if (!GLVertexArray.this.isValid()) {
@@ -558,8 +689,6 @@ public class GLVertexArray {
             if (!buffer.isValid()) {
                 throw new GLException("Invalid GLBuffer!");
             }
-
-            this.checkSize();
 
             // bind the VAO if it isn't bound already.
             GLVertexArray.this.bind();
@@ -573,7 +702,7 @@ public class GLVertexArray {
                         this.index,
                         this.size.value,
                         this.type.value,
-                        this.stride, this.offset);                
+                        this.stride, this.offset);
             } else {
                 GL20.glVertexAttribPointer(
                         this.index,
@@ -582,7 +711,7 @@ public class GLVertexArray {
                         this.normalized,
                         this.stride, this.offset);
             }
-            GL20.glEnableVertexAttribArray(this.index);            
+            GL20.glEnableVertexAttribArray(this.index);
         }
     }
 }

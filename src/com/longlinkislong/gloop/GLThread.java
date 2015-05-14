@@ -8,7 +8,6 @@ package com.longlinkislong.gloop;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
-import static org.lwjgl.system.MemoryUtil.NULL;
 
 /**
  *
@@ -17,9 +16,11 @@ import static org.lwjgl.system.MemoryUtil.NULL;
 public class GLThread {
 
     private final ExecutorService internalExecutor = Executors.newSingleThreadExecutor();
-    private Thread internalThread = null;    
+    private Thread internalThread = null;
+    private boolean shouldHaltScheduledTasks = false;
 
     public void shutdown() {
+        this.shouldHaltScheduledTasks = true;
         this.internalExecutor.shutdown();
     }
 
@@ -37,7 +38,10 @@ public class GLThread {
             @Override
             public void run() {
                 task.run();
-                internalExecutor.execute(this);
+
+                if (!GLThread.this.shouldHaltScheduledTasks) {
+                    GLThread.this.internalExecutor.execute(this);
+                }
             }
         });
     }
@@ -54,30 +58,39 @@ public class GLThread {
     protected GLThread() {
         this.internalExecutor.execute(new InitTask());
     }
-    
+
     private class InitTask implements Runnable {
+
         @Override
         public void run() {
             GLThread.this.internalThread = Thread.currentThread();
         }
     }
 
+    /**
+     * Creates a new GLThread. This should only be called by GLWindow. The first
+     * GLWindow created owns the main GLThread. All subsequent instances of
+     * GLWindow have a new GLThread leased to them.
+     *
+     * @return the GLThread
+     * @since 15.05.14
+     */
     protected static GLThread create() {
-        final GLThread thread = new GLThread();
-        
-        if (Holder.INSTANCE == null) {
-            Holder.INSTANCE = thread;
+        if (!Holder.IS_ASSIGNED) {
+            Holder.IS_ASSIGNED = true;
+            return Holder.INSTANCE;
+        } else {
+            return new GLThread();
         }
-        
-        return thread;
     }
 
     private static final class Holder {
 
-        private static GLThread INSTANCE;
+        private static boolean IS_ASSIGNED = false;
+        private final static GLThread INSTANCE = new GLThread();
     }
 
     public static GLThread getDefaultInstance() {
         return Holder.INSTANCE;
-    }        
+    }
 }

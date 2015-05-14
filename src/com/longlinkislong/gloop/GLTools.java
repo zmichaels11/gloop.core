@@ -53,7 +53,7 @@ public class GLTools {
     public static ByteBuffer wrapVec2F(final List<GLVec2F> data) {
         return wrapVec2F(data, 0, data.size());
     }
-    
+
     public static ByteBuffer wrapVec2F(
             final List<GLVec2F> data, final int offset, final int length) {
 
@@ -77,7 +77,7 @@ public class GLTools {
     public static ByteBuffer wrapVec3F(final List<GLVec3F> data) {
         return wrapVec3F(data, 0, data.size());
     }
-    
+
     public static ByteBuffer wrapVec3F(
             final List<GLVec3F> data, final int offset, final int length) {
 
@@ -103,7 +103,7 @@ public class GLTools {
     public static ByteBuffer wrapVec4F(final List<GLVec4F> data) {
         return wrapVec4F(data, 0, data.size());
     }
-    
+
     public static ByteBuffer wrapVec4F(
             final List<GLVec4F> data, final int offset, final int length) {
 
@@ -133,8 +133,8 @@ public class GLTools {
         final ByteBuffer out = ByteBuffer.allocateDirect(neededSize)
                 .order(ByteOrder.nativeOrder());
         final ListIterator<Float> li = data.listIterator(offset);
-        
-        for(int i = 0; i < length; i++) {
+
+        for (int i = 0; i < length; i++) {
             out.putFloat(li.next());
         }
 
@@ -146,7 +146,7 @@ public class GLTools {
     public static ByteBuffer wrapFloat(final float... values) {
         return wrapFloat(values, 0, values.length);
     }
-    
+
     public static ByteBuffer wrapFloat(
             final float[] data, final int offset, final int length) {
 
@@ -165,7 +165,7 @@ public class GLTools {
     public static ByteBuffer wrapInt(final int... values) {
         return wrapInt(values, 0, values.length);
     }
-    
+
     public static ByteBuffer wrapInt(
             final List<Integer> data, final int offset, final int length) {
 
@@ -173,8 +173,8 @@ public class GLTools {
         final ByteBuffer out = ByteBuffer.allocateDirect(neededSize)
                 .order(ByteOrder.nativeOrder());
         final ListIterator<Integer> li = data.listIterator(offset);
-        
-        for(int i = 0; i < length; i++) {
+
+        for (int i = 0; i < length; i++) {
             out.putInt(li.next());
         }
 
@@ -201,7 +201,7 @@ public class GLTools {
     public static ByteBuffer wrapShort(final short... values) {
         return wrapShort(values, 0, values.length);
     }
-    
+
     public static ByteBuffer wrapShort(
             final List<Short> data, final int offset, final int length) {
 
@@ -209,8 +209,8 @@ public class GLTools {
         final ByteBuffer out = ByteBuffer.allocateDirect(neededSize)
                 .order(ByteOrder.nativeOrder());
         final ListIterator<Short> li = data.listIterator(offset);
-        
-        for(int i = 0; i < length; i++) {
+
+        for (int i = 0; i < length; i++) {
             out.putShort(li.next());
         }
 
@@ -236,15 +236,15 @@ public class GLTools {
     public static ByteBuffer wrapByte(final byte... values) {
         return wrapByte(values, 0, values.length);
     }
-    
+
     public static ByteBuffer wrapByte(
             final List<Byte> data, final int offset, final int length) {
 
         final ByteBuffer out = ByteBuffer.allocateDirect(data.size())
                 .order(ByteOrder.nativeOrder());
         final ListIterator<Byte> li = data.listIterator(offset);
-        
-        for(int i = 0; i < length; i++) {
+
+        for (int i = 0; i < length; i++) {
             out.put(li.next());
         }
 
@@ -277,5 +277,41 @@ public class GLTools {
         }
 
         return out.toString();
+    }    
+    
+    /**
+     * Retrieves the number of bytes that 'count' instances of 'type' would
+     * consume.
+     *
+     * @param count the number of elements.
+     * @param type the type of element.
+     * @return the number of bytes.
+     * @since 15.05.13
+     */
+    public static long sizeOf(final long count, final GLType type) {
+        if (count < 0) {
+            throw new GLException("Count should not be less than 0!");
+        }
+
+        switch (type) {
+            case GL_BYTE:
+                return count;
+            case GL_UNSIGNED_BYTE:
+                return count;
+            case GL_SHORT:
+                return count * 2L;
+            case GL_UNSIGNED_SHORT:
+                return count * 2L;
+            case GL_INT:
+                return count * 4L;
+            case GL_UNSIGNED_INT:
+                return count * 4L;
+            case GL_FLOAT:
+                return count * 4L;
+            case GL_DOUBLE:
+                return count * 8L;
+            default:
+                throw new GLException("Invalid type: " + type);
+        }
     }
 }

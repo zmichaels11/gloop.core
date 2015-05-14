@@ -5,7 +5,6 @@
  */
 package com.longlinkislong.gloop.nehe;
 
-import com.longlinkislong.gloop.GLThread;
 import com.longlinkislong.gloop.GLWindow;
 
 /**
@@ -16,10 +15,9 @@ public class NeHe01 {
 
     public NeHe01() {        
         GLWindow window = new GLWindow();
-        GLThread thread = window.getThread();
-                
-        thread.submitGLTask(window.new SetVisibleTask(true));
-        thread.scheduleGLTask(window.new UpdateTask());
+        
+        window.setVisible(true);
+        window.getThread().scheduleGLTask(window.new UpdateTask());                        
     }
 
     public static void main(String[] args) {

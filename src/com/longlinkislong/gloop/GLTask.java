@@ -9,14 +9,14 @@ package com.longlinkislong.gloop;
  *
  * @author zmichaels
  */
-public abstract class GLTask implements Runnable {    
-    
+public abstract class GLTask implements Runnable {
+
     /**
-     * Runs the GLTask now without checking for thread safety.     
-     */    
+     * Runs the GLTask now without checking for thread safety.
+     */
     @Override
     public abstract void run();
-    
+
     /**
      * Runs the task on the supplied thread. If the thread supplied is the
      * current thread, the call will run instantly.
@@ -37,10 +37,17 @@ public abstract class GLTask implements Runnable {
         }
     }
 
+    /**
+     * Runs the task on the default GLThread. If the current thread is the
+     * default GLThread, the task will run instantly. Otherwise it will be
+     * deferred.
+     * 
+     * @since 15.05.12
+     */
     public final void glRun() {
         final GLThread thread = GLThread.getDefaultInstance();
-        
-        if(thread.isCurrent()) {
+
+        if (thread.isCurrent()) {
             this.run();
         } else {
             thread.submitGLTask(this);
