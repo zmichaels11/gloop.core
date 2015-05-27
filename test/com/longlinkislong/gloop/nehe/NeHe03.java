@@ -6,6 +6,8 @@
 package com.longlinkislong.gloop.nehe;
 
 import com.longlinkislong.gloop.GLBuffer;
+import com.longlinkislong.gloop.GLClear;
+import com.longlinkislong.gloop.GLClearBufferMode;
 import com.longlinkislong.gloop.GLDrawMode;
 import com.longlinkislong.gloop.GLIndexElementType;
 import com.longlinkislong.gloop.GLMat4F;
@@ -30,12 +32,17 @@ import java.util.List;
  *
  * @author zmichaels
  */
-public class NeHe02 {
+public class NeHe03 {
+
     private final GLWindow window;
     private final GLTask drawTask;
+    private float rotTri = 0f;
+    private float rotQuad = 0f;
 
-    public NeHe02() throws IOException {
+    public NeHe03() throws IOException {
         this.window = new GLWindow();
+
+        final GLClear clear = new GLClear(0f, 0f, 0f, 0f, 1f);
 
         final InputStream inVsh = this.getClass()
                 .getResourceAsStream("basic.vs");
@@ -43,85 +50,103 @@ public class NeHe02 {
                 .getResourceAsStream("basic.fs");
 
         final GLShader vSh = new GLShader(
-                GLShaderType.GL_VERTEX_SHADER, 
-                GLTools.readAll(inVsh));
-        
+                GLShaderType.GL_VERTEX_SHADER, GLTools.readAll(inVsh));
         final GLShader fSh = new GLShader(
-                GLShaderType.GL_FRAGMENT_SHADER, 
-                GLTools.readAll(inFsh));                
-
+                GLShaderType.GL_FRAGMENT_SHADER, GLTools.readAll(inFsh));
+        
         final GLVertexAttributes vAttribs = new GLVertexAttributes();
         vAttribs.setAttribute("vPos", 0);
-
+        
         final GLProgram program = new GLProgram();
-
+        
         program.setVertexAttributes(vAttribs);
         program.linkShaders(vSh, fSh);
-
+        
         final List<GLVec3> vListTriangles = new ArrayList<>();
         vListTriangles.add(GLVec3F.create(0f, 1f, 0f));
         vListTriangles.add(GLVec3F.create(-1f, -1f, 0f));
         vListTriangles.add(GLVec3F.create(1f, -1f, 0f));
-
+        
         final GLBuffer vTriangles = new GLBuffer();
-
+        
         vTriangles.upload(GLTools.wrapVec3F(vListTriangles));
         vListTriangles.clear();
-
+        
         final GLVertexArray vaoTriangle = new GLVertexArray();
-
+        
         vaoTriangle.attachBuffer(
                 vAttribs.getLocation("vPos"),
                 vTriangles,
                 GLVertexAttributeType.GL_FLOAT,
-                GLVertexAttributeSize.VEC3);                
-
+                GLVertexAttributeSize.VEC3);     
+        
         final List<GLVec3> vListSquares = new ArrayList<>();
         vListSquares.add(GLVec3F.create(-1f, 1f, 0f));
         vListSquares.add(GLVec3F.create(1f, 1f, 0f));
         vListSquares.add(GLVec3F.create(1f, -1f, 0f));
         vListSquares.add(GLVec3F.create(-1f, -1f, 0f));
-
+        
         final GLBuffer vSquares = new GLBuffer();
-
-        vSquares.upload(GLTools.wrapVec3F(vListSquares));        
+        
+        vSquares.upload(GLTools.wrapVec3F(vListSquares));
         vListSquares.clear();
-
+        
         final GLBuffer vSquareIndex = new GLBuffer();
-                
         vSquareIndex.upload(GLTools.wrapInt(0, 1, 2, 0, 2, 3));
-
+        
         final GLVertexArray vaoSquare = new GLVertexArray();
-
+        
         vaoSquare.attachIndexBuffer(vSquareIndex);
         vaoSquare.attachBuffer(
                 vAttribs.getLocation("vPos"),
                 vSquares,
                 GLVertexAttributeType.GL_FLOAT,
                 GLVertexAttributeSize.VEC3);
-                        
-        
-        this.drawTask = GLTask.create(()-> {
+
+        this.drawTask = GLTask.create(() -> {
+            clear.clear(
+                    GLClearBufferMode.GL_COLOR_BUFFER_BIT,
+                    GLClearBufferMode.GL_DEPTH_BUFFER_BIT);
+
+            final GLMat4F trTri;
+            {
+                final GLMat4F rotation = GLMat4F.rotateY(rotTri);
+                final GLMat4F translation = GLMat4F.translation(-1.5f, 0f, -6f);
+
+                trTri = rotation.multiply(translation);
+            }
+
+            final GLMat4F trQuad;
+            {
+                final GLMat4F rotation = GLMat4F.rotateX(rotQuad);
+                final GLMat4F translation = GLMat4F.translation(1.5f, 0f, -6f);
+                
+                trQuad = rotation.multiply(translation);
+            }
+            
             program.setUniformMatrixF("proj", GLMat4F.perspective(45, window.getAspectRatio(), 0.1f));
             
-            program.setUniformMatrixF("tr", GLMat4F.translation(-1.5f, 0.0f, -6.0f));
+            program.setUniformMatrixF("tr", trTri);
             vaoTriangle.drawArrays(program, GLDrawMode.GL_TRIANGLES, 0, 3);
             
-            program.setUniformMatrixF("tr", GLMat4F.translation(1.5f, 0.0f, -6.0f));
+            program.setUniformMatrixF("tr", trQuad);
             vaoSquare.drawElements(program, GLDrawMode.GL_TRIANGLES, 6, GLIndexElementType.GL_UNSIGNED_INT, 0);
             
-            window.update();
-        });                        
+            rotTri += 0.2f;
+            rotQuad -= 0.15f;
+
+            this.window.update();
+        });
     }
-    
+
     public void start() {
-        this.window.getThread().scheduleGLTask(drawTask);
+        this.window.getThread().scheduleGLTask(this.drawTask);
         this.window.setVisible(true);
     }
 
     public static void main(String[] args) throws Exception {
-        NeHe02 test = new NeHe02();
-        
+        NeHe03 test = new NeHe03();
+
         test.start();
     }
 }

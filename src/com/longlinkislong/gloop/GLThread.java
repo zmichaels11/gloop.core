@@ -5,6 +5,8 @@
  */
 package com.longlinkislong.gloop;
 
+import java.util.Deque;
+import java.util.LinkedList;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
@@ -18,11 +20,48 @@ public class GLThread {
     private final ExecutorService internalExecutor = Executors.newSingleThreadExecutor();
     private Thread internalThread = null;
     private boolean shouldHaltScheduledTasks = false;
+    private final Deque<GLClear> clearStack = new LinkedList<>();
+
+    /**
+     * Retrieves but does not remove the top of the clear stack. The GLClear
+     * object will not be reinitialized.
+     *
+     * @return the GLClear object.
+     * @since 15.05.27
+     */
+    public GLClear topClear() {
+        return this.clearStack.peek();
+    }
+
+    /**
+     * Pushes the GLClear object onto the clear stack.
+     *
+     * @param clear the clear object to push
+     * @since 15.05.27
+     */
+    public void pushClear(final GLClear clear) {
+        this.clearStack.push(clear);
+    }
+
+    /**
+     * Pops the last GLClear object from the stack. This will reinitialize the
+     * GLClear object.
+     *
+     * @return the GLClear object.
+     * @since 15.05.27
+     */
+    public GLClear popClear() {
+        final GLClear top = this.clearStack.pop();
+
+        top.init();
+
+        return top;
+    }
 
     protected Thread getThread() {
         return this.internalThread;
     }
-    
+
     public void shutdown() {
         this.shouldHaltScheduledTasks = true;
         this.internalExecutor.shutdown();
@@ -52,7 +91,7 @@ public class GLThread {
 
     public <ReturnType> GLFuture<ReturnType> submitGLQuery(
             final GLQuery<ReturnType> query) {
-        
+
         final Future<ReturnType> raw = this.internalExecutor.submit(query);
 
         return new GLFuture<>(raw);
