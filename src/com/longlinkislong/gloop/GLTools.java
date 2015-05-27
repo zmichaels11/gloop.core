@@ -11,13 +11,14 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
-import java.util.Iterator;
 import java.util.List;
 import java.util.ListIterator;
 
 /**
+ * A collection of functions that can aid in OpenGL programs.
  *
  * @author zmichaels
+ * @since 15.05.27
  */
 public class GLTools {
 
@@ -44,27 +45,38 @@ public class GLTools {
         return val;
     }
 
-    private static void skip(final Iterator<?> it, final int count) {
-        for (int i = 0; i < count; i++) {
-            it.next();
-        }
-    }
-
-    public static ByteBuffer wrapVec2F(final List<GLVec2F> data) {
+    /**
+     * Wraps a list of GLVec2F as a ByteBuffer ready for OpenGL.
+     *
+     * @param data the data to wrap
+     * @return the ByteBuffer
+     * @since 15.05.27
+     */
+    public static ByteBuffer wrapVec2F(final List<GLVec2> data) {
         return wrapVec2F(data, 0, data.size());
     }
 
-    public static ByteBuffer wrapVec2F(
-            final List<GLVec2F> data, final int offset, final int length) {
+    /**
+     * Wraps a list of GLVec2F as a ByteBuffer ready for OpenGL.
+     *
+     * @param <VecT> the type of vector.
+     * @param data the data to wrap.
+     * @param offset the offset to start reading from the list.
+     * @param length the number of elements to read from the list.
+     * @return the ByteBuffer
+     * @since 15.05.27
+     */
+    public static <VecT extends GLVec2> ByteBuffer wrapVec2F(
+            final List<VecT> data, final int offset, final int length) {
 
         final int vecSize = 8;
         final int neededSize = data.size() * vecSize;
         final ByteBuffer out = ByteBuffer.allocateDirect(neededSize)
                 .order(ByteOrder.nativeOrder());
-        final ListIterator<GLVec2F> li = data.listIterator(offset);
+        final ListIterator<VecT> li = data.listIterator(offset);
 
         for (int i = 0; i < length; i++) {
-            final GLVec2F vec = li.next();
+            final GLVec2F vec = li.next().asGLVec2F();
 
             out.putFloat(vec.x());
             out.putFloat(vec.y());
@@ -74,22 +86,42 @@ public class GLTools {
         return out;
     }
 
-    public static ByteBuffer wrapVec3F(final List<GLVec3F> data) {
+    /**
+     * Wraps a list of GLVec3F as a ByteBuffer ready for OpenGL.
+     *
+     * @param <VecT> the type of vector.
+     * @param data the data to wrap.
+     * @return the ByteBuffer.
+     * @since 15.05.27
+     */
+    public static <VecT extends GLVec3> ByteBuffer wrapVec3F(
+            final List<VecT> data) {
+        
         return wrapVec3F(data, 0, data.size());
     }
 
-    public static ByteBuffer wrapVec3F(
-            final List<GLVec3F> data, final int offset, final int length) {
+    /**
+     * Wraps a list of GLVec3F as a ByteBuffer ready for OpenGL.
+     *
+     * @param <VecT> the type of vector.
+     * @param data the data to wrap.
+     * @param offset the offset to start reading from the list.
+     * @param length the number of elements to read from the list.
+     * @return the ByteBuffer
+     * @since 15.05.27
+     */
+    public static <VecT extends GLVec3> ByteBuffer wrapVec3F(
+            final List<VecT> data, final int offset, final int length) {
 
         final int vecSize = 12;
         final int neededSize = data.size() * vecSize;
         final ByteBuffer out = ByteBuffer.allocateDirect(neededSize)
                 .order(ByteOrder.nativeOrder());
 
-        final ListIterator<GLVec3F> li = data.listIterator(offset);
+        final ListIterator<VecT> li = data.listIterator(offset);
 
         for (int i = 0; i < length; i++) {
-            final GLVec3F vec = li.next();
+            final GLVec3F vec = li.next().asGLVec3F();
 
             out.putFloat(vec.x());
             out.putFloat(vec.y());
@@ -100,21 +132,40 @@ public class GLTools {
         return out;
     }
 
-    public static ByteBuffer wrapVec4F(final List<GLVec4F> data) {
+    /**
+     * Wraps a list of GLVec4F as a ByteBuffer ready for OpenGL.
+     *
+     * @param <VecT> the type of vector.
+     * @param data the data to wrap.
+     * @return the ByteBuffer
+     * @since 15.05.27
+     */
+    public static <VecT extends GLVec4> ByteBuffer wrapVec4F(final List<VecT> data) {
         return wrapVec4F(data, 0, data.size());
     }
 
-    public static ByteBuffer wrapVec4F(
-            final List<GLVec4F> data, final int offset, final int length) {
+    /**
+     * Wraps a list of GLVec4F as a ByteBuffer ready for OpenGL.
+     *
+     * @param <VecT> the type of vector.
+     * @param data the data to wrap.
+     * @param offset the offset to start reading from the list.
+     * @param length the number of elements to read from the list.
+     *
+     * @return the ByteBuffer
+     * @since 15.05.27
+     */
+    public static <VecT extends GLVec4> ByteBuffer wrapVec4F(
+            final List<VecT> data, final int offset, final int length) {
 
         final int vecSize = 16;
         final int neededSize = data.size() * vecSize;
         final ByteBuffer out = ByteBuffer.allocateDirect(neededSize)
                 .order(ByteOrder.nativeOrder());
-        final ListIterator<GLVec4F> li = data.listIterator(offset);
+        final ListIterator<VecT> li = data.listIterator(offset);
 
         for (int i = 0; i < length; i++) {
-            final GLVec4F vec = li.next();
+            final GLVec4F vec = li.next().asGLVec4F();
 
             out.putFloat(vec.x());
             out.putFloat(vec.y());
@@ -277,8 +328,8 @@ public class GLTools {
         }
 
         return out.toString();
-    }    
-    
+    }
+
     /**
      * Retrieves the number of bytes that 'count' instances of 'type' would
      * consume.

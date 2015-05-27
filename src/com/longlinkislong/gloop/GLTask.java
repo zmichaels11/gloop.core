@@ -6,13 +6,14 @@ package com.longlinkislong.gloop;
  * and open the template in the editor.
  */
 /**
- *
+ * A task that should run on a GLThread. Tasks do not return values.
  * @author zmichaels
  */
 public abstract class GLTask implements Runnable {
 
     /**
      * Runs the GLTask now without checking for thread safety.
+     * @since 15.05.27
      */
     @Override
     public abstract void run();

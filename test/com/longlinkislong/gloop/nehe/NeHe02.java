@@ -48,10 +48,7 @@ public class NeHe02 {
         
         final GLShader fSh = new GLShader(
                 GLShaderType.GL_FRAGMENT_SHADER, 
-                GLTools.readAll(inFsh));        
-
-        vSh.compile();
-        fSh.compile();
+                GLTools.readAll(inFsh));                
 
         final GLVertexAttributes vAttribs = new GLVertexAttributes();
         vAttribs.setAttribute("vPos", 0);

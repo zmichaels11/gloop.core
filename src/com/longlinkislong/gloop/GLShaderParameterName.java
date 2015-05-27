@@ -9,7 +9,7 @@ import org.lwjgl.opengl.GL20;
 import org.lwjgl.opengl.GL43;
 
 /**
- *
+ * 
  * @author zmichaels
  */
 public enum GLShaderParameterName {

@@ -34,11 +34,18 @@ public class GLWindow {
         this(width, height, "GLOOP App", null);
     }
 
-    public GLWindow(final int width, final int height, final CharSequence title) {
+    public GLWindow(
+            final int width, final int height, 
+            final CharSequence title) {
+        
         this(width, height, title, null);
     }
 
-    public GLWindow(final int width, final int height, final CharSequence title, final GLWindow shared) {
+    public GLWindow(
+            final int width, final int height, 
+            final CharSequence title, 
+            final GLWindow shared) {
+        
         this.width = width;
         this.height = height;
         this.title = title.toString();
@@ -46,7 +53,10 @@ public class GLWindow {
 
         if (!isGLFWInit) {
             isGLFWInit = (GLFW.glfwInit() == GL_TRUE);
-
+            
+            if(!isGLFWInit) {
+                throw new GLException("Could not initialize GLFW!");
+            }
         }
 
         this.thread = GLThread.create();

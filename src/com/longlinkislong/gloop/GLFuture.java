@@ -11,9 +11,10 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 
 /**
- *
+ * A future object that is used with GLQuery objects.
  * @author zmichaels
- * @param <ReturnType>
+ * @param <ReturnType> the return type that is set after the GLQuery executes.
+ * @since 15.05.27
  */
 public class GLFuture<ReturnType> implements Future<ReturnType> {
     private final Future<ReturnType> internal;

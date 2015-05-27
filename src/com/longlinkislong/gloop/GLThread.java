@@ -19,6 +19,10 @@ public class GLThread {
     private Thread internalThread = null;
     private boolean shouldHaltScheduledTasks = false;
 
+    protected Thread getThread() {
+        return this.internalThread;
+    }
+    
     public void shutdown() {
         this.shouldHaltScheduledTasks = true;
         this.internalExecutor.shutdown();
@@ -48,7 +52,7 @@ public class GLThread {
 
     public <ReturnType> GLFuture<ReturnType> submitGLQuery(
             final GLQuery<ReturnType> query) {
-
+        
         final Future<ReturnType> raw = this.internalExecutor.submit(query);
 
         return new GLFuture<>(raw);

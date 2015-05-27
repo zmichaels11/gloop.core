@@ -44,7 +44,7 @@
             dest="obj/lwjgl/"
             src="${libs.lwjgl.lwjgl.jar}"/>
         
-        <touch file="obj/lwjgl/300.version"/>
+        <touch file="obj/lwjgl/300a.version"/>
     </target>
     
     <target name="-check-deps-lwjgl-natives-linux" if="isLinux" unless="lwjgl.exists">
@@ -88,17 +88,23 @@
     </target>
     
     <target name="-clear-deps-lwjgl" if="lwjgl.exists">
-        <delete file="obj/lwjgl/*.version"/>
+        <delete>
+            <fileset dir="obj/lwjgl" includes="*.version"/>
+        </delete>
     </target>
     
     <target name="-clear-deps-gloop" if="gloop.exists">
-        <delete file="obj/gloop/*.version"/>
+        <delete>
+            <fileset dir="obj/gloop" includes="*.version"/>
+        </delete>        
     </target>
     
+    <target name="clear-deps-nightly" depends="-clear-deps-gloop"/>
     <target name="check-deps-natives" depends="-check-deps-lwjgl-natives-linux,-check-deps-lwjgl-natives-windows"/>
     <target name="check-deps" depends="-check-deps-lwjgl,check-deps-nightly"/>
     <target name="check-deps-nightly" depends="-check-deps-gloop"/>
     <target name="-pre-compile" depends="check-deps,check-deps-natives"/>    
+    <target name="-post-clean" depends="clear-deps-nightly"/>
     <!--
 
     There exist several targets which are by default empty and which can be 

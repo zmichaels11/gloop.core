@@ -162,8 +162,14 @@ public class GLBuffer extends GLObject {
                 final GLBufferTarget target,
                 final GLBufferParameterName pName) {
 
-            this.target = target;
-            this.pName = pName;
+            Objects.requireNonNull(this.target = target);
+            Objects.requireNonNull(this.pName = pName);
+
+            if (this.target != GLBufferTarget.GL_ARRAY_BUFFER
+                    || this.target != GLBufferTarget.GL_ELEMENT_ARRAY_BUFFER) {
+
+                throw new GLException("Target must be either GL_ARRAY_BUFFER or GL_ELEMENT_BUFFER!");
+            }
         }
 
         @Override
@@ -210,6 +216,19 @@ public class GLBuffer extends GLObject {
     }
 
     private UploadTask lastUploadTask = null;
+
+    /**
+     * Uploads the supplied data to the GLBuffer. GL_ARRAY_BUFFER is used for
+     * the target and GL_STATIC_DRAW is used for the usage.
+     *
+     * @param data
+     */
+    public void upload(final ByteBuffer data) {
+        this.upload(
+                GLBufferTarget.GL_ARRAY_BUFFER,
+                data,
+                GLBufferUsage.GL_STATIC_DRAW);
+    }
 
     /**
      * Uploads the supplied data to the GLBuffer. GL_STATIC_DRAW is used for
@@ -419,6 +438,18 @@ public class GLBuffer extends GLObject {
      */
     public ByteBuffer download() {
         return this.download(GLBufferTarget.GL_ARRAY_BUFFER, 0, null);
+    }
+
+    /**
+     * Requests a copy of the data stored inside the GLBuffer. A new ByteBuffer
+     * is allocated to write the data to. This function can cause a thread sync.
+     *
+     * @param target the target the buffer will be bound to.
+     * @return the data
+     * @since 15.05.27
+     */
+    public ByteBuffer download(final GLBufferTarget target) {
+        return this.download(target, 0, null);
     }
 
     /**
@@ -707,7 +738,7 @@ public class GLBuffer extends GLObject {
         if (src.getThread() != dest.getThread()) {
             throw new GLException("Source GLBuffer and destination GLBuffer are on different GLThreads!");
         }
-        
+
         if (src.lastCopyTask != null
                 && src.lastCopyTask.src == src
                 && src.lastCopyTask.srcOffset == srcOffset

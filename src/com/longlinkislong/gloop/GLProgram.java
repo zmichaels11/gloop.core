@@ -21,41 +21,79 @@ import org.lwjgl.opengl.GL30;
 import org.lwjgl.opengl.GL40;
 
 /**
+ * A GLObject that represents an OpenGL shader program.
  *
  * @author zmichaels
+ * @since 15.05.27
  */
 public class GLProgram extends GLObject {
 
-    private static final FloatBuffer TEMPF = ByteBuffer.allocateDirect(16 << 2).order(ByteOrder.nativeOrder()).asFloatBuffer();
-    private static final DoubleBuffer TEMPD = ByteBuffer.allocateDirect(16 << 3).order(ByteOrder.nativeOrder()).asDoubleBuffer();
+    private static final FloatBuffer TEMPF = ByteBuffer
+            .allocateDirect(16 << 2)
+            .order(ByteOrder.nativeOrder())
+            .asFloatBuffer();
+    private static final DoubleBuffer TEMPD = ByteBuffer
+            .allocateDirect(16 << 3)
+            .order(ByteOrder.nativeOrder())
+            .asDoubleBuffer();
 
-    private static GLProgram CURRENT = null;
+    private static final Map<Thread, GLProgram> CURRENT = new HashMap<>();
     private static final int INVALID_PROGRAM_ID = -1;
     protected int programId = INVALID_PROGRAM_ID;
     private final Map<String, Integer> uniforms = new HashMap<>();
 
+    /**
+     * Constructs a new GLProgram using the default GLThread.
+     *
+     * @since 15.05.27
+     */
     public GLProgram() {
         super();
         this.init();
     }
 
+    /**
+     * Constructs a new GLProgram using the specified thread as the parent
+     * thread.
+     *
+     * @param thread the thread to create the GLProgram on.
+     * @since 15.05.27
+     */
     public GLProgram(final GLThread thread) {
         super(thread);
         this.init();
     }
 
+    /**
+     * Checks if the GLProgram is valid. A GLProgram is considered valid after
+     * it is created and before it is deleted.
+     *
+     * @return true if the GLProgram is valid.
+     * @since 15.05.27
+     */
     public boolean isValid() {
         return this.programId != INVALID_PROGRAM_ID;
     }
 
+    /**
+     * Checks if the GLProgram is currently bound on the current thraed.
+     *
+     * @return true if the GLProgram is currently being used.
+     * @since 15.05.27
+     */
     public boolean isCurrent() {
-        return CURRENT == this;
+        return CURRENT.get(Thread.currentThread()) == this;
     }
 
+    /**
+     * Binds the current program to the current thread.
+     *
+     * @since 15.05.27
+     */
     protected void bind() {
         if (!this.isCurrent()) {
             GL20.glUseProgram(this.programId);
-            GLProgram.CURRENT = this;
+            CURRENT.put(Thread.currentThread(), this);
         }
     }
 
@@ -71,14 +109,31 @@ public class GLProgram extends GLObject {
         }
     }
 
+    /**
+     * Registers all VertexAttribute properties. This should be called before
+     * the link task is executed.
+     *
+     * @param attrib the VertexAttributes to set.
+     * @since 15.05.27
+     */
     public void setVertexAttributes(final GLVertexAttributes attrib) {
         new SetVertexAttributesTask(attrib).glRun(this.getThread());
     }
 
+    /**
+     * A GLTask that sets the VertexAttributes for the GLProgram.
+     */
     public class SetVertexAttributesTask extends GLTask {
 
         private final GLVertexAttributes attribs;
 
+        /**
+         * Constructs a new SetVertexAttributes task with the specified
+         * GLVertexAttributes.
+         *
+         * @param attrib the attributes to set.
+         * @since 15.05.27
+         */
         public SetVertexAttributesTask(final GLVertexAttributes attrib) {
             Objects.requireNonNull(this.attribs = attrib);
         }
@@ -111,24 +166,50 @@ public class GLProgram extends GLObject {
         }
     }
 
+    /**
+     * Sets a uniform double matrix at the specified uniform attribute.
+     *
+     * @param uName the name of the attribute.
+     * @param mat the matrix to set
+     * @since 15.05.27
+     */
     public void setUniformMatrixD(
             final CharSequence uName, final GLMat<?, ?> mat) {
 
         new SetUniformMatrixDTask(uName, mat).glRun(this.getThread());
     }
 
+    /**
+     * Sets a uniform float matrix at the specified uniform attribute.
+     *
+     * @param uName the name of the attribute.
+     * @param mat the matrix to set.
+     * @since 15.05.27
+     */
     public void setUniformMatrixF(
             final CharSequence uName, final GLMat<?, ?> mat) {
 
         new SetUniformMatrixFTask(uName, mat).glRun(this.getThread());
     }
 
+    /**
+     * A GLTask that sets a uniform double matrix.
+     *
+     * @since 15.05.27
+     */
     public class SetUniformMatrixDTask extends GLTask {
 
         private final String uName;
         private final double[] values;
         private final int count;
 
+        /**
+         * Constructs a new SetUniformMatrixDTask with the specified GLMat.
+         *
+         * @param uName the name of the uniform to set.
+         * @param mat the matrix to set
+         * @since 15.05.27
+         */
         public SetUniformMatrixDTask(
                 final CharSequence uName, final GLMat<?, ?> mat) {
 
@@ -150,6 +231,17 @@ public class GLProgram extends GLObject {
                     this.count);
         }
 
+        /**
+         * Constructs a new SetUniformMatrixDTask with the specified double
+         * array.
+         *
+         * @param uName the name of the uniform to set.
+         * @param data the data to set.
+         * @param offset the offset to start reading from the data.
+         * @param length the number of elements to set. Must be either 4 for a
+         * 2x2 matrix, 9 for a 3x3 matrix, or 16 for a 4x4 matrix.
+         * @since 15.05.27
+         */
         public SetUniformMatrixDTask(
                 final CharSequence uName,
                 final double[] data, final int offset, final int length) {
@@ -175,6 +267,7 @@ public class GLProgram extends GLObject {
 
             final int uLoc = GLProgram.this.getUniformLoc(uName);
 
+            //TODO check if this needs sync
             TEMPD.clear();
             TEMPD.put(this.values).flip();
 
@@ -192,13 +285,26 @@ public class GLProgram extends GLObject {
         }
     }
 
+    /**
+     * A GLTask that sets a uniform float matrix.
+     *
+     * @since 15.05.27
+     */
     public class SetUniformMatrixFTask extends GLTask {
 
         private final String uName;
         private final float[] values;
         private final int count;
 
-        public SetUniformMatrixFTask(final CharSequence uName, GLMat<?, ?> mat) {
+        /**
+         * Constructs a new UniformMatrixTask using the supplied GLMat. The
+         * values set will be the values of the GLMat on task creation.
+         *
+         * @param uName the name of the uniform to use.
+         * @param mat the matrix to set
+         * @since 15.05.27
+         */
+        public SetUniformMatrixFTask(final CharSequence uName, final GLMat<?, ?> mat) {
 
             final int sz = mat.size();
 
@@ -215,6 +321,17 @@ public class GLProgram extends GLObject {
             System.arraycopy(mf.data(), mf.offset(), this.values, 0, this.count);
         }
 
+        /**
+         * Constructs a new UniformMatrixTask using the supplied float array.
+         * The values set will be the values on task creation.
+         *
+         * @param uName the name of the uniform to use.
+         * @param values the matrix to set.
+         * @param offset the offset to start reading from the matrix.
+         * @param length the number of elements to use for the matrix. 4
+         * elements defines a 2x2 matrix, 9 for a 3x3, and 16 for a 4x4.
+         * @since 15.05.27
+         */
         public SetUniformMatrixFTask(
                 final CharSequence uName,
                 final float[] values, final int offset, final int length) {
@@ -257,10 +374,27 @@ public class GLProgram extends GLObject {
         }
     }
 
+    /**
+     * Sets a double uniform from the supplied GLVec. The GLVec must be of size
+     * 1, 2, 3, or 4.
+     *
+     * @param uName the name of the uniform to set.
+     * @param vec the vector to set
+     * @since 15.05.27
+     */
     public void setUniformD(final CharSequence uName, final GLVec<?> vec) {
         new SetUniformDTask(uName, vec).glRun(this.getThread());
     }
 
+    /**
+     * Sets a double uniform from the supplied double array.
+     *
+     * @param uName the name of the uniform to set.
+     * @param values the data to read the uniform values from.
+     * @param offset the offset to start the read.
+     * @param length the number of elements to read. Must be 1, 2, 3, or 4.
+     * @since 15.05.27
+     */
     public void setUniformD(final CharSequence uName,
             final double[] values, final int offset, final int length) {
 
@@ -268,16 +402,37 @@ public class GLProgram extends GLObject {
                 .glRun(this.getThread());
     }
 
+    /**
+     * Sets a double uniform to the series of double values.
+     *
+     * @param uName the uniform to set.
+     * @param values the values to set. At least one value and up to 4 values
+     * must be defined.
+     * @since 15.05.27
+     */
     public void setUniformD(final CharSequence uName, final double... values) {
         new SetUniformDTask(uName, values).glRun(this.getThread());
     }
 
+    /**
+     * A GLTask that sets a uniform double.
+     *
+     * @since 15.05.27
+     */
     public class SetUniformDTask extends GLTask {
 
         private final String uName;
         private final double[] values;
         private final int count;
 
+        /**
+         * Constructs a new SetUniformDTask using a GLVec. The values of the
+         * GLVec are copied on task creation.
+         *
+         * @param uName the name of the uniform.
+         * @param v the vector. Must be of size 1, 2, 3, or 4.
+         * @since 15.05.27.
+         */
         public SetUniformDTask(final CharSequence uName, final GLVec<?> v) {
 
             final int sz = v.size();
@@ -295,10 +450,29 @@ public class GLProgram extends GLObject {
             System.arraycopy(vd.data(), vd.offset(), this.values, 0, this.count);
         }
 
+        /**
+         * Constructs a new SetUniformDTask using a series of doubles. These
+         * doubles are copied on task creation.
+         *
+         * @param uName the name of the uniform.
+         * @param data the uniform data. At least one value and up to four
+         * values must be defined.
+         * @since 15.05.27
+         */
         public SetUniformDTask(final CharSequence uName, final double... data) {
             this(uName, data, 0, data.length);
         }
 
+        /**
+         * Constructs a new SetUniformDTask using an array of doubles.
+         *
+         * @param uName the name of the uniform.
+         * @param data the uniform data.
+         * @param offset the offset to start reading from the data.
+         * @param length the number of values to read. Must be either 1, 2, 3,
+         * or 4.
+         * @since 15.05.27
+         */
         public SetUniformDTask(final CharSequence uName,
                 final double[] data, final int offset, final int length) {
 
@@ -339,6 +513,15 @@ public class GLProgram extends GLObject {
         }
     }
 
+    /**
+     * Sets a uniform integer to values read from an array.
+     *
+     * @param uName the name of the uniform to set.
+     * @param data the data to read
+     * @param offset the offset to start reading.
+     * @param length the number of elements to read. Must be 1, 2, 3, or 4.
+     * @since 15.05.27
+     */
     public void setUniformI(
             final CharSequence uName,
             final int[] data, final int offset, final int length) {
@@ -346,21 +529,50 @@ public class GLProgram extends GLObject {
         new SetUniformITask(uName, data, offset, length).glRun(this.getThread());
     }
 
+    /**
+     * Sets a uniform integer to a series of values.
+     *
+     * @param uName the name of the uniform to set.
+     * @param data the series of data to read. At least one and up to four
+     * values must be defined.
+     * @since 15.05.27
+     */
     public void setUniformI(final CharSequence uName, final int... data) {
         new SetUniformITask(uName, data).glRun(this.getThread());
     }
 
+    /**
+     * A GLTask that sets an integer uniform.
+     *
+     * @since 15.05.27
+     */
     public class SetUniformITask extends GLTask {
 
         private final String uName;
         private final int[] values;
         private final int count;
 
+        /**
+         * Constructs a new SetUniformITask using the series of integers.
+         *
+         * @param uName the name of the uniform to set.
+         * @param data the series of data to set.
+         * @since 15.05.27
+         */
         public SetUniformITask(
                 final CharSequence uName, final int... data) {
             this(uName, data, 0, data.length);
         }
 
+        /**
+         * Constructs a new SetUniformITask using an array of data to read from.
+         *
+         * @param uName the name of the uniform to set
+         * @param data the array to read data from.
+         * @param offset the offset to start reading data.
+         * @param length the number of elements to read. Must be 1, 2, 3, or 4.
+         * @since 15.05.27
+         */
         public SetUniformITask(
                 final CharSequence uName,
                 final int[] data, final int offset, final int length) {
@@ -402,10 +614,27 @@ public class GLProgram extends GLObject {
         }
     }
 
+    /**
+     * Sets a float uniform to values read from a GLVec.
+     *
+     * @param uName the name of the uniform to set
+     * @param vec the vector to read the uniform data from. Must be of size 1,
+     * 2, 3, or 4.
+     * @since 15.05.27
+     */
     public void setUniformF(final CharSequence uName, final GLVec<?> vec) {
         new SetUniformFTask(uName, vec).glRun(this.getThread());
     }
 
+    /**
+     * Sets a float uniform to values read from an array of floats.
+     *
+     * @param uName the name of the uniform to set.
+     * @param data the array to read values from.
+     * @param offset the offset to start reading values from.
+     * @param length the number of values to read. Must be 1, 2, 3, or 4.
+     * @since 15.05.27
+     */
     public void setUniformF(
             final CharSequence uName,
             final float[] data, final int offset, final int length) {
@@ -413,16 +642,34 @@ public class GLProgram extends GLObject {
         new SetUniformFTask(uName, data, offset, length).glRun(this.getThread());
     }
 
+    /**
+     * Sets a float uniform to values read from a series of floats.
+     *
+     * @param uName the name of the uniform to set.
+     * @param values the series of floats to set.
+     * @since 15.05.27
+     */
     public void setUniformF(final CharSequence uName, final float... values) {
         new SetUniformFTask(uName, values).glRun(this.getThread());
     }
 
+    /**
+     * A GLTask that sets a floating point uniform.
+     */
     public class SetUniformFTask extends GLTask {
 
         private final String uName;
         private final float[] values;
         private final int count;
 
+        /**
+         * Constructs a new SetUniformFTask with the specified vector.
+         *
+         * @param uName the name of the uniform.
+         * @param vec the vector to set. The vector must be of size 1, 2, 3, or
+         * 4. The values from the vector will be copied on task creation.
+         * @since 15.05.27
+         */
         public SetUniformFTask(final CharSequence uName, final GLVec<?> vec) {
             final int sz = vec.size();
 
@@ -438,11 +685,28 @@ public class GLProgram extends GLObject {
             this.uName = uName.toString();
         }
 
+        /**
+         * Constructs a new SetUniformFTask with a series of float data.
+         *
+         * @param uName the name of the uniform.
+         * @param data the values to read. At least one and at most four values
+         * must be defined.
+         * @since 15.05.27
+         */
         public SetUniformFTask(
                 final CharSequence uName, final float... data) {
             this(uName, data, 0, data.length);
         }
 
+        /**
+         * Constructs a new SetUniformTask with an array of floats.
+         *
+         * @param uName the name of the uniform.
+         * @param data the array to read data from.
+         * @param offset the offset to start reading data.
+         * @param length the number of elements to read.
+         * @since 15.05.27
+         */
         public SetUniformFTask(
                 final CharSequence uName,
                 final float[] data, final int offset, final int length) {
@@ -510,25 +774,58 @@ public class GLProgram extends GLObject {
         }
     }
 
+    /**
+     * Links the shaders for the GLProgram.
+     *
+     * @param shaders series of shaders to link.
+     * @since 15.05.27
+     */
     public void linkShaders(final GLShader... shaders) {
         new LinkShadersTask(shaders).glRun(this.getThread());
     }
 
+    /**
+     * Links a collection of shaders for the GLProgram.
+     *
+     * @param shaders the array of shaders to link.
+     * @param offset the offset to start reading from the list of shaders.
+     * @param length the number of shaders to read.
+     * @since 15.05.27
+     */
     public void linkShaders(
             final GLShader[] shaders, final int offset, final int length) {
 
         new LinkShadersTask(shaders, offset, length).glRun(this.getThread());
     }
 
+    /**
+     * A GLTask that links shaders for the GLProgram.
+     *
+     * @since 15.05.27
+     */
     public class LinkShadersTask extends GLTask {
 
         private final GLShader[] shaders;
 
+        /**
+         * Constructs a new LinkShaderTask using a series of shaders.
+         *
+         * @param shaders the shaders to link.
+         * @since 15.05.27
+         */
         public LinkShadersTask(
                 final GLShader... shaders) {
             this(shaders, 0, shaders.length);
         }
 
+        /**
+         * Constructs a new LinkShadersTask using an array of shaders.
+         *
+         * @param shaders the array to get shaders from.
+         * @param offset the offset to start reading shaders.
+         * @param length the number of shaders to read.
+         * @since 15.05.27
+         */
         public LinkShadersTask(
                 final GLShader[] shaders, final int offset, final int length) {
 
@@ -577,6 +874,13 @@ public class GLProgram extends GLObject {
         this.initTask.glRun(this.getThread());
     }
 
+    /**
+     * A GLTask that initializes the GLProgram. This is automatically ran on
+     * GLProgram construction. GLProgram objects can be recycled by first
+     * deleting them and then initializing them.
+     *
+     * @since 15.05.27
+     */
     public class InitTask extends GLTask {
 
         @Override
@@ -591,10 +895,20 @@ public class GLProgram extends GLObject {
 
     private final GLTask deleteTask = new DeleteTask();
 
+    /**
+     * Deletes the GLProgram.
+     *
+     * @since 15.05.27
+     */
     public final void delete() {
         this.deleteTask.glRun(this.getThread());
     }
 
+    /**
+     * A GLTask that deletes the GLProgram.
+     *
+     * @since 15.05.27
+     */
     public class DeleteTask extends GLTask {
 
         @Override
@@ -606,13 +920,26 @@ public class GLProgram extends GLObject {
             GL20.glDeleteProgram(GLProgram.this.programId);
             GLProgram.this.programId = INVALID_PROGRAM_ID;
         }
-    }    
-    
+    }
+
+    /**
+     * A GLTask that sets a uniform sampler.
+     *
+     * @since 15.05.27
+     */
     public class SetUniformSamplerTask extends GLTask {
 
         private final GLTexture.BindTask bindTask;
         private final String uName;
 
+        /**
+         * Constructs a new SetUniformSamplerTask with the specified GLTexture
+         * BindTask.
+         *
+         * @param uName the name of the uniform to set.
+         * @param bindTask the bind task to associate the uniform to.
+         * @since 15.05.27
+         */
         public SetUniformSamplerTask(
                 final CharSequence uName, final GLTexture.BindTask bindTask) {
 
@@ -624,13 +951,13 @@ public class GLProgram extends GLObject {
         public void run() {
             if (!GLProgram.this.isValid()) {
                 throw new GLException("GLProgram is invalid!");
-            }
-
+            }            
+            
             GLProgram.this.bind();
 
             final int uLoc = GLProgram.this.getUniformLoc(uName);
 
             GL20.glUniform1i(uLoc, this.bindTask.activeTexture);
         }
-    }   
+    }
 }

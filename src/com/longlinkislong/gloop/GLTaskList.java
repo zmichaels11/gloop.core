@@ -13,8 +13,9 @@ import java.util.ListIterator;
 import java.util.RandomAccess;
 
 /**
- *
+ * A list of GLTasks.
  * @author zmichaels
+ * @since 15.05.27
  */
 public class GLTaskList extends GLTask implements List<GLTask>, RandomAccess{
     final List<GLTask> tasks = new ArrayList<>();        
