@@ -14,7 +14,6 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
 import java.util.Objects;
-import java.util.Optional;
 import java.util.Set;
 import org.lwjgl.opengl.GL11;
 import org.lwjgl.opengl.GL20;
@@ -41,9 +40,7 @@ public class GLProgram extends GLObject {
     private static final Map<Thread, GLProgram> CURRENT = new HashMap<>();
     private static final int INVALID_PROGRAM_ID = -1;
     protected int programId = INVALID_PROGRAM_ID;
-    private final Map<String, Integer> uniforms = new HashMap<>();
-
-    private Optional vertexAttribs = Optional.empty();
+    private final Map<String, Integer> uniforms = new HashMap<>();    
 
     /**
      * Constructs a new GLProgram using the default GLThread.
@@ -119,8 +116,7 @@ public class GLProgram extends GLObject {
      * @param attrib the VertexAttributes to set.
      * @since 15.05.27
      */
-    public void setVertexAttributes(final GLVertexAttributes attrib) {
-        this.vertexAttribs = Optional.of(attrib);
+    public void setVertexAttributes(final GLVertexAttributes attrib) {        
         new SetVertexAttributesTask(attrib).glRun(this.getThread());
     }
 

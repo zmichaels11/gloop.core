@@ -6,6 +6,8 @@
 package com.longlinkislong.gloop;
 
 import java.nio.IntBuffer;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.Objects;
 import org.lwjgl.opengl.GL11;
 import org.lwjgl.opengl.GL14;
@@ -23,7 +25,7 @@ import org.lwjgl.opengl.GL41;
  */
 public class GLVertexArray extends GLObject {
 
-    private static GLVertexArray CURRENT_VAO = null;
+    private static final Map<Thread, GLVertexArray> CURRENT = new HashMap<>();
     private static final int INVALID_VERTEX_ARRAY_ID = -1;
     private int vaoId = INVALID_VERTEX_ARRAY_ID;
 
@@ -41,10 +43,14 @@ public class GLVertexArray extends GLObject {
         return this.vaoId != INVALID_VERTEX_ARRAY_ID;
     }
 
+    private boolean isCurrent() {
+        return CURRENT.get(Thread.currentThread()) == this;
+    }
+    
     private void bind() {
-        if (CURRENT_VAO != this) {
+        if (!this.isCurrent()) {
             GL30.glBindVertexArray(this.vaoId);
-            CURRENT_VAO = this;
+            CURRENT.put(Thread.currentThread(), this);
         }
     }
 
@@ -93,7 +99,7 @@ public class GLVertexArray extends GLObject {
         }
     }
 
-    public class DrawElementsIndirectTask extends GLTask {
+    public class DrawElementsIndirectTask extends GLTask implements GLDrawTask {
 
         private final GLBuffer indirectCommandBuffer;
         private final GLProgram program;
@@ -164,7 +170,7 @@ public class GLVertexArray extends GLObject {
         }
     }
 
-    public class DrawArraysIndirectTask extends GLTask {
+    public class DrawArraysIndirectTask extends GLTask implements GLDrawTask {
 
         private final GLBuffer indirectCommandBuffer;
         private final GLProgram program;
@@ -228,7 +234,7 @@ public class GLVertexArray extends GLObject {
         }
     }
 
-    public class MultiDrawArraysTask extends GLTask {
+    public class MultiDrawArraysTask extends GLTask implements GLDrawTask {
 
         private final GLProgram program;
         private final IntBuffer first;
@@ -286,7 +292,7 @@ public class GLVertexArray extends GLObject {
         }
     }
 
-    public class DrawElementsInstancedTask extends GLTask {
+    public class DrawElementsInstancedTask extends GLTask implements GLDrawTask {
 
         private final GLProgram program;
         private final int count;
@@ -357,7 +363,7 @@ public class GLVertexArray extends GLObject {
         }
     }
 
-    public class DrawArraysInstancedTask extends GLTask {
+    public class DrawArraysInstancedTask extends GLTask implements GLDrawTask {
 
         private final GLProgram program;
         private final GLDrawMode mode;
@@ -488,7 +494,35 @@ public class GLVertexArray extends GLObject {
         }
     }
 
-    public class DrawArraysTask extends GLTask {
+    public class DrawTransformFeedbackTask extends GLTask {
+
+        final GLTransformFeedback tfb;
+        final GLDrawMode mode;
+        final GLProgram program;
+
+        public DrawTransformFeedbackTask(
+                final GLProgram program,
+                final GLDrawMode mode,
+                final GLTransformFeedback tfb) {
+
+            Objects.requireNonNull(this.program = program);
+            Objects.requireNonNull(this.mode = mode);
+            Objects.requireNonNull(this.tfb = tfb);
+        }
+        
+        @Override
+        public void run() {
+            if(!GLVertexArray.this.isValid()) {
+                throw new GLException("Invalid GLVertexArray!");
+            }
+            
+            this.program.bind();
+            GLVertexArray.this.bind();
+            GL40.glDrawTransformFeedback(this.mode.value, this.tfb.tfbId);
+        }
+    }       
+
+    public class DrawArraysTask extends GLTask implements GLDrawTask {
 
         private final GLDrawMode mode;
         private final int start;
@@ -525,11 +559,11 @@ public class GLVertexArray extends GLObject {
     }
 
     private final DeleteTask deleteTask = new DeleteTask();
-    
+
     public void delete() {
         this.deleteTask.glRun(this.getThread());
     }
-    
+
     public class DeleteTask extends GLTask {
 
         @Override
@@ -540,11 +574,11 @@ public class GLVertexArray extends GLObject {
             }
         }
     }
-    
+
     public void setDivisor(final int index, final int divisor) {
         new SetDivisorTask(index, divisor).glRun(this.getThread());
     }
-    
+
     public class SetDivisorTask extends GLTask {
 
         private final int index;
@@ -574,7 +608,7 @@ public class GLVertexArray extends GLObject {
     public void attachIndexBuffer(final GLBuffer buffer) {
         new AttachIndexBufferTask(buffer).glRun(this.getThread());
     }
-    
+
     public class AttachIndexBufferTask extends GLTask {
 
         private final GLBuffer buffer;
@@ -600,12 +634,12 @@ public class GLVertexArray extends GLObject {
     }
 
     public void attachBuffer(
-            final int index, final GLBuffer buffer, 
+            final int index, final GLBuffer buffer,
             final GLVertexAttributeType type, final GLVertexAttributeSize size) {
-        
+
         new AttachBufferTask(index, buffer, type, size).glRun(this.getThread());
     }
-    
+
     public class AttachBufferTask extends GLTask {
 
         private final int index;
@@ -714,4 +748,5 @@ public class GLVertexArray extends GLObject {
             GL20.glEnableVertexAttribArray(this.index);
         }
     }
+
 }
