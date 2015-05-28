@@ -14,6 +14,7 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.Set;
 import org.lwjgl.opengl.GL11;
 import org.lwjgl.opengl.GL20;
@@ -41,6 +42,8 @@ public class GLProgram extends GLObject {
     private static final int INVALID_PROGRAM_ID = -1;
     protected int programId = INVALID_PROGRAM_ID;
     private final Map<String, Integer> uniforms = new HashMap<>();
+
+    private Optional vertexAttribs = Optional.empty();
 
     /**
      * Constructs a new GLProgram using the default GLThread.
@@ -117,6 +120,7 @@ public class GLProgram extends GLObject {
      * @since 15.05.27
      */
     public void setVertexAttributes(final GLVertexAttributes attrib) {
+        this.vertexAttribs = Optional.of(attrib);
         new SetVertexAttributesTask(attrib).glRun(this.getThread());
     }
 
@@ -141,6 +145,8 @@ public class GLProgram extends GLObject {
         @Override
         public void run() {
             if (!GLProgram.this.isValid()) {
+                throw new GLException("Invalid GLProgram!");
+            } else {
                 this.attribs.nameMap.forEach((name, index) -> {
                     GL20.glBindAttribLocation(
                             GLProgram.this.programId,
@@ -951,13 +957,13 @@ public class GLProgram extends GLObject {
         public void run() {
             if (!GLProgram.this.isValid()) {
                 throw new GLException("GLProgram is invalid!");
-            }            
-            
+            }
+
             GLProgram.this.bind();
 
             final int uLoc = GLProgram.this.getUniformLoc(uName);
 
             GL20.glUniform1i(uLoc, this.bindTask.activeTexture);
         }
-    }
+    }        
 }

@@ -5,6 +5,9 @@
  */
 package com.longlinkislong.gloop;
 
+import org.lwjgl.opengl.GL14;
+import org.lwjgl.opengl.GL30;
+
 /**
  *
  * @author zmichaels
@@ -85,11 +88,18 @@ public enum GLTextureInternalFormat {
     GL_RGBA16I(0x8D88),
     GL_RGBA16UI(0x8D76),
     GL_RGBA32I(0x8D82),
-    GL_RGBA32UI(0x8D70);
+    GL_RGBA32UI(0x8D70),
+    GL_DEPTH_COMPONENT16(GL14.GL_DEPTH_COMPONENT16),
+    GL_DEPTH_COMPONENT24(GL14.GL_DEPTH_COMPONENT24),
+    GL_DEPTH_COMPONENT32(GL14.GL_DEPTH_COMPONENT32),
+    GL_DEPTH_COMPONENT32F(GL30.GL_DEPTH_COMPONENT32F),
+    GL_DEPTH24_STENCIL8(GL30.GL_DEPTH24_STENCIL8),
+    GL_DEPTH32F_STENCIL8(GL30.GL_DEPTH32F_STENCIL8);
     
     final int value;
     
     GLTextureInternalFormat(final int value) {
         this.value = value;
+        
     }
 }

@@ -5,12 +5,15 @@
  */
 package com.longlinkislong.gloop;
 
+import org.lwjgl.opengl.GL30;
+
 /**
  *
  * @author zmichaels
  */
 public enum GLTextureFormat {
-    GL_DEPTH_COMPONENT(0x1902),    
+    GL_DEPTH_COMPONENT(0x1902),
+    GL_DEPTH_STENCIL(GL30.GL_DEPTH_STENCIL),
     GL_RED_INTEGER(0x8D94),
     GL_GREEN_INTEGER(0x8D95),
     GL_BLUE_INTEGER(0x8D96),

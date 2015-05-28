@@ -31,8 +31,12 @@ import java.util.List;
  * @author zmichaels
  */
 public class NeHe02 {
+
     private final GLWindow window;
     private final GLTask drawTask;
+    private final GLProgram program;
+    private final GLVertexArray vaoTriangle;
+    private final GLVertexArray vaoSquare;
 
     public NeHe02() throws IOException {
         this.window = new GLWindow();
@@ -43,77 +47,78 @@ public class NeHe02 {
                 .getResourceAsStream("basic.fs");
 
         final GLShader vSh = new GLShader(
-                GLShaderType.GL_VERTEX_SHADER, 
+                GLShaderType.GL_VERTEX_SHADER,
                 GLTools.readAll(inVsh));
-        
+
         final GLShader fSh = new GLShader(
-                GLShaderType.GL_FRAGMENT_SHADER, 
-                GLTools.readAll(inFsh));                
+                GLShaderType.GL_FRAGMENT_SHADER,
+                GLTools.readAll(inFsh));
 
         final GLVertexAttributes vAttribs = new GLVertexAttributes();
         vAttribs.setAttribute("vPos", 0);
 
-        final GLProgram program = new GLProgram();
+        this.program = new GLProgram();
 
-        program.setVertexAttributes(vAttribs);
-        program.linkShaders(vSh, fSh);
-
-        final List<GLVec3> vListTriangles = new ArrayList<>();
-        vListTriangles.add(GLVec3F.create(0f, 1f, 0f));
-        vListTriangles.add(GLVec3F.create(-1f, -1f, 0f));
-        vListTriangles.add(GLVec3F.create(1f, -1f, 0f));
+        this.program.setVertexAttributes(vAttribs);
+        this.program.linkShaders(vSh, fSh);
 
         final GLBuffer vTriangles = new GLBuffer();
+        {
+            final List<GLVec3> vPos = new ArrayList<>();
+            vPos.add(GLVec3F.create(0f, 1f, 0f));
+            vPos.add(GLVec3F.create(-1f, -1f, 0f));
+            vPos.add(GLVec3F.create(1f, -1f, 0f));
 
-        vTriangles.upload(GLTools.wrapVec3F(vListTriangles));
-        vListTriangles.clear();
+            vTriangles.upload(GLTools.wrapVec3F(vPos));
+            vPos.clear();
+        }
 
-        final GLVertexArray vaoTriangle = new GLVertexArray();
+        this.vaoTriangle = new GLVertexArray();
 
-        vaoTriangle.attachBuffer(
+        this.vaoTriangle.attachBuffer(
                 vAttribs.getLocation("vPos"),
                 vTriangles,
                 GLVertexAttributeType.GL_FLOAT,
-                GLVertexAttributeSize.VEC3);                
-
-        final List<GLVec3> vListSquares = new ArrayList<>();
-        vListSquares.add(GLVec3F.create(-1f, 1f, 0f));
-        vListSquares.add(GLVec3F.create(1f, 1f, 0f));
-        vListSquares.add(GLVec3F.create(1f, -1f, 0f));
-        vListSquares.add(GLVec3F.create(-1f, -1f, 0f));
+                GLVertexAttributeSize.VEC3);
 
         final GLBuffer vSquares = new GLBuffer();
+        {
+            final List<GLVec3> vPos = new ArrayList<>();
+            vPos.add(GLVec3F.create(-1f, 1f, 0f));
+            vPos.add(GLVec3F.create(1f, 1f, 0f));
+            vPos.add(GLVec3F.create(1f, -1f, 0f));
+            vPos.add(GLVec3F.create(-1f, -1f, 0f));
 
-        vSquares.upload(GLTools.wrapVec3F(vListSquares));        
-        vListSquares.clear();
+            vSquares.upload(GLTools.wrapVec3F(vPos));
+            vPos.clear();
+        }
 
         final GLBuffer vSquareIndex = new GLBuffer();
-                
+
         vSquareIndex.upload(GLTools.wrapInt(0, 1, 2, 0, 2, 3));
 
-        final GLVertexArray vaoSquare = new GLVertexArray();
+        this.vaoSquare = new GLVertexArray();
 
-        vaoSquare.attachIndexBuffer(vSquareIndex);
-        vaoSquare.attachBuffer(
+        this.vaoSquare.attachIndexBuffer(vSquareIndex);
+        this.vaoSquare.attachBuffer(
                 vAttribs.getLocation("vPos"),
                 vSquares,
                 GLVertexAttributeType.GL_FLOAT,
                 GLVertexAttributeSize.VEC3);
-                        
-        
-        this.drawTask = GLTask.create(()-> {
+
+        this.drawTask = GLTask.create(() -> {
             program.setUniformMatrixF("proj", GLMat4F.perspective(45, window.getAspectRatio(), 0.1f));
-            
+
             program.setUniformMatrixF("tr", GLMat4F.translation(-1.5f, 0.0f, -6.0f));
             vaoTriangle.drawArrays(program, GLDrawMode.GL_TRIANGLES, 0, 3);
-            
+
             program.setUniformMatrixF("tr", GLMat4F.translation(1.5f, 0.0f, -6.0f));
             vaoSquare.drawElements(program, GLDrawMode.GL_TRIANGLES, 6, GLIndexElementType.GL_UNSIGNED_INT, 0);
-            
+
             window.update();
-        });                        
+        });
     }
-    
+
     public void start() {
         this.window.getThread().scheduleGLTask(drawTask);
         this.window.setVisible(true);
@@ -121,7 +126,7 @@ public class NeHe02 {
 
     public static void main(String[] args) throws Exception {
         NeHe02 test = new NeHe02();
-        
+
         test.start();
     }
 }
