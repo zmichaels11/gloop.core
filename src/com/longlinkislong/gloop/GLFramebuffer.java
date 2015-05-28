@@ -82,6 +82,10 @@ public class GLFramebuffer extends GLObject {
 
     }
 
+    public void delete() {
+        new DeleteTask().glRun(this.getThread());
+    }
+
     public class DeleteTask extends GLTask {
 
         @Override
@@ -95,11 +99,40 @@ public class GLFramebuffer extends GLObject {
         }
     }
 
+    private BindTask lastBindTask = null;
+
+    public void bind(final CharSequence... attachments) {
+        this.bind(attachments, 0, attachments.length);
+    }
+
+    public void bind(final CharSequence[] attachments, final int offset, final int length) {
+        if (this.lastBindTask != null) {
+            for (int i = offset; i < length; i++) {
+                if (!attachments[i].toString().equals(this.lastBindTask.attachmentNames[i - offset])) {
+                    this.lastBindTask = null;
+                    return;
+                }
+            }
+
+            this.lastBindTask.glRun(this.getThread());
+        } else {
+            this.lastBindTask = new BindTask(attachments, offset, length);
+            this.lastBindTask.glRun(this.getThread());
+        }
+    }
+
     public class BindTask extends GLTask {
 
         final IntBuffer attachments;
+        final String[] attachmentNames;
+
+        public BindTask(final CharSequence... attachments) {
+            this(attachments, 0, attachments.length);
+        }
 
         public BindTask(final CharSequence[] attachments, final int offset, final int length) {
+            this.attachmentNames = new String[length];
+
             if (length > 0) {
                 this.attachments = ByteBuffer.allocateDirect(length * 4).order(ByteOrder.nativeOrder()).asIntBuffer();
 
@@ -113,6 +146,7 @@ public class GLFramebuffer extends GLObject {
                     final int attachId = GLFramebuffer.this.attachments.get(name);
 
                     this.attachments.put(attachId);
+                    this.attachmentNames[i - offset] = name;
                 }
 
                 this.attachments.flip();
@@ -134,10 +168,22 @@ public class GLFramebuffer extends GLObject {
         }
     }
 
+    public void addDepthStencilAttachment(final GLTexture attachment) {
+        this.addDepthStencilAttachment(attachment, 0);
+    }
+
+    public void addDepthStencilAttachment(final GLTexture attachment, final int level) {
+        new AddDepthStencilAttachmentTask(attachment, level).glRun(this.getThread());
+    }
+
     public class AddDepthStencilAttachmentTask extends GLTask {
 
         final GLTexture depthStencilAttachment;
         final int level;
+
+        public AddDepthStencilAttachmentTask(final GLTexture attachment) {
+            this(attachment, 0);
+        }
 
         public AddDepthStencilAttachmentTask(
                 final GLTexture attachment,
@@ -181,6 +227,14 @@ public class GLFramebuffer extends GLObject {
 
             GL30.glBindFramebuffer(GL30.GL_FRAMEBUFFER, 0);
         }
+    }
+
+    public void addDepthAttachment(final GLTexture depthAttachment) {
+        this.addDepthAttachment(depthAttachment, 0);
+    }
+
+    public void addDepthAttachment(final GLTexture depthAttachment, final int level) {
+        new AddDepthAttachmentTask(depthAttachment, level).glRun(this.getThread());
     }
 
     public class AddDepthAttachmentTask extends GLTask {
@@ -232,6 +286,19 @@ public class GLFramebuffer extends GLObject {
         }
     }
 
+    public void addColorAttachment(
+            final CharSequence name, final GLTexture attachment) {
+        
+        this.addColorAttachment(name, attachment, 0);
+    }
+    
+    public void addColorAttachment(
+            final CharSequence name, 
+            final GLTexture attachment, final int level) {
+        
+        new AddColorAttachmentTask(name, attachment, level).glRun(this.getThread());
+    }
+    
     public class AddColorAttachmentTask extends GLTask {
 
         final GLTexture colorAttachment;
