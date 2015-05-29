@@ -15,6 +15,14 @@ public class GLClear extends GLObject {
     public final float red, green, blue, alpha;
     public final double depth;
     
+    public GLClear() {
+        this(0f, 0f, 0f, 0f, 1d);
+    }
+    
+    public GLClear(final GLThread thread) {
+        this(thread, 0f, 0f, 0f, 0f, 1d);
+    }
+    
     public GLClear(
             final float r, final float g, final float b, final float a, 
             final double depth) {
@@ -25,8 +33,7 @@ public class GLClear extends GLObject {
         this.green = g;
         this.blue = b;
         this.alpha = a;
-        this.depth = depth;
-        this.init();
+        this.depth = depth;        
     }
     
     public GLClear(
@@ -40,18 +47,16 @@ public class GLClear extends GLObject {
         this.green = g;
         this.blue = b;
         this.alpha = a;
-        this.depth = depth;
-        
-        this.init();
+        this.depth = depth;                
     }
     
-    private final InitTask init = new InitTask();
+    private final ApplyClearTask init = new ApplyClearTask();
     
-    public final void init() {
+    public final void applyClear() {
         this.init.glRun(this.getThread());
     }
     
-    public class InitTask extends GLTask {
+    public class ApplyClearTask extends GLTask {
         @Override
         public void run() {
             GL11.glClearColor(

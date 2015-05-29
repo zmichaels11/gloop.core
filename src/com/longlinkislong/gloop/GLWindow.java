@@ -60,7 +60,8 @@ public class GLWindow {
         }
 
         this.thread = GLThread.create();
-        this.thread.submitGLTask(new InitTask());
+        this.thread.submitGLTask(new InitTask()); 
+        this.thread.pushViewport(new GLViewport(this.thread, 0, 0, this.width, this.height));
     }
 
     private class InitTask extends GLTask {
@@ -84,7 +85,7 @@ public class GLWindow {
 
             GLFW.glfwMakeContextCurrent(GLWindow.this.window);
             GLFW.glfwSwapInterval(1);
-            GLContext.createFromCurrent();
+            GLContext.createFromCurrent();                        
         }
     }
 

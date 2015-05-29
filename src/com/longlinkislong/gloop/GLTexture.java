@@ -11,6 +11,8 @@ import org.lwjgl.opengl.EXTTextureFilterAnisotropic;
 import org.lwjgl.opengl.GL11;
 import org.lwjgl.opengl.GL12;
 import org.lwjgl.opengl.GL13;
+import org.lwjgl.opengl.GL15;
+import org.lwjgl.opengl.GL21;
 import org.lwjgl.opengl.GL31;
 
 /**
@@ -117,6 +119,8 @@ public class GLTexture extends GLObject {
             if (!GLTexture.this.isValid()) {
                 throw new GLException("GLTexture is not valid!");
             }
+            
+            //TODO: skip if already bound
             
             GL13.glActiveTexture(GL13.GL_TEXTURE0 + this.activeTexture);
             GL11.glBindTexture(GLTexture.this.target.value, GLTexture.this.textureId);
@@ -889,6 +893,63 @@ public class GLTexture extends GLObject {
                     internalFormat,
                     buffer);
             this.lastSetTexBufferTask.glRun(this.getThread());
+        }
+    }
+    
+    public class SetPixelBuffer2DTask extends GLTask {
+        final GLBuffer buffer;
+        final int level;
+        final int xOffset;
+        final int yOffset;
+        final int width;
+        final int height;
+        final GLTextureFormat format;
+        final GLType type;
+        
+        public SetPixelBuffer2DTask(                
+                final int level,
+                final int xOffset, final int yOffset,
+                final int width, final int height,
+                final GLTextureFormat format,
+                final GLType type,
+                final GLBuffer buffer) {
+            
+            Objects.requireNonNull(this.buffer = buffer);
+            Objects.requireNonNull(this.format = format);
+            Objects.requireNonNull(this.type = type);
+            
+            if((this.level = level) < 0) {
+                throw new GLException("Mipmap level cannot be less than 0!");
+            } else if((this.xOffset = xOffset) < 0) {
+                throw new GLException("X-offset cannot be less than 0!");
+            } else if((this.yOffset = yOffset) < 0) {
+                throw new GLException("Y-offset cannot be less than 0!");
+            } else if((this.width = width) < 1) {
+                throw new GLException("Width cannot be less than 1!");
+            } else if((this.height = height) < 1) {
+                throw new GLException("Height cannot be less than 1!");
+            }
+        }
+        
+        @Override
+        public void run() {
+            if(!GLTexture.this.isValid()) {
+                throw new GLException("Invalid GLTexture!");
+            } else if(!this.buffer.isValid()) {
+                throw new GLException("Invalid GLBuffer!");
+            }
+            
+            GL11.glBindTexture(GL11.GL_TEXTURE_2D, GLTexture.this.textureId);
+            GL15.glBindBuffer(GL21.GL_PIXEL_UNPACK_BUFFER, this.buffer.bufferId);
+            
+            GL11.glTexSubImage2D(
+                    GL11.GL_TEXTURE_2D, 
+                    this.level, 
+                    this.xOffset, this.yOffset, 
+                    this.width, this.height, 
+                    this.format.value, 
+                    this.type.value, 0);
+            GL11.glBindTexture(GL11.GL_TEXTURE_2D, 0);
         }
     }
     
