@@ -24,6 +24,10 @@ public class GLDepthTest extends GLObject {
         this(thread, false, DEFAULT_DEPTH_FUNC);
     }
     
+    public GLDepthTest(final boolean enabled, final GLDepthFunc depthFunc) {
+        this(GLThread.getDefaultInstance(), enabled, depthFunc);
+    }
+    
     public GLDepthTest(
             final GLThread thread,
             final boolean enabled, final GLDepthFunc depthFunc) {

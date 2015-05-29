@@ -1,5 +1,6 @@
 package com.longlinkislong.gloop;
 
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
@@ -10,7 +11,7 @@ import java.util.Set;
  * @author zmichaels
  */
 public class GLVertexAttributes {
-
+    public static final int INVALID_ATTRIBUTE_LOCATION = -1;
     protected final Map<String, Integer> nameMap = new HashMap<>();
     protected final Set<String> feedbackVaryings = new HashSet<>();
 
@@ -29,6 +30,16 @@ public class GLVertexAttributes {
     }
 
     public int getLocation(final CharSequence aName) {
-        return this.nameMap.getOrDefault(aName.toString(), -1);
-    }   
+        return this.nameMap.getOrDefault(
+                aName.toString(), 
+                INVALID_ATTRIBUTE_LOCATION);
+    }
+    
+    public Set<String> getAttributes() {
+        return Collections.unmodifiableSet(this.nameMap.keySet());
+    }
+    
+    public Set<String> getVaryings() {
+        return Collections.unmodifiableSet(this.feedbackVaryings);
+    }
 }

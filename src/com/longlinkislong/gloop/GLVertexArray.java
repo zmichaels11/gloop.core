@@ -679,7 +679,7 @@ public class GLVertexArray extends GLObject {
                 final int stride, final long offset) {
 
             if ((this.index = index) < 0) {
-                throw new GLException("Invalid index value! Index cannot be less than 0.");
+                throw new GLException("Invalid index value [" + index + "]! Index cannot be less than 0.");
             }
 
             if (size != GLVertexAttributeSize.VEC4

@@ -42,26 +42,25 @@ public class NeHe04 {
     public NeHe04() throws IOException {
         this.window = new GLWindow();
 
-        final GLClear clear = new GLClear(0f, 0f, 0f, 0f, 1f);
-
-        final InputStream inVsh = this.getClass()
-                .getResourceAsStream("color.vs");
-        final InputStream inFsh = this.getClass()
-                .getResourceAsStream("color.fs");
-
-        final GLShader vSh = new GLShader(
-                GLShaderType.GL_VERTEX_SHADER, GLTools.readAll(inVsh));
-        final GLShader fSh = new GLShader(
-                GLShaderType.GL_FRAGMENT_SHADER, GLTools.readAll(inFsh));
+        final GLClear clear = this.window.getThread().currentClear();
 
         final GLVertexAttributes vAttribs = new GLVertexAttributes();
         vAttribs.setAttribute("vPos", 0);
         vAttribs.setAttribute("vCol", 1);
-
+        
         final GLProgram program = new GLProgram();
-
+        
         program.setVertexAttributes(vAttribs);
-        program.linkShaders(vSh, fSh);
+        {
+            final InputStream inVsh = this.getClass().getResourceAsStream("color.vs");
+            final InputStream inFsh = this.getClass().getResourceAsStream("color.fs");
+            final GLShader vSh = new GLShader(GLShaderType.GL_VERTEX_SHADER, GLTools.readAll(inVsh));
+            final GLShader fSh = new GLShader(GLShaderType.GL_FRAGMENT_SHADER, GLTools.readAll(inFsh));
+            
+            program.linkShaders(vSh, fSh);
+            vSh.delete();
+            fSh.delete();
+        }                       
 
         final GLBuffer vTriangles = new GLBuffer();
         {

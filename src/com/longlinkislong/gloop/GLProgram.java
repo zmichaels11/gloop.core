@@ -28,7 +28,7 @@ import org.lwjgl.opengl.GL43;
  * @since 15.05.27
  */
 public class GLProgram extends GLObject {
-    
+
     private static final FloatBuffer TEMPF = ByteBuffer
             .allocateDirect(16 << 2)
             .order(ByteOrder.nativeOrder())
@@ -37,7 +37,7 @@ public class GLProgram extends GLObject {
             .allocateDirect(16 << 3)
             .order(ByteOrder.nativeOrder())
             .asDoubleBuffer();
-    
+
     private static final Map<Thread, GLProgram> CURRENT = new HashMap<>();
     private static final int INVALID_PROGRAM_ID = -1;
     protected int programId = INVALID_PROGRAM_ID;
@@ -97,14 +97,14 @@ public class GLProgram extends GLObject {
             CURRENT.put(Thread.currentThread(), this);
         }
     }
-    
+
     private int getUniformLoc(final String uName) {
         if (this.uniforms.containsKey(uName)) {
             return this.uniforms.get(uName);
         } else {
             this.bind();
             final int uLoc = GL20.glGetUniformLocation(programId, uName);
-            
+
             this.uniforms.put(uName, uLoc);
             return uLoc;
         }
@@ -125,7 +125,7 @@ public class GLProgram extends GLObject {
      * A GLTask that sets the VertexAttributes for the GLProgram.
      */
     public class SetVertexAttributesTask extends GLTask {
-        
+
         private final GLVertexAttributes attribs;
 
         /**
@@ -138,7 +138,7 @@ public class GLProgram extends GLObject {
         public SetVertexAttributesTask(final GLVertexAttributes attrib) {
             Objects.requireNonNull(this.attribs = attrib);
         }
-        
+
         @Override
         public void run() {
             if (!GLProgram.this.isValid()) {
@@ -149,17 +149,17 @@ public class GLProgram extends GLObject {
                             GLProgram.this.programId,
                             index, name);
                 });
-                
+
                 final Set<String> varyingSet = this.attribs.feedbackVaryings;
-                
+
                 if (!varyingSet.isEmpty()) {
                     final CharSequence[] varyings = new CharSequence[varyingSet.size()];
                     final Iterator<String> it = varyingSet.iterator();
-                    
+
                     for (int i = 0; i < varyingSet.size(); i++) {
                         varyings[i] = it.next();
                     }
-                    
+
                     GL30.glTransformFeedbackVaryings(
                             GLProgram.this.programId,
                             varyings,
@@ -178,7 +178,7 @@ public class GLProgram extends GLObject {
      */
     public void setUniformMatrixD(
             final CharSequence uName, final GLMat<?, ?> mat) {
-        
+
         new SetUniformMatrixDTask(uName, mat).glRun(this.getThread());
     }
 
@@ -191,7 +191,7 @@ public class GLProgram extends GLObject {
      */
     public void setUniformMatrixF(
             final CharSequence uName, final GLMat<?, ?> mat) {
-        
+
         new SetUniformMatrixFTask(uName, mat).glRun(this.getThread());
     }
 
@@ -201,10 +201,35 @@ public class GLProgram extends GLObject {
      * @since 15.05.27
      */
     public class SetUniformMatrixDTask extends GLTask {
-        
+
         private final String uName;
         private final double[] values;
         private final int count;
+
+        public SetUniformMatrixDTask set(final GLMat<?, ?> mat) {
+            if (mat.size() * mat.size() != this.count) {
+                throw new ArrayIndexOutOfBoundsException();
+            }
+
+            final GLMatD matD = mat.asGLMatD();
+
+            return this.set(matD.data(), matD.offset(), this.count);
+        }
+
+        public SetUniformMatrixDTask set(final double... data) {
+            return this.set(data, 0, data.length);
+        }
+
+        public SetUniformMatrixDTask set(
+                final double[] data, final int offset, final int length) {
+            
+            if (length != this.count) {
+                throw new ArrayIndexOutOfBoundsException();
+            }
+
+            System.arraycopy(data, offset, this.values, 0, length);
+            return this;
+        }
 
         /**
          * Constructs a new SetUniformMatrixDTask with the specified GLMat.
@@ -215,19 +240,19 @@ public class GLProgram extends GLObject {
          */
         public SetUniformMatrixDTask(
                 final CharSequence uName, final GLMat<?, ?> mat) {
-            
+
             final int sz = mat.size();
-            
+
             if (!(sz == 2 || sz == 3 || sz == 4)) {
                 throw new GLException("Invalid uniform count!");
             }
-            
+
             final GLMatD<?, ?> matD = mat.asGLMatD();
-            
+
             this.uName = uName.toString();
             this.count = sz * sz;
             this.values = new double[this.count];
-            
+
             System.arraycopy(
                     matD.data(), matD.offset(),
                     this.values, 0,
@@ -248,32 +273,32 @@ public class GLProgram extends GLObject {
         public SetUniformMatrixDTask(
                 final CharSequence uName,
                 final double[] data, final int offset, final int length) {
-            
+
             if (!(length == 4 || length == 9 || length == 16)) {
                 throw new GLException("Invalid uniform count!");
             }
-            
+
             this.uName = uName.toString();
             this.values = new double[length];
             this.count = length;
-            
+
             System.arraycopy(data, offset, this.values, 0, length);
         }
-        
+
         @Override
         public void run() {
             if (!GLProgram.this.isValid()) {
                 throw new GLException("GLProgram is not valid!");
             }
-            
+
             GLProgram.this.bind();
-            
+
             final int uLoc = GLProgram.this.getUniformLoc(uName);
 
             //TODO check if this needs sync
             TEMPD.clear();
             TEMPD.put(this.values).flip();
-            
+
             switch (this.count) {
                 case 4:
                     GL40.glUniformMatrix2dv(uLoc, false, TEMPD);
@@ -294,10 +319,36 @@ public class GLProgram extends GLObject {
      * @since 15.05.27
      */
     public class SetUniformMatrixFTask extends GLTask {
-        
+
         private final String uName;
         private final float[] values;
         private final int count;
+
+        public final SetUniformMatrixFTask set(final GLMat mat) {
+            if (mat.size() * mat.size() != this.count) {
+                throw new ArrayIndexOutOfBoundsException();
+            }
+
+            final GLMatF matF = mat.asGLMatF();
+
+            return this.set(matF.data(), matF.offset(), this.count);            
+        }
+
+        public final SetUniformMatrixFTask set(final float... data) {
+            return this.set(data, 0, data.length);
+        }
+
+        public final SetUniformMatrixFTask set(
+                final float[] data, final int offset, final int length) {
+
+            if (length != count) {
+                throw new ArrayIndexOutOfBoundsException();
+            }
+
+            System.arraycopy(data, offset, this.values, 0, length);
+            
+            return this;
+        }
 
         /**
          * Constructs a new UniformMatrixTask using the supplied GLMat. The
@@ -308,19 +359,19 @@ public class GLProgram extends GLObject {
          * @since 15.05.27
          */
         public SetUniformMatrixFTask(final CharSequence uName, final GLMat<?, ?> mat) {
-            
+
             final int sz = mat.size();
-            
+
             if (!(sz == 2 || sz == 3 || sz == 4)) {
                 throw new GLException("Invalid uniform count!");
             }
-            
+
             final GLMatF mf = mat.asGLMatF();
-            
+
             this.uName = uName.toString();
             this.count = sz * sz;
             this.values = new float[this.count];
-            
+
             System.arraycopy(mf.data(), mf.offset(), this.values, 0, this.count);
         }
 
@@ -338,30 +389,30 @@ public class GLProgram extends GLObject {
         public SetUniformMatrixFTask(
                 final CharSequence uName,
                 final float[] values, final int offset, final int length) {
-            
+
             if (!(length == 4 || length == 9 || length == 16)) {
                 throw new GLException("Invalid uniform count!");
             }
-            
+
             this.uName = uName.toString();
             this.count = length;
             this.values = new float[length];
-            
+
             System.arraycopy(values, offset, this.values, 0, length);
         }
-        
+
         @Override
         public void run() {
             if (!GLProgram.this.isValid()) {
                 throw new GLException("GLProgram is not valid!");
             }
-            
+
             GLProgram.this.bind();
-            
+
             final int uLoc = GLProgram.this.getUniformLoc(this.uName);
             TEMPF.put(values);
             TEMPF.flip();
-            
+
             switch (this.count) {
                 case 4:
                     GL20.glUniformMatrix2fv(uLoc, false, TEMPF);
@@ -376,7 +427,7 @@ public class GLProgram extends GLObject {
             TEMPF.clear();
         }
     }
-
+    
     /**
      * Sets a double uniform from the supplied GLVec. The GLVec must be of size
      * 1, 2, 3, or 4.
@@ -400,7 +451,7 @@ public class GLProgram extends GLObject {
      */
     public void setUniformD(final CharSequence uName,
             final double[] values, final int offset, final int length) {
-        
+
         new SetUniformDTask(uName, values, offset, length)
                 .glRun(this.getThread());
     }
@@ -423,10 +474,35 @@ public class GLProgram extends GLObject {
      * @since 15.05.27
      */
     public class SetUniformDTask extends GLTask {
-        
+
         private final String uName;
         private final double[] values;
         private final int count;
+
+        public final SetUniformDTask set(final GLVec<?> vec) {
+            if (vec.size() != this.count) {
+                throw new ArrayIndexOutOfBoundsException();
+            }
+
+            final GLVecD vecD = vec.asGLVecD();
+
+            return this.set(vecD.data(), vecD.offset(), vecD.size());
+        }
+
+        public final SetUniformDTask set(final double... data) {
+            return this.set(data, 0, data.length);            
+        }
+
+        public final SetUniformDTask set(
+                final double[] data, final int offset, final int length) {
+            
+            if (this.count != length) {
+                throw new ArrayIndexOutOfBoundsException();
+            }
+
+            System.arraycopy(data, offset, this.values, 0, length);
+            return this;
+        }
 
         /**
          * Constructs a new SetUniformDTask using a GLVec. The values of the
@@ -437,19 +513,19 @@ public class GLProgram extends GLObject {
          * @since 15.05.27.
          */
         public SetUniformDTask(final CharSequence uName, final GLVec<?> v) {
-            
+
             final int sz = v.size();
-            
+
             if (sz < 1 || sz > 4) {
                 throw new GLException("Invalid uniform count!");
             }
-            
+
             this.values = new double[sz];
             this.uName = uName.toString();
             this.count = sz;
-            
+
             final GLVecD vd = v.asGLVecD();
-            
+
             System.arraycopy(vd.data(), vd.offset(), this.values, 0, this.count);
         }
 
@@ -478,27 +554,27 @@ public class GLProgram extends GLObject {
          */
         public SetUniformDTask(final CharSequence uName,
                 final double[] data, final int offset, final int length) {
-            
+
             if (length < 1 || length > 4) {
                 throw new GLException("Invalid uniform count!");
             }
-            
+
             this.values = new double[length];
             System.arraycopy(data, offset, this.values, 0, length);
             this.uName = uName.toString();
             this.count = length;
         }
-        
+
         @Override
         public void run() {
             if (!GLProgram.this.isValid()) {
                 throw new GLException("GLProgram is not valid!");
             }
-            
+
             GLProgram.this.bind();
-            
+
             final int uLoc = GLProgram.this.getUniformLoc(this.uName);
-            
+
             switch (this.count) {
                 case 1:
                     GL40.glUniform1d(uLoc, this.values[0]);
@@ -528,7 +604,7 @@ public class GLProgram extends GLObject {
     public void setUniformI(
             final CharSequence uName,
             final int[] data, final int offset, final int length) {
-        
+
         new SetUniformITask(uName, data, offset, length).glRun(this.getThread());
     }
 
@@ -550,10 +626,25 @@ public class GLProgram extends GLObject {
      * @since 15.05.27
      */
     public class SetUniformITask extends GLTask {
-        
+
         private final String uName;
         private final int[] values;
         private final int count;
+
+        public SetUniformITask set(final int... data) {
+            return this.set(data, 0, data.length);            
+        }
+
+        public SetUniformITask set(
+                final int[] data, final int offset, final int length) {
+            
+            if (this.count != length) {
+                throw new ArrayIndexOutOfBoundsException();
+            }
+
+            System.arraycopy(data, offset, this.values, 0, length);
+            return this;
+        }
 
         /**
          * Constructs a new SetUniformITask using the series of integers.
@@ -579,31 +670,31 @@ public class GLProgram extends GLObject {
         public SetUniformITask(
                 final CharSequence uName,
                 final int[] data, final int offset, final int length) {
-            
+
             if (length < 1 || length > 4) {
                 throw new GLException("Invalid uniform count!");
             }
-            
+
             this.values = new int[length];
             System.arraycopy(data, offset, this.values, 0, length);
             this.count = length;
             this.uName = uName.toString();
         }
-        
+
         @Override
         public void run() {
             if (!GLProgram.this.isValid()) {
                 throw new GLException("GLProgram is not valid!");
             }
-            
+
             GLProgram.this.bind();
-            
+
             final int uLoc = GLProgram.this.getUniformLoc(this.uName);
-            
+
             switch (this.count) {
                 case 1:
                     GL20.glUniform1i(uLoc, this.values[0]);
-                    
+
                     break;
                 case 2:
                     GL20.glUniform2i(uLoc, this.values[0], this.values[1]);
@@ -642,7 +733,7 @@ public class GLProgram extends GLObject {
     public void setUniformF(
             final CharSequence uName,
             final float[] data, final int offset, final int length) {
-        
+
         new SetUniformFTask(uName, data, offset, length).glRun(this.getThread());
     }
 
@@ -661,10 +752,35 @@ public class GLProgram extends GLObject {
      * A GLTask that sets a floating point uniform.
      */
     public class SetUniformFTask extends GLTask {
-        
+
         private final String uName;
         private final float[] values;
         private final int count;
+
+        public final SetUniformFTask set(final GLVec<?> vec) {
+            if (vec.size() != this.count) {
+                throw new ArrayIndexOutOfBoundsException();
+            }
+
+            final GLVecF vecF = vec.asGLVecF();
+
+            return this.set(vecF.data(), vecF.offset(), vecF.size());
+        }
+
+        public final SetUniformFTask set(final float... data) {
+            return this.set(data, 0, data.length);
+        }
+
+        public final SetUniformFTask set(
+                final float[] data, final int offset, final int length) {
+
+            if (this.count != length) {
+                throw new ArrayIndexOutOfBoundsException();
+            }
+
+            System.arraycopy(data, offset, this.values, 0, length);
+            return this;
+        }
 
         /**
          * Constructs a new SetUniformFTask with the specified vector.
@@ -676,13 +792,13 @@ public class GLProgram extends GLObject {
          */
         public SetUniformFTask(final CharSequence uName, final GLVec<?> vec) {
             final int sz = vec.size();
-            
+
             if (sz < 1 || sz > 4) {
                 throw new GLException("Invalid uniform vector size!");
             }
-            
+
             final GLVecF vecF = vec.asGLVecF();
-            
+
             this.values = new float[sz];
             System.arraycopy(vecF.data(), vecF.offset(), this.values, 0, sz);
             this.count = sz;
@@ -714,27 +830,27 @@ public class GLProgram extends GLObject {
         public SetUniformFTask(
                 final CharSequence uName,
                 final float[] data, final int offset, final int length) {
-            
+
             if (length < 1 || length > 4) {
                 throw new GLException("Invalid uniform count!");
             }
-            
+
             this.values = new float[length];
             System.arraycopy(data, offset, this.values, 0, length);
             this.uName = uName.toString();
             this.count = length;
         }
-        
+
         @Override
         public void run() {
             if (!GLProgram.this.isValid()) {
                 throw new GLException("GLProgram is not valid!");
             }
-            
+
             GLProgram.this.bind();
-            
+
             final int uLoc = GLProgram.this.getUniformLoc(this.uName);
-            
+
             switch (this.count) {
                 case 1:
                     GL20.glUniform1f(uLoc, this.values[0]);
@@ -750,13 +866,13 @@ public class GLProgram extends GLObject {
                     break;
             }
         }
-        
+
         @Override
         public String toString() {
             final StringBuilder out = new StringBuilder();
-            
+
             out.append("glUniform");
-            
+
             switch (this.count) {
                 case 1:
                     out.append("1f: ");
@@ -771,9 +887,9 @@ public class GLProgram extends GLObject {
                     out.append("4f: ");
                     break;
             }
-            
+
             out.append(Arrays.toString(this.values));
-            
+
             return out.toString();
         }
     }
@@ -798,7 +914,7 @@ public class GLProgram extends GLObject {
      */
     public void linkShaders(
             final GLShader[] shaders, final int offset, final int length) {
-        
+
         new LinkShadersTask(shaders, offset, length).glRun(this.getThread());
     }
 
@@ -808,7 +924,7 @@ public class GLProgram extends GLObject {
      * @since 15.05.27
      */
     public class LinkShadersTask extends GLTask {
-        
+
         private final GLShader[] shaders;
 
         /**
@@ -832,36 +948,36 @@ public class GLProgram extends GLObject {
          */
         public LinkShadersTask(
                 final GLShader[] shaders, final int offset, final int length) {
-            
+
             this.shaders = new GLShader[length];
             System.arraycopy(shaders, offset, this.shaders, 0, length);
         }
-        
+
         @Override
         public void run() {
             if (!GLProgram.this.isValid()) {
                 throw new GLException("GLProgram is not valid!");
             }
-            
+
             for (GLShader shader : this.shaders) {
                 if (!shader.isValid()) {
                     throw new GLException("GLShader is not valid!");
                 }
-                
+
                 GL20.glAttachShader(GLProgram.this.programId, shader.shaderId);
             }
-            
+
             GL20.glLinkProgram(GLProgram.this.programId);
             final int isLinked = GL20.glGetProgrami(
                     GLProgram.this.programId,
                     GL20.GL_LINK_STATUS);
-            
+
             if (isLinked == GL11.GL_FALSE) {
                 final int length = GL20.glGetProgrami(
                         GLProgram.this.programId, GL20.GL_INFO_LOG_LENGTH);
                 final String msg = GL20.glGetProgramInfoLog(
                         GLProgram.this.programId, length);
-                
+
                 throw new GLException(msg);
             } else {
                 for (GLShader shader : this.shaders) {
@@ -869,11 +985,11 @@ public class GLProgram extends GLObject {
                 }
             }
         }
-        
+
     }
-    
+
     private final GLTask initTask = new InitTask();
-    
+
     public final void init() {
         this.initTask.glRun(this.getThread());
     }
@@ -886,17 +1002,17 @@ public class GLProgram extends GLObject {
      * @since 15.05.27
      */
     public class InitTask extends GLTask {
-        
+
         @Override
         public void run() {
             if (GLProgram.this.isValid()) {
                 throw new GLException("Cannot reinit GLProgram!");
             }
-            
+
             GLProgram.this.programId = GL20.glCreateProgram();
         }
     }
-    
+
     private final GLTask deleteTask = new DeleteTask();
 
     /**
@@ -914,13 +1030,13 @@ public class GLProgram extends GLObject {
      * @since 15.05.27
      */
     public class DeleteTask extends GLTask {
-        
+
         @Override
         public void run() {
             if (!GLProgram.this.isValid()) {
                 throw new GLException("Cannot delete invalid GLProgram!");
             }
-            
+
             GL20.glDeleteProgram(GLProgram.this.programId);
             GLProgram.this.programId = INVALID_PROGRAM_ID;
         }
@@ -932,7 +1048,7 @@ public class GLProgram extends GLObject {
      * @since 15.05.27
      */
     public class SetUniformSamplerTask extends GLTask {
-        
+
         private final GLTexture.BindTask bindTask;
         private final String uName;
 
@@ -946,54 +1062,54 @@ public class GLProgram extends GLObject {
          */
         public SetUniformSamplerTask(
                 final CharSequence uName, final GLTexture.BindTask bindTask) {
-            
+
             Objects.requireNonNull(this.bindTask = bindTask);
             this.uName = uName.toString();
         }
-        
+
         @Override
         public void run() {
             if (!GLProgram.this.isValid()) {
                 throw new GLException("GLProgram is invalid!");
             }
-            
+
             GLProgram.this.bind();
-            
+
             final int uLoc = GLProgram.this.getUniformLoc(uName);
-            
+
             GL20.glUniform1i(uLoc, this.bindTask.activeTexture);
         }
     }
-    
+
     private ComputeTask lastComputeTask = null;
-    
+
     public void compute(final int groupsX, final int groupsY, final int groupsZ) {
         if (this.lastComputeTask != null
                 && this.lastComputeTask.numX == groupsX
                 && this.lastComputeTask.numY == groupsY
                 && this.lastComputeTask.numZ == groupsZ) {
-            
+
             this.lastComputeTask.glRun(this.getThread());
         } else {
             this.lastComputeTask = new ComputeTask(groupsX, groupsY, groupsZ);
             this.lastComputeTask.glRun(this.getThread());
         }
     }
-    
+
     public class ComputeTask extends GLTask {
-        
+
         final int numX;
         final int numY;
         final int numZ;
-        
+
         public ComputeTask(final int groupsX) {
             this(groupsX, 1, 1);
         }
-        
+
         public ComputeTask(final int groupsX, final int groupsY) {
             this(groupsX, groupsY, 1);
         }
-        
+
         public ComputeTask(final int groupsX, final int groupsY, final int groupsZ) {
             if ((this.numX = groupsX) < 1) {
                 throw new GLException("groupsX cannot be less than 1!");
@@ -1003,13 +1119,13 @@ public class GLProgram extends GLObject {
                 throw new GLException("groupsZ cannot be less than 1!");
             }
         }
-        
+
         @Override
         public void run() {
             if (!GLProgram.this.isValid()) {
                 throw new GLException("Invalid GLProgram!");
             }
-            
+
             GLProgram.this.bind();
             GL43.glDispatchCompute(this.numX, this.numY, this.numZ);
         }
