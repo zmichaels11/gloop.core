@@ -160,8 +160,7 @@ public class NeHe05 {
             vPos.add(GLVec3F.create(1f, -1f, 1f));
             vPos.add(GLVec3F.create(1f, -1f, -1f));
 
-            vCube.upload(GLTools.wrapVec3F(vPos));
-            cubeVerts = vPos.size();
+            vCube.upload(GLTools.wrapVec3F(vPos));            
         }
 
         final GLBuffer cCube = new GLBuffer();
@@ -202,6 +201,7 @@ public class NeHe05 {
                 12, 13, 14, 14, 15, 12,
                 16, 17, 18, 18, 19, 16,
                 20, 21, 22, 22, 23, 20));
+        cubeVerts = 36;
 
         final GLVertexArray vaoCube = new GLVertexArray();
         vaoCube.attachIndexBuffer(vCubeIndex);

@@ -7,7 +7,6 @@ package com.longlinkislong.gloop;
 
 import java.nio.ByteBuffer;
 import java.util.Objects;
-import org.lwjgl.opengl.EXTTextureFilterAnisotropic;
 import org.lwjgl.opengl.GL11;
 import org.lwjgl.opengl.GL12;
 import org.lwjgl.opengl.GL13;
@@ -26,7 +25,7 @@ public class GLTexture extends GLObject {
     private int width = 0;
     private int height = 0;
     private int depth = 0;
-    private GLTextureTarget target;
+    private GLTextureTarget target;    
     
     public GLTexture() {
         super();
@@ -76,6 +75,33 @@ public class GLTexture extends GLObject {
         this.initTask.glRun(this.getThread());
     }
     
+    public void setMipmapRange(final int base, final int max) {
+        new SetMipmapRangeTask(base, max).glRun(this.getThread());
+    }
+    
+    public class SetMipmapRangeTask extends GLTask {
+
+        final int baseLevel;
+        final int maxLevel;
+        
+        public SetMipmapRangeTask(final int baseLevel, final int maxLevel) {
+            this.baseLevel = baseLevel;
+            this.maxLevel = maxLevel;
+        }
+        
+        @Override
+        public void run() {
+            if (!GLTexture.this.isValid()) {
+                throw new GLException("Invalid GLTexture!");
+            }
+            
+            GL11.glBindTexture(GL11.GL_TEXTURE_2D, GLTexture.this.textureId);
+            GL11.glTexParameteri(GL11.GL_TEXTURE_2D, GL12.GL_TEXTURE_BASE_LEVEL, this.baseLevel);
+            GL11.glTexParameteri(GL11.GL_TEXTURE_2D, GL12.GL_TEXTURE_MAX_LEVEL, this.maxLevel);
+            GL11.glBindTexture(GL11.GL_TEXTURE_2D, 0);
+        }
+    }
+
     public class InitTask extends GLTask {
         
         @Override
@@ -102,8 +128,8 @@ public class GLTexture extends GLObject {
         }
     }
     
-    public class BindTask extends GLTask {        
-
+    public class BindTask extends GLTask {
+        
         final int activeTexture;
         
         public BindTask(final int activeTexture) {
@@ -119,9 +145,8 @@ public class GLTexture extends GLObject {
             if (!GLTexture.this.isValid()) {
                 throw new GLException("GLTexture is not valid!");
             }
-            
-            //TODO: skip if already bound
-            
+
+            //TODO: skip if already bound            
             GL13.glActiveTexture(GL13.GL_TEXTURE0 + this.activeTexture);
             GL11.glBindTexture(GLTexture.this.target.value, GLTexture.this.textureId);
         }
@@ -160,9 +185,9 @@ public class GLTexture extends GLObject {
         this.depth = depth;
     }
     
-    private SetSubImage3DTask lastUpdateImage3D = null;
+    private UpdateImage3DTask lastUpdateImage3D = null;
     
-    public void setSubImage(
+    public void updateImage(
             final int level,
             final int xOffset, final int yOffset, final int zOffset,
             final int width, final int height, final int depth,
@@ -182,7 +207,7 @@ public class GLTexture extends GLObject {
             
             this.lastUpdateImage3D.glRun(this.getThread());
         } else {
-            this.lastUpdateImage3D = new SetSubImage3DTask(
+            this.lastUpdateImage3D = new UpdateImage3DTask(
                     level,
                     xOffset, yOffset, zOffset,
                     width, height, depth,
@@ -193,7 +218,7 @@ public class GLTexture extends GLObject {
         }
     }
     
-    public class SetSubImage3DTask extends GLTask {
+    public class UpdateImage3DTask extends GLTask {
         
         final int level;
         final int xOffset;
@@ -206,7 +231,7 @@ public class GLTexture extends GLObject {
         final GLType type;
         final ByteBuffer data;
         
-        public SetSubImage3DTask(
+        public UpdateImage3DTask(
                 final int level,
                 final int xOffset, final int yOffset, final int zOffset,
                 final int width, final int height, final int depth,
@@ -259,9 +284,9 @@ public class GLTexture extends GLObject {
         }
     }
     
-    private SetSubImage2DTask lastSetSubImage2D = null;
+    private UpdateImage2DTask lastSetSubImage2D = null;
     
-    public void setSubImage(
+    public void updateImage(
             final int level,
             final int xOffset, final int yOffset,
             final int width, final int height,
@@ -280,7 +305,7 @@ public class GLTexture extends GLObject {
             
             this.lastSetSubImage2D.glRun(this.getThread());
         } else {
-            this.lastSetSubImage2D = new SetSubImage2DTask(
+            this.lastSetSubImage2D = new UpdateImage2DTask(
                     level,
                     xOffset, yOffset,
                     width, height,
@@ -293,7 +318,7 @@ public class GLTexture extends GLObject {
         GLTexture.this.target = GLTextureTarget.GL_TEXTURE_2D;
     }
     
-    public class SetSubImage2DTask extends GLTask {
+    public class UpdateImage2DTask extends GLTask {
         
         final int level;
         final int xOffset;
@@ -304,7 +329,7 @@ public class GLTexture extends GLObject {
         final GLType type;
         final ByteBuffer data;
         
-        public SetSubImage2DTask(
+        public UpdateImage2DTask(
                 final int level,
                 final int xOffset, final int yOffset,
                 final int width, final int height,
@@ -356,9 +381,9 @@ public class GLTexture extends GLObject {
         
     }
     
-    private SetSubImage1DTask lastSetSubImage1D = null;
+    private Update1DTask lastSetSubImage1D = null;
     
-    public void setSubImage(
+    public void updateImage(
             final int level,
             final int xOffset, final int width,
             final GLTextureFormat format,
@@ -374,7 +399,7 @@ public class GLTexture extends GLObject {
             
             this.lastSetSubImage1D.glRun(this.getThread());
         } else {
-            this.lastSetSubImage1D = new SetSubImage1DTask(
+            this.lastSetSubImage1D = new Update1DTask(
                     level,
                     xOffset, width,
                     format,
@@ -384,7 +409,7 @@ public class GLTexture extends GLObject {
         }
     }
     
-    public class SetSubImage1DTask extends GLTask {
+    public class Update1DTask extends GLTask {
         
         final int level;
         final int xOffset;
@@ -393,7 +418,7 @@ public class GLTexture extends GLObject {
         final GLType type;
         final ByteBuffer data;
         
-        public SetSubImage1DTask(
+        public Update1DTask(
                 final int xOffset, final int width,
                 final GLTextureFormat format,
                 final GLType type, final ByteBuffer data) {
@@ -401,7 +426,7 @@ public class GLTexture extends GLObject {
             this(0, xOffset, width, format, type, data);
         }
         
-        public SetSubImage1DTask(
+        public Update1DTask(
                 final int level,
                 final int xOffset, final int width,
                 final GLTextureFormat format,
@@ -799,7 +824,7 @@ public class GLTexture extends GLObject {
                     this.type.value,
                     data);
             GL11.glBindTexture(GLTextureTarget.GL_TEXTURE_2D.value, 0);
-            GLTexture.this.target = GLTextureTarget.GL_TEXTURE_2D;
+            GLTexture.this.target = GLTextureTarget.GL_TEXTURE_2D;            
         }
     }
     
@@ -897,6 +922,7 @@ public class GLTexture extends GLObject {
     }
     
     public class SetPixelBuffer2DTask extends GLTask {
+        
         final GLBuffer buffer;
         final int level;
         final int xOffset;
@@ -906,7 +932,7 @@ public class GLTexture extends GLObject {
         final GLTextureFormat format;
         final GLType type;
         
-        public SetPixelBuffer2DTask(                
+        public SetPixelBuffer2DTask(
                 final int level,
                 final int xOffset, final int yOffset,
                 final int width, final int height,
@@ -918,24 +944,24 @@ public class GLTexture extends GLObject {
             Objects.requireNonNull(this.format = format);
             Objects.requireNonNull(this.type = type);
             
-            if((this.level = level) < 0) {
+            if ((this.level = level) < 0) {
                 throw new GLException("Mipmap level cannot be less than 0!");
-            } else if((this.xOffset = xOffset) < 0) {
+            } else if ((this.xOffset = xOffset) < 0) {
                 throw new GLException("X-offset cannot be less than 0!");
-            } else if((this.yOffset = yOffset) < 0) {
+            } else if ((this.yOffset = yOffset) < 0) {
                 throw new GLException("Y-offset cannot be less than 0!");
-            } else if((this.width = width) < 1) {
+            } else if ((this.width = width) < 1) {
                 throw new GLException("Width cannot be less than 1!");
-            } else if((this.height = height) < 1) {
+            } else if ((this.height = height) < 1) {
                 throw new GLException("Height cannot be less than 1!");
             }
         }
         
         @Override
         public void run() {
-            if(!GLTexture.this.isValid()) {
+            if (!GLTexture.this.isValid()) {
                 throw new GLException("Invalid GLTexture!");
-            } else if(!this.buffer.isValid()) {
+            } else if (!this.buffer.isValid()) {
                 throw new GLException("Invalid GLBuffer!");
             }
             
@@ -943,11 +969,11 @@ public class GLTexture extends GLObject {
             GL15.glBindBuffer(GL21.GL_PIXEL_UNPACK_BUFFER, this.buffer.bufferId);
             
             GL11.glTexSubImage2D(
-                    GL11.GL_TEXTURE_2D, 
-                    this.level, 
-                    this.xOffset, this.yOffset, 
-                    this.width, this.height, 
-                    this.format.value, 
+                    GL11.GL_TEXTURE_2D,
+                    this.level,
+                    this.xOffset, this.yOffset,
+                    this.width, this.height,
+                    this.format.value,
                     this.type.value, 0);
             GL11.glBindTexture(GL11.GL_TEXTURE_2D, 0);
         }
@@ -997,7 +1023,7 @@ public class GLTexture extends GLObject {
     public void setAttributes(final GLTextureParameters params) {
         new SetAttributesTask(params).glRun(this.getThread());
     }
-
+    
     public class SetAttributesTask extends GLTask {
         
         final GLTextureParameters params;
@@ -1012,42 +1038,53 @@ public class GLTexture extends GLObject {
                 throw new GLException("Invalid GLTexture!");
             }
             
-            final int target = GLTexture.this.target.value;
+            final int target = GL11.GL_TEXTURE_2D;
             
             GL11.glBindTexture(target, GLTexture.this.textureId);
+            
             GL11.glTexParameteri(
                     target,
                     GL11.GL_TEXTURE_MIN_FILTER,
                     this.params.minFilter.value);
+            
             GL11.glTexParameteri(
                     target,
                     GL11.GL_TEXTURE_MAG_FILTER,
                     this.params.magFilter.value);
+            
             GL11.glTexParameteri(
                     target,
                     GL11.GL_TEXTURE_WRAP_S,
                     this.params.wrapS.value);
+            
             GL11.glTexParameteri(
                     target,
                     GL11.GL_TEXTURE_WRAP_T,
                     this.params.wrapT.value);
+            
             GL11.glTexParameteri(
                     target,
                     GL12.GL_TEXTURE_WRAP_R,
                     this.params.wrapR.value);
+            
             GL11.glTexParameterf(
                     target,
                     GL12.GL_TEXTURE_MIN_LOD,
                     this.params.minLOD);
+            
             GL11.glTexParameterf(
                     target,
                     GL12.GL_TEXTURE_MAX_LOD,
                     this.params.maxLOD);
-            GL11.glTexParameterf(
-                    target,
-                    EXTTextureFilterAnisotropic.GL_TEXTURE_MAX_ANISOTROPY_EXT,
-                    this.params.anisotropicLevel);
+
+            /*
+             GL11.glTexParameterf(
+             target,
+             EXTTextureFilterAnisotropic.GL_TEXTURE_MAX_ANISOTROPY_EXT,
+             this.params.anisotropicLevel);
+             */
             GL11.glBindTexture(target, 0);
+            
         }
     }
 }
