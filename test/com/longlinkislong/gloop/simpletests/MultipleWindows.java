@@ -29,7 +29,9 @@ public class MultipleWindows {
 
         thread.scheduleGLTask(new Colorizer());
         thread.scheduleGLTask(window.new UpdateTask());
-        thread.submitGLTask(window.new SetVisibleTask(true));
+        
+        window.waitForInit();
+        window.setVisible(true);
     }
 
     private class Colorizer extends GLTask {

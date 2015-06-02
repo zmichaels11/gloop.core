@@ -27,46 +27,46 @@ public class GLThread {
     private final Deque<GLViewport> viewportStack = new LinkedList<>();
     private final Deque<GLPolygonParameters> polygonStack = new LinkedList<>();
     private final Deque<GLDepthTest> depthTestStack = new LinkedList<>();
-    
+
     public GLDepthTest currentDepthTest() {
         return this.depthTestStack.isEmpty()
                 ? new GLDepthTest(this)
                 : this.depthTestStack.peek();
     }
-    
+
     public void pushDepthTest(final GLDepthTest test) {
         this.depthTestStack.push(test);
         test.applyDepthFunc();
     }
-    
+
     public GLDepthTest popDepthTest() {
         final GLDepthTest top = this.depthTestStack.isEmpty()
                 ? new GLDepthTest(this)
                 : this.depthTestStack.pop();
-        
+
         this.currentDepthTest().applyDepthFunc();
-        
+
         return top;
     }
-    
+
     public GLPolygonParameters currentPolygonParameters() {
-        return this.polygonStack.isEmpty() 
+        return this.polygonStack.isEmpty()
                 ? new GLPolygonParameters(this)
                 : this.polygonStack.peek();
     }
-    
+
     public void pushPolygonParameters(final GLPolygonParameters params) {
         params.applyParameters();
         this.polygonStack.push(params);
     }
-    
+
     public GLPolygonParameters popPolygonParameters() {
         final GLPolygonParameters top = this.polygonStack.isEmpty()
                 ? new GLPolygonParameters(this)
                 : this.polygonStack.pop();
-        
+
         this.currentPolygonParameters().applyParameters();
-        
+
         return top;
     }
 
@@ -234,6 +234,26 @@ public class GLThread {
 
     protected GLThread() {
         this.internalExecutor.execute(new InitTask());
+    }
+
+    /**
+     * Waits until all queries/tasks submitted to the GLThread prior to the
+     * barrier are executed.
+     *
+     * @return null.
+     * @since 15.06.01
+     */
+    public Void insertBarrier() {
+        return new BarrierQuery().glCall(this);
+    }
+
+    public class BarrierQuery extends GLQuery<Void> {
+
+        @Override
+        public Void call() throws Exception {
+            return null;
+        }
+
     }
 
     private class InitTask implements Runnable {

@@ -177,7 +177,7 @@ public class NeHe04 {
 
     public void start() {
         this.window.getThread().scheduleGLTask(this.drawTask);
-        this.window.setVisible(true);
+        this.window.waitForInit().setVisible(true);
     }
 
     public static void main(String[] args) throws Exception {

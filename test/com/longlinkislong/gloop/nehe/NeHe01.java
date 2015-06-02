@@ -13,11 +13,13 @@ import com.longlinkislong.gloop.GLWindow;
  */
 public class NeHe01 {
 
-    public NeHe01() {        
-        GLWindow window = new GLWindow();
-        
+    public NeHe01() {
+        final GLWindow window = new GLWindow();
+
+        window.getThread().scheduleGLTask(window.new UpdateTask());
+
+        window.waitForInit();
         window.setVisible(true);
-        window.getThread().scheduleGLTask(window.new UpdateTask());                        
     }
 
     public static void main(String[] args) {

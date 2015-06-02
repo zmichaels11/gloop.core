@@ -61,8 +61,7 @@ public class NeHe06 {
         this.window = new GLWindow();
 
         
-        final GLClear clear = new GLClear(1f, 1f, 1f, 1f, 1f);
-        clear.applyClear();
+        final GLClear clear = this.window.getThread().currentClear();
 
         this.window.getThread().pushDepthTest(new GLDepthTest(true, GLDepthFunc.GL_LESS));
 
@@ -124,35 +123,35 @@ public class NeHe06 {
         {
             final List<GLVec2> vTex = new ArrayList<>();
 
-            vTex.add(GLVec2F.create(0f, 0f));
             vTex.add(GLVec2F.create(1f, 0f));
-            vTex.add(GLVec2F.create(1f, 1f));
-            vTex.add(GLVec2F.create(0f, 1f));
-
-            vTex.add(GLVec2F.create(1f, 0f));
-            vTex.add(GLVec2F.create(1f, 1f));
-            vTex.add(GLVec2F.create(0f, 1f));
             vTex.add(GLVec2F.create(0f, 0f));
-
             vTex.add(GLVec2F.create(0f, 1f));
-            vTex.add(GLVec2F.create(0f, 0f));
-            vTex.add(GLVec2F.create(1f, 0f));
             vTex.add(GLVec2F.create(1f, 1f));
 
-            vTex.add(GLVec2F.create(1f, 1f));
-            vTex.add(GLVec2F.create(0f, 1f));
             vTex.add(GLVec2F.create(0f, 0f));
+            vTex.add(GLVec2F.create(0f, 1f));
+            vTex.add(GLVec2F.create(1f, 1f));
             vTex.add(GLVec2F.create(1f, 0f));
 
-            vTex.add(GLVec2F.create(1f, 0f));
             vTex.add(GLVec2F.create(1f, 1f));
+            vTex.add(GLVec2F.create(1f, 0f));
+            vTex.add(GLVec2F.create(0f, 0f));
             vTex.add(GLVec2F.create(0f, 1f));
+
+            vTex.add(GLVec2F.create(0f, 1f));
+            vTex.add(GLVec2F.create(1f, 1f));
+            vTex.add(GLVec2F.create(1f, 0f));
             vTex.add(GLVec2F.create(0f, 0f));
 
             vTex.add(GLVec2F.create(0f, 0f));
-            vTex.add(GLVec2F.create(1f, 0f));
-            vTex.add(GLVec2F.create(1f, 1f));
             vTex.add(GLVec2F.create(0f, 1f));
+            vTex.add(GLVec2F.create(1f, 1f));
+            vTex.add(GLVec2F.create(1f, 0f));
+
+            vTex.add(GLVec2F.create(1f, 0f));
+            vTex.add(GLVec2F.create(0f, 0f));
+            vTex.add(GLVec2F.create(0f, 1f));
+            vTex.add(GLVec2F.create(1f, 1f));
 
             tCube.upload(GLTools.wrapVec2F(vTex));
         }
@@ -197,7 +196,7 @@ public class NeHe06 {
             
             
             final GLTextureParameters attribs = new GLTextureParameters()
-                    .withFilter(GLTextureMinFilter.GL_LINEAR, GLTextureMagFilter.GL_LINEAR)
+                    .withFilter(GLTextureMinFilter.GL_LINEAR_MIPMAP_LINEAR, GLTextureMagFilter.GL_LINEAR)
                     .withWrap(GLTextureWrap.GL_CLAMP_TO_EDGE, GLTextureWrap.GL_CLAMP_TO_EDGE, GLTextureWrap.GL_CLAMP_TO_EDGE);                        
                         
             bImg.getRGB(0, 0, bImg.getWidth(), bImg.getHeight(), pixels, 0, bImg.getWidth());
@@ -205,11 +204,10 @@ public class NeHe06 {
             Arrays.stream(pixels).forEach(pBuf::putInt);
             
             pBuf.flip(); 
-            
-            texture.setMipmapRange(0, 0);
+                        
             texture.setAttributes(attribs);
             texture.setImage(
-                    0, 
+                    GLTexture.GENERATE_MIPMAP, 
                     GLTextureInternalFormat.GL_RGBA8, 
                     GLTextureFormat.GL_BGRA, 
                     bImg.getWidth(), bImg.getHeight(),
@@ -250,7 +248,7 @@ public class NeHe06 {
     
     public void start() {
         this.window.getThread().scheduleGLTask(drawTask);
-        this.window.setVisible(true);
+        this.window.waitForInit().setVisible(true);
     }
     
     public static void main(String[] args) throws Exception {

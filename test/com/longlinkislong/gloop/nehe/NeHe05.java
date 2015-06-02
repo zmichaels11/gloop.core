@@ -29,6 +29,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.List;
+import javax.swing.SwingUtilities;
 
 /**
  *
@@ -251,13 +252,17 @@ public class NeHe05 {
             rTetra += 0.2f;
             rCube -= 0.15f;
             
-            this.window.update();
+            this.window.update();  
+            
+            SwingUtilities.invokeLater(() -> {
+                System.out.println(window.getMouse().getMousePosition());
+            });
         });
     }
     
     public void start() {
         this.window.getThread().scheduleGLTask(this.drawTask);
-        this.window.setVisible(true);
+        this.window.waitForInit().setVisible(true);
     }
     
     public static void main(String[] args) throws Exception {
