@@ -234,9 +234,11 @@ public class NeHe06 {
                 trCube = rz.multiply(ry.multiply(rx.multiply(tr)));
             }
             
+            program.use();
+            
             setTr.set(trCube).glRun();
             texture.bind(0);
-            vaoCube.drawElements(program, GLDrawMode.GL_TRIANGLES, cubeVerts, GLIndexElementType.GL_UNSIGNED_INT, 0);
+            vaoCube.drawElements(GLDrawMode.GL_TRIANGLES, cubeVerts, GLIndexElementType.GL_UNSIGNED_INT, 0);
             
             xRot += 0.015f;
             yRot += 0.015f;

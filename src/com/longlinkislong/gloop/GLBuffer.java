@@ -221,7 +221,8 @@ public class GLBuffer extends GLObject {
      * Uploads the supplied data to the GLBuffer. GL_ARRAY_BUFFER is used for
      * the target and GL_STATIC_DRAW is used for the usage.
      *
-     * @param data
+     * @param data the date to upload.
+     * @since 15.06.05
      */
     public void upload(final ByteBuffer data) {
         this.upload(

@@ -101,7 +101,7 @@ public class GLTextureParameters {
      * only sync the threads on the first call.
      *
      * @return the maximum supported anisotoropy filter level.
-     * @sinec 15.05.28
+     * @since 15.05.28
      */
     public static float getTextureMaxAnisotropyLevel() {
         if (ANISO_QUERY == null) {

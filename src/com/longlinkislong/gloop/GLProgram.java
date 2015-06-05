@@ -91,18 +91,32 @@ public class GLProgram extends GLObject {
      *
      * @since 15.05.27
      */
-    protected void bind() {
-        if (!this.isCurrent()) {
-            GL20.glUseProgram(this.programId);
-            CURRENT.put(Thread.currentThread(), this);
+    private final UseTask useTask = new UseTask();
+    public void use() {
+        this.useTask.glRun(this.getThread());
+    }
+    
+    public class UseTask extends GLTask {
+
+        @Override
+        public void run() {
+            if(!GLProgram.this.isValid()) {
+                throw new GLException("Invalid GLProgram!");
+            } if(GLProgram.this.isCurrent()) {
+                return;
+            }
+            
+            GL20.glUseProgram(GLProgram.this.programId);
+            CURRENT.put(Thread.currentThread(), GLProgram.this);
         }
+        
     }
 
     private int getUniformLoc(final String uName) {
         if (this.uniforms.containsKey(uName)) {
             return this.uniforms.get(uName);
         } else {
-            this.bind();
+            this.use();
             final int uLoc = GL20.glGetUniformLocation(programId, uName);
 
             this.uniforms.put(uName, uLoc);
@@ -291,7 +305,7 @@ public class GLProgram extends GLObject {
                 throw new GLException("GLProgram is not valid!");
             }
 
-            GLProgram.this.bind();
+            GLProgram.this.use();
 
             final int uLoc = GLProgram.this.getUniformLoc(uName);
 
@@ -407,7 +421,7 @@ public class GLProgram extends GLObject {
                 throw new GLException("GLProgram is not valid!");
             }
 
-            GLProgram.this.bind();
+            GLProgram.this.use();
 
             final int uLoc = GLProgram.this.getUniformLoc(this.uName);
             TEMPF.put(values);
@@ -571,7 +585,7 @@ public class GLProgram extends GLObject {
                 throw new GLException("GLProgram is not valid!");
             }
 
-            GLProgram.this.bind();
+            GLProgram.this.use();
 
             final int uLoc = GLProgram.this.getUniformLoc(this.uName);
 
@@ -687,7 +701,7 @@ public class GLProgram extends GLObject {
                 throw new GLException("GLProgram is not valid!");
             }
 
-            GLProgram.this.bind();
+            GLProgram.this.use();
 
             final int uLoc = GLProgram.this.getUniformLoc(this.uName);
 
@@ -847,7 +861,7 @@ public class GLProgram extends GLObject {
                 throw new GLException("GLProgram is not valid!");
             }
 
-            GLProgram.this.bind();
+            GLProgram.this.use();
 
             final int uLoc = GLProgram.this.getUniformLoc(this.uName);
 
@@ -1057,7 +1071,7 @@ public class GLProgram extends GLObject {
          * BindTask.
          *
          * @param uName the name of the uniform to set.
-         * @param bindTask the bind task to associate the uniform to.
+         * @param bindTask the use task to associate the uniform to.
          * @since 15.05.27
          */
         public SetUniformSamplerTask(
@@ -1073,7 +1087,7 @@ public class GLProgram extends GLObject {
                 throw new GLException("GLProgram is invalid!");
             }
 
-            GLProgram.this.bind();
+            GLProgram.this.use();
 
             final int uLoc = GLProgram.this.getUniformLoc(uName);
 
@@ -1126,7 +1140,7 @@ public class GLProgram extends GLObject {
                 throw new GLException("Invalid GLProgram!");
             }
 
-            GLProgram.this.bind();
+            GLProgram.this.use();
             GL43.glDispatchCompute(this.numX, this.numY, this.numZ);
         }
     }

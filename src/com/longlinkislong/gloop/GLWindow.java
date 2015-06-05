@@ -19,6 +19,7 @@ import org.lwjgl.glfw.GLFWCursorPosCallback;
 import org.lwjgl.glfw.GLFWKeyCallback;
 import org.lwjgl.glfw.GLFWMouseButtonCallback;
 import org.lwjgl.glfw.GLFWScrollCallback;
+import org.lwjgl.glfw.GLFWvidmode;
 import org.lwjgl.opengl.GL11;
 import static org.lwjgl.opengl.GL11.GL_FALSE;
 import static org.lwjgl.opengl.GL11.GL_TRUE;
@@ -286,14 +287,41 @@ public class GLWindow {
         this.keyCallback = Optional.of(callback);
     }
 
+    /**
+     * Retrieves the DPI of the monitor displaying the window.
+     *
+     * @return the DPI
+     * @throws GLException if the window has not been initialized.
+     * @since 15.06.07
+     */
+    public double getDPI() throws GLException {
+        if (!this.isValid()) {
+            throw new GLException("Invalid GLWindow!");
+        }
+
+        final long mHandle = GLFW.glfwGetWindowMonitor(this.monitor);
+
+        final ByteBuffer mode = GLFW.glfwGetVideoMode(mHandle);
+
+        final ByteBuffer widthMM = ByteBuffer
+                .allocateDirect(Integer.BYTES)
+                .order(ByteOrder.nativeOrder());
+
+        GLFW.glfwGetMonitorPhysicalSize(mHandle, widthMM, null);
+
+        final int vWidth = GLFWvidmode.width(mode);
+
+        return (vWidth / (widthMM.getInt() / 25.4));
+    }
+    
     private class InitTask extends GLTask {
 
         @Override
         public void run() {
             GLFW.glfwDefaultWindowHints();
             GLFW.glfwWindowHint(GLFW.GLFW_VISIBLE, GL_FALSE);
-            GLFW.glfwWindowHint(GLFW.GLFW_RESIZABLE, GL_TRUE);
-
+            GLFW.glfwWindowHint(GLFW.GLFW_RESIZABLE, GL_TRUE);                        
+            
             final long sharedContextHandle = shared != null ? shared.window : NULL;
 
             GLWindow.this.window = GLFW.glfwCreateWindow(

@@ -243,11 +243,12 @@ public class NeHe05 {
                 trCube = rotation.multiply(translation);
             }
                         
-            setTr.set(trTetra).glRun();
-            vaoTetra.drawArrays(program, GLDrawMode.GL_TRIANGLES, 0, tetraVerts);
+            program.use();
+            setTr.set(trTetra).glRun();            
+            vaoTetra.drawArrays(GLDrawMode.GL_TRIANGLES, 0, tetraVerts);
             
             setTr.set(trCube).glRun();
-            vaoCube.drawElements(program, GLDrawMode.GL_TRIANGLES, cubeVerts, GLIndexElementType.GL_UNSIGNED_INT, 0);
+            vaoCube.drawElements(GLDrawMode.GL_TRIANGLES, cubeVerts, GLIndexElementType.GL_UNSIGNED_INT, 0);
             
             rTetra += 0.2f;
             rCube -= 0.15f;

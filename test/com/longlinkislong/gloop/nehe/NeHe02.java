@@ -107,16 +107,17 @@ public class NeHe02 {
                 GLVertexAttributeSize.VEC3);
 
         this.drawTask = GLTask.create(() -> {
+            program.use();
             program.setUniformMatrixF("proj", GLMat4F.perspective(45, (float) window.getAspectRatio(), 0.1f));
 
             program.setUniformMatrixF("tr", GLMat4F.translation(-1.5f, 0.0f, -6.0f));
-            vaoTriangle.drawArrays(program, GLDrawMode.GL_TRIANGLES, 0, 3);
+            vaoTriangle.drawArrays(GLDrawMode.GL_TRIANGLES, 0, 3);
 
             program.setUniformMatrixF("tr", GLMat4F.translation(1.5f, 0.0f, -6.0f));
-            vaoSquare.drawElements(program, GLDrawMode.GL_TRIANGLES, 6, GLIndexElementType.GL_UNSIGNED_INT, 0);
+            vaoSquare.drawElements(GLDrawMode.GL_TRIANGLES, 6, GLIndexElementType.GL_UNSIGNED_INT, 0);
 
             window.update();
-        });
+        });                
     }
 
     public void start() {
