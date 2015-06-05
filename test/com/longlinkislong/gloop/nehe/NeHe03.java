@@ -143,7 +143,7 @@ public class NeHe03 {
                 GLVertexAttributeSize.VEC3);
 
         this.drawTask = GLTask.create(() -> {
-            program.setUniformMatrixF("proj", GLMat4F.perspective(45, window.getAspectRatio(), 0.1f));
+            program.setUniformMatrixF("proj", GLMat4F.perspective(45, (float) window.getAspectRatio(), 0.1f));
 
             program.setUniformMatrixF("tr", GLMat4F.translation(-1.5f, 0.0f, -6.0f));
             vaoTriangle.drawArrays(program, GLDrawMode.GL_TRIANGLES, 0, 3);

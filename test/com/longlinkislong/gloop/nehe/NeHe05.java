@@ -217,7 +217,7 @@ public class NeHe05 {
                 GLVertexAttributeType.GL_FLOAT,
                 GLVertexAttributeSize.VEC3);
         
-        program.setUniformMatrixF("proj", GLMat4F.perspective(45, window.getAspectRatio(), 0.1f));
+        program.setUniformMatrixF("proj", GLMat4F.perspective(45, (float) window.getAspectRatio(), 0.1f));
         final GLProgram.SetUniformMatrixFTask setTr 
                 = program.new SetUniformMatrixFTask("tr", GLMat4F.create());
         

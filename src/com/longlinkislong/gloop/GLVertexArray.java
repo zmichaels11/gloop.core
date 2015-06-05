@@ -20,8 +20,11 @@ import org.lwjgl.opengl.GL40;
 import org.lwjgl.opengl.GL41;
 
 /**
+ * A GLVertexArray is an OpenGL object that contains information relevant to
+ * vertex array states.
  *
  * @author zmichaels
+ * @since 15.06.05
  */
 public class GLVertexArray extends GLObject {
 
@@ -29,16 +32,34 @@ public class GLVertexArray extends GLObject {
     private static final int INVALID_VERTEX_ARRAY_ID = -1;
     private int vaoId = INVALID_VERTEX_ARRAY_ID;
 
+    /**
+     * Constructs a new GLVertexArray object on the default OpenGL thread.
+     *
+     * @since 15.06.05
+     */
     public GLVertexArray() {
         super();
         this.init();
     }
 
+    /**
+     * Constructs a new GLVertexArray object on the specified OpenGL thread.
+     *
+     * @param thread the thread to create the object on.
+     * @since 15.06.05
+     */
     public GLVertexArray(final GLThread thread) {
         super(thread);
         this.init();
     }
 
+    /**
+     * Checks if the OpenGL object is valid. A GLVertexArray object is
+     * considered valid if it has been initialized and until it is deleted.
+     *
+     * @return true if the object is valid.
+     * @since 15.06.05
+     */
     public boolean isValid() {
         return this.vaoId != INVALID_VERTEX_ARRAY_ID;
     }
@@ -46,7 +67,7 @@ public class GLVertexArray extends GLObject {
     private boolean isCurrent() {
         return CURRENT.get(Thread.currentThread()) == this;
     }
-    
+
     private void bind() {
         if (!this.isCurrent()) {
             GL30.glBindVertexArray(this.vaoId);
@@ -56,28 +77,55 @@ public class GLVertexArray extends GLObject {
 
     private final InitTask initTask = new InitTask();
 
-    public final void init() {
+    /**
+     * Initializes the GLVertexArray object on its default thread. This function
+     * is automatically called by the constructor and only should be called if
+     * the GLVertexArray object is to be recycled.
+     *
+     * @throws GLException if the GLVertexArray object is already initialized.
+     * @since 15.06.05
+     */
+    public final void init() throws GLException {
         this.initTask.glRun(this.getThread());
     }
 
+    /**
+     * A GLTask that initializes the parent GLVertexArray object.
+     *
+     * @since 15.06.05
+     */
     public class InitTask extends GLTask {
 
         @Override
         public void run() {
-            if (!GLVertexArray.this.isValid()) {
-                GLVertexArray.this.vaoId = GL30.glGenVertexArrays();
+            if (GLVertexArray.this.isValid()) {
+                throw new GLException("GLVertexArray is already initialized!");
             }
+
+            GLVertexArray.this.vaoId = GL30.glGenVertexArrays();
         }
     }
 
     private DrawElementsIndirectTask lastDrawElementsIndirect = null;
 
+    /**
+     * Runs a draw elements indirect call on the object's default thread.
+     *
+     * @param program the program to run
+     * @param drawMode the draw mode to use.
+     * @param indexType the index type to use.
+     * @param indirectCommandBuffer the indirect buffer to use
+     * @param offset the offset to start reading from the indirect buffer.
+     * @throws GLException if the vertex array, program, or indirect command
+     * buffer is invalid.
+     * @since 15.06.05
+     */
     public void drawElementsIndirect(
             final GLProgram program,
             final GLDrawMode drawMode,
             final GLIndexElementType indexType,
             final GLBuffer indirectCommandBuffer,
-            final long offset) {
+            final long offset) throws GLException {
 
         if (this.lastDrawElementsIndirect != null
                 && this.lastDrawElementsIndirect.program == program
@@ -99,6 +147,11 @@ public class GLVertexArray extends GLObject {
         }
     }
 
+    /**
+     * A GLTask that executes an indirect draw elements task.
+     *
+     * @since 15.06.05
+     */
     public class DrawElementsIndirectTask extends GLTask implements GLDrawTask {
 
         private final GLBuffer indirectCommandBuffer;
@@ -107,6 +160,15 @@ public class GLVertexArray extends GLObject {
         private final GLIndexElementType indexType;
         private final long offset;
 
+        /**
+         * Constructs a new DrawElementsIndirectTask using 0 for the offset.
+         *
+         * @param program the program to use
+         * @param mode the draw mode to use
+         * @param indexType the index type to use
+         * @param indirectCommandBuffer the indirect command buffer
+         * @since 15.06.05
+         */
         public DrawElementsIndirectTask(
                 final GLProgram program,
                 final GLDrawMode mode, final GLIndexElementType indexType,
@@ -115,11 +177,22 @@ public class GLVertexArray extends GLObject {
             this(program, mode, indexType, indirectCommandBuffer, 0);
         }
 
+        /**
+         * Constructs a new DrawElementsIndirectTask.
+         *
+         * @param program the program to use
+         * @param mode the draw mode to use
+         * @param indexType the index type to use
+         * @param indirectCommandBuffer the indirect command buffer
+         * @param offset the offset to use
+         * @throws GLException if the offset is less than 0.
+         * @since 15.06.05
+         */
         public DrawElementsIndirectTask(
                 final GLProgram program,
                 final GLDrawMode mode, final GLIndexElementType indexType,
                 final GLBuffer indirectCommandBuffer,
-                final long offset) {
+                final long offset) throws GLException {
 
             Objects.requireNonNull(this.program = program);
             Objects.requireNonNull(this.indexType = indexType);
@@ -154,11 +227,23 @@ public class GLVertexArray extends GLObject {
 
     private DrawArraysIndirectTask lastDrawArraysIndirect = null;
 
+    /**
+     * Runs an indirect draw arrays task on the object's default GLThread.
+     *
+     * @param program the program to run
+     * @param drawMode the draw mode to use
+     * @param indirectCommandBuffer the indirect command buffer to grab
+     * parameters from.
+     * @param offset the offset to use
+     * @throws GLException if the vertex array, program, or indirect command
+     * buffer is invalid.
+     * @since 15.06.05
+     */
     public void drawArraysIndirect(
             final GLProgram program,
             final GLDrawMode drawMode,
             final GLBuffer indirectCommandBuffer,
-            final long offset) {
+            final long offset) throws GLException {
 
         if (this.lastDrawArraysIndirect != null
                 && this.lastDrawArraysIndirect.indirectCommandBuffer == indirectCommandBuffer
@@ -509,18 +594,18 @@ public class GLVertexArray extends GLObject {
             Objects.requireNonNull(this.mode = mode);
             Objects.requireNonNull(this.tfb = tfb);
         }
-        
+
         @Override
         public void run() {
-            if(!GLVertexArray.this.isValid()) {
+            if (!GLVertexArray.this.isValid()) {
                 throw new GLException("Invalid GLVertexArray!");
             }
-            
+
             this.program.bind();
             GLVertexArray.this.bind();
             GL40.glDrawTransformFeedback(this.mode.value, this.tfb.tfbId);
         }
-    }       
+    }
 
     public class DrawArraysTask extends GLTask implements GLDrawTask {
 
@@ -575,36 +660,6 @@ public class GLVertexArray extends GLObject {
         }
     }
 
-    public void setDivisor(final int index, final int divisor) {
-        new SetDivisorTask(index, divisor).glRun(this.getThread());
-    }
-
-    public class SetDivisorTask extends GLTask {
-
-        private final int index;
-        private final int divisor;
-
-        public SetDivisorTask(final int index, final int divisor) {
-            if ((this.index = index) < 0) {
-                throw new GLException("Invalid index value! Index cannot be less than 0.");
-            }
-
-            if ((this.divisor = divisor) < 0) {
-                throw new GLException("Invalid divisor value! Divisor cannot be less than 0.");
-            }
-        }
-
-        @Override
-        public void run() {
-            if (!GLVertexArray.this.isValid()) {
-                throw new GLException("Invalid GLVertexArray!");
-            }
-
-            GLVertexArray.this.bind();
-            GL33.glVertexAttribDivisor(this.index, this.divisor);
-        }
-    }
-
     public void attachIndexBuffer(final GLBuffer buffer) {
         new AttachIndexBufferTask(buffer).glRun(this.getThread());
     }
@@ -649,6 +704,7 @@ public class GLVertexArray extends GLObject {
         private final int stride;
         private final long offset;
         private final boolean normalized;
+        private final int divisor;
 
         public AttachBufferTask(
                 final int index,
@@ -678,6 +734,18 @@ public class GLVertexArray extends GLObject {
                 final boolean normalized,
                 final int stride, final long offset) {
 
+            this(index, buffer, type, size, normalized, stride, offset, 0);
+        }
+
+        public AttachBufferTask(
+                final int index,
+                final GLBuffer buffer,
+                final GLVertexAttributeType type,
+                final GLVertexAttributeSize size,
+                final boolean normalized,
+                final int stride, final long offset,
+                final int divisor) {
+
             if ((this.index = index) < 0) {
                 throw new GLException("Invalid index value [" + index + "]! Index cannot be less than 0.");
             }
@@ -698,6 +766,10 @@ public class GLVertexArray extends GLObject {
 
             if ((this.stride = stride) < 0) {
                 throw new GLException("Invalid stride value! Stride cannot be less than 0.");
+            }
+
+            if ((this.divisor = divisor) < 0) {
+                throw new GLException("Invalid divisor value! Divisor cannot be less than 0.");
             }
 
             Objects.requireNonNull(this.buffer = buffer);
@@ -731,6 +803,7 @@ public class GLVertexArray extends GLObject {
                     GLBufferTarget.GL_ARRAY_BUFFER.value,
                     this.buffer.bufferId);
 
+            GL20.glEnableVertexAttribArray(this.index);
             if (this.type == GLVertexAttributeType.GL_DOUBLE) {
                 GL41.glVertexAttribLPointer(
                         this.index,
@@ -745,7 +818,8 @@ public class GLVertexArray extends GLObject {
                         this.normalized,
                         this.stride, this.offset);
             }
-            GL20.glEnableVertexAttribArray(this.index);
+
+            GL33.glVertexAttribDivisor(this.index, this.divisor);
         }
     }
 

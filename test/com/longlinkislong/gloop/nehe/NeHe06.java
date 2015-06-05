@@ -58,7 +58,7 @@ public class NeHe06 {
     float xRot, yRot, zRot;
 
     public NeHe06() throws IOException {
-        this.window = new GLWindow();
+        this.window = new GLWindow(640, 480, "NeHe06");
 
         
         final GLClear clear = this.window.getThread().currentClear();
@@ -180,7 +180,7 @@ public class NeHe06 {
                 GLVertexAttributeType.GL_FLOAT,
                 GLVertexAttributeSize.VEC2);
         
-        program.setUniformMatrixF("proj", GLMat4F.perspective(45, window.getAspectRatio(), 0.1f));
+        program.setUniformMatrixF("proj", GLMat4F.perspective(45, (float) window.getAspectRatio(), 0.1f));
         final GLProgram.SetUniformMatrixFTask setTr
                 = program.new SetUniformMatrixFTask("tr", GLMat4F.create());
         
@@ -215,7 +215,7 @@ public class NeHe06 {
             
             
         }
-        
+                
         this.drawTask = GLTask.create(()->{
             if(GL11.glGetError() != 0) {
                 throw new GLException();
@@ -243,6 +243,7 @@ public class NeHe06 {
             zRot += 0.015f;
             
             this.window.update();
+            
         });                
     }
     

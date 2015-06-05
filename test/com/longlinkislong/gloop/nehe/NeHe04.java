@@ -160,7 +160,7 @@ public class NeHe04 {
                 trQuad = rotation.multiply(translation);
             }
 
-            program.setUniformMatrixF("proj", GLMat4F.perspective(45, window.getAspectRatio(), 0.1f));
+            program.setUniformMatrixF("proj", GLMat4F.perspective(45, (float) window.getAspectRatio(), 0.1f));
 
             program.setUniformMatrixF("tr", trTri);
             vaoTriangle.drawArrays(program, GLDrawMode.GL_TRIANGLES, 0, 3);
