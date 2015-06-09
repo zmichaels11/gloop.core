@@ -29,7 +29,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.List;
-import javax.swing.SwingUtilities;
+import org.lwjgl.glfw.GLFW;
 
 /**
  *
@@ -253,11 +253,12 @@ public class NeHe05 {
             rTetra += 0.2f;
             rCube -= 0.15f;
             
-            this.window.update();  
-            
-            SwingUtilities.invokeLater(() -> {
-                System.out.println(window.getMouse().getMousePosition());
-            });
+            this.window.update();                          
+        });
+        window.waitForInit().getMouse().addButtonListener((window, button, action, mods) -> {
+            if(button == GLFW.GLFW_MOUSE_BUTTON_1) {
+                throw new RuntimeException("test");
+            }
         });
     }
     

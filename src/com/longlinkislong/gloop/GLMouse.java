@@ -120,7 +120,7 @@ public class GLMouse implements GLMouseEnteredListener, GLMousePositionListener,
      * @return true if the listener was added
      * @since 15.06.05
      */
-    public boolean addListener(final GLMouseScrollListener listener) {
+    public boolean addScrollListener(final GLMouseScrollListener listener) {
         Objects.requireNonNull(listener, "Listener cannot be null!");
         return this.mouseScrollListeners.add(listener);
     }
@@ -131,7 +131,7 @@ public class GLMouse implements GLMouseEnteredListener, GLMousePositionListener,
      * @return true if the listener was removed.
      * @since 15.06.05
      */
-    public boolean removeListener(final GLMouseScrollListener listener) {
+    public boolean removeScrollListener(final GLMouseScrollListener listener) {
         Objects.requireNonNull(listener, "Listener cannot be null!");
         return this.mouseScrollListeners.remove(listener);
     }        
@@ -143,7 +143,7 @@ public class GLMouse implements GLMouseEnteredListener, GLMousePositionListener,
      * @return true if the listener was added.
      * @since 15.06.07
      */
-    public boolean addListener(final GLMouseEnteredListener listener) {
+    public boolean addEnteredListener(final GLMouseEnteredListener listener) {
         Objects.requireNonNull(listener, "Listener cannot be null!");
         return this.mouseEnteredListeners.add(listener);
     }
@@ -155,7 +155,7 @@ public class GLMouse implements GLMouseEnteredListener, GLMousePositionListener,
      * @return true if the listener was removed.
      * @since 15.06.07
      */
-    public boolean removeListener(final GLMouseEnteredListener listener) {
+    public boolean removeEnteredListener(final GLMouseEnteredListener listener) {
         Objects.requireNonNull(listener, "Listener cannot be null!");
         return this.mouseEnteredListeners.remove(listener);
     }
@@ -179,7 +179,7 @@ public class GLMouse implements GLMouseEnteredListener, GLMousePositionListener,
      * @return true if the listener was added.
      * @since 15.06.07
      */
-    public boolean addListener(final GLMousePositionListener listener) {
+    public boolean addPositionListener(final GLMousePositionListener listener) {
         Objects.requireNonNull(listener, "Listener cannot be null!");
         return this.mousePositionListeners.add(listener);
     }
@@ -191,7 +191,7 @@ public class GLMouse implements GLMouseEnteredListener, GLMousePositionListener,
      * @return true if the listener was removed.
      * @since 15.06.07
      */
-    public boolean removeListener(final GLMousePositionListener listener) {
+    public boolean removePositionListener(final GLMousePositionListener listener) {
         Objects.requireNonNull(listener, "Listener cannot be null!");
         return this.mousePositionListeners.remove(listener);
     }
@@ -203,7 +203,7 @@ public class GLMouse implements GLMouseEnteredListener, GLMousePositionListener,
      * @return true if the listener was added.
      * @since 15.06.07
      */
-    public boolean addListener(final GLMouseButtonListener listener) {
+    public boolean addButtonListener(final GLMouseButtonListener listener) {
         Objects.requireNonNull(listener, "Listener cannot be null!");
         return this.mouseButtonListeners.add(listener);
     }
@@ -215,7 +215,7 @@ public class GLMouse implements GLMouseEnteredListener, GLMousePositionListener,
      * @return true if the listener was removed.
      * @since 15.06.07
      */
-    public boolean removeListener(final GLMouseButtonListener listener) {
+    public boolean removeButtonListener(final GLMouseButtonListener listener) {
         Objects.requireNonNull(listener, "Listener cannot be null!");
         return this.mouseButtonListeners.remove(listener);
     }

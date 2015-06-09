@@ -43,6 +43,8 @@ public class GLWindow {
     private Optional<GLFWMouseButtonCallback> mouseButtonCallback = Optional.empty();
     private Optional<GLFWCursorPosCallback> cursorPosCallback = Optional.empty();
     private Optional<GLFWCursorEnterCallback> cursorEnterCallback = Optional.empty();
+    private Optional<GLFWScrollCallback> scrollCallback = Optional.empty();
+    private Optional<Runnable> onClose = Optional.empty();
     private final long monitor;
 
     protected static final Map<Long, GLWindow> WINDOWS = new TreeMap<>(Long::compareTo);
@@ -87,6 +89,10 @@ public class GLWindow {
         return Collections.unmodifiableList(windows);
     }
 
+    public void setOnClose(final Runnable onCloseCallback) {
+        this.onClose = Optional.ofNullable(onCloseCallback);
+    }
+    
     /**
      * Constructs a new GLWindow with all default parameters.
      *
@@ -246,8 +252,12 @@ public class GLWindow {
     }
 
     private void setMouseScrollCallback(final GLMouseScrollListener listener) {
-        final GLFWScrollCallback callbac
+        final GLFWScrollCallback callback
                 = GLFW.GLFWScrollCallback(listener::glfwScrollCallback);
+        
+        GLFW.glfwSetScrollCallback(this.window, callback);
+        
+        this.scrollCallback = Optional.of(callback);
     }
     
     private void setMousePositionCallback(final GLMousePositionListener listener) {
@@ -584,6 +594,7 @@ public class GLWindow {
         this.cursorPosCallback.ifPresent(GLFWCursorPosCallback::release);
         this.keyCallback.ifPresent(GLFWKeyCallback::release);
         this.mouseButtonCallback.ifPresent(GLFWMouseButtonCallback::release);
+        this.onClose.ifPresent(Runnable::run);
         this.thread.shutdown();
     }
 
