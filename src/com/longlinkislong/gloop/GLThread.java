@@ -28,7 +28,7 @@ public class GLThread {
                 protected void afterExecute(final Runnable task, Throwable ex) {
                     super.afterExecute(task, ex);
 
-                    if (task == null && task instanceof Future<?>) {
+                    if (task != null && task instanceof Future<?>) {
                         try {
                             final Future<?> future = (Future<?>) task;
 
