@@ -7,6 +7,7 @@ package com.longlinkislong.gloop;
 
 import java.nio.ByteBuffer;
 import java.util.Objects;
+import org.lwjgl.opengl.EXTTextureFilterAnisotropic;
 import org.lwjgl.opengl.GL11;
 import org.lwjgl.opengl.GL12;
 import org.lwjgl.opengl.GL13;
@@ -1102,12 +1103,11 @@ public class GLTexture extends GLObject {
                     GL12.GL_TEXTURE_MAX_LOD,
                     this.params.maxLOD);
 
-            /*
-             GL11.glTexParameterf(
-             target,
-             EXTTextureFilterAnisotropic.GL_TEXTURE_MAX_ANISOTROPY_EXT,
-             this.params.anisotropicLevel);
-             */
+            GL11.glTexParameterf(
+                    target,
+                    EXTTextureFilterAnisotropic.GL_TEXTURE_MAX_ANISOTROPY_EXT,
+                    this.params.anisotropicLevel);
+
             GL11.glBindTexture(target, 0);
 
         }

@@ -364,5 +364,5 @@ public class GLTools {
             default:
                 throw new GLException("Invalid type: " + type);
         }
-    }
+    }        
 }

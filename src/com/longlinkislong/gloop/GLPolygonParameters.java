@@ -23,7 +23,7 @@ public class GLPolygonParameters extends GLObject {
     public static final float DEFAULT_POLYGON_OFFSET_UNITS = 0f;
     public static final GLCullMode DEFAULT_CULL_MODE = GLCullMode.GL_BACK;
 
-    public final boolean cullEnabled;
+    public final GLEnableStatus cullEnabled;
     public final GLCullMode cullMode;
     public final float pointSize, lineSize;
     public final GLFrontFaceMode frontFace;
@@ -41,7 +41,7 @@ public class GLPolygonParameters extends GLObject {
                 DEFAULT_FRONT_FACE,
                 DEFAULT_FRONT_MODE, DEFAULT_BACK_MODE,
                 DEFAULT_POLYGON_OFFSET_FACTOR, DEFAULT_POLYGON_OFFSET_UNITS,
-                false, DEFAULT_CULL_MODE);
+                GLEnableStatus.GL_ENABLED, DEFAULT_CULL_MODE);
     }
 
     public GLPolygonParameters(
@@ -49,7 +49,7 @@ public class GLPolygonParameters extends GLObject {
             final GLFrontFaceMode frontFace,
             final GLPolygonMode frontMode, final GLPolygonMode backMode,
             final float polygonOffsetFactor, final float polygonOffsetUnits,
-            final boolean cullEnabled, final GLCullMode cullMode) {
+            final GLEnableStatus cullEnabled, final GLCullMode cullMode) {
 
         this(GLThread.getDefaultInstance(),
                 pointSize, lineSize,
@@ -65,7 +65,7 @@ public class GLPolygonParameters extends GLObject {
             final GLFrontFaceMode frontFace,
             final GLPolygonMode frontMode, final GLPolygonMode backMode,
             final float polygonOffsetFactor, final float polygonOffsetUnits,
-            final boolean cullEnabled, final GLCullMode cullMode) {
+            final GLEnableStatus cullEnabled, final GLCullMode cullMode) {
 
         super(thread);
         this.pointSize = pointSize;
@@ -133,7 +133,7 @@ public class GLPolygonParameters extends GLObject {
                 this.cullEnabled, this.cullMode);
     }
 
-    public GLPolygonParameters withCullMode(final boolean enabled, final GLCullMode mode) {
+    public GLPolygonParameters withCullMode(final GLEnableStatus enabled, final GLCullMode mode) {
         return new GLPolygonParameters(
                 this.getThread(),
                 this.pointSize, this.lineSize,
@@ -161,13 +161,15 @@ public class GLPolygonParameters extends GLObject {
             GL11.glLineWidth(GLPolygonParameters.this.lineSize);
             GL11.glFrontFace(GLPolygonParameters.this.frontFace.value);
 
-            if (GLPolygonParameters.this.cullEnabled) {
-                GL11.glEnable(GL11.GL_CULL_FACE);
-            } else {
-                GL11.glDisable(GL11.GL_CULL_FACE);
-            }
-
-            GL11.glCullFace(GLPolygonParameters.this.cullMode.value);
+            switch(GLPolygonParameters.this.cullEnabled) {
+                case GL_ENABLED:
+                    GL11.glEnable(GL11.GL_CULL_FACE);
+                    GL11.glCullFace(GLPolygonParameters.this.cullMode.value);
+                    break;
+                case GL_DISABLED:
+                    GL11.glDisable(GL11.GL_CULL_FACE);
+            }            
+            
             GL11.glPolygonMode(GL11.GL_FRONT, GLPolygonParameters.this.frontMode.value);
             GL11.glPolygonMode(GL11.GL_BACK, GLPolygonParameters.this.backMode.value);
             GL11.glPolygonOffset(

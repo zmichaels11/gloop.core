@@ -11,6 +11,7 @@ import com.longlinkislong.gloop.GLClearBufferMode;
 import com.longlinkislong.gloop.GLDepthFunc;
 import com.longlinkislong.gloop.GLDepthTest;
 import com.longlinkislong.gloop.GLDrawMode;
+import com.longlinkislong.gloop.GLEnableStatus;
 import com.longlinkislong.gloop.GLIndexElementType;
 import com.longlinkislong.gloop.GLMat4F;
 import com.longlinkislong.gloop.GLProgram;
@@ -47,7 +48,7 @@ public class NeHe05 {
 
         final GLClear clear = this.window.getThread().currentClear();
 
-        this.window.getThread().pushDepthTest(new GLDepthTest(true, GLDepthFunc.GL_LESS));
+        this.window.getThread().pushDepthTest(new GLDepthTest(GLEnableStatus.GL_ENABLED, GLDepthFunc.GL_LESS));
         
         final GLVertexAttributes vAttribs = new GLVertexAttributes();
         vAttribs.setAttribute("vPos", 0);

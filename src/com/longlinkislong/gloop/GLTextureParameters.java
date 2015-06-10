@@ -22,7 +22,7 @@ public class GLTextureParameters {
     public static final GLTextureWrap DEFAULT_WRAP_S = GLTextureWrap.GL_REPEAT;
     public static final GLTextureWrap DEFAULT_WRAP_T = GLTextureWrap.GL_REPEAT;
     public static final GLTextureWrap DEFAULT_WRAP_R = GLTextureWrap.GL_REPEAT;
-    public static final float DEFAULT_ANISOTROPIC_LEVEL = 0f;
+    public static final float DEFAULT_ANISOTROPIC_LEVEL = 1f;
 
     public final GLTextureWrap wrapS, wrapT, wrapR;
     public final GLTextureMinFilter minFilter;

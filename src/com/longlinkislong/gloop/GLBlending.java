@@ -23,7 +23,7 @@ public class GLBlending extends GLObject {
     public static final GLBlendFunc DEFAULT_ALPHA_FUNC_SRC = GLBlendFunc.GL_ONE;
     public static final GLBlendFunc DEFAULT_ALPHA_FUNC_DST = GLBlendFunc.GL_ZERO;
 
-    public final boolean enabled;
+    public final GLEnableStatus enabled;
     public final GLBlendEquation rgbBlend;
     public final GLBlendEquation alphaBlend;
     public final GLBlendFunc rgbFuncSrc;
@@ -38,7 +38,7 @@ public class GLBlending extends GLObject {
     public GLBlending(final GLThread thread) {
         this(
                 thread,
-                false,
+                GLEnableStatus.GL_DISABLED,
                 DEFAULT_RGB_BLEND, DEFAULT_ALPHA_BLEND,
                 DEFAULT_RGB_FUNC_SRC, DEFAULT_RGB_FUNC_DST,
                 DEFAULT_ALPHA_FUNC_SRC, DEFAULT_ALPHA_FUNC_DST);
@@ -46,14 +46,15 @@ public class GLBlending extends GLObject {
 
     public GLBlending(
             final GLThread thread,
-            final boolean enabled,
+            final GLEnableStatus enabled,
             final GLBlendEquation rgbBlend,
             final GLBlendEquation alphaBlend,
             final GLBlendFunc rgbFuncSrc, final GLBlendFunc rgbFuncDst,
             final GLBlendFunc alphaFuncSrc, final GLBlendFunc alphaFuncDst) {
 
         super(thread);
-        this.enabled = enabled;
+
+        Objects.requireNonNull(this.enabled = enabled);
         Objects.requireNonNull(this.rgbBlend = rgbBlend);
         Objects.requireNonNull(this.alphaBlend = alphaBlend);
         Objects.requireNonNull(this.rgbFuncSrc = rgbFuncSrc);
@@ -73,7 +74,7 @@ public class GLBlending extends GLObject {
                 this.alphaFuncSrc, this.alphaFuncDst);
     }
 
-    public GLBlending withEnabled(final boolean isEnabled) {
+    public GLBlending withEnabled(final GLEnableStatus isEnabled) {
 
         return new GLBlending(
                 this.getThread(),
@@ -109,21 +110,23 @@ public class GLBlending extends GLObject {
 
         @Override
         public void run() {
-            if (GLBlending.this.enabled) {
-                GL11.glEnable(GL11.GL_BLEND);
-            } else {
-                GL11.glDisable(GL11.GL_BLEND);
+            switch (GLBlending.this.enabled) {
+                case GL_ENABLED:
+                    GL11.glEnable(GL11.GL_BLEND);
+
+                    GL20.glBlendEquationSeparate(
+                            GLBlending.this.rgbBlend.value,
+                            GLBlending.this.alphaBlend.value);
+
+                    GL14.glBlendFuncSeparate(
+                            GLBlending.this.rgbFuncSrc.value,
+                            GLBlending.this.rgbFuncDst.value,
+                            GLBlending.this.alphaFuncSrc.value,
+                            GLBlending.this.alphaFuncDst.value);
+                    break;
+                case GL_DISABLED:
+                    GL11.glDisable(GL11.GL_BLEND);
             }
-
-            GL20.glBlendEquationSeparate(
-                    GLBlending.this.rgbBlend.value,
-                    GLBlending.this.alphaBlend.value);
-
-            GL14.glBlendFuncSeparate(
-                    GLBlending.this.rgbFuncSrc.value,
-                    GLBlending.this.rgbFuncDst.value,
-                    GLBlending.this.alphaFuncSrc.value,
-                    GLBlending.this.alphaFuncDst.value);
         }
     }
 }
