@@ -225,7 +225,7 @@ public class GLProgram extends GLObject {
                 throw new ArrayIndexOutOfBoundsException();
             }
 
-            final GLMatD matD = mat.asGLMatD();
+            final GLMatD<?,?> matD = mat.asGLMatD();
 
             return this.set(matD.data(), matD.offset(), this.count);
         }
@@ -338,12 +338,12 @@ public class GLProgram extends GLObject {
         private final float[] values;
         private final int count;
 
-        public final SetUniformMatrixFTask set(final GLMat mat) {
+        public final SetUniformMatrixFTask set(final GLMat<?,?> mat) {
             if (mat.size() * mat.size() != this.count) {
                 throw new ArrayIndexOutOfBoundsException();
             }
 
-            final GLMatF matF = mat.asGLMatF();
+            final GLMatF<?,?> matF = mat.asGLMatF();
 
             return this.set(matF.data(), matF.offset(), this.count);            
         }
@@ -380,7 +380,7 @@ public class GLProgram extends GLObject {
                 throw new GLException("Invalid uniform count!");
             }
 
-            final GLMatF mf = mat.asGLMatF();
+            final GLMatF<?,?> mf = mat.asGLMatF();
 
             this.uName = uName.toString();
             this.count = sz * sz;
@@ -498,7 +498,7 @@ public class GLProgram extends GLObject {
                 throw new ArrayIndexOutOfBoundsException();
             }
 
-            final GLVecD vecD = vec.asGLVecD();
+            final GLVecD<?> vecD = vec.asGLVecD();
 
             return this.set(vecD.data(), vecD.offset(), vecD.size());
         }
@@ -538,7 +538,7 @@ public class GLProgram extends GLObject {
             this.uName = uName.toString();
             this.count = sz;
 
-            final GLVecD vd = v.asGLVecD();
+            final GLVecD<?> vd = v.asGLVecD();
 
             System.arraycopy(vd.data(), vd.offset(), this.values, 0, this.count);
         }
@@ -776,7 +776,7 @@ public class GLProgram extends GLObject {
                 throw new ArrayIndexOutOfBoundsException();
             }
 
-            final GLVecF vecF = vec.asGLVecF();
+            final GLVecF<?> vecF = vec.asGLVecF();
 
             return this.set(vecF.data(), vecF.offset(), vecF.size());
         }
@@ -811,7 +811,7 @@ public class GLProgram extends GLObject {
                 throw new GLException("Invalid uniform vector size!");
             }
 
-            final GLVecF vecF = vec.asGLVecF();
+            final GLVecF<?> vecF = vec.asGLVecF();
 
             this.values = new float[sz];
             System.arraycopy(vecF.data(), vecF.offset(), this.values, 0, sz);

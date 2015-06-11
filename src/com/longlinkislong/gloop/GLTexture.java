@@ -129,7 +129,7 @@ public class GLTexture extends GLObject {
 
             this.lastBind.glRun(this.getThread());
         }
-    }
+    }        
 
     public class BindTask extends GLTask {
 

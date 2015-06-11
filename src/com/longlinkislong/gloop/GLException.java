@@ -11,6 +11,7 @@ package com.longlinkislong.gloop;
  * @author zmichaels
  * @since 15.05.27
  */
+@SuppressWarnings("serial")
 public class GLException extends RuntimeException {
 
     /**

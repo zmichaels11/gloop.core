@@ -49,7 +49,7 @@ public class GLTaskBuilder {
      * @return self reference
      * @since 15.05.27
      */
-    public GLTaskBuilder append(final GLQuery query) {
+    public GLTaskBuilder append(final GLQuery<?> query) {
         this.tasks.add(GLTask.ifElse(query, null, GLTask.NO_OP, GLTask.NO_OP));
         
         return this;
