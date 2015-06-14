@@ -121,7 +121,7 @@ public class NeHe02 {
     }
 
     public void start() {
-        this.window.getThread().scheduleGLTask(drawTask);
+        this.window.getGLThread().scheduleGLTask(drawTask);
         this.window.waitForInit().setVisible(true);
     }
 

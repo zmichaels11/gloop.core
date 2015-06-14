@@ -46,9 +46,9 @@ public class NeHe05 {
     public NeHe05() throws IOException {
         this.window = new GLWindow();
 
-        final GLClear clear = this.window.getThread().currentClear();
+        final GLClear clear = this.window.getGLThread().currentClear();
 
-        this.window.getThread().pushDepthTest(new GLDepthTest(GLEnableStatus.GL_ENABLED, GLDepthFunc.GL_LESS));
+        this.window.getGLThread().pushDepthTest(new GLDepthTest(GLEnableStatus.GL_ENABLED, GLDepthFunc.GL_LESS));
         
         final GLVertexAttributes vAttribs = new GLVertexAttributes();
         vAttribs.setAttribute("vPos", 0);
@@ -264,7 +264,7 @@ public class NeHe05 {
     }
     
     public void start() {
-        this.window.getThread().scheduleGLTask(this.drawTask);
+        this.window.getGLThread().scheduleGLTask(this.drawTask);
         this.window.waitForInit().setVisible(true);
     }
     

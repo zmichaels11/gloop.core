@@ -73,9 +73,9 @@ public class NeHe07 {
     public NeHe07() throws IOException {
         this.window = new GLWindow(640, 480, "NeHe07");
         
-        final GLClear clear = this.window.getThread().currentClear();
+        final GLClear clear = this.window.getGLThread().currentClear();
         
-        this.window.getThread().pushDepthTest(new GLDepthTest(GL_ENABLED, GL_LESS));
+        this.window.getGLThread().pushDepthTest(new GLDepthTest(GL_ENABLED, GL_LESS));
         
         final GLVertexAttributes vAttribs = new GLVertexAttributes();
         vAttribs.setAttribute("vPos", 0);
@@ -302,7 +302,7 @@ public class NeHe07 {
     }
     
     public void start() {
-        this.window.getThread().scheduleGLTask(this.drawTask);
+        this.window.getGLThread().scheduleGLTask(this.drawTask);
         this.window.waitForInit().getKeyboard().addKeyListener(this::input);
         this.window.waitForInit().setVisible(true);
     }
@@ -319,7 +319,7 @@ public class NeHe07 {
             case GLFW.GLFW_KEY_F:
                 if (action == GLKeyAction.KEY_RELEASE) {
                     this.filter = (++filter) % 5;
-                    window.getThread().submitGLTask(GLTask.create(() -> {
+                    window.getGLThread().submitGLTask(GLTask.create(() -> {
                         switch (filter) {
                             case 0:
                                 System.out.println("Set filter to nearest/nearest");
