@@ -11,6 +11,7 @@ import com.longlinkislong.gloop.GLClearBufferMode;
 import com.longlinkislong.gloop.GLDepthFunc;
 import com.longlinkislong.gloop.GLDepthTest;
 import com.longlinkislong.gloop.GLDrawMode;
+import com.longlinkislong.gloop.GLEnableStatus;
 import com.longlinkislong.gloop.GLIndexElementType;
 import com.longlinkislong.gloop.GLMat4F;
 import com.longlinkislong.gloop.GLProgram;
@@ -29,7 +30,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.List;
-import javax.swing.SwingUtilities;
+import org.lwjgl.glfw.GLFW;
 
 /**
  *
@@ -47,7 +48,7 @@ public class NeHe05 {
 
         final GLClear clear = this.window.getThread().currentClear();
 
-        this.window.getThread().pushDepthTest(new GLDepthTest(true, GLDepthFunc.GL_LESS));
+        this.window.getThread().pushDepthTest(new GLDepthTest(GLEnableStatus.GL_ENABLED, GLDepthFunc.GL_LESS));
         
         final GLVertexAttributes vAttribs = new GLVertexAttributes();
         vAttribs.setAttribute("vPos", 0);
@@ -253,11 +254,12 @@ public class NeHe05 {
             rTetra += 0.2f;
             rCube -= 0.15f;
             
-            this.window.update();  
-            
-            SwingUtilities.invokeLater(() -> {
-                System.out.println(window.getMouse().getMousePosition());
-            });
+            this.window.update();                          
+        });
+        window.waitForInit().getMouse().addButtonListener((window, button, action, mods) -> {
+            if(button == GLFW.GLFW_MOUSE_BUTTON_1) {
+                throw new RuntimeException("test");
+            }
         });
     }
     

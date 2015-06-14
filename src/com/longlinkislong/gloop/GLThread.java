@@ -7,9 +7,13 @@ package com.longlinkislong.gloop;
 
 import java.util.Deque;
 import java.util.LinkedList;
+import java.util.concurrent.CancellationException;
+import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
+import java.util.concurrent.LinkedBlockingQueue;
+import java.util.concurrent.ThreadPoolExecutor;
+import java.util.concurrent.TimeUnit;
 
 /**
  *
@@ -17,7 +21,34 @@ import java.util.concurrent.Future;
  */
 public class GLThread {
 
-    private final ExecutorService internalExecutor = Executors.newSingleThreadExecutor();
+    private final ExecutorService internalExecutor = new ThreadPoolExecutor(
+            1, 1, 0L, TimeUnit.MILLISECONDS, new LinkedBlockingQueue<>()) {
+                
+                @Override
+                protected void afterExecute(final Runnable task, Throwable ex) {
+                    super.afterExecute(task, ex);
+
+                    if (task != null && task instanceof Future<?>) {
+                        try {
+                            final Future<?> future = (Future<?>) task;
+
+                            if (future.isDone()) {
+                                future.get();
+                            }
+                        } catch (CancellationException ce) {
+                            ex = ce;
+                        } catch (ExecutionException ee) {
+                            ex = ee.getCause();                            
+                        } catch (InterruptedException ie) {
+                            Thread.currentThread().interrupt();
+                        }
+                    }
+
+                    if (ex != null) {
+                        ex.printStackTrace();
+                    }
+                }
+            };
     private Thread internalThread = null;
     private boolean shouldHaltScheduledTasks = false;
     private final Deque<GLClear> clearStack = new LinkedList<>();

@@ -68,11 +68,12 @@ public class GLTools {
     /**
      * Wraps a list of GLVec2F as a ByteBuffer ready for OpenGL.
      *
+     * @param <VecT> the vector type
      * @param data the data to wrap
      * @return the ByteBuffer
      * @since 15.05.27
      */
-    public static ByteBuffer wrapVec2F(final List<GLVec2> data) {
+    public static <VecT extends GLVec2> ByteBuffer wrapVec2F(final List<VecT> data) {
         return wrapVec2F(data, 0, data.size());
     }
 
