@@ -666,9 +666,9 @@ public class GLBuffer extends GLObject {
 
             final ByteBuffer oldBuffer = GLBuffer.this.mappedBuffer;
 
-            GL15.glBindBuffer(this.target.value, bufferId);
+            GL15.glBindBuffer(this.target.value, GLBuffer.this.bufferId);
             final ByteBuffer newBuffer = GL15.glMapBuffer(
-                    this.target.value, bufferId, oldBuffer);
+                    this.target.value, this.access.value, oldBuffer);            
 
             GLBuffer.this.mappedBuffer = newBuffer;
 
