@@ -22,6 +22,26 @@ import java.util.ListIterator;
  */
 public class GLTools {
 
+    public static final int R = 0;
+    public static final int G = 1;
+    public static final int B = 2;
+    public static final int A = 3;
+    public static final int X = 0;
+    public static final int Y = 1;
+    public static final int Z = 2;
+    public static final int W = 3;
+    public static final int WIDTH = 0;
+    public static final int HEIGHT = 1;
+    public static final int DEPTH = 2;
+    
+    public static final double MEDIUMP = 9.77e-04;
+    public static final double HIGHP = 1.19e-07;
+    public static final double SUPERP = 2.22e-16;
+    public static final double ULTRAP = 1.08e-19;
+    
+    public static final double RADIANS_TO_DEGREES = 180.0 / Math.PI;
+    public static final double DEGREES_TO_RADIANS = Math.PI / 180.0;
+    
     public static void checkBuffer(final ByteBuffer data) {
         if (!data.isDirect()) {
             throw new GLException("ByteBuffer is not direct!");
@@ -365,4 +385,14 @@ public class GLTools {
                 throw new GLException("Invalid type: " + type);
         }
     }
+    
+    public static boolean compare(final float a, final float b, final float delta) {
+        return Math.abs(a - b) < delta;
+    }
+    
+    public static boolean compare(final double a, final double b, final double delta) {
+        return Math.abs(a - b) < delta;
+    }
+    
+    
 }

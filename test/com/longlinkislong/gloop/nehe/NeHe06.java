@@ -60,7 +60,6 @@ public class NeHe06 {
     public NeHe06() throws IOException {
         this.window = new GLWindow(640, 480, "NeHe06");
 
-        
         final GLClear clear = this.window.getThread().currentClear();
 
         this.window.getThread().pushDepthTest(new GLDepthTest(true, GLDepthFunc.GL_LESS));
@@ -179,84 +178,82 @@ public class NeHe06 {
                 tCube,
                 GLVertexAttributeType.GL_FLOAT,
                 GLVertexAttributeSize.VEC2);
-        
+
         program.setUniformMatrixF("proj", GLMat4F.perspective(45, (float) window.getAspectRatio(), 0.1f));
         final GLProgram.SetUniformMatrixFTask setTr
                 = program.new SetUniformMatrixFTask("tr", GLMat4F.create());
-        
+
         program.setUniformI("texture", 0);
-        
+
         final GLTexture texture = new GLTexture();
-        try(final InputStream inImg = this.getClass().getResourceAsStream("data/lesson06/NeHe.bmp")){
+        try (final InputStream inImg = this.getClass().getResourceAsStream("data/lesson06/NeHe.bmp")) {
             final BufferedImage bImg = ImageIO.read(inImg);
             final ByteBuffer pBuf = ByteBuffer.allocateDirect(
                     bImg.getWidth() * bImg.getHeight() * 4)
                     .order(ByteOrder.nativeOrder());
             final int[] pixels = new int[bImg.getWidth() * bImg.getHeight()];
-            
-            
+
             final GLTextureParameters attribs = new GLTextureParameters()
                     .withFilter(GLTextureMinFilter.GL_LINEAR_MIPMAP_LINEAR, GLTextureMagFilter.GL_LINEAR)
-                    .withWrap(GLTextureWrap.GL_CLAMP_TO_EDGE, GLTextureWrap.GL_CLAMP_TO_EDGE, GLTextureWrap.GL_CLAMP_TO_EDGE);                        
-                        
+                    .withWrap(GLTextureWrap.GL_CLAMP_TO_EDGE, GLTextureWrap.GL_CLAMP_TO_EDGE, GLTextureWrap.GL_CLAMP_TO_EDGE);
+
             bImg.getRGB(0, 0, bImg.getWidth(), bImg.getHeight(), pixels, 0, bImg.getWidth());
-            
+
             Arrays.stream(pixels).forEach(pBuf::putInt);
-            
-            pBuf.flip(); 
-                        
+
+            pBuf.flip();
+
             texture.setAttributes(attribs);
             texture.setImage(
-                    GLTexture.GENERATE_MIPMAP, 
-                    GLTextureInternalFormat.GL_RGBA8, 
-                    GLTextureFormat.GL_BGRA, 
+                    GLTexture.GENERATE_MIPMAP,
+                    GLTextureInternalFormat.GL_RGBA8,
+                    GLTextureFormat.GL_BGRA,
                     bImg.getWidth(), bImg.getHeight(),
-                    GLType.GL_UNSIGNED_BYTE, pBuf);            
-            
-            
+                    GLType.GL_UNSIGNED_BYTE, pBuf);
+
         }
-                
-        this.drawTask = GLTask.create(()->{
-            if(GL11.glGetError() != 0) {
+
+        this.drawTask = GLTask.create(() -> {
+            if (GL11.glGetError() != 0) {
                 throw new GLException();
             }
             clear.clear(
                     GLClearBufferMode.GL_COLOR_BUFFER_BIT,
                     GLClearBufferMode.GL_DEPTH_BUFFER_BIT);
-            
+
             final GLMat4F trCube;
             {
                 final GLMat4F rx = GLMat4F.rotateX(xRot);
                 final GLMat4F ry = GLMat4F.rotateY(yRot);
                 final GLMat4F rz = GLMat4F.rotateZ(zRot);
                 final GLMat4F tr = GLMat4F.translation(0f, 0f, -5f);
-                
+
                 trCube = rz.multiply(ry.multiply(rx.multiply(tr)));
             }
-            
+
             program.use();
-            
+
             setTr.set(trCube).glRun();
             texture.bind(0);
             vaoCube.drawElements(GLDrawMode.GL_TRIANGLES, cubeVerts, GLIndexElementType.GL_UNSIGNED_INT, 0);
-            
+
             xRot += 0.015f;
             yRot += 0.015f;
             zRot += 0.015f;
-            
+
             this.window.update();
-            
-        });                
+
+        });
     }
-    
+
     public void start() {
         this.window.getThread().scheduleGLTask(drawTask);
         this.window.waitForInit().setVisible(true);
     }
-    
+
     public static void main(String[] args) throws Exception {
         NeHe06 test = new NeHe06();
-        
+
         test.start();
     }
 }
