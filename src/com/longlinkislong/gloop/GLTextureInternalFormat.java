@@ -5,6 +5,7 @@
  */
 package com.longlinkislong.gloop;
 
+import org.lwjgl.opengl.EXTTextureCompressionS3TC;
 import org.lwjgl.opengl.GL14;
 import org.lwjgl.opengl.GL30;
 
@@ -12,7 +13,11 @@ import org.lwjgl.opengl.GL30;
  *
  * @author zmichaels
  */
-public enum GLTextureInternalFormat {
+public enum GLTextureInternalFormat {    
+    GL_COMPRESSED_RGB_S3TC_DXT1(EXTTextureCompressionS3TC.GL_COMPRESSED_RGB_S3TC_DXT1_EXT),
+    GL_COMPRESSED_RGBA_S3TC_DXT1(EXTTextureCompressionS3TC.GL_COMPRESSED_RGBA_S3TC_DXT1_EXT),
+    GL_COMPRESSED_RGBA_S3TC_DXT3(EXTTextureCompressionS3TC.GL_COMPRESSED_RGBA_S3TC_DXT3_EXT),
+    GL_COMPRESSED_RGBA_S3TC_DXT5(EXTTextureCompressionS3TC.GL_COMPRESSED_RGBA_S3TC_DXT5_EXT),
     GL_STENCIL_INDEX(0x1901),
     GL_RED(0x1903),
     GL_DEPTH_COMPONENT(0x1902),

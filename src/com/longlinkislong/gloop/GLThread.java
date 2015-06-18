@@ -5,8 +5,11 @@
  */
 package com.longlinkislong.gloop;
 
+import java.util.Collection;
 import java.util.Deque;
 import java.util.LinkedList;
+import java.util.List;
+import java.util.concurrent.Callable;
 import java.util.concurrent.CancellationException;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
@@ -14,12 +17,14 @@ import java.util.concurrent.Future;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
+import java.util.stream.Collectors;
 
 /**
  *
  * @author zmichaels
  */
-public class GLThread {
+public class GLThread implements ExecutorService {
 
     private final ExecutorService internalExecutor = new ThreadPoolExecutor(
             1, 1, 0L, TimeUnit.MILLISECONDS, new LinkedBlockingQueue<>()) {
@@ -276,6 +281,66 @@ public class GLThread {
      */
     public Void insertBarrier() {
         return new BarrierQuery().glCall(this);
+    }
+
+    @Override
+    public List<Runnable> shutdownNow() {
+        return this.internalExecutor.shutdownNow();
+    }
+
+    @Override
+    public boolean isShutdown() {
+        return this.internalExecutor.isShutdown();
+    }
+
+    @Override
+    public boolean isTerminated() {
+        return this.internalExecutor.isTerminated();
+    }
+
+    @Override
+    public boolean awaitTermination(long timeout, TimeUnit unit) throws InterruptedException {
+        return this.internalExecutor.awaitTermination(timeout, unit);
+    }
+
+    @Override
+    public <T> Future<T> submit(Callable<T> task) {
+        return this.submitGLQuery(GLQuery.create(task));
+    }
+
+    @Override
+    public <T> Future<T> submit(Runnable task, T result) {        
+        return this.submitGLQuery(GLQuery.create(task, ()->{return result;}));
+    }
+
+    @Override
+    public Future<?> submit(Runnable task) {
+        return this.submitGLQuery(GLQuery.create(task, ()->{ return Boolean.TRUE; }));
+    }
+
+    @Override
+    public <T> List<Future<T>> invokeAll(Collection<? extends Callable<T>> tasks) throws InterruptedException {        
+        return tasks.stream().map(this::submit).collect(Collectors.toList());        
+    }
+
+    @Override
+    public <T> List<Future<T>> invokeAll(Collection<? extends Callable<T>> tasks, long timeout, TimeUnit unit) throws InterruptedException {
+        throw new UnsupportedOperationException("Not supported yet.");
+    }
+
+    @Override
+    public <T> T invokeAny(Collection<? extends Callable<T>> tasks) throws InterruptedException, ExecutionException {
+        throw new UnsupportedOperationException("Not supported yet.");
+    }
+
+    @Override
+    public <T> T invokeAny(Collection<? extends Callable<T>> tasks, long timeout, TimeUnit unit) throws InterruptedException, ExecutionException, TimeoutException {
+        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+    }
+
+    @Override
+    public void execute(Runnable command) {
+        this.submitGLTask(GLTask.create(command));
     }
 
     public class BarrierQuery extends GLQuery<Void> {

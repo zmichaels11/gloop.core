@@ -94,6 +94,29 @@ public class GLClear extends GLObject {
         this.depth = depth;
     }
 
+    /**
+     * Copies the GLClear object and overrides the clear color.
+     * @param r the new red value.
+     * @param g the new green value.
+     * @param b the new blue value.
+     * @param a the new alpha value
+     * @return the GLClear object
+     * @since 15.06.18
+     */
+    public GLClear withClearColor(final float r, final float g, final float b, final float a) {
+        return new GLClear(this.getThread(), r, g, b, a, this.depth);
+    }
+    
+    /**
+     * Copies the GLClear object and overrides the clear depth.
+     * @param depth the new clear depth.
+     * @return the GLClear object.
+     * @since 15.06.18
+     */
+    public GLClear withClearDepth(final double depth) {
+        return new GLClear(this.getThread(), this.red, this.green, this.blue, this.alpha, depth);
+    }
+
     private final GLTask init = new ApplyClearTask();
 
     /**
@@ -108,6 +131,7 @@ public class GLClear extends GLObject {
 
     /**
      * A GLTask that sets both clear color and clear depth values.
+     *
      * @since 15.06.18
      */
     public class ApplyClearTask extends GLTask {
@@ -127,6 +151,7 @@ public class GLClear extends GLObject {
 
     /**
      * Runs the clear command with the specified buffer clear bits.
+     *
      * @param bits the attachments of the backbuffer to clear.
      * @since 15.06.18
      */
@@ -136,6 +161,7 @@ public class GLClear extends GLObject {
 
     /**
      * Runs the clear command with the specified clear buffer bits.
+     *
      * @param bits the clear bits
      * @param offset the offset to start reading from the clear bits array.
      * @param length the number of elements to read from the array.
@@ -163,6 +189,7 @@ public class GLClear extends GLObject {
 
     /**
      * A GLTask that clears the current framebuffer.
+     *
      * @since 15.06.18
      */
     public class ClearTask extends GLTask {
@@ -171,6 +198,7 @@ public class GLClear extends GLObject {
 
         /**
          * The bitfield to clear
+         *
          * @param bits bitfield.
          * @since 15.06.18
          */
@@ -180,6 +208,7 @@ public class GLClear extends GLObject {
 
         /**
          * The bitfield to clear.
+         *
          * @param bits array containing bitfield parameters.
          * @param offset offset to start reading from the array.
          * @param length the number of elements to read from the array.
