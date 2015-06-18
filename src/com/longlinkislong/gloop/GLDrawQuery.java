@@ -10,32 +10,69 @@ import org.lwjgl.opengl.GL15;
 import org.lwjgl.opengl.GL30;
 
 /**
+ * An OpenGL object that performs a conditional draw based on the outcome of a
+ * test draw.
  *
  * @author zmichaels
+ * @since 15.06.18
  */
 public class GLDrawQuery extends GLObject {
 
     private static final int INVALID_QUERY_ID = -1;
     private int queryId = INVALID_QUERY_ID;
 
+    /**
+     * Constructs a new GLDrawQuery object on the default OpenGL thread.
+     *
+     * @since 15.06.18
+     */
     public GLDrawQuery() {
-        super();
+        super(GLThread.getDefaultInstance());
+
+        this.init();
     }
 
+    /**
+     * Constructs a new GLDrawQuery object on the specified OpenGL thread.
+     *
+     * @param thread the OpenGL thread to create the object on.
+     * @since 15.06.18
+     */
     public GLDrawQuery(final GLThread thread) {
         super(thread);
+
+        this.init();
     }
 
+    /**
+     * Checks if the GLDrawQuery object has been initialized.
+     *
+     * @return true if the GLDrawQuery object has been initialized and has not
+     * yet been deleted.
+     * @since 15.06.18
+     */
     public boolean isValid() {
         return this.queryId != INVALID_QUERY_ID;
     }
 
+    /**
+     * Initializes the GLDrawQuery object on the OpenGL thread associated with
+     * the GLDrawQuery object.
+     *
+     * @since 15.06.18
+     */
     public final void init() {
         new InitTask().glRun(this.getThread());
     }
 
     private DrawQueryTask lastDrawQuery = null;
 
+    /**
+     * Performs a draw query.
+     * @param testDraw the draw function to use as a test.
+     * @param condition the conditional requirements to pass the test.
+     * @since 15.06.18
+     */
     public void drawQuery(final GLDrawTask testDraw, final GLDrawQueryCondition condition) {
         if (this.lastDrawQuery == null
                 || this.lastDrawQuery.testDraw != testDraw
@@ -47,11 +84,21 @@ public class GLDrawQuery extends GLObject {
         this.lastDrawQuery.glRun(this.getThread());
     }
 
+    /**
+     * A GLTask that performs the draw query.
+     * @since 15.06.18
+     */
     public class DrawQueryTask extends GLTask {
 
         final GLDrawTask testDraw;
         final GLDrawQueryCondition condition;
 
+        /**
+         * Constructs a new DrawQueryTask with the supplied task and passing condition.
+         * @param task the test draw task.
+         * @param condition the conditions for a pass.
+         * @since 15.06.18
+         */
         public DrawQueryTask(
                 final GLDrawTask task,
                 final GLDrawQueryCondition condition) {
