@@ -89,14 +89,21 @@
     
     <target name="-clear-deps-lwjgl" if="lwjgl.exists">
         <delete>
-            <fileset dir="obj/lwjgl" includes="*.version"/>
+            <fileset dir="obj/lwjgl" includes="300a.version"/>
         </delete>
     </target>
     
     <target name="-clear-deps-gloop" if="gloop.exists">
         <delete>
-            <fileset dir="obj/gloop" includes="*.version"/>
+            <fileset dir="obj/gloop" includes="nightly.version"/>
         </delete>        
+    </target>
+    
+    <target description="bundle sources in a jar" name="package-sources">
+        <jar basedir="src" destfile="dist/${ant.project.name}-sources.jar"/>
+    </target>
+    <target depends="-javadoc-build" description="bundle javadoc in a jar" name="package-doc">
+        <jar basedir="dist/javadoc" destfile="dist/${ant.project.name}-javadoc.jar"/>
     </target>
     
     <target name="clear-deps-nightly" depends="-clear-deps-gloop"/>
@@ -105,6 +112,14 @@
     <target name="check-deps-nightly" depends="-check-deps-gloop"/>
     <target name="-pre-compile" depends="check-deps,check-deps-natives"/>    
     <target name="-post-clean" depends="clear-deps-nightly"/>
+    
+    <target name="-post-jar" depends="package-sources,package-doc">
+        <zip destfile="dist/${ant.project.name}-all.jar">
+            <zipfileset src="dist/${ant.project.name}-sources.jar"/>
+            <zipfileset src="dist/${ant.project.name}.jar"/>
+            <zipfileset src="dist/${ant.project.name}-javadoc.jar"/>
+        </zip>
+    </target>
     <!--
 
     There exist several targets which are by default empty and which can be 

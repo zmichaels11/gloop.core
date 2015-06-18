@@ -18,6 +18,6 @@ public enum GLBlendEquation {
     
     final int value;
     GLBlendEquation(final int value) {
-        this.value = value;
+        this.value = value;                  
     }
 }
