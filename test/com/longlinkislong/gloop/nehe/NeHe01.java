@@ -16,7 +16,7 @@ public class NeHe01 {
     public NeHe01() {
         final GLWindow window = new GLWindow();
 
-        window.getThread().scheduleGLTask(window.new UpdateTask());
+        window.getGLThread().scheduleGLTask(window.new UpdateTask());
 
         window.waitForInit();
         window.setVisible(true);

@@ -25,7 +25,7 @@ public class MultipleWindows {
     }
 
     private void init(final GLWindow window) {                
-        GLThread thread = window.getThread();
+        GLThread thread = window.getGLThread();
 
         thread.scheduleGLTask(new Colorizer());
         thread.scheduleGLTask(window.new UpdateTask());

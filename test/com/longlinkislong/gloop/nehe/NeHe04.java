@@ -42,7 +42,7 @@ public class NeHe04 {
     public NeHe04() throws IOException {
         this.window = new GLWindow();
 
-        final GLClear clear = this.window.getThread().currentClear();
+        final GLClear clear = this.window.getGLThread().currentClear();
 
         final GLVertexAttributes vAttribs = new GLVertexAttributes();
         vAttribs.setAttribute("vPos", 0);
@@ -176,7 +176,7 @@ public class NeHe04 {
     }
 
     public void start() {
-        this.window.getThread().scheduleGLTask(this.drawTask);
+        this.window.getGLThread().scheduleGLTask(this.drawTask);
         this.window.waitForInit().setVisible(true);
     }
 

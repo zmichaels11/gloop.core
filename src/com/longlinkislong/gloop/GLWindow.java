@@ -548,7 +548,7 @@ public class GLWindow {
      * @return the thread owned by the window.
      * @since 15.06.05
      */
-    public GLThread getThread() {
+    public GLThread getGLThread() {
         return this.thread;
     }
 
@@ -564,7 +564,7 @@ public class GLWindow {
         if (!this.isValid()) {
             throw new GLException("Invalid GLWindow!");
         }
-        this.updateTask.glRun(this.getThread());
+        this.updateTask.glRun(this.getGLThread());
     }
 
     /**
@@ -625,7 +625,7 @@ public class GLWindow {
 
         this.workerThreads.add(dummy);
 
-        return dummy.getThread();
+        return dummy.getGLThread();
     }
 
     @Override
