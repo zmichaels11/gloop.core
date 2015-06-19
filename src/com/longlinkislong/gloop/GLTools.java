@@ -184,7 +184,7 @@ public class GLTools {
      */
     public static <VecT extends GLVec2> ByteBuffer wrapVec2F(
             final List<VecT> data, final int offset, final int length) {
-        
+
         final int neededSize = data.size() * GLVec2F.VECTOR_WIDTH;
         final ByteBuffer out = ByteBuffer.allocateDirect(neededSize)
                 .order(ByteOrder.nativeOrder());
@@ -227,7 +227,7 @@ public class GLTools {
      */
     public static <VecT extends GLVec3> ByteBuffer wrapVec3F(
             final List<VecT> data, final int offset, final int length) {
-        
+
         final int neededSize = data.size() * GLVec3F.VECTOR_WIDTH;
         final ByteBuffer out = ByteBuffer.allocateDirect(neededSize)
                 .order(ByteOrder.nativeOrder());
@@ -326,8 +326,8 @@ public class GLTools {
      * @since 15.06.13
      */
     @SuppressWarnings("unchecked")
-    public static <VecT extends GLVec2> ByteBuffer wrapVec2(final VecT... vecs) {
-        return wrapVec2(vecs, 0, vecs.length);
+    public static <VecT extends GLVec2> ByteBuffer wrapVec2F(final VecT... vecs) {
+        return wrapVec2F(vecs, 0, vecs.length);
     }
 
     /**
@@ -340,7 +340,7 @@ public class GLTools {
      * @return the ByteBuffer
      * @since 15.06.13
      */
-    public static <VecT extends GLVec2> ByteBuffer wrapVec2(
+    public static <VecT extends GLVec2> ByteBuffer wrapVec2F(
             final VecT[] data, final int offset, final int length) {
 
         final int neededSize = data.length * GLVec2F.VECTOR_WIDTH;
@@ -672,6 +672,7 @@ public class GLTools {
 
     /**
      * WRaps a segment of an array of bytes as a ByteBuffer ready for OpenGL.
+     *
      * @param data the array of bytes
      * @param offset the offset to start reading
      * @param length the number of bytes to read.
@@ -683,17 +684,327 @@ public class GLTools {
         final ByteBuffer out = ByteBuffer.allocateDirect(length)
                 .order(ByteOrder.nativeOrder());
 
-        out.put(data, offset, length);        
+        out.put(data, offset, length);
 
         out.flip();
         return out;
     }
 
+    public static ByteBuffer writeByte(final ByteBuffer dst, final List<Byte> data) {
+        return writeByte(dst, data, 0, data.size());
+    }
+
+    public static ByteBuffer writeByte(
+            final ByteBuffer dst,
+            final List<Byte> data, final int offset, final int length) {
+
+        final ByteBuffer out = dst == null || dst.capacity() < length
+                ? ByteBuffer.allocateDirect(length).order(ByteOrder.nativeOrder())
+                : dst;
+        final ListIterator<Byte> it = data.listIterator(offset);
+
+        out.clear();
+        for (int i = 0; i < length; i++) {
+            out.put(it.next());
+        }
+        out.flip();
+
+        return out;
+    }
+
+    public static ByteBuffer writeByte(final ByteBuffer dst, final byte... values) {
+        return writeByte(dst, values, 0, values.length);
+    }
+
+    public static ByteBuffer writeByte(
+            final ByteBuffer dst,
+            final byte[] data, final int offset, final int length) {
+
+        final ByteBuffer out = dst == null || dst.capacity() < length
+                ? ByteBuffer.allocateDirect(length).order(ByteOrder.nativeOrder())
+                : dst;
+
+        out.clear();
+        out.put(data, offset, length);
+        out.flip();
+
+        return out;
+    }
+
+    public static ByteBuffer writeShort(final ByteBuffer dst, final List<Short> data) {
+        return writeShort(dst, data, 0, data.size());
+    }
+
+    public static ByteBuffer writeShort(
+            final ByteBuffer dst,
+            final List<Short> data, final int offset, final int length) {
+
+        final int bytes = length * Short.BYTES;
+        final ByteBuffer out = dst == null || dst.capacity() < bytes
+                ? ByteBuffer.allocateDirect(bytes).order(ByteOrder.nativeOrder())
+                : dst;
+        final ListIterator<Short> it = data.listIterator(offset);
+
+        out.clear();
+        for (int i = 0; i < length; i++) {
+            out.putShort(it.next());
+        }
+        out.flip();
+
+        return out;
+    }
+
+    public static ByteBuffer writeShort(final ByteBuffer dst, final short... values) {
+        return writeShort(dst, values, 0, values.length);
+    }
+
+    public static ByteBuffer writeShort(
+            final ByteBuffer dst,
+            final short[] data, final int offset, final int length) {
+
+        final int bytes = length * Short.BYTES;
+        final ByteBuffer out = dst == null || dst.capacity() < bytes
+                ? ByteBuffer.allocateDirect(bytes).order(ByteOrder.nativeOrder())
+                : dst;
+
+        out.clear();
+        for (int i = 0; i < length; i++) {
+            out.putShort(data[offset + i]);
+        }
+        out.flip();
+
+        return out;
+    }
+
+    public static ByteBuffer writeInt(final ByteBuffer dst, final int... values) {
+        return writeInt(dst, values, 0, values.length);
+    }
+
+    public static ByteBuffer writeInt(
+            final ByteBuffer dst,
+            final int[] data, final int offset, final int length) {
+
+        final int bytes = length * Integer.BYTES;
+        final ByteBuffer out = dst == null || dst.capacity() < bytes
+                ? ByteBuffer.allocateDirect(bytes).order(ByteOrder.nativeOrder())
+                : dst;
+
+        out.clear();
+        for (int i = 0; i < length; i++) {
+            out.putInt(data[offset + i]);
+        }
+        out.flip();
+
+        return out;
+    }
+    
+    public static ByteBuffer writeFloat(final ByteBuffer dst, final List<Float> data) {
+        return writeFloat(dst, data, 0, data.size());
+    }
+
+    public static ByteBuffer writeFloat(
+            final ByteBuffer dst,
+            final List<Float> data, final int offset, final int length) {
+
+        final int bytes = length * Integer.BYTES;
+        final ByteBuffer out = dst == null || dst.capacity() < bytes
+                ? ByteBuffer.allocateDirect(bytes).order(ByteOrder.nativeOrder())
+                : dst;
+        final ListIterator<Float> it = data.listIterator(offset);
+
+        out.clear();
+        for (int i = 0; i < length; i++) {
+            out.putFloat(it.next());
+        }
+        out.flip();
+        return out;
+    }
+    
+    public static ByteBuffer writeFloat(final ByteBuffer dst, final float... values) {
+        return writeFloat(dst, values, 0, values.length);
+    }
+
+    public static ByteBuffer writeFloat(
+            final ByteBuffer dst,
+            final float[] data, final int offset, final int length) {
+
+        final int bytes = length * Float.BYTES;
+        final ByteBuffer out = dst == null || dst.capacity() < bytes
+                ? ByteBuffer.allocateDirect(bytes).order(ByteOrder.nativeOrder())
+                : dst;
+
+        out.clear();
+        for (int i = 0; i < length; i++) {
+            out.putFloat(data[offset + i]);
+        }
+        out.flip();
+
+        return out;
+    }
+    
+    public static ByteBuffer writeVec2F(final ByteBuffer dst, final List<GLVec2> data) {
+        return writeVec2F(dst, data, 0, data.size());
+    }
+
+    public static ByteBuffer writeVec2F(
+            final ByteBuffer dst,
+            final List<GLVec2> data, final int offset, final int length) {
+
+        final int bytes = length * GLVec2F.VECTOR_WIDTH;
+        final ByteBuffer out = dst == null || dst.capacity() < bytes
+                ? ByteBuffer.allocateDirect(bytes).order(ByteOrder.nativeOrder())
+                : dst;
+        final ListIterator<GLVec2> it = data.listIterator(offset);
+
+        out.clear();
+        for (int i = 0; i < length; i++) {
+            final GLVec2F vec = it.next().asGLVec2F();
+
+            out.putFloat(vec.x());
+            out.putFloat(vec.y());
+        }
+        out.flip();
+        return out;
+    }
+
+    public static ByteBuffer writeVec2F(final ByteBuffer dst, final GLVec2... values) {
+        return writeVec2F(dst, values, 0, values.length);
+    }
+    
+    public static ByteBuffer writeVec2F(
+            final ByteBuffer dst,
+            final GLVec2[] data, final int offset, final int length) {
+
+        final int bytes = length * GLVec2F.VECTOR_WIDTH;
+        final ByteBuffer out = dst == null || dst.capacity() < bytes
+                ? ByteBuffer.allocateDirect(bytes).order(ByteOrder.nativeOrder())
+                : dst;
+
+        out.clear();
+        for (int i = 0; i < length; i++) {
+            final GLVec2F vec = data[offset + i].asGLVec2F();
+
+            out.putFloat(vec.x());
+            out.putFloat(vec.y());
+        }
+        out.flip();
+
+        return out;
+    }
+    
+    public static ByteBuffer writeVec3F(final ByteBuffer dst, final List<GLVec3> data) {
+        return writeVec3F(dst, data, 0, data.size());
+    }
+
+    public static ByteBuffer writeVec3F(
+            final ByteBuffer dst,
+            final List<GLVec3> data, final int offset, final int length) {
+
+        final int bytes = length * GLVec3F.VECTOR_WIDTH;
+        final ByteBuffer out = dst == null || dst.capacity() < bytes
+                ? ByteBuffer.allocateDirect(bytes).order(ByteOrder.nativeOrder())
+                : dst;
+        final ListIterator<GLVec3> it = data.listIterator(offset);
+
+        out.clear();
+        for (int i = 0; i < length; i++) {
+            final GLVec3F vec = it.next().asGLVec3F();
+
+            out.putFloat(vec.x());
+            out.putFloat(vec.y());
+            out.putFloat(vec.z());
+        }
+        out.flip();
+
+        return out;
+    }
+
+    public static ByteBuffer writeVec3F(final ByteBuffer dst, final GLVec3... values) {
+        return writeVec3F(dst, values, 0, values.length);
+    }
+    
+    public static ByteBuffer writeVec3F(
+            final ByteBuffer dst,
+            final GLVec3[] data, final int offset, final int length) {
+
+        final int bytes = length * GLVec3F.VECTOR_WIDTH;
+        final ByteBuffer out = dst == null || dst.capacity() < bytes
+                ? ByteBuffer.allocateDirect(bytes).order(ByteOrder.nativeOrder())
+                : dst;
+
+        out.clear();
+        for (int i = 0; i < length; i++) {
+            final GLVec3F vec = data[offset + i].asGLVec3F();
+
+            out.putFloat(vec.x());
+            out.putFloat(vec.y());
+            out.putFloat(vec.z());
+        }
+        out.flip();
+
+        return out;
+    }
+
+    public static ByteBuffer writeVec4F(final ByteBuffer dst, final List<GLVec4> data) {
+        return writeVec4F(dst, data, 0, data.size());
+    }
+    
+    public static ByteBuffer writeVec4F(
+            final ByteBuffer dst,
+            final List<GLVec4> data, final int offset, final int length) {
+
+        final int bytes = length * GLVec4F.VECTOR_WIDTH;
+        final ByteBuffer out = dst == null || dst.capacity() < bytes
+                ? ByteBuffer.allocateDirect(bytes).order(ByteOrder.nativeOrder())
+                : dst;
+        final ListIterator<GLVec4> it = data.listIterator(offset);
+
+        for (int i = 0; i < length; i++) {
+            final GLVec4F vec = it.next().asGLVec4F();
+
+            out.putFloat(vec.x());
+            out.putFloat(vec.y());
+            out.putFloat(vec.z());
+            out.putFloat(vec.w());
+        }
+        out.flip();
+
+        return out;
+    }
+
+    public static ByteBuffer writeVec4F(final ByteBuffer dst, final GLVec4... values) {
+        return writeVec4F(dst, values, 0, values.length);
+    }
+    
+    public static ByteBuffer writeVec4F(
+            final ByteBuffer dst,
+            final GLVec4[] data, final int offset, final int length) {
+
+        final int bytes = length * GLVec4F.VECTOR_WIDTH;
+        final ByteBuffer out = dst == null || dst.capacity() < bytes
+                ? ByteBuffer.allocateDirect(bytes).order(ByteOrder.nativeOrder())
+                : dst;
+
+        out.clear();
+        for (int i = 0; i < length; i++) {
+            final GLVec4F vec = data[offset + i].asGLVec4F();
+
+            out.putFloat(vec.x());
+            out.putFloat(vec.y());
+            out.putFloat(vec.z());
+            out.putFloat(vec.w());
+        }
+        out.flip();
+
+        return out;
+    }
+
     /**
      * Reads from an InputStream line by line and returns the entire source.
+     *
      * @param src
      * @return
-     * @throws IOException 
+     * @throws IOException
      */
     public static String readAll(final InputStream src) throws IOException {
         final StringBuilder out = new StringBuilder();

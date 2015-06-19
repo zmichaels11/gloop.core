@@ -656,6 +656,15 @@ public class GLVertexArray extends GLObject {
 
         new AttachBufferTask(index, buffer, type, size, false, stride, offset).glRun(this.getThread());
     }
+    
+    public void attachBuffer(
+            final int index, final GLBuffer buffer,
+            final GLVertexAttributeType type, final GLVertexAttributeSize size,
+            final int offset, final int stride,
+            final int divisor) {
+        
+        new AttachBufferTask(index, buffer, type, size, false, stride, offset, divisor).glRun(this.getThread());
+    }
 
     public class AttachBufferTask extends GLTask {
 
