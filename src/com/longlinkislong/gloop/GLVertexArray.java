@@ -110,22 +110,22 @@ public class GLVertexArray extends GLObject {
 
     /**
      * Runs a draw elements indirect call on the object's default thread.
-     *     
+     *
      * @param drawMode the draw mode to use.
      * @param indexType the index type to use.
      * @param indirectCommandBuffer the indirect buffer to use
      * @param offset the offset to start reading from the indirect buffer.
-     * @throws GLException if the vertex array or indirect command
-     * buffer is invalid.
+     * @throws GLException if the vertex array or indirect command buffer is
+     * invalid.
      * @since 15.06.05
      */
-    public void drawElementsIndirect(            
+    public void drawElementsIndirect(
             final GLDrawMode drawMode,
             final GLIndexElementType indexType,
             final GLBuffer indirectCommandBuffer,
             final long offset) throws GLException {
 
-        if (this.lastDrawElementsIndirect != null                
+        if (this.lastDrawElementsIndirect != null
                 && this.lastDrawElementsIndirect.indirectCommandBuffer == indirectCommandBuffer
                 && this.lastDrawElementsIndirect.drawMode == drawMode
                 && this.lastDrawElementsIndirect.indexType == indexType
@@ -133,7 +133,7 @@ public class GLVertexArray extends GLObject {
 
             this.lastDrawElementsIndirect.glRun(this.getThread());
         } else {
-            this.lastDrawElementsIndirect = new DrawElementsIndirectTask(                    
+            this.lastDrawElementsIndirect = new DrawElementsIndirectTask(
                     drawMode,
                     indexType,
                     indirectCommandBuffer,
@@ -150,20 +150,20 @@ public class GLVertexArray extends GLObject {
      */
     public class DrawElementsIndirectTask extends GLTask implements GLDrawTask {
 
-        private final GLBuffer indirectCommandBuffer;        
+        private final GLBuffer indirectCommandBuffer;
         private final GLDrawMode drawMode;
         private final GLIndexElementType indexType;
         private final long offset;
 
         /**
          * Constructs a new DrawElementsIndirectTask using 0 for the offset.
-         *         
+         *
          * @param mode the draw mode to use
          * @param indexType the index type to use
          * @param indirectCommandBuffer the indirect command buffer
          * @since 15.06.05
          */
-        public DrawElementsIndirectTask(                
+        public DrawElementsIndirectTask(
                 final GLDrawMode mode, final GLIndexElementType indexType,
                 final GLBuffer indirectCommandBuffer) {
 
@@ -172,7 +172,7 @@ public class GLVertexArray extends GLObject {
 
         /**
          * Constructs a new DrawElementsIndirectTask.
-         *         
+         *
          * @param mode the draw mode to use
          * @param indexType the index type to use
          * @param indirectCommandBuffer the indirect command buffer
@@ -180,12 +180,11 @@ public class GLVertexArray extends GLObject {
          * @throws GLException if the offset is less than 0.
          * @since 15.06.05
          */
-        public DrawElementsIndirectTask(                
+        public DrawElementsIndirectTask(
                 final GLDrawMode mode, final GLIndexElementType indexType,
                 final GLBuffer indirectCommandBuffer,
                 final long offset) throws GLException {
 
-            
             Objects.requireNonNull(this.indexType = indexType);
             Objects.requireNonNull(this.drawMode = mode);
             Objects.requireNonNull(this.indirectCommandBuffer = indirectCommandBuffer);
@@ -202,7 +201,7 @@ public class GLVertexArray extends GLObject {
             } else if (!this.indirectCommandBuffer.isValid()) {
                 throw new GLException("Invalid GLBuffer!");
             }
-            
+
             GLVertexArray.this.bind();
 
             GL15.glBindBuffer(
@@ -219,22 +218,22 @@ public class GLVertexArray extends GLObject {
 
     /**
      * Runs an indirect draw arrays task on the object's default GLThread.
-     *     
+     *
      * @param drawMode the draw mode to use
      * @param indirectCommandBuffer the indirect command buffer to grab
      * parameters from.
      * @param offset the offset to use
-     * @throws GLException if the vertex array or indirect command
-     * buffer is invalid.
+     * @throws GLException if the vertex array or indirect command buffer is
+     * invalid.
      * @since 15.06.05
      */
-    public void drawArraysIndirect(            
+    public void drawArraysIndirect(
             final GLDrawMode drawMode,
             final GLBuffer indirectCommandBuffer,
             final long offset) throws GLException {
 
         if (this.lastDrawArraysIndirect != null
-                && this.lastDrawArraysIndirect.indirectCommandBuffer == indirectCommandBuffer                
+                && this.lastDrawArraysIndirect.indirectCommandBuffer == indirectCommandBuffer
                 && this.lastDrawArraysIndirect.drawMode == drawMode
                 && this.lastDrawArraysIndirect.offset == offset) {
 
@@ -244,17 +243,17 @@ public class GLVertexArray extends GLObject {
 
     public class DrawArraysIndirectTask extends GLTask implements GLDrawTask {
 
-        private final GLBuffer indirectCommandBuffer;        
+        private final GLBuffer indirectCommandBuffer;
         private final GLDrawMode drawMode;
         private final long offset;
 
-        public DrawArraysIndirectTask(                
+        public DrawArraysIndirectTask(
                 final GLDrawMode drawMode,
                 final GLBuffer indirectCommandBuffer,
                 final long offset) {
 
             Objects.requireNonNull(this.indirectCommandBuffer = indirectCommandBuffer);
-            Objects.requireNonNull(this.drawMode = drawMode);            
+            Objects.requireNonNull(this.drawMode = drawMode);
 
             if ((this.offset = offset) < 0) {
                 throw new GLException("Offset cannot be less than 0!");
@@ -268,7 +267,7 @@ public class GLVertexArray extends GLObject {
             } else if (!this.indirectCommandBuffer.isValid()) {
                 throw new GLException("Invalid GLBuffer!");
             }
-            
+
             GLVertexArray.this.bind();
 
             GL15.glBindBuffer(
@@ -287,7 +286,7 @@ public class GLVertexArray extends GLObject {
             final GLDrawMode drawMode,
             final IntBuffer first, final IntBuffer count) {
 
-        if (this.lastMultiDrawArrays != null                
+        if (this.lastMultiDrawArrays != null
                 && this.lastMultiDrawArrays.first == first
                 && this.lastMultiDrawArrays.count == count
                 && this.lastMultiDrawArrays.drawMode == drawMode) {
@@ -302,15 +301,15 @@ public class GLVertexArray extends GLObject {
     }
 
     public class MultiDrawArraysTask extends GLTask implements GLDrawTask {
-        
+
         private final IntBuffer first;
         private final IntBuffer count;
         private final GLDrawMode drawMode;
 
-        public MultiDrawArraysTask(                
+        public MultiDrawArraysTask(
                 final GLDrawMode drawMode,
                 final IntBuffer first, final IntBuffer count) {
-            
+
             Objects.requireNonNull(this.first = first);
             Objects.requireNonNull(this.count = count);
             Objects.requireNonNull(this.drawMode = drawMode);
@@ -321,7 +320,7 @@ public class GLVertexArray extends GLObject {
             if (!GLVertexArray.this.isValid()) {
                 throw new GLException("Invalid GLVertexArray!");
             }
-            
+
             GLVertexArray.this.bind();
             GL14.glMultiDrawArrays(
                     this.drawMode.value,
@@ -338,7 +337,7 @@ public class GLVertexArray extends GLObject {
             final int count, final GLIndexElementType indexType,
             final long offset, final int instanceCount) {
 
-        if (this.lastDrawElementsInstanced != null                
+        if (this.lastDrawElementsInstanced != null
                 && this.lastDrawElementsInstanced.drawMode == drawMode
                 && this.lastDrawElementsInstanced.count == count
                 && this.lastDrawElementsInstanced.type == indexType
@@ -355,20 +354,20 @@ public class GLVertexArray extends GLObject {
     }
 
     public class DrawElementsInstancedTask extends GLTask implements GLDrawTask {
-        
+
         private final int count;
         private GLIndexElementType type;
         private GLDrawMode drawMode;
         private final int instanceCount;
         private final long offset;
 
-        public DrawElementsInstancedTask(                
+        public DrawElementsInstancedTask(
                 final GLDrawMode drawMode,
                 final int count,
                 final GLIndexElementType indexType,
                 final long offset,
                 final int instanceCount) {
-            
+
             this.count = count;
             Objects.requireNonNull(this.type = indexType);
             Objects.requireNonNull(this.drawMode = drawMode);
@@ -405,7 +404,7 @@ public class GLVertexArray extends GLObject {
             final GLDrawMode mode,
             final int first, final int count, final int instanceCount) {
 
-        if (this.lastDrawArraysInstanced != null                
+        if (this.lastDrawArraysInstanced != null
                 && this.lastDrawArraysInstanced.mode == mode
                 && this.lastDrawArraysInstanced.first == first
                 && this.lastDrawArraysInstanced.count == count
@@ -422,18 +421,18 @@ public class GLVertexArray extends GLObject {
     }
 
     public class DrawArraysInstancedTask extends GLTask implements GLDrawTask {
-        
+
         private final GLDrawMode mode;
         private final int first;
         private final int count;
         private final int instanceCount;
 
-        public DrawArraysInstancedTask(                
+        public DrawArraysInstancedTask(
                 final GLDrawMode mode,
                 final int first,
                 final int count,
                 final int instanceCount) {
-            
+
             Objects.requireNonNull(this.mode = mode);
 
             this.count = count;
@@ -452,7 +451,7 @@ public class GLVertexArray extends GLObject {
             if (!GLVertexArray.this.isValid()) {
                 throw new GLException("GLVertexArray is not valid!");
             }
-            
+
             GLVertexArray.this.bind();
 
             GL31.glDrawArraysInstanced(
@@ -469,7 +468,7 @@ public class GLVertexArray extends GLObject {
             final GLDrawMode mode,
             final int count, final GLIndexElementType type, final long offset) {
 
-        if (this.lastDrawElements != null                
+        if (this.lastDrawElements != null
                 && this.lastDrawElements.mode == mode
                 && this.lastDrawElements.count == count
                 && this.lastDrawElements.type == type
@@ -486,7 +485,7 @@ public class GLVertexArray extends GLObject {
     }
 
     public class DrawElementsTask extends GLTask {
-        
+
         private final GLDrawMode mode;
         private final int count;
         private final GLIndexElementType type;
@@ -497,7 +496,7 @@ public class GLVertexArray extends GLObject {
                 final int count,
                 final GLIndexElementType type,
                 final long offset) {
-            
+
             Objects.requireNonNull(this.mode = mode);
             Objects.requireNonNull(this.type = type);
 
@@ -513,7 +512,7 @@ public class GLVertexArray extends GLObject {
             if (!GLVertexArray.this.isValid()) {
                 throw new GLException("Invalid GLVertex!");
             }
-            
+
             GLVertexArray.this.bind();
 
             GL11.glDrawElements(
@@ -530,7 +529,7 @@ public class GLVertexArray extends GLObject {
             final GLDrawMode mode,
             final int start, final int count) {
 
-        if (this.lastDrawArrays != null                
+        if (this.lastDrawArrays != null
                 && this.lastDrawArrays.mode == mode
                 && this.lastDrawArrays.start == start
                 && this.lastDrawArrays.count == count) {
@@ -545,12 +544,12 @@ public class GLVertexArray extends GLObject {
     public class DrawTransformFeedbackTask extends GLTask {
 
         final GLTransformFeedback tfb;
-        final GLDrawMode mode;        
+        final GLDrawMode mode;
 
-        public DrawTransformFeedbackTask(                
+        public DrawTransformFeedbackTask(
                 final GLDrawMode mode,
                 final GLTransformFeedback tfb) {
-            
+
             Objects.requireNonNull(this.mode = mode);
             Objects.requireNonNull(this.tfb = tfb);
         }
@@ -560,7 +559,7 @@ public class GLVertexArray extends GLObject {
             if (!GLVertexArray.this.isValid()) {
                 throw new GLException("Invalid GLVertexArray!");
             }
-            
+
             GLVertexArray.this.bind();
             GL40.glDrawTransformFeedback(this.mode.value, this.tfb.tfbId);
         }
@@ -570,12 +569,12 @@ public class GLVertexArray extends GLObject {
 
         private final GLDrawMode mode;
         private final int start;
-        private final int count;        
+        private final int count;
 
-        public DrawArraysTask(                
+        public DrawArraysTask(
                 final GLDrawMode mode,
                 final int start, final int count) {
-            
+
             Objects.requireNonNull(this.mode = mode);
 
             this.count = count;
@@ -590,7 +589,7 @@ public class GLVertexArray extends GLObject {
             if (!GLVertexArray.this.isValid()) {
                 throw new GLException("GLVertexArray is not valid!");
             }
-            
+
             GLVertexArray.this.bind();
 
             GL11.glDrawArrays(this.mode.value, this.start, this.count);
@@ -648,6 +647,14 @@ public class GLVertexArray extends GLObject {
             final GLVertexAttributeType type, final GLVertexAttributeSize size) {
 
         new AttachBufferTask(index, buffer, type, size).glRun(this.getThread());
+    }
+
+    public void attachBuffer(
+            final int index, final GLBuffer buffer,
+            final GLVertexAttributeType type, final GLVertexAttributeSize size,
+            final int offset, final int stride) {
+
+        new AttachBufferTask(index, buffer, type, size, false, stride, offset).glRun(this.getThread());
     }
 
     public class AttachBufferTask extends GLTask {
