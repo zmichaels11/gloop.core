@@ -335,9 +335,7 @@ public class GLBuffer extends GLObject {
             GL15.glBufferData(this.target.value, this.data, this.usage.value);
         }
     }
-
-    private AllocateTask allocateTask = null;
-
+    
     /**
      * Allocates the specified number of bytes for the GLBuffer. GL_ARRAY_BUFFER
      * is used for the target.
@@ -357,16 +355,11 @@ public class GLBuffer extends GLObject {
      * @since 15.05.13
      */
     public void allocate(final GLBufferTarget target, final long size) {
-        if (this.allocateTask != null
-                && this.allocateTask.target == target
-                && this.allocateTask.size == size) {
-
-            this.allocateTask.glRun(this.getThread());
-        } else {
-            this.allocateTask = new AllocateTask(target, size);
-
-            this.allocateTask.glRun(this.getThread());
-        }
+        this.allocate(target, size, GLBufferUsage.GL_DYNAMIC_DRAW);
+    }
+    
+    public void allocate(final GLBufferTarget target, final long size, final GLBufferUsage usage) {
+        new AllocateTask(target, size, usage).glRun(this.getThread());
     }
 
     /**
