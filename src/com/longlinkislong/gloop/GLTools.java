@@ -797,7 +797,7 @@ public class GLTools {
 
         return out;
     }
-    
+
     public static ByteBuffer writeFloat(final ByteBuffer dst, final List<Float> data) {
         return writeFloat(dst, data, 0, data.size());
     }
@@ -819,7 +819,7 @@ public class GLTools {
         out.flip();
         return out;
     }
-    
+
     public static ByteBuffer writeFloat(final ByteBuffer dst, final float... values) {
         return writeFloat(dst, values, 0, values.length);
     }
@@ -841,7 +841,7 @@ public class GLTools {
 
         return out;
     }
-    
+
     public static ByteBuffer writeVec2F(final ByteBuffer dst, final List<GLVec2> data) {
         return writeVec2F(dst, data, 0, data.size());
     }
@@ -870,7 +870,7 @@ public class GLTools {
     public static ByteBuffer writeVec2F(final ByteBuffer dst, final GLVec2... values) {
         return writeVec2F(dst, values, 0, values.length);
     }
-    
+
     public static ByteBuffer writeVec2F(
             final ByteBuffer dst,
             final GLVec2[] data, final int offset, final int length) {
@@ -891,7 +891,7 @@ public class GLTools {
 
         return out;
     }
-    
+
     public static ByteBuffer writeVec3F(final ByteBuffer dst, final List<GLVec3> data) {
         return writeVec3F(dst, data, 0, data.size());
     }
@@ -922,7 +922,7 @@ public class GLTools {
     public static ByteBuffer writeVec3F(final ByteBuffer dst, final GLVec3... values) {
         return writeVec3F(dst, values, 0, values.length);
     }
-    
+
     public static ByteBuffer writeVec3F(
             final ByteBuffer dst,
             final GLVec3[] data, final int offset, final int length) {
@@ -948,7 +948,7 @@ public class GLTools {
     public static ByteBuffer writeVec4F(final ByteBuffer dst, final List<GLVec4> data) {
         return writeVec4F(dst, data, 0, data.size());
     }
-    
+
     public static ByteBuffer writeVec4F(
             final ByteBuffer dst,
             final List<GLVec4> data, final int offset, final int length) {
@@ -975,7 +975,7 @@ public class GLTools {
     public static ByteBuffer writeVec4F(final ByteBuffer dst, final GLVec4... values) {
         return writeVec4F(dst, values, 0, values.length);
     }
-    
+
     public static ByteBuffer writeVec4F(
             final ByteBuffer dst,
             final GLVec4[] data, final int offset, final int length) {
@@ -1081,4 +1081,30 @@ public class GLTools {
         return Math.abs(a - b) < delta;
     }
 
+    /**
+     * Converts color data packed as integers to an array packed as shorts.
+     * @param out array to write to
+     * @param outOffset offset to the array to write to
+     * @param in0 array to read data from
+     * @param in0Offset offset to the array to read from
+     * @param length the number elements to read
+     * @since 15.06.22
+     */
+    public static void int8888ToShort4444(
+            final short[] out, final int outOffset,
+            final int[] in0, final int in0Offset, final int length) {
+
+        for (int i = 0; i < length; i++) {
+            final int val = in0[in0Offset + i];
+            final int inB0 = ((0xFF000000 & val) >> 24) / 2;
+            final int inB1 = ((0x00FF0000 & val) >> 16) / 2;
+            final int inB2 = ((0x0000FF00 & val) >> 8) / 2;
+            final int inB3 = (0x000000FF & val) / 2;
+
+            out[outOffset + i] = (short) ((inB0 << 12 & 0xF0)
+                    | (inB1 << 8 & 0x0F)
+                    | (inB2 << 4 & 0xF0)
+                    | (inB3 & 0x0F));
+        }
+    }    
 }
