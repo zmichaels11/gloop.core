@@ -120,16 +120,12 @@ public class GLTexture extends GLObject {
     private BindTask lastBind = null;
 
     public void bind(final int activeTexture) {
-        if (this.lastBind != null
-                && this.lastBind.activeTexture == activeTexture) {
-
-            this.lastBind.glRun(this.getThread());
-        } else {
+        if (this.lastBind == null || this.lastBind.activeTexture != activeTexture) {
             this.lastBind = new BindTask(activeTexture);
-
-            this.lastBind.glRun(this.getThread());
         }
-    }        
+
+        this.lastBind.glRun(this.getThread());
+    }
 
     public class BindTask extends GLTask {
 
@@ -1111,5 +1107,48 @@ public class GLTexture extends GLObject {
             GL11.glBindTexture(target, 0);
 
         }
+    }       
+
+    private static final GLQuery<Integer> MAX_TEX_UNIT_QUERY = new MaxTextureUnitQuery();
+
+    public static int getMaxSupportedTextureUnits() {
+        return MAX_TEX_UNIT_QUERY.glCall();
+    }
+
+    public static class MaxTextureUnitQuery extends GLQuery<Integer> {
+
+        boolean checked = false;
+        int maxUnits;
+
+        @Override
+        public Integer call() throws Exception {
+            if (this.checked) {
+                return this.maxUnits;
+            }
+
+            return this.maxUnits = GL11.glGetInteger(GL13.GL_MAX_TEXTURE_UNITS);
+        }
+    }
+    
+    private static final GLQuery<Integer> MAX_TEX_SIZE_QUERY = new MaxTextureSizeQuery();
+    
+    public static int getMaxTextureSize() {
+        return MAX_TEX_SIZE_QUERY.glCall();
+    }
+
+    public static class MaxTextureSizeQuery extends GLQuery<Integer> {
+
+        boolean checked = false;
+        int maxUnits;
+
+        @Override
+        public Integer call() throws Exception {
+            if (this.checked) {
+                return this.maxUnits;
+            }
+
+            return this.maxUnits = GL11.glGetInteger(GL11.GL_MAX_TEXTURE_SIZE);
+        }
+
     }
 }
