@@ -1101,10 +1101,10 @@ public class GLTools {
             final int inB2 = ((0x0000FF00 & val) >> 8) / 2;
             final int inB3 = (0x000000FF & val) / 2;
 
-            out[outOffset + i] = (short) ((inB0 << 12 & 0xF0)
-                    | (inB1 << 8 & 0x0F)
-                    | (inB2 << 4 & 0xF0)
-                    | (inB3 & 0x0F));
+            out[outOffset + i] = (short) ((inB0 << 12 & 0xFF)
+                    | (inB1 << 8 & 0xFF)
+                    | (inB2 << 4 & 0xFF)
+                    | (inB3 & 0xFF));
         }
     }    
 }

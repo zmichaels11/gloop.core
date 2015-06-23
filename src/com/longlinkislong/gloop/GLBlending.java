@@ -163,6 +163,8 @@ public class GLBlending extends GLObject {
      * @param rgb the RGB blend equation.
      * @param alpha the alpha blend equation.
      * @return the GLBlending object.
+     * @see <a href="https://www.opengl.org/wiki/GLAPI/glBlendEquationSeparate">glBlendEquation (OpenGL Wiki)</a>
+     * @see <a href="https://www.opengl.org/sdk/docs/man/html/glBlendEquation.xhtml">glBlendEquation (OpenGL Wiki)</a>
      * @since 15.06.18
      */
     public GLBlending withBlendEquation(
@@ -180,6 +182,8 @@ public class GLBlending extends GLObject {
      * Copies the GLBlending object and overrides the enabled status.
      * @param isEnabled if blending should be enabled.
      * @return the GLBlending object
+     * @see <a href="https://www.opengl.org/wiki/GLAPI/glEnable">glEnable (OpenGL Wiki)</a>
+     * @see <a href="https://www.opengl.org/sdk/docs/man/html/glEnable.xhtml">glEnable (OpenGL SDK)</a>
      * @since 15.06.18
      */
     public GLBlending withEnabled(final GLEnableStatus isEnabled) {
@@ -199,6 +203,8 @@ public class GLBlending extends GLObject {
      * @param alphaSrc the blend function for alpha source color.
      * @param alphaDst the blend function for alpha destination color.
      * @return the blend function
+     * @see <a href="https://www.opengl.org/wiki/GLAPI/glBlendFuncSeparate">glBlendFunc/Separate (OpenGL Wiki)</a>     
+     * @see <a href="https://www.opengl.org/sdk/docs/man/html/glBlendFuncSeparate.xhtml">glBlendFuncSeparate (OpenGL SDK)</a>
      * @since 15.06.18
      */
     public GLBlending withBlendFunc(
@@ -212,6 +218,7 @@ public class GLBlending extends GLObject {
                 rgbSrc, rgbDst,
                 alphaSrc, alphaDst);
     }
+       
 
     private SetBlendingTask applyTask = null;
 

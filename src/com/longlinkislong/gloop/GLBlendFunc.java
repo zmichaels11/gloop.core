@@ -13,6 +13,8 @@ import org.lwjgl.opengl.GL11;
  * with a GLBlendEquation.
  *
  * @author zmichaels
+ * @see <a href="https://www.opengl.org/wiki/GLAPI/glBlendFuncSeparate">glBlendFunc (OpenGL Wiki)</a>
+ * @see <a href="https://www.opengl.org/sdk/docs/man/html/glBlendFunc.xhtml">glBlendFunc (OpenGL SDK)</a>
  * @since 15.06.18
  */
 public enum GLBlendFunc {
