@@ -241,12 +241,26 @@ public class GLVertexArray extends GLObject {
         }
     }
 
+    /**
+     * A GLTask that runs an indirect draw arrays call.
+     *
+     * @since 15.06.24
+     */
     public class DrawArraysIndirectTask extends GLTask implements GLDrawTask {
 
         private final GLBuffer indirectCommandBuffer;
         private final GLDrawMode drawMode;
         private final long offset;
 
+        /**
+         * Constructs a new DrawArraysIndirect task.
+         *
+         * @param drawMode the draw mode to use.
+         * @param indirectCommandBuffer the GLBuffer to read indirect commands
+         * from.
+         * @param offset the offset to use
+         * @since 15.06.24
+         */
         public DrawArraysIndirectTask(
                 final GLDrawMode drawMode,
                 final GLBuffer indirectCommandBuffer,
@@ -282,6 +296,14 @@ public class GLVertexArray extends GLObject {
 
     private MultiDrawArraysTask lastMultiDrawArrays = null;
 
+    /**
+     * Performs a multidraw arrays task on the default OpenGL thread.
+     *
+     * @param drawMode the draw mode to use.
+     * @param first the individual offsets.
+     * @param count the number of elements to render per offset.
+     * @since 15.06.24
+     */
     public void multiDrawArrays(
             final GLDrawMode drawMode,
             final IntBuffer first, final IntBuffer count) {
@@ -300,12 +322,25 @@ public class GLVertexArray extends GLObject {
         }
     }
 
+    /**
+     * A GLTask that performs a MultiDraw operation.
+     *
+     * @since 15.06.24
+     */
     public class MultiDrawArraysTask extends GLTask implements GLDrawTask {
 
         private final IntBuffer first;
         private final IntBuffer count;
         private final GLDrawMode drawMode;
 
+        /**
+         * Constructs a new MultiDrawArraysTask.
+         *
+         * @param drawMode the draw mode to use.
+         * @param first the offset for each draw task
+         * @param count the number of elements to draw per task
+         * @since 15.06.24
+         */
         public MultiDrawArraysTask(
                 final GLDrawMode drawMode,
                 final IntBuffer first, final IntBuffer count) {
@@ -332,6 +367,16 @@ public class GLVertexArray extends GLObject {
 
     private DrawElementsInstancedTask lastDrawElementsInstanced = null;
 
+    /**
+     * Performs a draw elements instanced task on the default OpenGL thread.
+     *
+     * @param drawMode the draw mode to use.
+     * @param count the number of elements to draw.
+     * @param indexType the data type the indices are stored as.
+     * @param offset the offset for the start buffer.
+     * @param instanceCount the number of copies to draw.
+     * @since 15.06.24
+     */
     public void drawElementsInstanced(
             final GLDrawMode drawMode,
             final int count, final GLIndexElementType indexType,
@@ -353,6 +398,11 @@ public class GLVertexArray extends GLObject {
         }
     }
 
+    /**
+     * A GLTask that performs a draw elements instanced operation.
+     *
+     * @since 15.60.24
+     */
     public class DrawElementsInstancedTask extends GLTask implements GLDrawTask {
 
         private final int count;
@@ -361,6 +411,16 @@ public class GLVertexArray extends GLObject {
         private final int instanceCount;
         private final long offset;
 
+        /**
+         * Constructs a new DrawElementsInstancedTask.
+         *
+         * @param drawMode the drawmode to use.
+         * @param count the number of elements to draw for the base instance.
+         * @param indexType the data type the indices are stored as.
+         * @param offset the offset for the first instance.
+         * @param instanceCount the number of instances to draw.
+         * @since 15.06.24
+         */
         public DrawElementsInstancedTask(
                 final GLDrawMode drawMode,
                 final int count,
@@ -400,6 +460,16 @@ public class GLVertexArray extends GLObject {
 
     private DrawArraysInstancedTask lastDrawArraysInstanced = null;
 
+    /**
+     * Performs a draw arrays instanced task on the OpenGL thread associated
+     * with this object.
+     *
+     * @param mode the draw mode to use.
+     * @param first the offset to the first element.
+     * @param count the number of elements to draw.
+     * @param instanceCount the number of instances to draw.
+     * @since 15.06.24
+     */
     public void drawArraysInstanced(
             final GLDrawMode mode,
             final int first, final int count, final int instanceCount) {
@@ -420,6 +490,11 @@ public class GLVertexArray extends GLObject {
         }
     }
 
+    /**
+     * A GLTask that runs a draw arrays instanced task.
+     *
+     * @since 15.06.24
+     */
     public class DrawArraysInstancedTask extends GLTask implements GLDrawTask {
 
         private final GLDrawMode mode;
@@ -427,6 +502,15 @@ public class GLVertexArray extends GLObject {
         private final int count;
         private final int instanceCount;
 
+        /**
+         * Constructs a new Draw Arrays Instanced task.
+         *
+         * @param mode the draw mode to use.
+         * @param first the offset to the first instance.
+         * @param count the number of vertices to draw.
+         * @param instanceCount the number of instances to draw.
+         * @since 15.06.24
+         */
         public DrawArraysInstancedTask(
                 final GLDrawMode mode,
                 final int first,
@@ -464,6 +548,16 @@ public class GLVertexArray extends GLObject {
 
     private DrawElementsTask lastDrawElements = null;
 
+    /**
+     * Performs a draw elements task on the OpenGL thread associated with this
+     * object.
+     *
+     * @param mode the draw mode to use.
+     * @param count the number of elements to draw.
+     * @param type the data type the elements are stored in.
+     * @param offset the offset to the first element.
+     * @since 15.06.24
+     */
     public void drawElements(
             final GLDrawMode mode,
             final int count, final GLIndexElementType type, final long offset) {
@@ -484,6 +578,11 @@ public class GLVertexArray extends GLObject {
         }
     }
 
+    /**
+     * A GLTask that executes a draw elements task.
+     *
+     * @since 15.06.24
+     */
     public class DrawElementsTask extends GLTask {
 
         private final GLDrawMode mode;
@@ -491,6 +590,15 @@ public class GLVertexArray extends GLObject {
         private final GLIndexElementType type;
         private final long offset;
 
+        /**
+         * Constructs a new DrawElementsTask
+         *
+         * @param mode the draw mode used for the draw elements task.
+         * @param count the number of elements drawn.
+         * @param type the data type the elements are stored as.
+         * @param offset the offset to the first element
+         * @since 15.06.24
+         */
         public DrawElementsTask(
                 final GLDrawMode mode,
                 final int count,
@@ -525,6 +633,13 @@ public class GLVertexArray extends GLObject {
 
     private DrawArraysTask lastDrawArrays = null;
 
+    /**
+     * Performs a draw arrays task on the OpenGL thread associated with this object.
+     * @param mode the draw mode used.
+     * @param start the start offset for the draw arrays call.
+     * @param count the number of vertices drawn.
+     * @since 15.06.24
+     */
     public void drawArrays(
             final GLDrawMode mode,
             final int start, final int count) {
@@ -656,13 +771,13 @@ public class GLVertexArray extends GLObject {
 
         new AttachBufferTask(index, buffer, type, size, false, stride, offset).glRun(this.getThread());
     }
-    
+
     public void attachBuffer(
             final int index, final GLBuffer buffer,
             final GLVertexAttributeType type, final GLVertexAttributeSize size,
             final int offset, final int stride,
             final int divisor) {
-        
+
         new AttachBufferTask(index, buffer, type, size, false, stride, offset, divisor).glRun(this.getThread());
     }
 
@@ -721,15 +836,7 @@ public class GLVertexArray extends GLObject {
                 throw new GLException("Invalid index value [" + index + "]! Index cannot be less than 0.");
             }
 
-            if (size != GLVertexAttributeSize.VEC4
-                    && (type == GLVertexAttributeType.GL_INT_2_10_10_10_REV
-                    || type == GLVertexAttributeType.GL_UNSIGNED_INT_10F_11F_11F_REV
-                    || type == GLVertexAttributeType.GL_UNSIGNED_INT_2_10_10_10_REV)) {
-
-                throw new GLException("GL_INT_2_10_10_10_REV, GL_UNSIGNED_INT_2_10_10_10_REV, and GL_UNSIGNED_INT_10F_11F_11F_REV require size = 4!");
-            } else {
-                Objects.requireNonNull(this.size = size);
-            }
+            Objects.requireNonNull(this.size = size);
 
             if ((this.offset = offset) < 0) {
                 throw new GLException("Invalid offset value! Offset cannot be less than 0.");

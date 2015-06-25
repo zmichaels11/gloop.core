@@ -16,6 +16,7 @@ import java.util.TreeMap;
 import org.lwjgl.glfw.GLFW;
 import org.lwjgl.glfw.GLFWCursorEnterCallback;
 import org.lwjgl.glfw.GLFWCursorPosCallback;
+import org.lwjgl.glfw.GLFWFramebufferSizeCallback;
 import org.lwjgl.glfw.GLFWKeyCallback;
 import org.lwjgl.glfw.GLFWMouseButtonCallback;
 import org.lwjgl.glfw.GLFWScrollCallback;
@@ -27,8 +28,10 @@ import org.lwjgl.opengl.GLContext;
 import static org.lwjgl.system.MemoryUtil.NULL;
 
 /**
+ * A GLWindow represents a window that handles OpenGL drawing.
  *
  * @author zmichaels
+ * @since 15.06.24
  */
 public class GLWindow {
 
@@ -44,6 +47,7 @@ public class GLWindow {
     private Optional<GLFWCursorPosCallback> cursorPosCallback = Optional.empty();
     private Optional<GLFWCursorEnterCallback> cursorEnterCallback = Optional.empty();
     private Optional<GLFWScrollCallback> scrollCallback = Optional.empty();
+    private Optional<GLFWFramebufferSizeCallback> resizeCallback = Optional.empty();
     private Optional<Runnable> onClose = Optional.empty();
     private final long monitor;
 
@@ -89,10 +93,16 @@ public class GLWindow {
         return Collections.unmodifiableList(windows);
     }
 
+    /**
+     * Registers a callback to run when the window is closed.
+     *
+     * @param onCloseCallback the callback to run
+     * @since 15.06.24
+     */
     public void setOnClose(final Runnable onCloseCallback) {
         this.onClose = Optional.ofNullable(onCloseCallback);
     }
-    
+
     /**
      * Constructs a new GLWindow with all default parameters.
      *
@@ -182,7 +192,18 @@ public class GLWindow {
         return ms;
     }
 
-    public GLMouse getMouse() {
+    /**
+     * Retrieves the mouse object associated with the window. A GLWindow object
+     * may own up to one mouse object.
+     *
+     * @return the mouse object.
+     * @throws GLException if the window is not initialized.
+     * @see
+     * <a href="http://www.glfw.org/docs/latest/input.html#input_mouse">GLFW
+     * Mouse Input</a>
+     * @since 15.06.24
+     */
+    public GLMouse getMouse() throws GLException {
         return this.mouse.orElseGet(this::newMouse);
     }
 
@@ -202,6 +223,9 @@ public class GLWindow {
      *
      * @return the keyboard object
      * @throws GLException if the window is not initialized.
+     * @see
+     * <a href="http://www.glfw.org/docs/latest/input.html#input_keyboard">GLFW
+     * Keyboard Input</a>
      * @since 15.06.07
      */
     public GLKeyboard getKeyboard() throws GLException {
@@ -217,6 +241,8 @@ public class GLWindow {
      *
      * @param seq the string to set
      * @throws GLException if the window is not initialized.
+     * @see <a href="http://www.glfw.org/docs/latest/input.html#clipboard">GLFW
+     * Clipboard Input and Output</a>
      * @since 15.06.07
      */
     public void setClipboardString(final CharSequence seq) throws GLException {
@@ -231,6 +257,8 @@ public class GLWindow {
      *
      * @return the clipboard string
      * @throws GLException if the window is not initialized.
+     * @see <a href="http://www.glfw.org/docs/latest/input.html#clipboard">GLFW
+     * Clipboard Input and Output</a>
      * @since 15.06.07
      */
     public String getClipboardString() throws GLException {
@@ -245,6 +273,8 @@ public class GLWindow {
      * Retrieves the time in seconds since the start of the application.
      *
      * @return the current time
+     * @see <a href="http://www.glfw.org/docs/latest/input.html#time">GLFW Time
+     * Input</a>
      * @since 15.06.07
      */
     public static double getTime() {
@@ -254,16 +284,24 @@ public class GLWindow {
     private void setMouseScrollCallback(final GLMouseScrollListener listener) {
         final GLFWScrollCallback callback
                 = GLFW.GLFWScrollCallback(listener::glfwScrollCallback);
-        
+
         GLFW.glfwSetScrollCallback(this.window, callback);
-        
+
         this.scrollCallback = Optional.of(callback);
     }
-    
+
+    private void setFramebufferResizeCallback(final GLFramebufferResizeListener listener) {
+        final GLFWFramebufferSizeCallback callback
+                = GLFW.GLFWFramebufferSizeCallback(listener::glfwFramebufferResizeCallback);
+
+        GLFW.glfwSetFramebufferSizeCallback(this.window, callback);
+
+        this.resizeCallback = Optional.of(callback);
+    }
+
     private void setMousePositionCallback(final GLMousePositionListener listener) {
         final GLFWCursorPosCallback callback
                 = GLFW.GLFWCursorPosCallback(listener::glfwCursorPosCallback);
-        
 
         GLFW.glfwSetCursorPosCallback(this.window, callback);
 
@@ -282,7 +320,7 @@ public class GLWindow {
     private void setMouseEnteredCallback(final GLMouseEnteredListener listener) {
         final GLFWCursorEnterCallback callback
                 = GLFW.GLFWCursorEnterCallback(listener::glfwCursorEnteredCallback);
-        
+
         GLFW.glfwSetCursorEnterCallback(this.window, callback);
 
         this.cursorEnterCallback = Optional.of(callback);
@@ -323,15 +361,15 @@ public class GLWindow {
 
         return (vWidth / (widthMM.getInt() / 25.4));
     }
-    
+
     private class InitTask extends GLTask {
 
         @Override
         public void run() {
             GLFW.glfwDefaultWindowHints();
             GLFW.glfwWindowHint(GLFW.GLFW_VISIBLE, GL_FALSE);
-            GLFW.glfwWindowHint(GLFW.GLFW_RESIZABLE, GL_TRUE);                        
-            
+            GLFW.glfwWindowHint(GLFW.GLFW_RESIZABLE, GL_TRUE);
+
             final long sharedContextHandle = shared != null ? shared.window : NULL;
 
             GLWindow.this.window = GLFW.glfwCreateWindow(
@@ -357,6 +395,9 @@ public class GLWindow {
 
             GLFW.glfwGetFramebufferSize(GLWindow.this.window, fbWidth, fbHeight);
             GLWindow.this.thread.pushViewport(new GLViewport(0, 0, fbWidth.getInt(0), fbHeight.getInt(0)));
+
+            GLWindow.this.handler = GLWindow.this.new WindowHandler();
+            GLWindow.this.handler.register();
 
             WINDOWS.put(GLWindow.this.window, GLWindow.this);
         }
@@ -389,6 +430,12 @@ public class GLWindow {
         return (double) this.width / (double) this.height;
     }
 
+    /**
+     * Sets the visibility of the window.
+     *
+     * @param isVisible the visibility flag.
+     * @since 15.06.24
+     */
     public void setVisible(final boolean isVisible) {
         if (isVisible) {
             GLFW.glfwShowWindow(this.window);
@@ -413,10 +460,6 @@ public class GLWindow {
 
         GLFW.glfwSetWindowSize(this.window, width, height);
     }
-
-    private final ByteBuffer tmpBuffer = ByteBuffer
-            .allocateDirect(Integer.BYTES)
-            .order(ByteOrder.nativeOrder());
 
     /**
      * Retrieves the width of the back buffer.
@@ -594,6 +637,8 @@ public class GLWindow {
         this.cursorPosCallback.ifPresent(GLFWCursorPosCallback::release);
         this.keyCallback.ifPresent(GLFWKeyCallback::release);
         this.mouseButtonCallback.ifPresent(GLFWMouseButtonCallback::release);
+        this.scrollCallback.ifPresent(GLFWScrollCallback::release);
+        this.resizeCallback.ifPresent(GLFWFramebufferSizeCallback::release);
         this.onClose.ifPresent(Runnable::run);
         this.thread.shutdown();
     }
@@ -631,5 +676,52 @@ public class GLWindow {
     @Override
     public String toString() {
         return "GLWindow: " + this.window;
+    }
+
+    private WindowHandler handler = null;
+
+    /**
+     * Adds a listener for when the window resizes.
+     *
+     * @param listener the resize listener.
+     * @return true if the listener was registered.
+     * @since 15.06.24
+     */
+    public boolean addWindowResizeListener(final GLFramebufferResizeListener listener) {
+        return this.handler.resizeListeners.add(listener);
+    }
+
+    /**
+     * Attempts to remove a window resize listener.
+     * @param listener the listener to remove.
+     * @return true if the listener was removed.
+     * @since 15.06.24
+     */
+    public boolean removeWindowResizeListener(final GLFramebufferResizeListener listener) {
+        return this.handler.resizeListeners.remove(listener);
+    }
+
+    /**
+     * Removes all window listeners from the window.
+     * @since 15.06.24
+     */
+    public void clearWindowListeners() {
+        this.handler.resizeListeners.clear();
+    }
+
+    private class WindowHandler implements GLFramebufferResizeListener {
+
+        final List<GLFramebufferResizeListener> resizeListeners = new ArrayList<>();
+
+        @Override
+        public void framebufferResizedActionPerformed(GLWindow window, int newWidth, int newHeight) {
+            this.resizeListeners.forEach((listener) -> {
+                listener.framebufferResizedActionPerformed(window, newWidth, newHeight);
+            });
+        }
+
+        void register() {
+            GLWindow.this.setFramebufferResizeCallback(this);
+        }
     }
 }
