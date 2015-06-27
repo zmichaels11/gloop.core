@@ -9,12 +9,14 @@ import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.util.Objects;
 import org.lwjgl.opengl.GL15;
+import org.lwjgl.opengl.GL30;
 import org.lwjgl.opengl.GL31;
 
 /**
  * GLBuffer represents an OpenGL Buffer object.
  *
  * @author zmichaels
+ * @see <a href="https://www.opengl.org/wiki/Buffer_Object">Buffer Object</a>
  * @since 15.05.14
  */
 public class GLBuffer extends GLObject {
@@ -335,7 +337,7 @@ public class GLBuffer extends GLObject {
             GL15.glBufferData(this.target.value, this.data, this.usage.value);
         }
     }
-    
+
     /**
      * Allocates the specified number of bytes for the GLBuffer. GL_ARRAY_BUFFER
      * is used for the target.
@@ -357,7 +359,7 @@ public class GLBuffer extends GLObject {
     public void allocate(final GLBufferTarget target, final long size) {
         this.allocate(target, size, GLBufferUsage.GL_DYNAMIC_DRAW);
     }
-    
+
     public void allocate(final GLBufferTarget target, final long size, final GLBufferUsage usage) {
         new AllocateTask(target, size, usage).glRun(this.getThread());
     }
@@ -576,79 +578,125 @@ public class GLBuffer extends GLObject {
         }
     }
 
-    private MapQuery mapQuery = null;
-
     /**
-     * Maps the GLBuffer to a ByteBuffer. The GLBuffer is bound to
-     * GL_ARRAY_BUFFER. This function can force a thread sync.
+     * Maps the GLBuffer to a ByteBuffer for read-write access. This function
+     * can force a thread sync.
      *
-     * @return the mapped ByteBuffer
+     * @param target the target to bind the GLBuffer to.
+     * @param offset the offset in bytes to begin the map.
+     * @param length the number of bytes to map.
+     * @return the mapped ByteBuffer.
+     * @see
+     * <a href="https://www.opengl.org/wiki/GLAPI/glMapBufferRange#Function_Definition">glMapBufferRange</a>
      * @since 15.05.13
      */
-    public ByteBuffer map() {
-        return this.map(GLBufferTarget.GL_ARRAY_BUFFER);
+    public ByteBuffer map(final GLBufferTarget target, final long offset, final long length) {
+        return this.map(target, offset, length, GLBufferAccess.GL_MAP_READ, GLBufferAccess.GL_MAP_WRITE);
     }
 
     /**
-     * Maps the GLBuffer to a ByteBuffer. This function can force a thread sync.
+     * Maps a GLBuffer to a ByteBuffer. This function can force a thread sync.
      *
      * @param target the target to bind the GLBuffer to.
-     * @return the mapped ByteBuffer.
-     * @since 15.05.13
+     * @param offset the offset in bytes to begin the map.
+     * @param length the number of bytes to map.
+     * @param accessBits the flags indicating access rights to the data.
+     * @return the mapped ByteBuffer
+     * @see
+     * <a href="https://www.opengl.org/wiki/GLAPI/glMapBufferRange#Function_Definition">glMapBufferRange</a>
+     * @since 15.06.23
      */
-    public ByteBuffer map(final GLBufferTarget target) {
-        if (this.mapQuery != null && this.mapQuery.target == target) {
-            return this.mapQuery.glCall(this.getThread());
-        } else {
-            this.mapQuery = new MapQuery(target, GLBufferAccess.GL_READ_WRITE);
+    public ByteBuffer map(
+            final GLBufferTarget target, final long offset, final long length,
+            final GLBufferAccess... accessBits) {
 
-            return this.mapQuery.glCall(this.getThread());
-        }
+        return this.map(target, offset, length, accessBits, 0, accessBits.length);
+    }
+
+    /**
+     * Maps a GLBuffer to a ByteBuffer. This function can force a thread sync.
+     *
+     * @param target the target to bind the GLBuffer to.
+     * @param offset the offset in bytes to begin the map.
+     * @param length the number of bytes to map.
+     * @param accessBits the flags indicating access rights to the data.
+     * @param accessOffset the offset to start reading the flags.
+     * @param accessLength the number of accessFlags to read.
+     * @return the mapped ByteBuffer
+     * @see
+     * <a href="https://www.opengl.org/wiki/GLAPI/glMapBufferRange#Function_Definition">glMapBufferRange</a>
+     * @since 15.06.23
+     */
+    public ByteBuffer map(
+            final GLBufferTarget target, final long offset, final long length,
+            final GLBufferAccess[] accessBits, final int accessOffset, final int accessLength) {
+
+        return new MapQuery(
+                target, offset, length,
+                accessBits, accessOffset, accessLength).glCall(this.getThread());
     }
 
     /**
      * A GLQuery that requests the buffer to be mapped. A GLBuffer can only be
      * mapped once at a time and should be unmapped before being used elsewhere.
      *
+     * @see
+     * <a href="https://www.opengl.org/wiki/GLAPI/glMapBufferRange#Function_Definition">glMapBufferRange</a>
      * @since 15.05.13
      */
     public class MapQuery extends GLQuery<ByteBuffer> {
 
         final GLBufferTarget target;
-        final GLBufferAccess access;
+        final int access;
+        final long offset;
+        final long length;
 
         /**
-         * Constructs a new MapQuery using the default GL_ARRAY and setting the
-         * access to READ_WRITE.
+         * Constructs a new MapQuery using a sequence of accessbits.
          *
-         * @since 15.05.13
+         * @param target the target to bind the GLBuffer to.
+         * @param offset the starting offset within the buffer range to be
+         * mapped.
+         * @param length the length of the range to be mapped.
+         * @param accessBits the flags indicating the desired access.
+         * @since 15.06.23
          */
-        public MapQuery() {
-            this(GLBufferTarget.GL_ARRAY_BUFFER, GLBufferAccess.GL_READ_WRITE);
-        }
+        public MapQuery(final GLBufferTarget target,
+                final long offset, final long length,
+                final GLBufferAccess... accessBits) {
 
-        /**
-         * Constructs a new MapQuery. The access is set to READ_WRITE.
-         *
-         * @param target the target to bind to
-         * @since 15.05.13
-         */
-        public MapQuery(final GLBufferTarget target) {
-            this(target, GLBufferAccess.GL_READ_WRITE);
+            this(target, offset, length, accessBits, 0, accessBits.length);
         }
 
         /**
          * Constructs a new MapQuery.
          *
          * @param target the target to bind to
-         * @param access the access privileges to use
+         * @param offset the starting offset within the buffer range to be
+         * mapped.
+         * @param length the length of the range to be mapped.
+         * @param accessBits the flags indicating the desired access to the
+         * range.
+         * @param accessOffset the offset to start reading from the access
+         * flags.
+         * @param accessLength the number of access flags to read.
          * @since 15.05.13
          */
         public MapQuery(
-                final GLBufferTarget target, final GLBufferAccess access) {
+                final GLBufferTarget target,
+                final long offset, final long length,
+                final GLBufferAccess[] accessBits, final int accessOffset, final int accessLength) {
 
             this.target = target;
-            this.access = access;
+            this.offset = offset;
+            this.length = length;
+
+            int bitVal = 0;
+            for (int i = accessOffset; i < accessOffset + accessLength; i++) {
+                bitVal |= accessBits[i].value;
+            }
+
+            this.access = bitVal;
         }
 
         @Override
@@ -660,8 +708,11 @@ public class GLBuffer extends GLObject {
             final ByteBuffer oldBuffer = GLBuffer.this.mappedBuffer;
 
             GL15.glBindBuffer(this.target.value, GLBuffer.this.bufferId);
-            final ByteBuffer newBuffer = GL15.glMapBuffer(
-                    this.target.value, this.access.value, oldBuffer);            
+            final ByteBuffer newBuffer = GL30.glMapBufferRange(
+                    this.target.value,
+                    this.offset, this.length,
+                    this.access,
+                    oldBuffer);
 
             GLBuffer.this.mappedBuffer = newBuffer;
 

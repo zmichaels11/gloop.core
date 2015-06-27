@@ -12,6 +12,7 @@ import org.lwjgl.opengl.GL15;
  * These exist as hints for the video unit and are not guaranteed to do anything
  * different.
  *
+ * <a href="https://www.opengl.org/wiki/GLAPI/glBufferData#Description">glBufferData, Description</a>
  * @author zmichaels
  * @since 15.05.27
  */
