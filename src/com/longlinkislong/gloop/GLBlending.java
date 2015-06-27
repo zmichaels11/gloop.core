@@ -171,7 +171,7 @@ public class GLBlending extends GLObject {
         return new GLBlending(
                 this.getThread(),
                 this.enabled,
-                this.rgbBlend, this.alphaBlend,
+                rgb, alpha,
                 this.rgbFuncSrc, this.rgbFuncDst,
                 this.alphaFuncSrc, this.alphaFuncDst);
     }
