@@ -897,7 +897,9 @@ public class GLVertexArray extends GLObject {
                         this.stride, this.offset);
             }
 
-            GL33.glVertexAttribDivisor(this.index, this.divisor);
+            if(this.divisor > 0) {
+                GL33.glVertexAttribDivisor(this.index, this.divisor);
+            }
         }
     }
 
