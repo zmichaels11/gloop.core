@@ -369,6 +369,9 @@ public class GLWindow {
             GLFW.glfwDefaultWindowHints();
             GLFW.glfwWindowHint(GLFW.GLFW_VISIBLE, GL_FALSE);
             GLFW.glfwWindowHint(GLFW.GLFW_RESIZABLE, GL_TRUE);
+            GLFW.glfwWindowHint(GLFW.GLFW_VERSION_MAJOR, 3);
+            GLFW.glfwWindowHint(GLFW.GLFW_VERSION_MINOR, 3);
+            //GLFW.glfwWindowHint(GLFW.GLFW_OPENGL_FORWARD_COMPAT, GL_TRUE);
 
             final long sharedContextHandle = shared != null ? shared.window : NULL;
 
