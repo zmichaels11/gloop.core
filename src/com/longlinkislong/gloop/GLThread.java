@@ -280,6 +280,9 @@ public class GLThread implements ExecutorService {
      * @since 15.06.01
      */
     public Void insertBarrier() {
+        if(Thread.currentThread() == this.internalThread) {
+            throw new RuntimeException("Attempted barrier insertion on OpenGL thread!");
+        }
         return new BarrierQuery().glCall(this);
     }
 

@@ -13,7 +13,14 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.TreeMap;
+import org.lwjgl.glfw.Callbacks;
 import org.lwjgl.glfw.GLFW;
+import static org.lwjgl.glfw.GLFW.GLFW_CONTEXT_VERSION_MAJOR;
+import static org.lwjgl.glfw.GLFW.GLFW_CONTEXT_VERSION_MINOR;
+import static org.lwjgl.glfw.GLFW.GLFW_OPENGL_CORE_PROFILE;
+import static org.lwjgl.glfw.GLFW.GLFW_OPENGL_FORWARD_COMPAT;
+import static org.lwjgl.glfw.GLFW.GLFW_OPENGL_PROFILE;
+import static org.lwjgl.glfw.GLFW.glfwWindowHint;
 import org.lwjgl.glfw.GLFWCursorEnterCallback;
 import org.lwjgl.glfw.GLFWCursorPosCallback;
 import org.lwjgl.glfw.GLFWFramebufferSizeCallback;
@@ -36,7 +43,7 @@ import static org.lwjgl.system.MemoryUtil.NULL;
 public class GLWindow {
 
     private static final long INVALID_WINDOW_ID = -1L;
-    protected long window = INVALID_WINDOW_ID;
+    protected volatile long window = INVALID_WINDOW_ID;
     private final int width;
     private final int height;
     private final String title;
@@ -50,6 +57,7 @@ public class GLWindow {
     private Optional<GLFWFramebufferSizeCallback> resizeCallback = Optional.empty();
     private Optional<Runnable> onClose = Optional.empty();
     private final long monitor;
+    private volatile boolean hasInitialized = false;
 
     protected static final Map<Long, GLWindow> WINDOWS = new TreeMap<>(Long::compareTo);
     private static final List<GLGamepad> GAMEPADS;
@@ -58,6 +66,8 @@ public class GLWindow {
         if (GLFW.glfwInit() != GL_TRUE) {
             throw new GLException("Could not initialize GLFW!");
         }
+
+        GLFW.glfwSetErrorCallback(Callbacks.errorCallbackThrow());
 
         final List<GLGamepad> gamepads = new ArrayList<>();
         for (int i = 0; i < GLFW.GLFW_JOYSTICK_LAST; i++) {
@@ -174,7 +184,7 @@ public class GLWindow {
      * @since 15.06.07
      */
     public boolean isValid() {
-        return this.window != INVALID_WINDOW_ID;
+        return (this.hasInitialized && this.window != INVALID_WINDOW_ID);
     }
 
     private Optional<GLMouse> mouse = Optional.empty();
@@ -366,12 +376,14 @@ public class GLWindow {
 
         @Override
         public void run() {
-            GLFW.glfwDefaultWindowHints();
+            //GLFW.glfwDefaultWindowHints();
             GLFW.glfwWindowHint(GLFW.GLFW_VISIBLE, GL_FALSE);
             GLFW.glfwWindowHint(GLFW.GLFW_RESIZABLE, GL_TRUE);
-            GLFW.glfwWindowHint(GLFW.GLFW_VERSION_MAJOR, 3);
-            GLFW.glfwWindowHint(GLFW.GLFW_VERSION_MINOR, 3);
-            //GLFW.glfwWindowHint(GLFW.GLFW_OPENGL_FORWARD_COMPAT, GL_TRUE);
+
+            glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
+            glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 2);
+            glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GL_TRUE);
+            glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);            
 
             final long sharedContextHandle = shared != null ? shared.window : NULL;
 
@@ -403,6 +415,7 @@ public class GLWindow {
             GLWindow.this.handler.register();
 
             WINDOWS.put(GLWindow.this.window, GLWindow.this);
+            GLWindow.this.hasInitialized = true;
         }
     }
 
@@ -696,6 +709,7 @@ public class GLWindow {
 
     /**
      * Attempts to remove a window resize listener.
+     *
      * @param listener the listener to remove.
      * @return true if the listener was removed.
      * @since 15.06.24
@@ -706,6 +720,7 @@ public class GLWindow {
 
     /**
      * Removes all window listeners from the window.
+     *
      * @since 15.06.24
      */
     public void clearWindowListeners() {
