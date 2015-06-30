@@ -216,7 +216,22 @@ public class GLWindow {
      * @since 15.06.24
      */
     public GLMouse getMouse() throws GLException {
-        return this.mouse.orElseGet(this::newMouse);
+        return new MouseQuery().glCall(this.getGLThread());
+    }
+    
+    /**
+     * A GLQuery that requests for the Mouse object.
+     * @since 15.06.30
+     */
+    public class MouseQuery extends GLQuery<GLMouse> {
+        @Override
+        public GLMouse call() throws Exception {
+            if(!GLWindow.this.isValid()) {
+                throw new GLException("GLWindow is not valid!");
+            }
+            
+            return GLWindow.this.mouse.orElseGet(GLWindow.this::newMouse);
+        }
     }
 
     private Optional<GLKeyboard> keyboard = Optional.empty();
@@ -241,11 +256,24 @@ public class GLWindow {
      * @since 15.06.07
      */
     public GLKeyboard getKeyboard() throws GLException {
-        if (!this.isValid()) {
-            throw new GLException("Invalid GLWindow!");
-        }
+        return new KeyboardQuery().glCall(this.getGLThread());
+    }
+    
+    /**
+     * A GLQuery that requests for the GLKeyboard object.
+     * @since 15.06.30
+     */
+    public class KeyboardQuery extends GLQuery<GLKeyboard> {
 
-        return this.keyboard.orElseGet(this::newKeyboard);
+        @Override
+        public GLKeyboard call() throws Exception {
+            if(!GLWindow.this.isValid()) {
+                throw new GLException("Invalid GLWindow!");
+            }
+                        
+            return GLWindow.this.keyboard.orElseGet(GLWindow.this::newKeyboard);
+        }
+        
     }
 
     /**

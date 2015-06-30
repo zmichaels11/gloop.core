@@ -304,8 +304,7 @@ public class NeHe07 {
     }
     
     public void start() {
-        this.window.getGLThread().scheduleGLTask(this.drawTask);
-        this.window.getGLThread().insertBarrier();
+        this.window.getGLThread().scheduleGLTask(this.drawTask);        
         this.window.getKeyboard().addKeyListener(this::input);
         this.window.setVisible(true);
     }

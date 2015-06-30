@@ -257,8 +257,7 @@ public class NeHe05 {
             rCube -= 0.15f;
             
             this.window.update();                          
-        });
-        window.getGLThread().insertBarrier();
+        });        
         window.getMouse().addButtonListener((window, button, action, mods) -> {
             if(button == GLFW.GLFW_MOUSE_BUTTON_1) {
                 throw new RuntimeException("test");
