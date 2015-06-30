@@ -258,7 +258,8 @@ public class NeHe05 {
             
             this.window.update();                          
         });
-        window.waitForInit().getMouse().addButtonListener((window, button, action, mods) -> {
+        window.getGLThread().insertBarrier();
+        window.getMouse().addButtonListener((window, button, action, mods) -> {
             if(button == GLFW.GLFW_MOUSE_BUTTON_1) {
                 throw new RuntimeException("test");
             }
@@ -267,7 +268,7 @@ public class NeHe05 {
     
     public void start() {
         this.window.getGLThread().scheduleGLTask(this.drawTask);
-        this.window.waitForInit().setVisible(true);
+        this.window.setVisible(true);
     }
     
     public static void main(String[] args) throws Exception {

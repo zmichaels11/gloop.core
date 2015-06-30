@@ -122,7 +122,7 @@ public class NeHe02 {
 
     public void start() {
         this.window.getGLThread().scheduleGLTask(drawTask);
-        this.window.waitForInit().setVisible(true);
+        this.window.setVisible(true);
     }
 
     public static void main(String[] args) throws Exception {

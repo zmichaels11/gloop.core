@@ -13,7 +13,7 @@ public class HelloWorld {
 
     public HelloWorld() {
         window = new GLWindow(640, 480, "Hello GLOOP!");
-        window.waitForInit().setVisible(true); // lazily show window before we draw to it!
+        window.setVisible(true); // lazily show window before we draw to it!
 
         final GLClear clear = new GLClear(window.getGLThread(), 0.5f, 0.5f, 0.5f, 0f, 1.0);
         final GLBlending blend = new GLBlending()

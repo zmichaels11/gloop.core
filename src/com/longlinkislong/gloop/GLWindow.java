@@ -41,7 +41,8 @@ import static org.lwjgl.system.MemoryUtil.NULL;
  * @since 15.06.24
  */
 public class GLWindow {
-
+    public static int OPENGL_VERSION_MAJOR = 3;
+    public static int OPENGL_VERSION_MINOR = 2;
     private static final long INVALID_WINDOW_ID = -1L;
     protected volatile long window = INVALID_WINDOW_ID;
     private final int width;
@@ -58,6 +59,7 @@ public class GLWindow {
     private Optional<Runnable> onClose = Optional.empty();
     private final long monitor;
     private volatile boolean hasInitialized = false;
+    private final List<Runnable> cleanupTasks = new ArrayList<>();
 
     protected static final Map<Long, GLWindow> WINDOWS = new TreeMap<>(Long::compareTo);
     private static final List<GLGamepad> GAMEPADS;
@@ -380,10 +382,10 @@ public class GLWindow {
             GLFW.glfwWindowHint(GLFW.GLFW_VISIBLE, GL_FALSE);
             GLFW.glfwWindowHint(GLFW.GLFW_RESIZABLE, GL_TRUE);
 
-            glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
-            glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 2);
+            glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, OPENGL_VERSION_MAJOR);
+            glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, OPENGL_VERSION_MINOR);
             glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GL_TRUE);
-            glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);            
+            glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
 
             final long sharedContextHandle = shared != null ? shared.window : NULL;
 
@@ -417,23 +419,7 @@ public class GLWindow {
             WINDOWS.put(GLWindow.this.window, GLWindow.this);
             GLWindow.this.hasInitialized = true;
         }
-    }
-
-    /**
-     * Waits for the window and OpenGL context to be fully initialized before
-     * executing subsequent functions.
-     *
-     * @return self reference after the window has been initialized.
-     * @throws GLException if the OpenGL thread could not be synchronized.
-     * @since 15.06.07
-     */
-    public GLWindow waitForInit() throws GLException {
-        if (!this.isValid()) {
-            this.thread.insertBarrier();
-        }
-
-        return this;
-    }
+    }    
 
     /**
      * Retrieves the aspect ratio for the window. This number is the width
@@ -453,10 +439,27 @@ public class GLWindow {
      * @since 15.06.24
      */
     public void setVisible(final boolean isVisible) {
-        if (isVisible) {
-            GLFW.glfwShowWindow(this.window);
-        } else {
-            GLFW.glfwHideWindow(this.window);
+        new SetWindowVisibilityTask(isVisible).glRun(this.getGLThread());
+    }
+    
+    public class SetWindowVisibilityTask extends GLTask {
+        final boolean visibility;
+        
+        public SetWindowVisibilityTask(final boolean isVisible) {
+            this.visibility = isVisible;
+        }
+        
+        @Override
+        public void run() {
+            if(!GLWindow.this.isValid()) {
+                throw new GLException("GLWindow is not valid!");
+            }
+            
+            if(this.visibility) {
+                GLFW.glfwShowWindow(GLWindow.this.window);
+            } else {
+                GLFW.glfwHideWindow(GLWindow.this.window);
+            }
         }
     }
 
@@ -470,11 +473,33 @@ public class GLWindow {
      * @since 15.06.07
      */
     public void setSize(final int width, final int height) throws GLException {
-        if (!this.isValid()) {
-            throw new GLException("Invalid GLWindow!");
+        new SetWindowSizeTask(width, height).glRun(this.getGLThread());
+    }
+
+    public class SetWindowSizeTask extends GLTask {
+
+        final int width;
+        final int height;
+
+        public SetWindowSizeTask(final int width, final int height) {
+            if ((this.width = width) < 0) {
+                throw new GLException("Cannot set window width to less than 0!");
+            }
+
+            if ((this.height = height) < 0) {
+                throw new GLException("Cannot set window height to less than 0!");
+            }
         }
 
-        GLFW.glfwSetWindowSize(this.window, width, height);
+        @Override
+        public void run() {
+            if (!GLWindow.this.isValid()) {
+                throw new GLException("GLWindow is not valid!");
+            }
+            
+            GLFW.glfwSetWindowSize(GLWindow.this.window, this.width, this.height);
+        }
+
     }
 
     /**
@@ -485,17 +510,9 @@ public class GLWindow {
      * @since 15.06.07
      */
     public final int getFramebufferWidth() throws GLException {
-        if (!this.isValid()) {
-            throw new GLException("Invalid GLWindow!");
-        }
+        final GLQuery<int[]> sizeQuery = new FramebufferSizeQuery();
 
-        final ByteBuffer temp = ByteBuffer
-                .allocateDirect(Integer.BYTES)
-                .order(ByteOrder.nativeOrder());
-
-        GLFW.glfwGetFramebufferSize(this.window, temp, null);
-
-        return temp.getInt();
+        return sizeQuery.glCall(this.getGLThread())[GLTools.WIDTH];
     }
 
     /**
@@ -506,17 +523,31 @@ public class GLWindow {
      * @since 15.06.07
      */
     public final int getFramebufferHeight() throws GLException {
-        if (!this.isValid()) {
-            throw new GLException("Invalid GLWindow!");
+        final GLQuery<int[]> sizeQuery = new FramebufferSizeQuery();
+
+        return sizeQuery.glCall(this.getGLThread())[GLTools.HEIGHT];
+    }
+
+    public class FramebufferSizeQuery extends GLQuery<int[]> {
+
+        @Override
+        public int[] call() throws Exception {
+            if (!GLWindow.this.isValid()) {
+                throw new GLException("GLWindow is not valid!");
+            }
+
+            final ByteBuffer width = ByteBuffer
+                    .allocateDirect(Integer.BYTES)
+                    .order(ByteOrder.nativeOrder());
+            final ByteBuffer height = ByteBuffer
+                    .allocateDirect(Integer.BYTES)
+                    .order(ByteOrder.nativeOrder());
+
+            GLFW.glfwGetFramebufferSize(GLWindow.this.window, width, height);
+
+            return new int[]{width.getInt(), height.getInt()};
         }
 
-        final ByteBuffer temp = ByteBuffer
-                .allocateDirect(Integer.BYTES)
-                .order(ByteOrder.nativeOrder());
-
-        GLFW.glfwGetFramebufferSize(this.window, null, temp);
-
-        return temp.getInt();
     }
 
     /**
@@ -527,17 +558,9 @@ public class GLWindow {
      * @since 15.06.07
      */
     public int getX() throws GLException {
-        if (!this.isValid()) {
-            throw new GLException("Invalid GLWindow!");
-        }
+        final GLQuery<int[]> posQuery = this.new WindowPositionQuery();
 
-        final ByteBuffer temp = ByteBuffer
-                .allocateDirect(Integer.BYTES)
-                .order(ByteOrder.nativeOrder());
-
-        GLFW.glfwGetWindowPos(this.window, temp, null);
-
-        return temp.getInt();
+        return posQuery.glCall(this.getGLThread())[GLTools.X];
     }
 
     /**
@@ -548,17 +571,36 @@ public class GLWindow {
      * @since 15.06.07
      */
     public int getY() throws GLException {
-        if (!this.isValid()) {
-            throw new GLException("Invalid GLWindow!");
+        final GLQuery<int[]> posQuery = this.new WindowPositionQuery();
+
+        return posQuery.glCall(this.getGLThread())[GLTools.Y];
+    }
+
+    /**
+     * A GLQuery that requests the position of the window.
+     *
+     * @since 15.06.30
+     */
+    public class WindowPositionQuery extends GLQuery<int[]> {
+
+        @Override
+        public int[] call() throws Exception {
+            if (!GLWindow.this.isValid()) {
+                throw new GLException("GLWindow is not valid!");
+            }
+
+            final ByteBuffer x = ByteBuffer
+                    .allocateDirect(Integer.BYTES)
+                    .order(ByteOrder.nativeOrder());
+            final ByteBuffer y = ByteBuffer
+                    .allocateDirect(Integer.BYTES)
+                    .order(ByteOrder.nativeOrder());
+
+            GLFW.glfwGetWindowPos(GLWindow.this.window, x, y);
+
+            return new int[]{x.getInt(), y.getInt()};
         }
 
-        final ByteBuffer temp = ByteBuffer
-                .allocateDirect(Integer.BYTES)
-                .order(ByteOrder.nativeOrder());
-
-        GLFW.glfwGetWindowPos(this.window, null, temp);
-
-        return temp.getInt();
     }
 
     /**
@@ -569,16 +611,9 @@ public class GLWindow {
      * @since 15.06.05
      */
     public int getWidth() {
-        if (!this.isValid()) {
-            throw new GLException("Invalid GLWindow!");
-        }
+        final GLQuery<int[]> sizeQuery = this.new WindowSizeQuery();
 
-        final ByteBuffer temp = ByteBuffer
-                .allocateDirect(Integer.BYTES)
-                .order(ByteOrder.nativeOrder());
-
-        GLFW.glfwGetWindowSize(this.window, temp, null);
-        return temp.getInt();
+        return sizeQuery.glCall(this.getGLThread())[GLTools.WIDTH];
     }
 
     /**
@@ -589,16 +624,36 @@ public class GLWindow {
      * @since 15.06.05
      */
     public int getHeight() throws GLException {
-        if (!this.isValid()) {
-            throw new GLException("Invalid GLWindow!");
+        final GLQuery<int[]> sizeQuery = this.new WindowSizeQuery();
+
+        return sizeQuery.glCall(this.getGLThread())[GLTools.HEIGHT];
+    }
+
+    /**
+     * A GLTask that requests the size of the window.
+     *
+     * @since 15.06.30
+     */
+    public class WindowSizeQuery extends GLQuery<int[]> {
+
+        @Override
+        public int[] call() throws Exception {
+            if (!GLWindow.this.isValid()) {
+                throw new GLException("GLWindow is not valid!");
+            }
+
+            final ByteBuffer width = ByteBuffer
+                    .allocateDirect(Integer.BYTES)
+                    .order(ByteOrder.nativeOrder());
+            final ByteBuffer height = ByteBuffer
+                    .allocateDirect(Integer.BYTES)
+                    .order(ByteOrder.nativeOrder());
+
+            GLFW.glfwGetWindowSize(GLWindow.this.window, width, height);
+
+            return new int[]{width.getInt(), height.getInt()};
         }
 
-        final ByteBuffer temp = ByteBuffer
-                .allocateDirect(Integer.BYTES)
-                .order(ByteOrder.nativeOrder());
-
-        GLFW.glfwGetWindowSize(this.window, null, temp);
-        return temp.getInt();
     }
 
     /**
@@ -645,6 +700,8 @@ public class GLWindow {
     }
 
     private void cleanup() {
+        this.cleanupTasks.forEach(Runnable::run);
+        this.cleanupTasks.clear();
         this.workerThreads.forEach(GLWindow::stop);
         GLFW.glfwDestroyWindow(this.window);
         WINDOWS.remove(this.window);
@@ -692,6 +749,36 @@ public class GLWindow {
     @Override
     public String toString() {
         return "GLWindow: " + this.window;
+    }
+
+    /**
+     * Attempts to append a task to the end of the cleanup queue.
+     *
+     * @param task the task to append.
+     * @since 15.06.30
+     */
+    public void appendToCleanup(final Runnable task) {
+        this.cleanupTasks.add(task);
+    }
+
+    /**
+     * Attempts to remove a task from the cleanup queue.
+     *
+     * @param task the task to remove.
+     * @return true if the task was removed.
+     * @since 15.06.30
+     */
+    public boolean removeFromCleanup(final Runnable task) {
+        return this.cleanupTasks.remove(task);
+    }
+
+    /**
+     * Removes all tasks from the cleanup task queue.
+     *
+     * @since 15.06.30
+     */
+    public void clearCleanup() {
+        this.cleanupTasks.clear();
     }
 
     private WindowHandler handler = null;

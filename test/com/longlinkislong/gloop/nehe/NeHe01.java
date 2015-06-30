@@ -26,8 +26,7 @@ public class NeHe01 {
             System.out.printf("OpenGL GLSL Version: %s\n", GL11.glGetString(GL20.GL_SHADING_LANGUAGE_VERSION));
         }));
         window.getGLThread().scheduleGLTask(window.new UpdateTask());
-
-        window.waitForInit();
+        
         window.setVisible(true);        
     }
 
