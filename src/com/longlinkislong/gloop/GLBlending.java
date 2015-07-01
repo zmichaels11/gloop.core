@@ -159,89 +159,134 @@ public class GLBlending extends GLObject {
     }
 
     /**
+     * Copies the GLBlending object onto the specified OpenGL thread.
+     *
+     * @param thread the OpenGL thread to copy the object to.
+     * @return the GLBlending object.
+     * @since 15.07.01
+     */
+    public GLBlending withGLThread(final GLThread thread) {
+        return this.getThread() == thread
+                ? this
+                : new GLBlending(
+                        thread,
+                        this.enabled,
+                        this.rgbBlend, this.alphaBlend,
+                        this.rgbFuncSrc, this.rgbFuncDst,
+                        this.alphaFuncSrc, this.alphaFuncDst);
+    }
+
+    /**
      * Copies the GLBlending object and overrides the blend equations.
+     *
      * @param rgb the RGB blend equation.
      * @param alpha the alpha blend equation.
      * @return the GLBlending object.
-     * @see <a href="https://www.opengl.org/wiki/GLAPI/glBlendEquationSeparate">glBlendEquation (OpenGL Wiki)</a>
-     * @see <a href="https://www.opengl.org/sdk/docs/man/html/glBlendEquation.xhtml">glBlendEquation (OpenGL Wiki)</a>
+     * @see
+     * <a href="https://www.opengl.org/wiki/GLAPI/glBlendEquationSeparate">glBlendEquation
+     * (OpenGL Wiki)</a>
+     * @see
+     * <a href="https://www.opengl.org/sdk/docs/man/html/glBlendEquation.xhtml">glBlendEquation
+     * (OpenGL Wiki)</a>
      * @since 15.06.18
      */
     public GLBlending withBlendEquation(
             final GLBlendEquation rgb, final GLBlendEquation alpha) {
 
-        return new GLBlending(
-                this.getThread(),
-                this.enabled,
-                rgb, alpha,
-                this.rgbFuncSrc, this.rgbFuncDst,
-                this.alphaFuncSrc, this.alphaFuncDst);
+        return this.rgbBlend == rgb && this.alphaBlend == alpha
+                ? this
+                : new GLBlending(
+                        this.getThread(),
+                        this.enabled,
+                        rgb, alpha,
+                        this.rgbFuncSrc, this.rgbFuncDst,
+                        this.alphaFuncSrc, this.alphaFuncDst);
     }
 
     /**
      * Copies the GLBlending object and overrides the enabled status.
+     *
      * @param isEnabled if blending should be enabled.
      * @return the GLBlending object
-     * @see <a href="https://www.opengl.org/wiki/GLAPI/glEnable">glEnable (OpenGL Wiki)</a>
-     * @see <a href="https://www.opengl.org/sdk/docs/man/html/glEnable.xhtml">glEnable (OpenGL SDK)</a>
+     * @see <a href="https://www.opengl.org/wiki/GLAPI/glEnable">glEnable
+     * (OpenGL Wiki)</a>
+     * @see
+     * <a href="https://www.opengl.org/sdk/docs/man/html/glEnable.xhtml">glEnable
+     * (OpenGL SDK)</a>
      * @since 15.06.18
      */
     public GLBlending withEnabled(final GLEnableStatus isEnabled) {
 
-        return new GLBlending(
-                this.getThread(),
-                isEnabled,
-                this.rgbBlend, this.alphaBlend,
-                this.rgbFuncSrc, this.rgbFuncDst,
-                this.alphaFuncSrc, this.alphaFuncDst);
+        return this.enabled == isEnabled
+                ? this
+                : new GLBlending(
+                        this.getThread(),
+                        isEnabled,
+                        this.rgbBlend, this.alphaBlend,
+                        this.rgbFuncSrc, this.rgbFuncDst,
+                        this.alphaFuncSrc, this.alphaFuncDst);
     }
 
     /**
-     * Copies the GLBlending object and overrides the source and destination blend functions.
+     * Copies the GLBlending object and overrides the source and destination
+     * blend functions.
+     *
      * @param rgbSrc the blend function for RGB source color.
      * @param rgbDst the blend function for RGB destination color.
      * @param alphaSrc the blend function for alpha source color.
      * @param alphaDst the blend function for alpha destination color.
      * @return the blend function
-     * @see <a href="https://www.opengl.org/wiki/GLAPI/glBlendFuncSeparate">glBlendFunc/Separate (OpenGL Wiki)</a>     
-     * @see <a href="https://www.opengl.org/sdk/docs/man/html/glBlendFuncSeparate.xhtml">glBlendFuncSeparate (OpenGL SDK)</a>
+     * @see
+     * <a href="https://www.opengl.org/wiki/GLAPI/glBlendFuncSeparate">glBlendFunc/Separate
+     * (OpenGL Wiki)</a>
+     * @see
+     * <a href="https://www.opengl.org/sdk/docs/man/html/glBlendFuncSeparate.xhtml">glBlendFuncSeparate
+     * (OpenGL SDK)</a>
      * @since 15.06.18
      */
     public GLBlending withBlendFunc(
             final GLBlendFunc rgbSrc, final GLBlendFunc rgbDst,
             final GLBlendFunc alphaSrc, final GLBlendFunc alphaDst) {
 
-        return new GLBlending(
-                this.getThread(),
-                this.enabled,
-                this.rgbBlend, this.alphaBlend,
-                rgbSrc, rgbDst,
-                alphaSrc, alphaDst);
+        return this.rgbFuncSrc == rgbSrc && this.rgbFuncDst == rgbDst
+                && this.alphaFuncSrc == alphaSrc && this.alphaFuncDst == alphaDst
+                        ? this
+                        : new GLBlending(
+                                this.getThread(),
+                                this.enabled,
+                                this.rgbBlend, this.alphaBlend,
+                                rgbSrc, rgbDst,
+                                alphaSrc, alphaDst);
     }
-       
 
-    private SetBlendingTask applyTask = null;
+    private ApplyBlendingTask applyTask = null;
 
     /**
      * Applies all of the blend parameters on the GLBlending object's GLThread.
+     *
      * @since 15.06.18
      */
     public final void applyBlending() {
-        if (this.applyTask == null) {            
-            this.applyTask = new SetBlendingTask();
+        if (this.applyTask == null) {
+            this.applyTask = new ApplyBlendingTask();
         }
-        
+
         this.applyTask.glRun(this.getThread());
     }
 
     /**
      * GLTask that sets the OpenGL blending parameters.
+     *
      * @since 15.06.18
      */
-    public class SetBlendingTask extends GLTask {
+    public class ApplyBlendingTask extends GLTask {
 
         @Override
         public void run() {
+            final GLThread thread = GLThread.THREAD_MAP.get(Thread.currentThread());
+
+            thread.currentBlend = GLBlending.this.withGLThread(thread);
+
             switch (GLBlending.this.enabled) {
                 case GL_ENABLED:
                     GL11.glEnable(GL11.GL_BLEND);

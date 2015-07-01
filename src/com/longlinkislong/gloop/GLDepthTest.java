@@ -59,23 +59,42 @@ public class GLDepthTest extends GLObject {
     }
 
     /**
+     * Copies the GLDepthTest object onto the specified OpenGL thread.
+     *
+     * @param thread the thread to copy the object to.
+     * @return the GLDepthTest object.
+     * @since 15.07.01
+     */
+    public GLDepthTest withGLThread(final GLThread thread) {
+        return thread == this.getThread()
+                ? this
+                : new GLDepthTest(thread, this.depthTestEnabled, this.depthFunc);
+    }
+
+    /**
      * Copies the GLDepthTest object and overrides the enabled parameter.
+     *
      * @param isEnabled the new enabled parameter.
      * @return the GLDepthTest object.
      * @since 15.06.18
      */
     public GLDepthTest withEnabled(final GLEnableStatus isEnabled) {
-        return new GLDepthTest(this.getThread(), isEnabled, this.depthFunc);
+        return this.depthTestEnabled == isEnabled
+                ? this
+                : new GLDepthTest(this.getThread(), isEnabled, this.depthFunc);
     }
 
     /**
      * Copies the GLDepthTest object and overrides the depth function parameter.
+     *
      * @param func the new depth function parameter.
      * @return the GLDepthTest object.
      * @since 15.06.18
      */
     public GLDepthTest withDepthFunc(final GLDepthFunc func) {
-        return new GLDepthTest(this.getThread(), this.depthTestEnabled, func);
+        return this.depthFunc == func
+                ? this
+                : new GLDepthTest(this.getThread(), this.depthTestEnabled, func);
     }
 
     private final GLTask applyTask = new ApplyDepthFuncTask();
@@ -98,6 +117,10 @@ public class GLDepthTest extends GLObject {
 
         @Override
         public void run() {
+            final GLThread thread = GLThread.THREAD_MAP.get(Thread.currentThread());
+            
+            thread.currentDepthTest = GLDepthTest.this.withGLThread(thread);
+            
             switch (GLDepthTest.this.depthTestEnabled) {
                 case GL_ENABLED:
                     GL11.glEnable(GL11.GL_DEPTH_TEST);

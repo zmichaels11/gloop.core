@@ -481,7 +481,7 @@ public class GLWindow {
                     .order(ByteOrder.nativeOrder());
 
             GLFW.glfwGetFramebufferSize(GLWindow.this.window, fbWidth, fbHeight);
-            GLWindow.this.thread.pushViewport(new GLViewport(0, 0, fbWidth.getInt(0), fbHeight.getInt(0)));
+            GLWindow.this.thread.currentViewport = new GLViewport(0, 0, fbWidth.getInt(), fbHeight.getInt());
 
             GLWindow.this.handler = GLWindow.this.new WindowHandler();
             GLWindow.this.handler.register();

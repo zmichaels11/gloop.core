@@ -7,8 +7,10 @@ package com.longlinkislong.gloop;
 
 import java.util.Collection;
 import java.util.Deque;
+import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.Callable;
 import java.util.concurrent.CancellationException;
 import java.util.concurrent.ExecutionException;
@@ -26,9 +28,174 @@ import java.util.stream.Collectors;
  */
 public class GLThread implements ExecutorService {
 
+    static final Map<Thread, GLThread> THREAD_MAP = new HashMap<>();
+    final Deque<GLBlending> blendStack = new LinkedList<>();
+    final Deque<GLClear> clearStack = new LinkedList<>();
+    final Deque<GLDepthTest> depthTestStack = new LinkedList<>();
+    final Deque<GLMask> maskStack = new LinkedList<>();
+    final Deque<GLPolygonParameters> polygonParameterStack = new LinkedList<>();
+    final Deque<GLViewport> viewportStack = new LinkedList<>();
+
+    GLBlending currentBlend = new GLBlending(this);
+    GLClear currentClear = new GLClear(this);
+    GLDepthTest currentDepthTest = new GLDepthTest(this);
+    GLPolygonParameters currentPolygonParameters = new GLPolygonParameters(this);
+    GLMask currentMask = new GLMask(this);
+    GLViewport currentViewport = null;
+
+    /**
+     * Retrieves the current blending mode.
+     *
+     * @return the current blending mode.
+     * @since 15.07.01
+     */
+    public GLBlending currentBlend() {
+        return this.currentBlend;
+    }
+
+    /**
+     * Pushes the current blending mode onto a stack.
+     *
+     * @since 15.07.01
+     */
+    public void pushBlend() {
+        this.blendStack.push(this.currentBlend);
+    }
+
+    /**
+     * Restores the previous blending mode.
+     *
+     * @return the previous mode.
+     * @since 15.07.01
+     */
+    public GLBlending popBlend() {
+        final GLBlending blend = this.blendStack.pop();
+        blend.applyBlending();
+        return blend;
+    }
+
+    /**
+     * Retrieves the current clear.
+     *
+     * @return the current clear.
+     * @since 15.07.01
+     */
+    public GLClear currentClear() {
+        return this.currentClear;
+    }
+
+    public void pushClear() {
+        this.clearStack.push(this.currentClear);
+    }
+
+    /**
+     * Restores the previous clear mode.
+     *
+     * @return the previous clear.
+     * @since 15.07.01
+     */
+    public GLClear popClear() {
+        final GLClear clear = this.clearStack.pop();
+        clear.clear();
+        return clear;
+    }
+
+    /**
+     * Retrieves the current depth test.
+     *
+     * @return the current depth test.
+     * @since 15.07.01
+     */
+    public GLDepthTest currentDepthTest() {
+        return this.currentDepthTest;
+    }
+
+    /**
+     * Pushes the current depth test onto the stack.
+     *
+     * @since 15.07.01
+     */
+    public void pushDepthTest() {
+        this.depthTestStack.push(this.currentDepthTest);
+    }
+
+    /**
+     * Restores the previous depth test.
+     *
+     * @return the previous depth test.
+     * @since 15.07.01
+     */
+    public GLDepthTest popDepthTest() {
+        final GLDepthTest depthTest = this.depthTestStack.pop();
+        depthTest.applyDepthFunc();
+        return depthTest;
+    }
+
+    /**
+     * Retrieves the current color mask.
+     *
+     * @return the current mask.
+     * @since 15.07.01
+     */
+    public GLMask currentMask() {
+        return this.currentMask;
+    }
+
+    /**
+     * Pushes the current color mask onto the stack.
+     *
+     * @since 15.07.01
+     */
+    public void pushMask() {
+        this.maskStack.push(this.currentMask);
+    }
+
+    /**
+     * Restores the previous color mask.
+     *
+     * @return the previous mask.
+     * @since 15.07.01
+     */
+    public GLMask popMask() {
+        final GLMask mask = this.maskStack.pop();
+        mask.applyMask();
+        return mask;
+    }
+
+    /**
+     * Retrieves the current viewport.
+     *
+     * @return the current viewport.
+     * @since 15.07.01
+     */
+    public GLViewport currentViewport() {
+        return this.currentViewport;
+    }
+
+    /**
+     * Pushes the current viewport onto the stack.
+     *
+     * @since 15.07.01
+     */
+    public void pushViewport() {
+        this.viewportStack.push(this.currentViewport);
+    }
+
+    /**
+     * Restores the previous viewport.
+     *
+     * @return the previous viewport.
+     * @since 15.07.01
+     */
+    public GLViewport popViewport() {
+        final GLViewport viewport = this.viewportStack.pop();
+        viewport.applyViewport();
+        return viewport;
+    }
+
     private final ExecutorService internalExecutor = new ThreadPoolExecutor(
             1, 1, 0L, TimeUnit.MILLISECONDS, new LinkedBlockingQueue<>()) {
-                
+
                 @Override
                 protected void afterExecute(final Runnable task, Throwable ex) {
                     super.afterExecute(task, ex);
@@ -43,7 +210,7 @@ public class GLThread implements ExecutorService {
                         } catch (CancellationException ce) {
                             ex = ce;
                         } catch (ExecutionException ee) {
-                            ex = ee.getCause();                            
+                            ex = ee.getCause();
                         } catch (InterruptedException ie) {
                             Thread.currentThread().interrupt();
                         }
@@ -56,177 +223,6 @@ public class GLThread implements ExecutorService {
             };
     private Thread internalThread = null;
     private boolean shouldHaltScheduledTasks = false;
-    private final Deque<GLClear> clearStack = new LinkedList<>();
-    private final Deque<GLBlending> blendStack = new LinkedList<>();
-    private final Deque<GLScissorTest> scissorStack = new LinkedList<>();
-    private final Deque<GLMask> maskStack = new LinkedList<>();
-    private final Deque<GLViewport> viewportStack = new LinkedList<>();
-    private final Deque<GLPolygonParameters> polygonStack = new LinkedList<>();
-    private final Deque<GLDepthTest> depthTestStack = new LinkedList<>();
-
-    public GLDepthTest currentDepthTest() {
-        return this.depthTestStack.isEmpty()
-                ? new GLDepthTest(this)
-                : this.depthTestStack.peek();
-    }
-
-    public void pushDepthTest(final GLDepthTest test) {
-        this.depthTestStack.push(test);
-        test.applyDepthFunc();
-    }
-
-    public GLDepthTest popDepthTest() {
-        final GLDepthTest top = this.depthTestStack.isEmpty()
-                ? new GLDepthTest(this)
-                : this.depthTestStack.pop();
-
-        this.currentDepthTest().applyDepthFunc();
-
-        return top;
-    }
-
-    public GLPolygonParameters currentPolygonParameters() {
-        return this.polygonStack.isEmpty()
-                ? new GLPolygonParameters(this)
-                : this.polygonStack.peek();
-    }
-
-    public void pushPolygonParameters(final GLPolygonParameters params) {
-        params.applyParameters();
-        this.polygonStack.push(params);
-    }
-
-    public GLPolygonParameters popPolygonParameters() {
-        final GLPolygonParameters top = this.polygonStack.isEmpty()
-                ? new GLPolygonParameters(this)
-                : this.polygonStack.pop();
-
-        this.currentPolygonParameters().applyParameters();
-
-        return top;
-    }
-
-    public GLViewport currentViewport() {
-        return this.viewportStack.peek();
-    }
-
-    public void pushViewport(final GLViewport viewport) {
-        this.viewportStack.push(viewport);
-    }
-
-    public GLViewport popViewport() {
-        final GLViewport top = this.viewportStack.pop();
-
-        this.currentViewport().applyViewport();
-
-        return top;
-    }
-
-    public GLMask currentMask() {
-        return this.maskStack.isEmpty()
-                ? new GLMask(this)
-                : this.maskStack.peek();
-    }
-
-    public void pushMask(final GLMask mask) {
-        this.maskStack.push(mask);
-    }
-
-    public GLMask popMask() {
-        final GLMask top = this.maskStack.isEmpty()
-                ? new GLMask(this)
-                : this.maskStack.pop();
-
-        this.currentMask().applyMask();
-
-        return top;
-    }
-
-    public GLScissorTest currentScissorTest() {
-        return this.scissorStack.peek();
-    }
-
-    public void pushScissorTest(final GLScissorTest test) {
-        this.scissorStack.push(test);
-    }
-
-    public GLScissorTest popScissorTest() {
-        this.currentScissorTest().end();
-
-        if (this.scissorStack.isEmpty()) {
-            return null;
-        } else {
-            final GLScissorTest top = this.scissorStack.pop();
-            final GLScissorTest current = this.currentScissorTest();
-
-            top.end();
-            if (current != null) {
-                current.begin();
-            }
-
-            return top;
-        }
-    }
-
-    public GLBlending currentBlend() {
-        return this.blendStack.isEmpty()
-                ? new GLBlending(this)
-                : this.blendStack.peek();
-    }
-
-    public void pushBlend(final GLBlending blend) {
-        this.blendStack.push(blend);
-    }
-
-    public GLBlending popBlend() {
-        final GLBlending top = this.blendStack.isEmpty()
-                ? new GLBlending(this)
-                : this.blendStack.pop();
-
-        this.currentBlend().applyBlending();
-
-        return top;
-    }
-
-    /**
-     * Retrieves but does not remove the top of the clear stack. The GLClear
-     * object will not be reinitialized.
-     *
-     * @return the GLClear object.
-     * @since 15.05.27
-     */
-    public GLClear currentClear() {
-        return this.clearStack.isEmpty()
-                ? new GLClear(this)
-                : this.clearStack.peek();
-    }
-
-    /**
-     * Pushes the GLClear object onto the clear stack.
-     *
-     * @param clear the clear object to push
-     * @since 15.05.27
-     */
-    public void pushClear(final GLClear clear) {
-        this.clearStack.push(clear);
-    }
-
-    /**
-     * Pops the last GLClear object from the stack. This will reinitialize the
-     * GLClear object.
-     *
-     * @return the GLClear object.
-     * @since 15.05.27
-     */
-    public GLClear popClear() {
-        final GLClear top = this.clearStack.isEmpty()
-                ? new GLClear(this)
-                : this.clearStack.pop();
-
-        this.currentClear().clear();
-
-        return top;
-    }
 
     protected Thread getThread() {
         return this.internalThread;
@@ -281,7 +277,7 @@ public class GLThread implements ExecutorService {
      * @since 15.06.01
      */
     public Void insertBarrier() {
-        if(Thread.currentThread() == this.internalThread) {
+        if (Thread.currentThread() == this.internalThread) {
             throw new RuntimeException("Attempted barrier insertion on OpenGL thread!");
         }
         return new BarrierQuery().glCall(this);
@@ -313,18 +309,22 @@ public class GLThread implements ExecutorService {
     }
 
     @Override
-    public <T> Future<T> submit(Runnable task, T result) {        
-        return this.submitGLQuery(GLQuery.create(task, ()->{return result;}));
+    public <T> Future<T> submit(Runnable task, T result) {
+        return this.submitGLQuery(GLQuery.create(task, () -> {
+            return result;
+        }));
     }
 
     @Override
     public Future<?> submit(Runnable task) {
-        return this.submitGLQuery(GLQuery.create(task, ()->{ return Boolean.TRUE; }));
+        return this.submitGLQuery(GLQuery.create(task, () -> {
+            return Boolean.TRUE;
+        }));
     }
 
     @Override
-    public <T> List<Future<T>> invokeAll(Collection<? extends Callable<T>> tasks) throws InterruptedException {        
-        return tasks.stream().map(this::submit).collect(Collectors.toList());        
+    public <T> List<Future<T>> invokeAll(Collection<? extends Callable<T>> tasks) throws InterruptedException {
+        return tasks.stream().map(this::submit).collect(Collectors.toList());
     }
 
     @Override
@@ -361,6 +361,7 @@ public class GLThread implements ExecutorService {
         @Override
         public void run() {
             GLThread.this.internalThread = Thread.currentThread();
+            THREAD_MAP.put(GLThread.this.internalThread, GLThread.this);
         }
     }
 

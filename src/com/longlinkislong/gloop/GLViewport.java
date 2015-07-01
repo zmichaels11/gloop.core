@@ -80,6 +80,18 @@ public class GLViewport extends GLObject {
         this.width = w;
         this.height = h;
     }
+    
+    public GLViewport withGLThread(final GLThread thread) {
+        return this.getThread() == thread
+                ? this
+                : new GLViewport(thread, this.x, this.y, this.width, this.height);
+    }
+    
+    public GLViewport withViewRect(final int x, final int y, final int width, final int height) {
+        return this.x == x && this.y == y && this.width == width && this.height == height
+                ? this
+                : new GLViewport(this.getThread(), x, y, width, height);
+    }
 
     private final ApplyViewportTask applyTask = new ApplyViewportTask();
 
@@ -101,6 +113,9 @@ public class GLViewport extends GLObject {
 
         @Override
         public void run() {
+            final GLThread thread = GLThread.THREAD_MAP.get(Thread.currentThread());
+            
+            thread.currentViewport = GLViewport.this.withGLThread(thread);
             GL11.glViewport(
                     GLViewport.this.x, GLViewport.this.y,
                     GLViewport.this.width, GLViewport.this.height);

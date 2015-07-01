@@ -47,9 +47,11 @@ public class NeHe05 {
 
         final GLClear clear = this.window.getGLThread().currentClear();
 
-        this.window.getGLThread().pushDepthTest(new GLDepthTest()
-                .withDepthFunc(GLDepthFunc.GL_LESS)
-                .withEnabled(GLEnableStatus.GL_ENABLED));
+        final GLDepthTest depthTest = new GLDepthTest()
+                .withEnabled(GLEnableStatus.GL_ENABLED)
+                .withDepthFunc(GLDepthFunc.GL_LESS);
+        
+        depthTest.applyDepthFunc();
         
         final GLVertexAttributes vAttribs = new GLVertexAttributes();
         vAttribs.setAttribute("vPos", 0);

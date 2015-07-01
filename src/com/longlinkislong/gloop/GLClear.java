@@ -168,6 +168,23 @@ public class GLClear extends GLObject {
     }
 
     /**
+     * Copies the GLClear object onto the specified OpenGL thread.
+     *
+     * @param thread the thread to copy the OpenGL object to.
+     * @return the GLClear object.
+     * @since 15.07.01
+     */
+    public GLClear withGLThread(final GLThread thread) {
+        return this.getThread() == thread
+                ? this
+                : new GLClear(
+                        thread,
+                        this.red, this.green, this.blue, this.alpha,
+                        this.depth,
+                        this.clearBits);
+    }
+
+    /**
      * Copies the GLClear object and overrides the clear bits.
      *
      * @param modes a series of clear bits.
@@ -240,6 +257,9 @@ public class GLClear extends GLObject {
 
         @Override
         public void run() {
+            final GLThread thread = GLThread.THREAD_MAP.get(Thread.currentThread());
+            
+            thread.currentClear = GLClear.this.withGLThread(thread);            
             GL11.glClearColor(GLClear.this.red, GLClear.this.green, GLClear.this.blue, GLClear.this.alpha);
             GL11.glClear(GLClear.this.clearBitField);
         }
