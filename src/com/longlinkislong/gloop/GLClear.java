@@ -5,6 +5,10 @@
  */
 package com.longlinkislong.gloop;
 
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.HashSet;
+import java.util.Set;
 import org.lwjgl.opengl.GL11;
 
 /**
@@ -16,6 +20,59 @@ import org.lwjgl.opengl.GL11;
  */
 public class GLClear extends GLObject {
 
+    /**
+     * The default value the red channel is set to on clear. By default it is
+     * 0.0.
+     *
+     * @since 15.07.01
+     */
+    public static final float DEFAULT_CLEAR_RED = 0f;
+    /**
+     * The default value the green channel is set to on clear. By default it is
+     * 0.0.
+     *
+     * @since 15.07.01
+     */
+    public static final float DEFAULT_CLEAR_GREEN = 0f;
+    /**
+     * The default value the blue channel is set to on clear. By default it is
+     * 0.0.
+     *
+     * @since 15.07.01
+     */
+    public static final float DEFAULT_CLEAR_BLUE = 0f;
+    /**
+     * The default value the alpha channel is set to on clear. By default it is
+     * 0.0.
+     *
+     * @since 15.07.01
+     */
+    public static final float DEFAULT_CLEAR_ALPHA = 0f;
+    /**
+     * The default value the depth buffer is set to on clear. By default it is
+     * 1.0.
+     *
+     * @since 15.07.01
+     */
+    public static final double DEFAULT_CLEAR_DEPTH = 1d;
+    /**
+     * The default clear bits. By default it is GL_CLEAR_COLOR_BIT and
+     * GL_CLEAR_DEPTH_BIT.
+     *
+     * @since 15.07.01
+     */
+    public static final Set<GLClearBufferMode> DEFAULT_CLEAR_BITS;
+
+    static {
+        final Set<GLClearBufferMode> bits = new HashSet<>();
+        DEFAULT_CLEAR_BITS = Collections.unmodifiableSet(bits);
+
+        bits.add(GLClearBufferMode.GL_COLOR_BUFFER_BIT);
+        bits.add(GLClearBufferMode.GL_DEPTH_BUFFER_BIT);
+    }
+
+    private final int clearBitField;
+    public final Set<GLClearBufferMode> clearBits;
     /**
      * The value to set each pixel's red component to.
      *
@@ -54,7 +111,7 @@ public class GLClear extends GLObject {
      * @since 15.06.18
      */
     public GLClear() {
-        this(GLThread.getDefaultInstance(), 0f, 0f, 0f, 0f, 1d);
+        this(GLThread.getDefaultInstance());
     }
 
     /**
@@ -65,7 +122,10 @@ public class GLClear extends GLObject {
      * @since 15.06.18
      */
     public GLClear(final GLThread thread) {
-        this(thread, 0f, 0f, 0f, 0f, 1d);
+        this(thread,
+                DEFAULT_CLEAR_RED, DEFAULT_CLEAR_GREEN, DEFAULT_CLEAR_BLUE,
+                DEFAULT_CLEAR_ALPHA, DEFAULT_CLEAR_DEPTH,
+                DEFAULT_CLEAR_BITS);
     }
 
     /**
@@ -78,12 +138,14 @@ public class GLClear extends GLObject {
      * @param b the blue component.
      * @param a the alpha component.
      * @param depth the depth component.
+     * @param clearBits the clear bits to use
      * @since 15.06.18
      */
     public GLClear(
             final GLThread thread,
             final float r, final float g, final float b, final float a,
-            final double depth) {
+            final double depth,
+            final Set<GLClearBufferMode> clearBits) {
 
         super(thread);
 
@@ -92,10 +154,50 @@ public class GLClear extends GLObject {
         this.blue = b;
         this.alpha = a;
         this.depth = depth;
+
+        final Set<GLClearBufferMode> bits = new HashSet<>();
+        int bitField = 0;
+
+        for (GLClearBufferMode bit : clearBits) {
+            bitField |= bit.value;
+            bits.add(bit);
+        }
+
+        this.clearBitField = bitField;
+        this.clearBits = Collections.unmodifiableSet(bits);
+    }
+
+    /**
+     * Copies the GLClear object and overrides the clear bits.
+     *
+     * @param modes a series of clear bits.
+     * @return the GLClear object.
+     * @since 15.07.01
+     */
+    public GLClear withClearBits(final GLClearBufferMode... modes) {
+        return this.withClearBits(modes, 0, modes.length);
+    }
+
+    /**
+     * Copies the GLClear object and overrides the clear bits.
+     *
+     * @param modes the array to read the clear bits from.
+     * @param offset the offset to start reading the clear bits.
+     * @param count the number of clear bits to read.
+     * @return the GLClear object.
+     * @since 15.07.01
+     */
+    public GLClear withClearBits(final GLClearBufferMode[] modes, final int offset, final int count) {
+        final Set<GLClearBufferMode> bits = new HashSet<>();
+
+        Arrays.stream(modes, offset, modes.length).forEach(bits::add);
+
+        return new GLClear(this.getThread(), this.red, this.green, this.blue, this.alpha, this.depth, bits);
     }
 
     /**
      * Copies the GLClear object and overrides the clear color.
+     *
      * @param r the new red value.
      * @param g the new green value.
      * @param b the new blue value.
@@ -104,133 +206,43 @@ public class GLClear extends GLObject {
      * @since 15.06.18
      */
     public GLClear withClearColor(final float r, final float g, final float b, final float a) {
-        return new GLClear(this.getThread(), r, g, b, a, this.depth);
+        return new GLClear(this.getThread(), r, g, b, a, this.depth, this.clearBits);
     }
-    
+
     /**
      * Copies the GLClear object and overrides the clear depth.
+     *
      * @param depth the new clear depth.
      * @return the GLClear object.
      * @since 15.06.18
      */
     public GLClear withClearDepth(final double depth) {
-        return new GLClear(this.getThread(), this.red, this.green, this.blue, this.alpha, depth);
+        return new GLClear(this.getThread(), this.red, this.green, this.blue, this.alpha, depth, this.clearBits);
     }
 
-    private final GLTask init = new ApplyClearTask();
+    private final GLTask clearTask = new ClearTask();
 
     /**
-     * Applies the clear task to the OpenGL thread associated to the GLClear
-     * object.
+     * Performs the OpenGL clear operation.
      *
-     * @since 15.06.18
+     * @since 15.07.01
      */
-    public final void applyClear() {
-        this.init.glRun(this.getThread());
+    public void clear() {
+        this.clearTask.glRun(this.getThread());
     }
 
     /**
-     * A GLTask that sets both clear color and clear depth values.
+     * A GLTask that clears the select buffers.
      *
-     * @since 15.06.18
-     */
-    public class ApplyClearTask extends GLTask {
-
-        @Override
-        public void run() {
-            GL11.glClearColor(
-                    GLClear.this.red,
-                    GLClear.this.green,
-                    GLClear.this.blue,
-                    GLClear.this.alpha);
-            GL11.glClearDepth(GLClear.this.depth);
-        }
-    }
-
-    private ClearTask lastClearTask = null;
-
-    /**
-     * Runs the clear command with the specified buffer clear bits.
-     *
-     * @param bits the attachments of the backbuffer to clear.
-     * @since 15.06.18
-     */
-    public void clear(final GLClearBufferMode... bits) {
-        this.clear(bits, 0, bits.length);
-    }
-
-    /**
-     * Runs the clear command with the specified clear buffer bits.
-     *
-     * @param bits the clear bits
-     * @param offset the offset to start reading from the clear bits array.
-     * @param length the number of elements to read from the array.
-     * @since 15.06.18
-     */
-    public void clear(
-            final GLClearBufferMode[] bits, final int offset, final int length) {
-
-        if (this.lastClearTask != null) {
-            int bitValue = 0;
-
-            for (GLClearBufferMode bit : bits) {
-                bitValue |= bit.value;
-            }
-
-            if (this.lastClearTask.bits != bitValue) {
-                this.lastClearTask = new ClearTask(bits, offset, length);
-            }
-        } else {
-            this.lastClearTask = new ClearTask(bits, offset, length);
-        }
-
-        this.lastClearTask.glRun(this.getThread());
-    }
-
-    /**
-     * A GLTask that clears the current framebuffer.
-     *
-     * @since 15.06.18
+     * @since 15.07.01
      */
     public class ClearTask extends GLTask {
 
-        final int bits;
-
-        /**
-         * The bitfield to clear
-         *
-         * @param bits bitfield.
-         * @since 15.06.18
-         */
-        public ClearTask(final GLClearBufferMode... bits) {
-            this(bits, 0, bits.length);
-        }
-
-        /**
-         * The bitfield to clear.
-         *
-         * @param bits array containing bitfield parameters.
-         * @param offset offset to start reading from the array.
-         * @param length the number of elements to read from the array.
-         * @since 15.06.18
-         */
-        public ClearTask(
-                final GLClearBufferMode[] bits,
-                final int offset,
-                final int length) {
-
-            int tBits = 0;
-
-            for (GLClearBufferMode bit : bits) {
-                tBits |= bit.value;
-            }
-
-            this.bits = tBits;
-        }
-
         @Override
         public void run() {
-            GL11.glClear(this.bits);
+            GL11.glClearColor(GLClear.this.red, GLClear.this.green, GLClear.this.blue, GLClear.this.alpha);
+            GL11.glClear(GLClear.this.clearBitField);
         }
+
     }
 }

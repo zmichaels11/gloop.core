@@ -7,8 +7,6 @@ package com.longlinkislong.gloop.nehe;
 
 import com.longlinkislong.gloop.GLBuffer;
 import com.longlinkislong.gloop.GLClear;
-import static com.longlinkislong.gloop.GLClearBufferMode.GL_COLOR_BUFFER_BIT;
-import static com.longlinkislong.gloop.GLClearBufferMode.GL_DEPTH_BUFFER_BIT;
 import static com.longlinkislong.gloop.GLDepthFunc.GL_LESS;
 import com.longlinkislong.gloop.GLDepthTest;
 import static com.longlinkislong.gloop.GLDrawMode.GL_TRIANGLES;
@@ -281,7 +279,7 @@ public class NeHe07 {
                 throw optEx.get();
             }
             
-            clear.clear(GL_COLOR_BUFFER_BIT, GL_DEPTH_BUFFER_BIT);
+            clear.clear();
             
             final GLMat4F trCube;
             {

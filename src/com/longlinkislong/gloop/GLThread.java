@@ -223,7 +223,7 @@ public class GLThread implements ExecutorService {
                 ? new GLClear(this)
                 : this.clearStack.pop();
 
-        this.currentClear().applyClear();
+        this.currentClear().clear();
 
         return top;
     }
@@ -232,6 +232,7 @@ public class GLThread implements ExecutorService {
         return this.internalThread;
     }
 
+    @Override
     public void shutdown() {
         this.shouldHaltScheduledTasks = true;
         this.internalExecutor.shutdown();

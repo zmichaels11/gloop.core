@@ -7,7 +7,6 @@ package com.longlinkislong.gloop.nehe;
 
 import com.longlinkislong.gloop.GLBuffer;
 import com.longlinkislong.gloop.GLClear;
-import com.longlinkislong.gloop.GLClearBufferMode;
 import com.longlinkislong.gloop.GLDepthFunc;
 import com.longlinkislong.gloop.GLDepthTest;
 import com.longlinkislong.gloop.GLDrawMode;
@@ -226,9 +225,7 @@ public class NeHe05 {
         
         
         this.drawTask = GLTask.create(() -> {
-            clear.clear(
-                    GLClearBufferMode.GL_COLOR_BUFFER_BIT, 
-                    GLClearBufferMode.GL_DEPTH_BUFFER_BIT);
+            clear.clear();
             
             final GLMat4F trTetra;
             {
