@@ -13,6 +13,9 @@ import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.util.List;
 import java.util.ListIterator;
+import org.lwjgl.opengl.ContextCapabilities;
+import org.lwjgl.opengl.GL;
+import org.lwjgl.opengl.GL11;
 
 /**
  * A collection of functions that can aid in OpenGL programs.
@@ -1083,6 +1086,7 @@ public class GLTools {
 
     /**
      * Converts color data packed as integers to an array packed as shorts.
+     *
      * @param out array to write to
      * @param outOffset offset to the array to write to
      * @param in0 array to read data from
@@ -1106,5 +1110,102 @@ public class GLTools {
                     | (inB2 << 4 & 0xFF)
                     | (inB3 & 0xFF));
         }
-    }    
+    }
+
+    private static final VendorQuery VENDOR_QUERY = new VendorQuery();
+    public static final String GPU_AMD = "AMD";
+    public static final String GPU_NVIDIA = "NVIDIA";
+    public static final String GPU_INTEL = "INTEL";
+
+    public static boolean hasOpenGLVersion(final int version) {
+        ContextCapabilities cap = GL.getCurrent().getCapabilities();
+        
+        switch(version) {
+            case 11:
+                return cap.OpenGL11;
+            case 12:
+                return cap.OpenGL12;
+            case 13:
+                return cap.OpenGL13;
+            case 14:
+                return cap.OpenGL14;
+            case 15:
+                return cap.OpenGL15;
+            case 20:
+                return cap.OpenGL20;
+            case 21:
+                return cap.OpenGL21;
+            case 30:
+                return cap.OpenGL30;
+            case 31:
+                return cap.OpenGL31;
+            case 32:
+                return cap.OpenGL32;
+            case 33:
+                return cap.OpenGL33;
+            case 40:
+                return cap.OpenGL40;
+            case 41:
+                return cap.OpenGL41;
+            case 42:
+                return cap.OpenGL42;
+            case 43:
+                return cap.OpenGL43;
+            case 44:
+                return cap.OpenGL44;
+            case 45:
+                return cap.OpenGL45;
+            default:
+                throw new GLException("Unknown OpenGL version: " + version);
+        }
+    }
+    
+    public static boolean isGPUAmd() {
+        return getVendor().equals(GPU_AMD);
+    }
+
+    public static boolean isNVidia() {
+        return getVendor().equals(GPU_NVIDIA);
+    }
+
+    public static  boolean isIntel() {
+        return getVendor().equals(GPU_INTEL);
+    }
+
+    public static String getVendor() {
+        if (VendorQuery.isSet()) {
+            return VendorQuery.VENDOR;
+        } else {
+            return VENDOR_QUERY.glCall(GLThread.getDefaultInstance());
+        }
+    }
+
+    public static class VendorQuery extends GLQuery<String> {
+
+        private static String VENDOR = null;
+
+        private static boolean isSet() {
+            return VENDOR != null;
+        }
+
+        @Override
+        public String call() throws Exception {
+            if (isSet()) {
+                final String rawVendor = GL11.glGetString(GL11.GL_VENDOR).toLowerCase();
+
+                if (rawVendor.contains("amd")) {
+                    VENDOR = GPU_AMD;
+                } else if (rawVendor.contains("intel")) {
+                    VENDOR = GPU_INTEL;
+                } else if (rawVendor.contains("nvidia")) {
+                    VENDOR = GPU_NVIDIA;
+                } else {
+                    VENDOR = rawVendor;
+                }
+            }
+
+            return VENDOR;
+        }
+
+    }
 }

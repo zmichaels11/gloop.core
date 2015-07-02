@@ -29,7 +29,6 @@ public class NeHe01 {
         
         window.setVisible(true);        
     }
-
     public static void main(String[] args) {
         NeHe01 test = new NeHe01();
     }
