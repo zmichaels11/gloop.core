@@ -1117,7 +1117,13 @@ public class GLTools {
     public static final String GPU_NVIDIA = "NVIDIA";
     public static final String GPU_INTEL = "INTEL";
 
+    public static boolean hasOpenGLVersion(final int version, GLThread thread) {
+        return GLQuery.create(() -> _hasOpenGLVersion(version)).glCall(thread);
+    }
     public static boolean hasOpenGLVersion(final int version) {
+        return GLQuery.create(() -> _hasOpenGLVersion(version)).glCall();
+    }
+    private static boolean _hasOpenGLVersion(final int version) {
         ContextCapabilities cap = GL.getCurrent().getCapabilities();
         
         switch(version) {
