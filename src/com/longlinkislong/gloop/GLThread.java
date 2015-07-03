@@ -161,6 +161,20 @@ public class GLThread implements ExecutorService {
         mask.applyMask();
         return mask;
     }
+    
+    public GLPolygonParameters currentPolygonParameters() {
+        return this.currentPolygonParameters;
+    }
+    
+    public void pushPolygonParameters() {
+        this.polygonParameterStack.push(this.currentPolygonParameters);
+    }
+    
+    public GLPolygonParameters popPolygonParameters() {
+        final GLPolygonParameters params = this.polygonParameterStack.pop();
+        params.applyParameters();
+        return params;
+    }
 
     /**
      * Retrieves the current viewport.
