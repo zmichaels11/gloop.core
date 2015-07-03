@@ -161,15 +161,15 @@ public class GLThread implements ExecutorService {
         mask.applyMask();
         return mask;
     }
-    
+
     public GLPolygonParameters currentPolygonParameters() {
         return this.currentPolygonParameters;
     }
-    
+
     public void pushPolygonParameters() {
         this.polygonParameterStack.push(this.currentPolygonParameters);
     }
-    
+
     public GLPolygonParameters popPolygonParameters() {
         final GLPolygonParameters params = this.polygonParameterStack.pop();
         params.applyParameters();
@@ -265,6 +265,32 @@ public class GLThread implements ExecutorService {
 
                 if (!GLThread.this.shouldHaltScheduledTasks) {
                     GLThread.this.internalExecutor.execute(this);
+                }
+            }
+        });
+    }
+
+    /**
+     * Submits a GLTask to execute after the specified number of frames.
+     *
+     * @param task the task to execute.
+     * @param delay the number of frames to wait.
+     * @since 15.07.03
+     */
+    public void submitGLTask(final GLTask task, final long delay) {
+        this.internalExecutor.execute(new GLTask() {
+            long count = delay;
+
+            @Override
+            public void run() {
+                if (count <= 0) {
+                    task.run();
+                } else {
+                    count--;
+
+                    if (!GLThread.this.shouldHaltScheduledTasks) {
+                        GLThread.this.internalExecutor.execute(this);
+                    }
                 }
             }
         });
