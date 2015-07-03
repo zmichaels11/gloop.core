@@ -710,8 +710,6 @@ public class GLBuffer extends GLObject {
 
             GL15.glBindBuffer(this.target.value, GLBuffer.this.bufferId);
             
-            GL44.glBufferStorage(this.target.value, this.length, this.access);
-            
             final ByteBuffer newBuffer = GL30.glMapBufferRange(
                     this.target.value,
                     this.offset, this.length,
