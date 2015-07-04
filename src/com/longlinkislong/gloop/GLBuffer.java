@@ -88,7 +88,7 @@ public class GLBuffer extends GLObject {
                 GLBuffer.this.bufferId = GL15.glGenBuffers();
             } else {
                 throw new GLException("GLBuffer is already initialized!");
-            }
+            }                                    
         }
     }
 

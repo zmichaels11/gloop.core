@@ -482,8 +482,7 @@ public class GLWindow {
 
             GLFW.glfwGetFramebufferSize(GLWindow.this.window, fbWidth, fbHeight);
             GLWindow.this.thread.currentViewport = new GLViewport(0, 0, fbWidth.getInt(), fbHeight.getInt());
-
-            GLWindow.this.handler = GLWindow.this.new WindowHandler();
+            
             GLWindow.this.handler.register();
 
             WINDOWS.put(GLWindow.this.window, GLWindow.this);
@@ -878,7 +877,7 @@ public class GLWindow {
         this.cleanupTasks.clear();
     }
 
-    private WindowHandler handler = null;
+    private WindowHandler handler = new WindowHandler();
 
     /**
      * Adds a listener for when the window resizes.
@@ -916,9 +915,15 @@ public class GLWindow {
         final List<GLFramebufferResizeListener> resizeListeners = new ArrayList<>();
 
         @Override
-        public void framebufferResizedActionPerformed(GLWindow window, int newWidth, int newHeight) {
+        public void framebufferResizedActionPerformed(GLWindow window, GLViewport view) {
+            if(!window.getGLThread().viewportStack.isEmpty()) {
+                throw new GLException("Viewport stack is not empty on Window Resize event!");
+            }
+            
+            view.applyViewport();
+            
             this.resizeListeners.forEach((listener) -> {
-                listener.framebufferResizedActionPerformed(window, newWidth, newHeight);
+                listener.framebufferResizedActionPerformed(window, view);
             });
         }
 

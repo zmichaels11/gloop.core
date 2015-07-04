@@ -10,10 +10,11 @@ package com.longlinkislong.gloop;
  * @author zmichaels
  */
 public interface GLFramebufferResizeListener {
-    void framebufferResizedActionPerformed(GLWindow window, int newWidth, int newHeight);
+    void framebufferResizedActionPerformed(GLWindow window, GLViewport viewport);
     default void glfwFramebufferResizeCallback(final long hwnd, final int width, final int height) {
         final GLWindow window = GLWindow.WINDOWS.get(hwnd);
+        final GLViewport newport = new GLViewport(window.getGLThread(), 0, 0, width, height);
         
-        this.framebufferResizedActionPerformed(window, width, height);
+        this.framebufferResizedActionPerformed(window, newport);
     }
 }
