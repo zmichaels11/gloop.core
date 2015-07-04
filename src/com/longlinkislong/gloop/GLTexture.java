@@ -12,6 +12,7 @@ import org.lwjgl.opengl.GL11;
 import org.lwjgl.opengl.GL12;
 import org.lwjgl.opengl.GL13;
 import org.lwjgl.opengl.GL15;
+import org.lwjgl.opengl.GL20;
 import org.lwjgl.opengl.GL21;
 import org.lwjgl.opengl.GL30;
 import org.lwjgl.opengl.GL31;
@@ -1126,7 +1127,7 @@ public class GLTexture extends GLObject {
                 return this.maxUnits;
             }
 
-            return this.maxUnits = GL11.glGetInteger(GL13.GL_MAX_TEXTURE_UNITS);
+            return this.maxUnits = GL11.glGetInteger(GL20.GL_MAX_TEXTURE_IMAGE_UNITS);
         }
     }
     
