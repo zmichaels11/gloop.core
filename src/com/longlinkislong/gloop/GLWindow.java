@@ -84,11 +84,11 @@ public class GLWindow {
     private static final List<GLGamepad> GAMEPADS;
 
     static {
-        final String glVersion = System.getProperty("gloop.opengl.version", "3.2");        
+        final String glVersion = System.getProperty("gloop.opengl.version", "3.2");
         OPENGL_VERSION_MAJOR = Integer.parseInt(glVersion.substring(0, glVersion.indexOf(".")));
-        OPENGL_VERSION_MINOR = Integer.parseInt(glVersion.substring(glVersion.indexOf(".")+1));
+        OPENGL_VERSION_MINOR = Integer.parseInt(glVersion.substring(glVersion.indexOf(".") + 1));
         OPENGL_REFRESH_RATE = Integer.parseInt(System.getProperty("gloop.opengl.refresh_rate", "-1"));
-        OPENGL_SWAP_INTERVAL = Integer.parseInt(System.getProperty("gloop.opengl.swap_interval", "1"));        
+        OPENGL_SWAP_INTERVAL = Integer.parseInt(System.getProperty("gloop.opengl.swap_interval", "1"));
         OPENGL_SAMPLES = Integer.parseInt(System.getProperty("gloop.opengl.msaa", "-1"));
         OPENGL_RED_BITS = Integer.parseInt(System.getProperty("gloop.opengl.red_bits", "8"));
         OPENGL_GREEN_BITS = Integer.parseInt(System.getProperty("gloop.opengl.green_bits", "8"));
@@ -96,7 +96,7 @@ public class GLWindow {
         OPENGL_ALPHA_BITS = Integer.parseInt(System.getProperty("gloop.opengl.alpha_bits", "8"));
         OPENGL_DEPTH_BITS = Integer.parseInt(System.getProperty("gloop.opengl.depth_bits", "24"));
         OPENGL_STENCIL_BITS = Integer.parseInt(System.getProperty("gloop.opengl.stencil_bits", "8"));
-        
+
         if (GLFW.glfwInit() != GL_TRUE) {
             throw new GLException("Could not initialize GLFW!");
         }
@@ -418,23 +418,31 @@ public class GLWindow {
      * @since 15.06.07
      */
     public double getDPI() throws GLException {
-        if (!this.isValid()) {
-            throw new GLException("Invalid GLWindow!");
+        return new DPIQuery().glCall(this.getGLThread());
+    }
+
+    public class DPIQuery extends GLQuery<Double> {
+
+        @Override
+        public Double call() throws Exception {
+            if(!GLWindow.this.isValid()) {
+                throw new GLException("GLWindow is not valid!");
+            }
+            
+            final long mHandle = GLFW.glfwGetWindowMonitor(GLWindow.this.monitor);
+
+            final ByteBuffer mode = GLFW.glfwGetVideoMode(mHandle);
+
+            final ByteBuffer widthMM = ByteBuffer
+                    .allocateDirect(Integer.BYTES)
+                    .order(ByteOrder.nativeOrder());
+
+            GLFW.glfwGetMonitorPhysicalSize(mHandle, widthMM, null);
+
+            final int vWidth = GLFWvidmode.width(mode);
+
+            return (vWidth / (widthMM.getInt() / 25.4));
         }
-
-        final long mHandle = GLFW.glfwGetWindowMonitor(this.monitor);
-
-        final ByteBuffer mode = GLFW.glfwGetVideoMode(mHandle);
-
-        final ByteBuffer widthMM = ByteBuffer
-                .allocateDirect(Integer.BYTES)
-                .order(ByteOrder.nativeOrder());
-
-        GLFW.glfwGetMonitorPhysicalSize(mHandle, widthMM, null);
-
-        final int vWidth = GLFWvidmode.width(mode);
-
-        return (vWidth / (widthMM.getInt() / 25.4));
     }
 
     private class InitTask extends GLTask {
@@ -450,12 +458,12 @@ public class GLWindow {
             glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
             glfwWindowHint(GLFW_SAMPLES, OPENGL_SAMPLES);
             glfwWindowHint(GLFW_RED_BITS, OPENGL_RED_BITS);
-            glfwWindowHint(GLFW_BLUE_BITS, OPENGL_BLUE_BITS);            
+            glfwWindowHint(GLFW_BLUE_BITS, OPENGL_BLUE_BITS);
             glfwWindowHint(GLFW_GREEN_BITS, OPENGL_GREEN_BITS);
             glfwWindowHint(GLFW_ALPHA_BITS, OPENGL_ALPHA_BITS);
             glfwWindowHint(GLFW_DEPTH_BITS, OPENGL_DEPTH_BITS);
             glfwWindowHint(GLFW_STENCIL_BITS, OPENGL_STENCIL_BITS);
-            glfwWindowHint(GLFW_REFRESH_RATE, OPENGL_REFRESH_RATE);            
+            glfwWindowHint(GLFW_REFRESH_RATE, OPENGL_REFRESH_RATE);
 
             final long sharedContextHandle = shared != null ? shared.window : NULL;
 
@@ -482,7 +490,7 @@ public class GLWindow {
 
             GLFW.glfwGetFramebufferSize(GLWindow.this.window, fbWidth, fbHeight);
             GLWindow.this.thread.currentViewport = new GLViewport(0, 0, fbWidth.getInt(), fbHeight.getInt());
-            
+
             GLWindow.this.handler.register();
 
             WINDOWS.put(GLWindow.this.window, GLWindow.this);
@@ -916,12 +924,12 @@ public class GLWindow {
 
         @Override
         public void framebufferResizedActionPerformed(GLWindow window, GLViewport view) {
-            if(!window.getGLThread().viewportStack.isEmpty()) {
+            if (!window.getGLThread().viewportStack.isEmpty()) {
                 throw new GLException("Viewport stack is not empty on Window Resize event!");
             }
-            
+
             view.applyViewport();
-            
+
             this.resizeListeners.forEach((listener) -> {
                 listener.framebufferResizedActionPerformed(window, view);
             });
