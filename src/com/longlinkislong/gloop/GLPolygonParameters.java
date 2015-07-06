@@ -165,23 +165,46 @@ public class GLPolygonParameters extends GLObject {
             thread.currentPolygonParameters = GLPolygonParameters.this.withGLThread(thread);
             
             GL11.glPointSize(GLPolygonParameters.this.pointSize);
+            
+            assert GL11.glGetError() == GL11.GL_NO_ERROR : String.format("glPointSize(%f) failed!", GLPolygonParameters.this.pointSize);
+            
             GL11.glLineWidth(GLPolygonParameters.this.lineSize);
+            
+            assert GL11.glGetError() == GL11.GL_NO_ERROR : String.format("glLineWidth(%f) failed!", GLPolygonParameters.this.lineSize);
+            
             GL11.glFrontFace(GLPolygonParameters.this.frontFace.value);
+            
+            assert GL11.glGetError() == GL11.GL_NO_ERROR : String.format("glFrontFace(%s) failed!", GLPolygonParameters.this.frontFace);
 
             switch (GLPolygonParameters.this.cullEnabled) {
                 case GL_ENABLED:
                     GL11.glEnable(GL11.GL_CULL_FACE);
+                    
+                    assert GL11.glGetError() == GL11.GL_NO_ERROR : "glEnable(GL_CULL_FACE) failed!";
+                            
                     GL11.glCullFace(GLPolygonParameters.this.cullMode.value);
+                    
+                    assert GL11.glGetError() == GL11.GL_NO_ERROR : String.format("glCullFace(%s) failed!", GLPolygonParameters.this.cullMode);
                     break;
                 case GL_DISABLED:
                     GL11.glDisable(GL11.GL_CULL_FACE);
+                    
+                    assert GL11.glGetError() == GL11.GL_NO_ERROR : "glDisable(GL_CULL_FACE) failed!";
             }
 
             GL11.glPolygonMode(GL11.GL_FRONT, GLPolygonParameters.this.frontMode.value);
+            
+            assert GL11.glGetError() == GL11.GL_NO_ERROR : String.format("glPolygonMode(GL_FRONT, %s) failed!", GLPolygonParameters.this.frontMode);
+            
             GL11.glPolygonMode(GL11.GL_BACK, GLPolygonParameters.this.backMode.value);
+            
+            assert GL11.glGetError() == GL11.GL_NO_ERROR : String.format("glPolygonMode(GL_BACK, %s) failed!", GLPolygonParameters.this.backMode);
+            
             GL11.glPolygonOffset(
                     GLPolygonParameters.this.polygonOffsetFactor,
                     GLPolygonParameters.this.polygonOffsetUnits);
+            
+            assert GL11.glGetError() == GL11.GL_NO_ERROR : String.format("glPolygonOffset(%f, %f) failed!", GLPolygonParameters.this.polygonOffsetFactor, GLPolygonParameters.this.polygonOffsetUnits);
         }
 
     }

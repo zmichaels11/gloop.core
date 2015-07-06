@@ -11,6 +11,8 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
+import java.nio.FloatBuffer;
+import java.nio.IntBuffer;
 import java.util.List;
 import java.util.ListIterator;
 import org.lwjgl.opengl.ContextCapabilities;
@@ -1085,6 +1087,85 @@ public class GLTools {
     }
 
     /**
+     * Converts a FloatBuffer into a verbose String.
+     *
+     * @param buffer the buffer to convert.
+     * @return the String describing the FloatBuffer
+     * @since 15.07.06
+     */
+    public static String FloatBufferToString(final FloatBuffer buffer) {
+        final StringBuilder out = new StringBuilder();
+
+        if (buffer == null) {
+            out.append("FloatBuffer: [null]");
+            return out.toString();
+        }
+
+        out.append("FloatBuffer: [pos: ");
+        out.append(buffer.position());
+        out.append(" limit: ");
+        out.append(buffer.limit());
+        out.append(" capacity: ");
+        out.append(buffer.capacity());
+        out.append(" order: ");
+        out.append(buffer.order());
+        out.append(" direct: ");
+        out.append(buffer.isDirect());
+        out.append(" data: {");
+
+        for (int i = buffer.position(); i < buffer.limit(); i++) {
+            out.append(buffer.get(i));
+
+            if (i < buffer.limit() - 1) {
+                out.append(", ");
+            }
+        }
+
+        out.append("}]");
+        return out.toString();
+    }
+
+    /**
+     * Converts an IntBuffer into a verbose String.
+     *
+     * @param buffer the buffer to convert.
+     * @return the String describing the IntBuffer.
+     * @since 15.07.06
+     */
+    public static String IntBufferToString(final IntBuffer buffer) {
+        final StringBuilder out = new StringBuilder();
+
+        if (buffer == null) {
+            out.append("IntBuffer: [null]");
+            return out.toString();
+        }
+
+        out.append("IntBuffer: [pos: ");
+        out.append(buffer.position());
+        out.append(" limit: ");
+        out.append(buffer.limit());
+        out.append(" capacity: ");
+        out.append(buffer.capacity());
+        out.append(" order: ");
+        out.append(buffer.order());
+        out.append(" direct: ");
+        out.append(buffer.isDirect());
+        out.append(" data: {");
+
+        for (int i = buffer.position(); i < buffer.limit(); i++) {
+            out.append(buffer.get(i));
+
+            if (i < buffer.limit() - 1) {
+                out.append(", ");
+            }
+        }
+
+        out.append("}]");
+
+        return out.toString();
+    }
+
+    /**
      * Converts color data packed as integers to an array packed as shorts.
      *
      * @param out array to write to
@@ -1118,15 +1199,21 @@ public class GLTools {
     public static final String GPU_INTEL = "INTEL";
 
     public static boolean hasOpenGLVersion(final int version, GLThread thread) {
-        return GLQuery.create(() -> _hasOpenGLVersion(version)).glCall(thread);
+        return newOpenGLVersionQuery(version).glCall(thread);
     }
+
     public static boolean hasOpenGLVersion(final int version) {
-        return GLQuery.create(() -> _hasOpenGLVersion(version)).glCall();
+        return newOpenGLVersionQuery(version).glCall();
     }
+
+    public static GLQuery<Boolean> newOpenGLVersionQuery(final int version) {
+        return GLQuery.create(GLTools::_hasOpenGLVersion, version);
+    }
+
     private static boolean _hasOpenGLVersion(final int version) {
         ContextCapabilities cap = GL.getCurrent().getCapabilities();
-        
-        switch(version) {
+
+        switch (version) {
             case 11:
                 return cap.OpenGL11;
             case 12:
@@ -1165,7 +1252,7 @@ public class GLTools {
                 throw new GLException("Unknown OpenGL version: " + version);
         }
     }
-    
+
     public static boolean isGPUAmd() {
         return getVendor().equals(GPU_AMD);
     }
@@ -1174,7 +1261,7 @@ public class GLTools {
         return getVendor().equals(GPU_NVIDIA);
     }
 
-    public static  boolean isIntel() {
+    public static boolean isIntel() {
         return getVendor().equals(GPU_INTEL);
     }
 

@@ -71,6 +71,10 @@ public class GLVertexArray extends GLObject {
     private void bind() {
         if (!this.isCurrent()) {
             GL30.glBindVertexArray(this.vaoId);
+            
+            assert GL11.glGetError() == GL11.GL_NO_ERROR
+                    : String.format("glBindVertexArray(%d) failed!", this.vaoId);
+            
             CURRENT.put(Thread.currentThread(), this);
         }
     }
@@ -103,6 +107,9 @@ public class GLVertexArray extends GLObject {
             }
 
             GLVertexArray.this.vaoId = GL30.glGenVertexArrays();
+
+            assert GL11.glGetError() == GL11.GL_NO_ERROR 
+                    : String.format("glGenVertexArrays() = %d failed!", GLVertexArray.this.vaoId);
         }
     }
 
@@ -207,10 +214,19 @@ public class GLVertexArray extends GLObject {
             GL15.glBindBuffer(
                     GLBufferTarget.GL_DRAW_INDIRECT_BUFFER.value,
                     this.indirectCommandBuffer.bufferId);
+            
+            assert GL11.glGetError() == GL11.GL_NO_ERROR 
+                    : String.format("glBindBuffer(GL_DRAW_INDIRECT_BUFFER, %d) failed!",
+                            this.indirectCommandBuffer.bufferId);
+            
             GL40.glDrawElementsIndirect(
                     this.drawMode.value,
                     this.indexType.value,
                     this.offset);
+            
+            assert GL11.glGetError() == GL11.GL_NO_ERROR 
+                    : String.format("glDrawElementsIndirect(%s, %s, %d) failed!",
+                            this.drawMode, this.indexType, this.offset);
         }
     }
 
@@ -287,10 +303,18 @@ public class GLVertexArray extends GLObject {
             GL15.glBindBuffer(
                     GLBufferTarget.GL_DRAW_INDIRECT_BUFFER.value,
                     this.indirectCommandBuffer.bufferId);
+            
+            assert GL11.glGetError() == GL11.GL_NO_ERROR 
+                    : String.format("glBindBuffer(GL_DRAW_INDIRECT_BUFFER, %d) failed!",
+                            this.indirectCommandBuffer.bufferId);
 
             GL40.glDrawArraysIndirect(
                     this.drawMode.value,
                     this.offset);
+            
+            assert GL11.glGetError() == GL11.GL_NO_ERROR
+                    : String.format("glDrawArraysIndirect(%s, %d) failed!",
+                            this.drawMode, this.offset);
         }
     }
 
@@ -362,6 +386,11 @@ public class GLVertexArray extends GLObject {
                     this.first,
                     this.count);
 
+            assert GL11.glGetError() == GL11.GL_NO_ERROR 
+                    : String.format("glMultiDrawArrays(%s, %s, %s) failed!",
+                            this.drawMode.value,
+                            GLTools.IntBufferToString(this.first),
+                            GLTools.IntBufferToString(this.count));
         }
     }
 
@@ -454,6 +483,14 @@ public class GLVertexArray extends GLObject {
                     this.type.value,
                     this.offset,
                     this.instanceCount);
+            
+            assert GL11.glGetError() == GL11.GL_NO_ERROR
+                    : String.format("glDrawElementsInstanced(%s, %d, %s, %d, %d) failed!",
+                            this.drawMode,
+                            this.count,
+                            this.type,
+                            this.offset,
+                            this.instanceCount);
         }
 
     }
@@ -543,6 +580,10 @@ public class GLVertexArray extends GLObject {
                     this.first,
                     this.count,
                     this.instanceCount);
+            
+            assert GL11.glGetError() == GL11.GL_NO_ERROR
+                    : String.format("glDrawArraysInstanced(%s, %d, %d, %d) failed!",
+                            this.mode, this.first, this.count, this.instanceCount);
         }
     }
 
@@ -628,13 +669,20 @@ public class GLVertexArray extends GLObject {
                     this.count,
                     this.type.value,
                     this.offset);
+            
+            assert GL11.glGetError() == GL11.GL_NO_ERROR
+                    : String.format("glDrawElements(%s, %d, %s, %d) failed!",
+                            this.mode, this.count, this.type, this.offset);
+                    
         }
     }
 
     private DrawArraysTask lastDrawArrays = null;
 
     /**
-     * Performs a draw arrays task on the OpenGL thread associated with this object.
+     * Performs a draw arrays task on the OpenGL thread associated with this
+     * object.
+     *
      * @param mode the draw mode used.
      * @param start the start offset for the draw arrays call.
      * @param count the number of vertices drawn.
@@ -677,6 +725,10 @@ public class GLVertexArray extends GLObject {
 
             GLVertexArray.this.bind();
             GL40.glDrawTransformFeedback(this.mode.value, this.tfb.tfbId);
+            
+            assert GL11.glGetError() == GL11.GL_NO_ERROR
+                    : String.format("glDrawTransformFeedback(%s, %d) failed!",
+                            this.mode, this.tfb.tfbId);
         }
     }
 
@@ -708,6 +760,10 @@ public class GLVertexArray extends GLObject {
             GLVertexArray.this.bind();
 
             GL11.glDrawArrays(this.mode.value, this.start, this.count);
+            
+            assert GL11.glGetError() == GL11.GL_NO_ERROR
+                    : String.format("glDrawArrays(%s, %d, %d) failed!",
+                            this.mode, this.start, this.count);
         }
 
     }
@@ -725,6 +781,10 @@ public class GLVertexArray extends GLObject {
             if (GLVertexArray.this.isValid()) {
                 GL30.glDeleteVertexArrays(GLVertexArray.this.vaoId);
                 GLVertexArray.this.vaoId = INVALID_VERTEX_ARRAY_ID;
+                
+                assert GL11.glGetError() == GL11.GL_NO_ERROR
+                        : String.format("glDeleteVertexArrays(%d) failed!",
+                                GLVertexArray.this.vaoId);
             }
         }
     }
@@ -754,6 +814,10 @@ public class GLVertexArray extends GLObject {
             GL15.glBindBuffer(
                     GLBufferTarget.GL_ELEMENT_ARRAY_BUFFER.value,
                     this.buffer.bufferId);
+            
+            assert GL11.glGetError() == GL11.GL_NO_ERROR
+                    : String.format("glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, %d) failed!",
+                            this.buffer.bufferId);
         }
     }
 
@@ -880,14 +944,29 @@ public class GLVertexArray extends GLObject {
             GL15.glBindBuffer(
                     GLBufferTarget.GL_ARRAY_BUFFER.value,
                     this.buffer.bufferId);
+            
+            assert GL11.glGetError() == GL11.GL_NO_ERROR
+                    : String.format("glBindBuffer(GL_ARRAY_BUFFER, %d) failed!", 
+                            this.buffer.bufferId);
 
             GL20.glEnableVertexAttribArray(this.index);
+            
+            assert GL11.glGetError() == GL11.GL_NO_ERROR
+                    : String.format("glEnableVertexAttribArray(%d) failed!", this.index);
+            
             if (this.type == GLVertexAttributeType.GL_DOUBLE) {
                 GL41.glVertexAttribLPointer(
                         this.index,
                         this.size.value,
                         this.type.value,
                         this.stride, this.offset);
+                
+                assert GL11.glGetError() == GL11.GL_NO_ERROR
+                        : String.format("glVertexAttribLPointer(%d, %s, %s, %d, %d) failed!",
+                                this.index,
+                                this.size, this.type,
+                                this.stride,
+                                this.offset);
             } else {
                 GL20.glVertexAttribPointer(
                         this.index,
@@ -895,10 +974,22 @@ public class GLVertexArray extends GLObject {
                         this.type.value,
                         this.normalized,
                         this.stride, this.offset);
+                
+                assert GL11.glGetError() == GL11.GL_NO_ERROR
+                        : String.format("glVertexAttribPointer(%d, %s, %s, %s, %d, %d) failed!",
+                                this.index,
+                                this.size,
+                                this.type,
+                                this.normalized,
+                                this.stride,
+                                this.offset);
             }
 
-            if(this.divisor > 0) {
+            if (this.divisor > 0) {
                 GL33.glVertexAttribDivisor(this.index, this.divisor);
+                
+                assert GL11.glGetError() == GL11.GL_NO_ERROR
+                        : String.format("glVertexAttribDivisor(%d, %d) failed!", this.index, this.divisor);
             }
         }
     }

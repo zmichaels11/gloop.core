@@ -7,9 +7,8 @@ package com.longlinkislong.gloop;
 
 import java.util.concurrent.Callable;
 import java.util.function.Consumer;
+import java.util.function.Function;
 import java.util.function.Supplier;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 
 /**
  * A GLQuery is a GLTask that can return a value at end of execution.
@@ -108,6 +107,25 @@ public abstract class GLQuery<ReturnType> implements Callable<ReturnType> {
                 } catch (Exception ex) {
                     throw new GLException("Error processing GLQuery!", ex);
                 }
+            }
+        };
+    }
+
+    /**
+     * Converts a java.util.function into a GLQuery.
+     *
+     * @param <InputType> the type of input.
+     * @param <ReturnType> the type of output.
+     * @param function the function to apply.
+     * @param input the input to the function.
+     * @return the GLQuery that performs the operation.
+     * @since 15.07.06
+     */
+    public static <InputType, ReturnType> GLQuery<ReturnType> create(final Function<InputType, ReturnType> function, InputType input) {
+        return new GLQuery<ReturnType>() {
+            @Override
+            public ReturnType call() throws Exception {
+                return function.apply(input);
             }
         };
     }

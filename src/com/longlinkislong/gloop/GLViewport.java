@@ -119,6 +119,8 @@ public class GLViewport extends GLObject {
             GL11.glViewport(
                     GLViewport.this.x, GLViewport.this.y,
                     GLViewport.this.width, GLViewport.this.height);
+            
+            assert(GL11.glGetError() == GL11.GL_NO_ERROR);
         }
     }
 }

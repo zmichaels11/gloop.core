@@ -92,24 +92,29 @@ public class GLProgram extends GLObject {
      * @since 15.05.27
      */
     private final UseTask useTask = new UseTask();
+
     public void use() {
         this.useTask.glRun(this.getThread());
     }
-    
+
     public class UseTask extends GLTask {
 
         @Override
         public void run() {
-            if(!GLProgram.this.isValid()) {
+            if (!GLProgram.this.isValid()) {
                 throw new GLException("Invalid GLProgram!");
-            } if(GLProgram.this.isCurrent()) {
+            }
+            if (GLProgram.this.isCurrent()) {
                 return;
             }
-            
+
             GL20.glUseProgram(GLProgram.this.programId);
+
+            assert GL11.glGetError() == GL11.GL_NO_ERROR : String.format("glUseProgram(%d) failed!", GLProgram.this.programId);
+
             CURRENT.put(Thread.currentThread(), GLProgram.this);
         }
-        
+
     }
 
     private int getUniformLoc(final String uName) {
@@ -118,6 +123,8 @@ public class GLProgram extends GLObject {
         } else {
             this.use();
             final int uLoc = GL20.glGetUniformLocation(programId, uName);
+
+            assert GL11.glGetError() == GL11.GL_NO_ERROR : String.format("glGetUniformLocation(%d, %s) failed!", programId, uName);
 
             this.uniforms.put(uName, uLoc);
             return uLoc;
@@ -162,6 +169,9 @@ public class GLProgram extends GLObject {
                     GL20.glBindAttribLocation(
                             GLProgram.this.programId,
                             index, name);
+
+                    assert GL11.glGetError() == GL11.GL_NO_ERROR : String.format("glBindAttribLocation(%d, %d, %s) failed!",
+                            GLProgram.this.programId, index, name);
                 });
 
                 final Set<String> varyingSet = this.attribs.feedbackVaryings;
@@ -178,6 +188,9 @@ public class GLProgram extends GLObject {
                             GLProgram.this.programId,
                             varyings,
                             GL30.GL_SEPARATE_ATTRIBS);
+
+                    assert GL11.glGetError() == GL11.GL_NO_ERROR : String.format("glTransformFeedbackVaryings(%d, %s, GL_SEPARATE_ATTRIBS) failed!",
+                            GLProgram.this.programId, Arrays.toString(varyings));
                 }
             }
         }
@@ -225,7 +238,7 @@ public class GLProgram extends GLObject {
                 throw new ArrayIndexOutOfBoundsException();
             }
 
-            final GLMatD<?,?> matD = mat.asGLMatD();
+            final GLMatD<?, ?> matD = mat.asGLMatD();
 
             return this.set(matD.data(), matD.offset(), this.count);
         }
@@ -236,7 +249,7 @@ public class GLProgram extends GLObject {
 
         public SetUniformMatrixDTask set(
                 final double[] data, final int offset, final int length) {
-            
+
             if (length != this.count) {
                 throw new ArrayIndexOutOfBoundsException();
             }
@@ -316,12 +329,16 @@ public class GLProgram extends GLObject {
             switch (this.count) {
                 case 4:
                     GL40.glUniformMatrix2dv(uLoc, false, TEMPD);
+
+                    assert GL11.glGetError() == GL11.GL_NO_ERROR : String.format("glUniformMatrix2dv(%d, false, [data]) failed!", uLoc);
                     break;
                 case 9:
                     GL40.glUniformMatrix3dv(uLoc, false, TEMPD);
+                    assert GL11.glGetError() == GL11.GL_NO_ERROR : String.format("glUniformMatrix3dv(%d, false, [data]) failed!", uLoc);
                     break;
                 case 16:
                     GL40.glUniformMatrix4dv(uLoc, false, TEMPD);
+                    assert GL11.glGetError() == GL11.GL_NO_ERROR : String.format("glUniformMatrix4dv(%d, false, [data]) failed!", uLoc);
                     break;
             }
         }
@@ -338,14 +355,14 @@ public class GLProgram extends GLObject {
         private final float[] values;
         private final int count;
 
-        public final SetUniformMatrixFTask set(final GLMat<?,?> mat) {
+        public final SetUniformMatrixFTask set(final GLMat<?, ?> mat) {
             if (mat.size() * mat.size() != this.count) {
                 throw new ArrayIndexOutOfBoundsException();
             }
 
-            final GLMatF<?,?> matF = mat.asGLMatF();
+            final GLMatF<?, ?> matF = mat.asGLMatF();
 
-            return this.set(matF.data(), matF.offset(), this.count);            
+            return this.set(matF.data(), matF.offset(), this.count);
         }
 
         public final SetUniformMatrixFTask set(final float... data) {
@@ -360,7 +377,7 @@ public class GLProgram extends GLObject {
             }
 
             System.arraycopy(data, offset, this.values, 0, length);
-            
+
             return this;
         }
 
@@ -380,7 +397,7 @@ public class GLProgram extends GLObject {
                 throw new GLException("Invalid uniform count!");
             }
 
-            final GLMatF<?,?> mf = mat.asGLMatF();
+            final GLMatF<?, ?> mf = mat.asGLMatF();
 
             this.uName = uName.toString();
             this.count = sz * sz;
@@ -430,18 +447,21 @@ public class GLProgram extends GLObject {
             switch (this.count) {
                 case 4:
                     GL20.glUniformMatrix2fv(uLoc, false, TEMPF);
+                    assert GL11.glGetError() == GL11.GL_NO_ERROR : String.format("glUniformMatrix2fv(%d, false, [data]) failed!", uLoc);
                     break;
                 case 9:
                     GL20.glUniformMatrix3fv(uLoc, false, TEMPF);
+                    assert GL11.glGetError() == GL11.GL_NO_ERROR : String.format("glUniformMatrix3fv(%d, false, [data]) failed!", uLoc);
                     break;
                 case 16:
                     GL20.glUniformMatrix4fv(uLoc, false, TEMPF);
+                    assert GL11.glGetError() == GL11.GL_NO_ERROR : String.format("glUniformMatrix4fv(%d, false, [data]) failed!", uLoc);
                     break;
             }
             TEMPF.clear();
         }
     }
-    
+
     /**
      * Sets a double uniform from the supplied GLVec. The GLVec must be of size
      * 1, 2, 3, or 4.
@@ -504,12 +524,12 @@ public class GLProgram extends GLObject {
         }
 
         public final SetUniformDTask set(final double... data) {
-            return this.set(data, 0, data.length);            
+            return this.set(data, 0, data.length);
         }
 
         public final SetUniformDTask set(
                 final double[] data, final int offset, final int length) {
-            
+
             if (this.count != length) {
                 throw new ArrayIndexOutOfBoundsException();
             }
@@ -592,15 +612,19 @@ public class GLProgram extends GLObject {
             switch (this.count) {
                 case 1:
                     GL40.glUniform1d(uLoc, this.values[0]);
+                    assert GL11.glGetError() == GL11.GL_NO_ERROR : String.format("glUniform1d(%d, %s) failed!", uLoc, Arrays.toString(this.values));
                     break;
                 case 2:
                     GL40.glUniform2d(uLoc, this.values[0], this.values[1]);
+                    assert GL11.glGetError() == GL11.GL_NO_ERROR : String.format("glUniform2d(%d, %s) failed!", uLoc, Arrays.toString(this.values));
                     break;
                 case 3:
                     GL40.glUniform3d(uLoc, this.values[0], this.values[1], this.values[2]);
+                    assert GL11.glGetError() == GL11.GL_NO_ERROR : String.format("glUniform3d(%d, %s) failed!", uLoc, Arrays.toString(this.values));
                     break;
                 case 4:
                     GL40.glUniform4d(uLoc, this.values[0], this.values[1], this.values[2], this.values[3]);
+                    assert GL11.glGetError() == GL11.GL_NO_ERROR : String.format("glUniform4d(%d, %s) failed!", uLoc, Arrays.toString(this.values));
                     break;
             }
         }
@@ -646,12 +670,12 @@ public class GLProgram extends GLObject {
         private final int count;
 
         public SetUniformITask set(final int... data) {
-            return this.set(data, 0, data.length);            
+            return this.set(data, 0, data.length);
         }
 
         public SetUniformITask set(
                 final int[] data, final int offset, final int length) {
-            
+
             if (this.count != length) {
                 throw new ArrayIndexOutOfBoundsException();
             }
@@ -708,16 +732,19 @@ public class GLProgram extends GLObject {
             switch (this.count) {
                 case 1:
                     GL20.glUniform1i(uLoc, this.values[0]);
-
+                    assert GL11.glGetError() == GL11.GL_NO_ERROR : String.format("glUniform1i(%d, %s) failed!", uLoc, Arrays.toString(this.values));
                     break;
                 case 2:
                     GL20.glUniform2i(uLoc, this.values[0], this.values[1]);
+                    assert GL11.glGetError() == GL11.GL_NO_ERROR : String.format("glUniform2i(%d, %s) failed!", uLoc, Arrays.toString(this.values));
                     break;
                 case 3:
                     GL20.glUniform3i(uLoc, this.values[0], this.values[1], this.values[2]);
+                    assert GL11.glGetError() == GL11.GL_NO_ERROR : String.format("glUniform3i(%d, %s) failed!", uLoc, Arrays.toString(this.values));
                     break;
                 case 4:
                     GL20.glUniform4i(uLoc, this.values[0], this.values[1], this.values[2], this.values[3]);
+                    assert GL11.glGetError() == GL11.GL_NO_ERROR : String.format("glUniform4i(%d, %s) failed!", uLoc, Arrays.toString(this.values));
                     break;
             }
         }
@@ -868,15 +895,19 @@ public class GLProgram extends GLObject {
             switch (this.count) {
                 case 1:
                     GL20.glUniform1f(uLoc, this.values[0]);
+                    assert GL11.glGetError() == GL11.GL_NO_ERROR : String.format("glUniform1f(%d, %s) failed!", uLoc, Arrays.toString(this.values));
                     break;
                 case 2:
                     GL20.glUniform2f(uLoc, this.values[0], this.values[1]);
+                    assert GL11.glGetError() == GL11.GL_NO_ERROR : String.format("glUniform2f(%d, %s) failed!", uLoc, Arrays.toString(this.values));
                     break;
                 case 3:
                     GL20.glUniform3f(uLoc, this.values[0], this.values[1], this.values[2]);
+                    assert GL11.glGetError() == GL11.GL_NO_ERROR : String.format("glUniform3f(%d, %s) failed!", uLoc, Arrays.toString(this.values));
                     break;
                 case 4:
                     GL20.glUniform4f(uLoc, this.values[0], this.values[1], this.values[2], this.values[3]);
+                    assert GL11.glGetError() == GL11.GL_NO_ERROR : String.format("glUniform4f(%d, %s) failed!", uLoc, Arrays.toString(this.values));
                     break;
             }
         }
@@ -979,23 +1010,42 @@ public class GLProgram extends GLObject {
                 }
 
                 GL20.glAttachShader(GLProgram.this.programId, shader.shaderId);
+                
+                assert GL11.glGetError() == GL11.GL_NO_ERROR : String.format("glAttachShader(%d, %d) failed!",
+                        GLProgram.this.programId, shader.shaderId);
             }
 
             GL20.glLinkProgram(GLProgram.this.programId);
+            
+            assert GL11.glGetError() == GL11.GL_NO_ERROR : String.format("glLinkProgram(%d) failed!", GLProgram.this.programId);
+            
             final int isLinked = GL20.glGetProgrami(
                     GLProgram.this.programId,
                     GL20.GL_LINK_STATUS);
 
+            assert GL11.glGetError() == GL11.GL_NO_ERROR : String.format("glGetProgrami(%d, GL_LINK_STATUS) = %d failed!",
+                    GLProgram.this.programId, isLinked);
+            
             if (isLinked == GL11.GL_FALSE) {
                 final int length = GL20.glGetProgrami(
                         GLProgram.this.programId, GL20.GL_INFO_LOG_LENGTH);
+                
+                assert GL11.glGetError() == GL11.GL_NO_ERROR : String.format("glGetProgrami(%d, GL_INFO_LOG_LENGTH) = %d failed!",
+                        GLProgram.this.programId, length);
+                
                 final String msg = GL20.glGetProgramInfoLog(
                         GLProgram.this.programId, length);
+                
+                assert GL11.glGetError() == GL11.GL_NO_ERROR : String.format("glGetProgramInfoLog(%d, %d) = %s failed!",
+                        GLProgram.this.programId, length, msg);
 
                 throw new GLException(msg);
             } else {
                 for (GLShader shader : this.shaders) {
                     GL20.glDetachShader(GLProgram.this.programId, shader.shaderId);
+                    
+                    assert GL11.glGetError() == GL11.GL_NO_ERROR : String.format("glDetachShader(%d, %d) failed!",
+                            GLProgram.this.programId, shader.shaderId);
                 }
             }
         }
@@ -1024,10 +1074,10 @@ public class GLProgram extends GLObject {
             }
 
             GLProgram.this.programId = GL20.glCreateProgram();
+            
+            assert GL11.glGetError() == GL11.GL_NO_ERROR : System.out.printf("glCreateProgram = %d failed!", GLProgram.this.programId);
         }
-    }
-
-    private final GLTask deleteTask = new DeleteTask();
+    }    
 
     /**
      * Deletes the GLProgram.
@@ -1035,7 +1085,7 @@ public class GLProgram extends GLObject {
      * @since 15.05.27
      */
     public final void delete() {
-        this.deleteTask.glRun(this.getThread());
+        this.new DeleteTask().glRun(this.getThread());        
     }
 
     /**
@@ -1052,6 +1102,9 @@ public class GLProgram extends GLObject {
             }
 
             GL20.glDeleteProgram(GLProgram.this.programId);
+            
+            assert GL11.glGetError() == GL11.GL_NO_ERROR : String.format("glDeleteProgram(%d) failed!", GLProgram.this.programId);
+            
             GLProgram.this.programId = INVALID_PROGRAM_ID;
         }
     }
@@ -1090,8 +1143,10 @@ public class GLProgram extends GLObject {
             GLProgram.this.use();
 
             final int uLoc = GLProgram.this.getUniformLoc(uName);
-
+                        
             GL20.glUniform1i(uLoc, this.bindTask.activeTexture);
+            
+            assert GL11.glGetError() == GL11.GL_NO_ERROR : String.format("glUniform1i(%d, %d) failed!", uLoc, this.bindTask.activeTexture);
         }
     }
 
@@ -1142,6 +1197,8 @@ public class GLProgram extends GLObject {
 
             GLProgram.this.use();
             GL43.glDispatchCompute(this.numX, this.numY, this.numZ);
+            
+            assert GL11.glGetError() == GL11.GL_NO_ERROR : String.format("glDispatchCompute(%d, %d, %d) failed!", this.numX, this.numY, this.numZ);
         }
     }
 }

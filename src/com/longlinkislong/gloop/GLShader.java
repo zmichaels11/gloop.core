@@ -6,6 +6,7 @@
 package com.longlinkislong.gloop;
 
 import java.util.Objects;
+import org.lwjgl.opengl.GL11;
 import org.lwjgl.opengl.GL20;
 
 /**
@@ -103,13 +104,22 @@ public class GLShader extends GLObject {
         public void run() {
             if (!GLShader.this.isValid()) {
                 GLShader.this.shaderId = GL20.glCreateShader(GLShader.this.type.value);
+                
+                assert GL11.glGetError() == GL11.GL_NO_ERROR : String.format("glCreateShader(%s) failed!", GLShader.this.type);                
+                assert GLShader.this.shaderId != INVALID_SHADER_ID : "glCreateShader did not return a valid shader id!";
+                
                 GL20.glShaderSource(GLShader.this.shaderId, GLShader.this.src);
+                
+                assert GL11.glGetError() == GL11.GL_NO_ERROR : String.format("glShaderSource(%d, [source]) failed!", GLShader.this.shaderId);
+                
                 GL20.glCompileShader(GLShader.this.shaderId);
 
+                assert GL11.glGetError() == GL11.GL_NO_ERROR : String.format("glCompileShader(%d) failed!", GLShader.this.shaderId);
+                
                 final GLBoolean status = GLBoolean.valueOf(
                         GLShader.this.getParameter(
-                                GLShaderParameterName.GL_COMPILE_STATUS));
-
+                                GLShaderParameterName.GL_COMPILE_STATUS));                
+                
                 if (status == GLBoolean.GL_FALSE) {
                     final String info = GLShader.this.getInfoLog();
 
@@ -141,6 +151,9 @@ public class GLShader extends GLObject {
         public void run() {
             if (GLShader.this.isValid()) {
                 GL20.glDeleteShader(GLShader.this.shaderId);
+                
+                assert GL11.glGetError() == GL11.GL_NO_ERROR : String.format("glDeleteShader(%d) failed!", GLShader.this.shaderId);
+                
                 GLShader.this.shaderId = INVALID_SHADER_ID;
             }
         }
@@ -187,7 +200,11 @@ public class GLShader extends GLObject {
                 throw new GLException("Invalid GLShader!");
             }
 
-            return GL20.glGetShaderi(GLShader.this.shaderId, pName.value);
+            final int rVal = GL20.glGetShaderi(GLShader.this.shaderId, pName.value);
+            
+            assert GL11.glGetError() == GL11.GL_NO_ERROR : String.format("glGetShaderi(%d, %s) = %d failed!", GLShader.this.shaderId, pName, rVal);
+            
+            return rVal;
         }
     }
 
@@ -220,7 +237,13 @@ public class GLShader extends GLObject {
                     GLShader.this.shaderId,
                     GLShaderParameterName.GL_INFO_LOG_LENGTH.value);
 
-            return GL20.glGetShaderInfoLog(GLShader.this.shaderId, length);
+            assert GL11.glGetError() == GL11.GL_NO_ERROR : String.format("glGetShaderi(%d, GL_INFO_LOG_LENGTH) = %d failed!", GLShader.this.shaderId, length);
+
+            final String log = GL20.glGetShaderInfoLog(GLShader.this.shaderId, length);
+            
+            assert GL11.glGetError() == GL11.GL_NO_ERROR : String.format("glGetShaderInfoLog(%d, %d) = %s failed!", GLShader.this.shaderId, length, log);
+            
+            return log;
         }
     }
 }

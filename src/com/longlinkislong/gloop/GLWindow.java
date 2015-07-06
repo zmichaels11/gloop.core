@@ -36,7 +36,6 @@ import org.lwjgl.glfw.GLFWKeyCallback;
 import org.lwjgl.glfw.GLFWMouseButtonCallback;
 import org.lwjgl.glfw.GLFWScrollCallback;
 import org.lwjgl.glfw.GLFWvidmode;
-import org.lwjgl.opengl.GL11;
 import static org.lwjgl.opengl.GL11.GL_FALSE;
 import static org.lwjgl.opengl.GL11.GL_TRUE;
 import org.lwjgl.opengl.GLContext;
@@ -105,7 +104,7 @@ public class GLWindow {
 
         final List<GLGamepad> gamepads = new ArrayList<>();
         for (int i = 0; i < GLFW.GLFW_JOYSTICK_LAST; i++) {
-            if (GLFW.glfwJoystickPresent(i) == GL11.GL_TRUE) {
+            if (GLFW.glfwJoystickPresent(i) == GL_TRUE) {
                 gamepads.add(new GLGamepad(i));
             }
         }
@@ -826,7 +825,7 @@ public class GLWindow {
      * @since 15.06.05
      */
     public void stop() {
-        GLFW.glfwSetWindowShouldClose(this.window, GL11.GL_TRUE);
+        GLFW.glfwSetWindowShouldClose(this.window, GL_TRUE);
     }
 
     private final List<GLWindow> workerThreads = new ArrayList<>();

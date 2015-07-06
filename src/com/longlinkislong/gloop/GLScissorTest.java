@@ -8,11 +8,14 @@ package com.longlinkislong.gloop;
 import org.lwjgl.opengl.GL11;
 
 /**
+ * An OpenGL object that represents a ScissorTest. A ScissorTest is an OpenGL
+ * operation used to select a segment of a larger scene to draw.
  *
  * @author zmichaels
+ * @since 15.07.06
  */
 public class GLScissorTest extends GLObject {
-
+    
     public final int left;
     public final int bottom;
     public final int width;
@@ -52,8 +55,14 @@ public class GLScissorTest extends GLObject {
         @Override
         public void run() {
             GL11.glEnable(GL11.GL_SCISSOR_TEST);
+            
+            assert GL11.glGetError() == GL11.GL_NO_ERROR : "glEnable(GL_SCISSOR_TEST) failed!";
+            
             GL11.glScissor(GLScissorTest.this.left, GLScissorTest.this.bottom,
                     GLScissorTest.this.width, GLScissorTest.this.height);
+            
+            assert GL11.glGetError() == GL11.GL_NO_ERROR : String.format("glScissor(%d, %d, %d, %d) failed!",
+                    GLScissorTest.this.left, GLScissorTest.this.bottom, GLScissorTest.this.width, GLScissorTest.this.height);
         }
     }
 
@@ -68,6 +77,8 @@ public class GLScissorTest extends GLObject {
         @Override
         public void run() {
             GL11.glDisable(GL11.GL_SCISSOR_TEST);
+            
+            assert GL11.glGetError() == GL11.GL_NO_ERROR : "glDisable(GL_SCISSOR_TEST)";
         }
     }
 }

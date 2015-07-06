@@ -8,6 +8,7 @@ package com.longlinkislong.gloop;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.util.Objects;
+import org.lwjgl.opengl.GL11;
 import org.lwjgl.opengl.GL15;
 import org.lwjgl.opengl.GL30;
 import org.lwjgl.opengl.GL31;
@@ -182,9 +183,16 @@ public class GLBuffer extends GLObject {
             }
 
             GL15.glBindBuffer(this.target.value, GLBuffer.this.bufferId);
-            return GL15.glGetBufferParameteri(
-                    this.target.value,
-                    this.pName.value);
+            
+            assert GL11.glGetError() == GL11.GL_NO_ERROR : String.format("glBindBuffer(%s, %d) failed!",
+                    this.target, GLBuffer.this.bufferId);
+            
+            final int rVal = GL15.glGetBufferParameteri(this.target.value, this.pName.value);
+            
+            assert GL11.glGetError() == GL11.GL_NO_ERROR : String.format("glGetBufferParameteri(%s, %s) failed!",
+                    this.target, this.pName);
+            
+            return rVal;
         }
 
     }
@@ -213,6 +221,9 @@ public class GLBuffer extends GLObject {
         public void run() {
             if (GLBuffer.this.isValid()) {
                 GL15.glDeleteBuffers(GLBuffer.this.bufferId);
+                
+                assert GL11.glGetError() == GL11.GL_NO_ERROR : String.format("glDeleteBuffers(%d) failed!", GLBuffer.this.bufferId);
+                
                 GLBuffer.this.bufferId = INVALID_BUFFER_ID;
             }
         }
@@ -228,10 +239,7 @@ public class GLBuffer extends GLObject {
      * @since 15.06.05
      */
     public void upload(final ByteBuffer data) {
-        this.upload(
-                GLBufferTarget.GL_ARRAY_BUFFER,
-                data,
-                GLBufferUsage.GL_STATIC_DRAW);
+        this.upload(GLBufferTarget.GL_ARRAY_BUFFER, data, GLBufferUsage.GL_STATIC_DRAW);        
     }
 
     /**
@@ -335,7 +343,14 @@ public class GLBuffer extends GLObject {
             }
 
             GL15.glBindBuffer(this.target.value, GLBuffer.this.bufferId);
+            
+            assert GL11.glGetError() == GL11.GL_NO_ERROR : String.format("glBindBuffer(%s, %d) failed!",
+                    this.target, GLBuffer.this.bufferId);
+            
             GL15.glBufferData(this.target.value, this.data, this.usage.value);
+            
+            assert GL11.glGetError() == GL11.GL_NO_ERROR : String.format("glBufferData(%s, [data], %s) failed!",
+                    this.target, this.usage);
         }
     }
 
@@ -418,7 +433,14 @@ public class GLBuffer extends GLObject {
             }
 
             GL15.glBindBuffer(this.target.value, GLBuffer.this.bufferId);
+            
+            assert GL11.glGetError() == GL11.GL_NO_ERROR : String.format("glBindBuffer(%s, %d) failed!",
+                    this.target, GLBuffer.this.bufferId);
+            
             GL15.glBufferData(this.target.value, this.size, this.usage.value);
+            
+            assert GL11.glGetError() == GL11.GL_NO_ERROR : String.format("glBufferData(%s, %d, %s) failed!",
+                    this.target, this.size, this.usage);
         }
 
     }
@@ -557,11 +579,18 @@ public class GLBuffer extends GLObject {
             final ByteBuffer out;
 
             GL15.glBindBuffer(this.target.value, bufferId);
+            
+            assert GL11.glGetError() == GL11.GL_NO_ERROR: String.format("glBindBuffer(%s, %d) failed!",
+                    this.target, bufferId);
+            
 
             if (this.writeBuffer == null) {
                 final int size = GL15.glGetBufferParameteri(
                         this.target.value,
                         GLBufferParameterName.GL_BUFFER_SIZE.value);
+                
+                assert GL11.glGetError() == GL11.GL_NO_ERROR : String.format("glGetBufferParameteri(%s, GL_BUFFER_SIZE) = %d failed!",
+                        this.target, size);
 
                 out = ByteBuffer.allocateDirect(size)
                         .order(ByteOrder.nativeOrder());
@@ -574,6 +603,9 @@ public class GLBuffer extends GLObject {
                     this.target.value,
                     this.offset,
                     out);
+            
+            assert GL11.glGetError() == GL11.GL_NO_ERROR : String.format("glGetBufferSubData(%s, %d, [data]) failed!",
+                    this.target.value, this.offset);
 
             return out;
         }
@@ -710,11 +742,17 @@ public class GLBuffer extends GLObject {
 
             GL15.glBindBuffer(this.target.value, GLBuffer.this.bufferId);
             
+            assert GL11.glGetError() == GL11.GL_NO_ERROR : String.format("glBindBuffer(%s, %d) failed!",
+                    this.target, GLBuffer.this.bufferId);
+            
             final ByteBuffer newBuffer = GL30.glMapBufferRange(
                     this.target.value,
                     this.offset, this.length,
                     this.access,
                     oldBuffer);
+            
+            assert GL11.glGetError() == GL11.GL_NO_ERROR: String.format("glMapBufferRange(%s, %d, %d, %d, [data]) failed!",
+                    this.target, this.offset, this.length, this.access);
 
             GLBuffer.this.mappedBuffer = newBuffer;
 
@@ -871,13 +909,22 @@ public class GLBuffer extends GLObject {
 
             GL15.glBindBuffer(this.target.value, GLBuffer.this.bufferId);
             
+            assert GL11.glGetError() == GL11.GL_NO_ERROR : String.format("glBindBuffer(%s, %d) failed!",
+                    this.target, GLBuffer.this.bufferId);
+            
             GL44.glBufferStorage(this.target.value, this.length, this.access);
+            
+            assert GL11.glGetError() == GL11.GL_NO_ERROR : String.format("glBufferStorage(%s, %d, %d) failed!",
+                    this.target, this.length, this.access);
             
             final ByteBuffer newBuffer = GL30.glMapBufferRange(
                     this.target.value,
                     0, this.length,
                     this.access,
                     oldBuffer);
+            
+            assert GL11.glGetError() == GL11.GL_NO_ERROR : String.format("glMapBufferRange(%s, 0, %d, %d, [data]) failed!",
+                    this.target, this.length, this.access);
 
             GLBuffer.this.mappedBuffer = newBuffer;
 
@@ -933,7 +980,13 @@ public class GLBuffer extends GLObject {
             }
 
             GL15.glBindBuffer(this.target.value, bufferId);
+            
+            assert GL11.glGetError() == GL11.GL_NO_ERROR : String.format("glBindBuffer(%s, %d) failed!",
+                    this.target, bufferId);
+            
             GL15.glUnmapBuffer(this.target.value);
+            
+            assert GL11.glGetError() == GL11.GL_NO_ERROR : String.format("glUnmapBuffer(%s) failed!", this.target);
         }
 
     }
@@ -1006,8 +1059,14 @@ public class GLBuffer extends GLObject {
                     GLBufferTarget.GL_COPY_READ_BUFFER.value,
                     this.src.bufferId);
 
+            assert GL11.glGetError() == GL11.GL_NO_ERROR : String.format("glBindBuffer(GL_COPY_READ_BUFFER, %d) failed!",
+                    this.src.bufferId);
+            
             GL15.glBindBuffer(
                     GLBufferTarget.GL_COPY_WRITE_BUFFER.value,
+                    this.dest.bufferId);
+            
+            assert GL11.glGetError() == GL11.GL_NO_ERROR: String.format("glBindBuffer(GL_COPY_WRITE_BUFFER, %d) failed!",
                     this.dest.bufferId);
 
             GL31.glCopyBufferSubData(
@@ -1016,6 +1075,9 @@ public class GLBuffer extends GLObject {
                     this.srcOffset,
                     this.destOffset,
                     this.size);
+            
+            assert GL11.glGetError() == GL11.GL_NO_ERROR : String.format("glCopyBufferSubData(GL_COPY_READ_BUFFER, GL_COPY_WRITE_BUFFER, %d, %d, %d) failed!",
+                    this.srcOffset, this.destOffset, this.size);
         }
     }
 }
