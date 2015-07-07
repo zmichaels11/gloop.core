@@ -606,6 +606,7 @@ public class GLProgram extends GLObject {
                 throw new GLException("GLProgram is not valid!");
             }
 
+            
             GLProgram.this.use();
 
             final int uLoc = GLProgram.this.getUniformLoc(this.uName);

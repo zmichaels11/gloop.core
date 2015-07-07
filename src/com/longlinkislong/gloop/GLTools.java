@@ -5,6 +5,10 @@
  */
 package com.longlinkislong.gloop;
 
+import com.longlinkislong.gloop.dsa.DirectStateAccess;
+import com.longlinkislong.gloop.dsa.EXTDSA;
+import com.longlinkislong.gloop.dsa.FakeDSA;
+import com.longlinkislong.gloop.dsa.GL45DSA;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStream;
@@ -1300,5 +1304,21 @@ public class GLTools {
             return VENDOR;
         }
 
+    }
+
+    private static DirectStateAccess DSA = null;
+    private static final DirectStateAccess[] DSA_IMPLEMENTATIONS = {GL45DSA.getInstance(), EXTDSA.getInstance(), FakeDSA.getInstance()};
+
+    protected static DirectStateAccess getDSAInstance() {
+        if (DSA == null) {
+            for(DirectStateAccess dsaImp : DSA_IMPLEMENTATIONS) {
+                if(dsaImp.isSupported()) {
+                    DSA = dsaImp;
+                    break;
+                }
+            }
+        }
+        
+        return DSA;
     }
 }
