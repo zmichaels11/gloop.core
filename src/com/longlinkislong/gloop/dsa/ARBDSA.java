@@ -9,6 +9,8 @@ import java.nio.ByteBuffer;
 import java.nio.DoubleBuffer;
 import java.nio.FloatBuffer;
 import org.lwjgl.opengl.ARBDirectStateAccess;
+import org.lwjgl.opengl.ContextCapabilities;
+import org.lwjgl.opengl.EXTDirectStateAccess;
 import org.lwjgl.opengl.GL;
 import org.lwjgl.opengl.GL41;
 
@@ -33,7 +35,9 @@ public class ARBDSA implements DirectStateAccess {
     
     @Override
     public boolean isSupported() {
-        return GL.getCurrent().getCapabilities().GL_ARB_direct_state_access;
+        final ContextCapabilities cap = GL.getCurrent().getCapabilities();
+                
+        return cap.GL_ARB_direct_state_access && cap.OpenGL41 && cap.GL_EXT_direct_state_access;
     }
 
     @Override
@@ -92,7 +96,7 @@ public class ARBDSA implements DirectStateAccess {
     }
 
     @Override
-    public void glProgramUniform1f(int programId, int location, float value) {
+    public void glProgramUniform1f(int programId, int location, float value) {        
         GL41.glProgramUniform1f(location, location, value);
     }
 
@@ -182,13 +186,15 @@ public class ARBDSA implements DirectStateAccess {
     }
 
     @Override
-    public void glTextureParameteri(int textureId, int target, int pName, int val) {
-        ARBDirectStateAccess.glTextureParameterIi(textureId, pName, val);
+    public void glTextureParameteri(int textureId, int target, int pName, int val) {   
+        EXTDirectStateAccess.glTextureParameteriEXT(textureId, target, pName, val);
+        //ARBDirectStateAccess.glTextureParameteri(textureId, pName, val);
     }
 
     @Override
     public void glTextureParameterf(int textureId, int target, int pName, float val) {
-        ARBDirectStateAccess.glTextureParameterf(textureId, pName, val);
+        EXTDirectStateAccess.glTextureParameterfEXT(textureId, target, pName, val);        
+        //ARBDirectStateAccess.glTextureParameterf(textureId, pName, val);
     }
 
     @Override
