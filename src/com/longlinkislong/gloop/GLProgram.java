@@ -18,6 +18,7 @@ import java.util.Set;
 import org.lwjgl.opengl.GL11;
 import org.lwjgl.opengl.GL20;
 import org.lwjgl.opengl.GL30;
+import org.lwjgl.opengl.GL31;
 import org.lwjgl.opengl.GL40;
 import org.lwjgl.opengl.GL43;
 
@@ -41,7 +42,7 @@ public class GLProgram extends GLObject {
     private static final Map<Thread, GLProgram> CURRENT = new HashMap<>();
     private static final int INVALID_PROGRAM_ID = -1;
     protected int programId = INVALID_PROGRAM_ID;
-    private final Map<String, Integer> uniforms = new HashMap<>();
+    private final Map<String, Integer> uniforms = new HashMap<>();    
 
     /**
      * Constructs a new GLProgram using the default GLThread.
@@ -1010,32 +1011,32 @@ public class GLProgram extends GLObject {
                 }
 
                 GL20.glAttachShader(GLProgram.this.programId, shader.shaderId);
-                
+
                 assert GL11.glGetError() == GL11.GL_NO_ERROR : String.format("glAttachShader(%d, %d) failed!",
                         GLProgram.this.programId, shader.shaderId);
             }
 
             GL20.glLinkProgram(GLProgram.this.programId);
-            
+
             assert GL11.glGetError() == GL11.GL_NO_ERROR : String.format("glLinkProgram(%d) failed!", GLProgram.this.programId);
-            
+
             final int isLinked = GL20.glGetProgrami(
                     GLProgram.this.programId,
                     GL20.GL_LINK_STATUS);
 
             assert GL11.glGetError() == GL11.GL_NO_ERROR : String.format("glGetProgrami(%d, GL_LINK_STATUS) = %d failed!",
                     GLProgram.this.programId, isLinked);
-            
+
             if (isLinked == GL11.GL_FALSE) {
                 final int length = GL20.glGetProgrami(
                         GLProgram.this.programId, GL20.GL_INFO_LOG_LENGTH);
-                
+
                 assert GL11.glGetError() == GL11.GL_NO_ERROR : String.format("glGetProgrami(%d, GL_INFO_LOG_LENGTH) = %d failed!",
                         GLProgram.this.programId, length);
-                
+
                 final String msg = GL20.glGetProgramInfoLog(
                         GLProgram.this.programId, length);
-                
+
                 assert GL11.glGetError() == GL11.GL_NO_ERROR : String.format("glGetProgramInfoLog(%d, %d) = %s failed!",
                         GLProgram.this.programId, length, msg);
 
@@ -1043,7 +1044,7 @@ public class GLProgram extends GLObject {
             } else {
                 for (GLShader shader : this.shaders) {
                     GL20.glDetachShader(GLProgram.this.programId, shader.shaderId);
-                    
+
                     assert GL11.glGetError() == GL11.GL_NO_ERROR : String.format("glDetachShader(%d, %d) failed!",
                             GLProgram.this.programId, shader.shaderId);
                 }
@@ -1052,10 +1053,13 @@ public class GLProgram extends GLObject {
 
     }
 
-    private final GLTask initTask = new InitTask();
-
+    /**
+     * Initialized the OpenGL program.
+     *
+     * @since 15.07.06
+     */
     public final void init() {
-        this.initTask.glRun(this.getThread());
+        new InitTask().glRun(this.getThread());
     }
 
     /**
@@ -1074,10 +1078,10 @@ public class GLProgram extends GLObject {
             }
 
             GLProgram.this.programId = GL20.glCreateProgram();
-            
+
             assert GL11.glGetError() == GL11.GL_NO_ERROR : System.out.printf("glCreateProgram = %d failed!", GLProgram.this.programId);
         }
-    }    
+    }
 
     /**
      * Deletes the GLProgram.
@@ -1085,7 +1089,7 @@ public class GLProgram extends GLObject {
      * @since 15.05.27
      */
     public final void delete() {
-        this.new DeleteTask().glRun(this.getThread());        
+        new DeleteTask().glRun(this.getThread());
     }
 
     /**
@@ -1102,9 +1106,9 @@ public class GLProgram extends GLObject {
             }
 
             GL20.glDeleteProgram(GLProgram.this.programId);
-            
+
             assert GL11.glGetError() == GL11.GL_NO_ERROR : String.format("glDeleteProgram(%d) failed!", GLProgram.this.programId);
-            
+
             GLProgram.this.programId = INVALID_PROGRAM_ID;
         }
     }
@@ -1143,10 +1147,139 @@ public class GLProgram extends GLObject {
             GLProgram.this.use();
 
             final int uLoc = GLProgram.this.getUniformLoc(uName);
-                        
+
             GL20.glUniform1i(uLoc, this.bindTask.activeTexture);
-            
+
             assert GL11.glGetError() == GL11.GL_NO_ERROR : String.format("glUniform1i(%d, %d) failed!", uLoc, this.bindTask.activeTexture);
+        }
+    }
+
+    /**
+     * Sets the shader storage with a GLBuffer.
+     *
+     * @param storageName the name of the storage block.
+     * @param buffer the GLBuffer to bind.
+     * @param bindingPoint the index to bind the GLBuffer to.
+     * @since 15.07.06
+     */
+    public void setShaderStorage(final CharSequence storageName, final GLBuffer buffer, final int bindingPoint) {
+        new SetShaderStorageTask(storageName, buffer, bindingPoint).glRun(this.getThread());
+    }
+
+    /**
+     * A GLTask that sets a Shader Storage block.
+     *
+     * @since 15.07.06
+     */
+    public class SetShaderStorageTask extends GLTask {
+
+        final String storageName;
+        final GLBuffer buffer;
+        final int bindingPoint;
+
+        /**
+         * Constructs a new SetShaderStorageTask.
+         *
+         * @param storageName the name of the shader storage
+         * @param buffer the buffer to bind.
+         * @param bindingPoint the index to bind the buffer to.
+         * @since 15.07.06
+         */
+        public SetShaderStorageTask(final CharSequence storageName, final GLBuffer buffer, final int bindingPoint) {
+            this.storageName = storageName.toString();
+            this.buffer = Objects.requireNonNull(buffer);
+
+            if ((this.bindingPoint = bindingPoint) < 0) {
+                throw new GLException("Invalid binding point: " + bindingPoint);
+            }
+        }
+
+        @Override
+        public void run() {
+            if (!GLProgram.this.isValid()) {
+                throw new GLException("Invalid GLProgram object!");
+            } else if (!this.buffer.isValid()) {
+                throw new GLException("Invalid GLBuffer object!");
+            }
+
+            final int sBlock = GL43.glGetProgramResourceLocation(GLProgram.this.programId, GL43.GL_SHADER_STORAGE_BLOCK, this.storageName);
+
+            assert GL11.glGetError() == GL11.GL_NO_ERROR : String.format("glGetProgramResourceLocation(%d, GL_SHADER_STORAGE_BLOCK, %s) failed!",
+                    GLProgram.this.programId, this.storageName);
+
+            GL30.glBindBufferBase(GLBufferTarget.GL_SHADER_STORAGE_BUFFER.value, this.bindingPoint, this.buffer.bufferId);
+
+            assert GL11.glGetError() == GL11.GL_NO_ERROR : String.format("glBindBufferBase(GL_SHADER_STORAGE_BUFFER, %d, %d) failed!",
+                    this.bindingPoint, this.buffer.bufferId);
+
+            GL43.glShaderStorageBlockBinding(GLProgram.this.programId, sBlock, this.bindingPoint);
+
+            assert GL11.glGetError() == GL11.GL_NO_ERROR : String.format("glShaderStorageBlockBinding(%d, %d, %d) failed!",
+                    GLProgram.this.programId, sBlock, this.bindingPoint);
+        }
+    }
+
+    /**
+     * Binds a GLBuffer to the specified uniform block.
+     *
+     * @param uBlock the name of the uniform block.
+     * @param buffer the buffer to use.
+     * @param bindingPoint the index to bind the buffer to.
+     * @since 15.07.06
+     */
+    public void setUniformBlock(final CharSequence uBlock, final GLBuffer buffer, final int bindingPoint) {
+        new SetUniformBlockTask(uBlock, buffer, bindingPoint).glRun(this.getThread());
+    }
+
+    /**
+     * A GLTask that sets a uniform block.
+     *
+     * @since 15.07.06
+     */
+    public class SetUniformBlockTask extends GLTask {
+
+        final String blockName;
+        final GLBuffer buffer;
+        final int bindingPoint;
+
+        /**
+         * Constructs a new SetUniformBlockTask.
+         *
+         * @param uBlock the name of the uniform block.
+         * @param buffer the buffer to bind.
+         * @param bindingPoint the index to bind the buffer to.
+         * @since 15.07.06
+         */
+        public SetUniformBlockTask(final CharSequence uBlock, final GLBuffer buffer, final int bindingPoint) {
+            this.blockName = uBlock.toString();
+            this.buffer = Objects.requireNonNull(buffer);
+            if ((this.bindingPoint = bindingPoint) < 0) {
+                throw new GLException("Invalid binding point address: " + bindingPoint);
+            }
+        }
+
+        @Override
+        public void run() {
+            if (!GLProgram.this.isValid()) {
+                throw new GLException("Invalid GLProgram object!");
+            } else if (!this.buffer.isValid()) {
+                throw new GLException("Invalid GLBuffer object!");
+            }            
+            
+            final int uBlock = GL31.glGetUniformBlockIndex(GLProgram.this.programId, this.blockName);
+
+            assert GL11.glGetError() == GL11.GL_NO_ERROR : String.format("glGetUniformBlockIndex(%d, %s) = %d failed!",
+                    GLProgram.this.programId, this.blockName, uBlock);
+
+            GL30.glBindBufferBase(GLBufferTarget.GL_UNIFORM_BUFFER.value, this.bindingPoint, this.buffer.bufferId);
+
+            assert GL11.glGetError() == GL11.GL_NO_ERROR : String.format("glBindBufferBase(GL_UNIFORM_BUFFER, %d, %d) failed!",
+                    this.bindingPoint, this.buffer.bufferId);
+
+            GL31.glUniformBlockBinding(GLProgram.this.programId, uBlock, this.bindingPoint);
+
+            assert GL11.glGetError() == GL11.GL_NO_ERROR : String.format("glUniformBlockBinding(%d, %d, %d) failed!",
+                    GLProgram.this.programId, uBlock, this.bindingPoint);
         }
     }
 
@@ -1197,7 +1330,7 @@ public class GLProgram extends GLObject {
 
             GLProgram.this.use();
             GL43.glDispatchCompute(this.numX, this.numY, this.numZ);
-            
+
             assert GL11.glGetError() == GL11.GL_NO_ERROR : String.format("glDispatchCompute(%d, %d, %d) failed!", this.numX, this.numY, this.numZ);
         }
     }

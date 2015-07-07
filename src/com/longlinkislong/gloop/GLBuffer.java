@@ -911,7 +911,7 @@ public class GLBuffer extends GLObject {
             
             assert GL11.glGetError() == GL11.GL_NO_ERROR : String.format("glBindBuffer(%s, %d) failed!",
                     this.target, GLBuffer.this.bufferId);
-            
+                        
             GL44.glBufferStorage(this.target.value, this.length, this.access);
             
             assert GL11.glGetError() == GL11.GL_NO_ERROR : String.format("glBufferStorage(%s, %d, %d) failed!",
