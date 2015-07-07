@@ -350,6 +350,7 @@ public class GLFramebuffer extends GLObject {
 
             switch (target) {
                 case GL_TEXTURE_1D:
+                    
                     GL30.glFramebufferTexture1D(
                             GL30.GL_FRAMEBUFFER,
                             GL30.GL_DEPTH_STENCIL_ATTACHMENT,
@@ -357,6 +358,7 @@ public class GLFramebuffer extends GLObject {
                             this.depthStencilAttachment.textureId,
                             this.level);
 
+                    
                     assert GL11.glGetError() == GL11.GL_NO_ERROR : String.format("glFramebufferTexture1D(GL_FRAMEBUFFER, GL_DEPTH_STENCIL_ATTACHMENT, %d, %d, %d) failed!",
                             target.value, this.depthStencilAttachment.textureId, this.level);
 

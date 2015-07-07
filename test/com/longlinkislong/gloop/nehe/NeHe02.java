@@ -39,7 +39,7 @@ public class NeHe02 {
     private final GLVertexArray vaoSquare;
 
     public NeHe02() throws IOException {
-        this.window = new GLWindow();
+        this.window = new GLWindow();        
 
         final InputStream inVsh = this.getClass()
                 .getResourceAsStream("basic.vs");
@@ -106,16 +106,17 @@ public class NeHe02 {
                 GLVertexAttributeType.GL_FLOAT,
                 GLVertexAttributeSize.VEC3);
 
-        this.drawTask = GLTask.create(() -> {
-            program.use();
+        this.drawTask = GLTask.create(() -> {            
             program.setUniformMatrixF("proj", GLMat4F.perspective(45, (float) window.getAspectRatio(), 0.1f));
-
             program.setUniformMatrixF("tr", GLMat4F.translation(-1.5f, 0.0f, -6.0f));
+            
+            program.use();
             vaoTriangle.drawArrays(GLDrawMode.GL_TRIANGLES, 0, 3);
 
             program.setUniformMatrixF("tr", GLMat4F.translation(1.5f, 0.0f, -6.0f));
+            
+            program.use();
             vaoSquare.drawElements(GLDrawMode.GL_TRIANGLES, 6, GLIndexElementType.GL_UNSIGNED_INT, 0);
-
             window.update();
         });                
     }

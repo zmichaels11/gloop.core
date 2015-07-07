@@ -6,26 +6,28 @@
 package com.longlinkislong.gloop.dsa;
 
 import java.nio.ByteBuffer;
-import java.nio.DoubleBuffer;
 import java.nio.FloatBuffer;
 import org.lwjgl.opengl.EXTDirectStateAccess;
 import org.lwjgl.opengl.GL;
-import org.lwjgl.opengl.GL15;
-import org.lwjgl.opengl.GL20;
-import org.lwjgl.opengl.GL40;
-import org.lwjgl.opengl.GL44;
+import org.lwjgl.opengl.GL11;
+import org.lwjgl.opengl.GL12;
 
 /**
  *
  * @author zmichaels
  */
-public class EXTDSA implements DirectStateAccess {
+public class EXTDSA extends FakeDSA {
+
+    @Override
+    public String toString() {
+        return "EXTDSA";
+    }
 
     @Override
     public boolean isSupported() {
         return GL.getCurrent().getCapabilities().GL_EXT_direct_state_access;
     }
-    
+
     @Override
     public void glNamedBufferData(int bufferId, long size, int usage) {
         EXTDirectStateAccess.glNamedBufferDataEXT(bufferId, size, usage);
@@ -42,21 +44,17 @@ public class EXTDSA implements DirectStateAccess {
     }
 
     @Override
-    public void glNamedBufferStorage(int bufferId, ByteBuffer data, int flags) {
-        GL15.glBindBuffer(GL15.GL_ARRAY_BUFFER, bufferId);
-        GL44.glBufferStorage(GL15.GL_ARRAY_BUFFER, data, flags);
-        GL15.glBindBuffer(GL15.GL_ARRAY_BUFFER, 0);
+    public void glGetNamedBufferSubData(int buffer, long offset, ByteBuffer out) {
+        EXTDirectStateAccess.glGetNamedBufferSubDataEXT(buffer, offset, out);
     }
 
     @Override
-    public void glNamedBufferStorage(int bufferId, long size, int flags) {
-        GL15.glBindBuffer(GL15.GL_ARRAY_BUFFER, bufferId);
-        GL44.glBufferStorage(GL15.GL_ARRAY_BUFFER, size, flags);
-        GL15.glBindBuffer(GL15.GL_ARRAY_BUFFER, 0);
+    public int glGetNamedBufferParameteri(int bufferId, int pName) {
+        return EXTDirectStateAccess.glGetNamedBufferParameteriEXT(bufferId, pName);
     }
 
     @Override
-    public ByteBuffer glMapNammedBufferRange(int bufferId, long offset, long length, int access, ByteBuffer recycled) {
+    public ByteBuffer glMapNamedBufferRange(int bufferId, long offset, long length, int access, ByteBuffer recycled) {
         return EXTDirectStateAccess.glMapNamedBufferRangeEXT(bufferId, offset, length, access, recycled);
     }
 
@@ -91,31 +89,23 @@ public class EXTDSA implements DirectStateAccess {
     }
 
     @Override
-    public void glProgramUniform1d(int programId, int location, double value) {
-        GL20.glUseProgram(programId);
-        GL40.glUniform1d(location, value);
-        GL20.glUseProgram(0);
+    public void glProgramUniform1i(int programId, int location, int value) {
+        EXTDirectStateAccess.glProgramUniform1iEXT(programId, location, value);
     }
 
     @Override
-    public void glProgramUniform2d(int programId, int location, double v0, double v1) {
-        GL20.glUseProgram(programId);
-        GL40.glUniform2d(location, v0, v1);
-        GL20.glUseProgram(0);
+    public void glProgramUniform2i(int programId, int location, int v0, int v1) {
+        EXTDirectStateAccess.glProgramUniform2iEXT(programId, location, v0, v1);
     }
 
     @Override
-    public void glProgramUniform3d(int programId, int location, double v0, double v1, double v2) {
-        GL20.glUseProgram(programId);
-        GL40.glUniform3d(location, v0, v1, v2);
-        GL20.glUseProgram(0);
+    public void glProgramUniform3i(int programId, int location, int v0, int v1, int v2) {
+        EXTDirectStateAccess.glProgramUniform3iEXT(programId, location, v0, v1, v2);
     }
 
     @Override
-    public void glProgramUniform4d(int programId, int location, double v0, double v1, double v2, double v3) {
-        GL20.glUseProgram(programId);
-        GL40.glUniform4d(location, v0, v1, v2, v3);
-        GL20.glUseProgram(0);
+    public void glProgramUniform4i(int programId, int location, int v0, int v1, int v2, int v3) {
+        EXTDirectStateAccess.glProgramUniform4iEXT(programId, location, v0, v1, v2, v3);
     }
 
     @Override
@@ -134,27 +124,6 @@ public class EXTDSA implements DirectStateAccess {
     }
 
     @Override
-    public void glProgramUniformMatrix2d(int programId, int location, boolean needsTranspose, DoubleBuffer data) {
-        GL20.glUseProgram(programId);
-        GL40.glUniformMatrix2dv(location, needsTranspose, data);
-        GL20.glUseProgram(0);
-    }
-
-    @Override
-    public void glProgramUniformMatrix3d(int programId, int location, boolean needsTranspose, DoubleBuffer data) {
-        GL20.glUseProgram(programId);
-        GL40.glUniformMatrix3dv(location, needsTranspose, data);
-        GL20.glUseProgram(0);
-    }
-
-    @Override
-    public void glProgramUniformMatrix4d(int programId, int location, boolean needsTranspose, DoubleBuffer data) {
-        GL20.glUseProgram(programId);
-        GL40.glUniformMatrix4dv(location, needsTranspose, data);
-        GL20.glUseProgram(0);
-    }
-
-    @Override
     public void glTextureParameteri(int textureId, int target, int pName, int val) {
         EXTDirectStateAccess.glTextureParameteriEXT(textureId, target, pName, val);
     }
@@ -162,6 +131,30 @@ public class EXTDSA implements DirectStateAccess {
     @Override
     public void glTextureParameterf(int textureId, int target, int pName, float val) {
         EXTDirectStateAccess.glTextureParameterfEXT(textureId, target, pName, val);
+    }
+
+    @Override
+    public void glTextureSubImage1d(int textureId, int level, int xOffset, int width, int format, int type, ByteBuffer pixels) {
+        EXTDirectStateAccess.glTextureSubImage1DEXT(
+                textureId, GL11.GL_TEXTURE_1D,
+                level, xOffset, width,
+                format, type, pixels);
+    }
+
+    @Override
+    public void glTextureSubImage2d(int textureId, int level, int xOffset, int yOffset, int width, int height, int format, int type, ByteBuffer pixels) {
+        EXTDirectStateAccess.glTextureSubImage2DEXT(
+                textureId, GL11.GL_TEXTURE_2D,
+                level, xOffset, yOffset, 
+                width, height, format, type, pixels);
+    }
+
+    @Override
+    public void glTextureSubImage3d(int textureId, int level, int xOffset, int yOffset, int zOffset, int width, int height, int depth, int format, int type, ByteBuffer pixels) {
+        EXTDirectStateAccess.glTextureSubImage3DEXT(
+                textureId, GL12.GL_TEXTURE_3D,
+                level, xOffset, yOffset, zOffset,
+                width, height, depth, format, type, pixels);
     }
 
     @Override

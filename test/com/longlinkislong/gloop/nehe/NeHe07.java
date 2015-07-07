@@ -69,7 +69,7 @@ public class NeHe07 {
     float xSpeed, ySpeed;
     
     public NeHe07() throws IOException {
-        this.window = new GLWindow(640, 480, "NeHe07");
+        this.window = new GLWindow(640, 480, "NeHe07");        
         
         final GLClear clear = this.window.getGLThread().currentClear();
         final GLDepthTest depthTest = new GLDepthTest()
@@ -291,9 +291,9 @@ public class NeHe07 {
                 
                 trCube = rz.multiply(ry.multiply(rx.multiply(tr)));
             }
-            
-            program.use();
+                        
             setTr.set(trCube).glRun();
+            program.use();
             vaoCube.drawElements(GL_TRIANGLES, cubeVerts, GLIndexElementType.GL_UNSIGNED_INT, 0);
             
             xRot += xSpeed;
@@ -305,7 +305,7 @@ public class NeHe07 {
     public void start() {
         this.window.getGLThread().scheduleGLTask(this.drawTask);        
         this.window.getKeyboard().addKeyListener(this::input);
-        this.window.setVisible(true);
+        this.window.setVisible(true);        
     }
     
     private void input(GLWindow window,

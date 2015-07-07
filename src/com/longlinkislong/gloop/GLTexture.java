@@ -289,29 +289,12 @@ public class GLTexture extends GLObject {
                 throw new GLException("GLTexture is not valid!");
             }
 
-            GL11.glBindTexture(
-                    GLTextureTarget.GL_TEXTURE_3D.value,
-                    GLTexture.this.textureId);
-
-            assert GL11.glGetError() == GL11.GL_NO_ERROR : String.format("glBindTexture(GL_TEXTURE_3D, %d) failed!",
-                    GLTexture.this.textureId);
-
-            GL12.glTexSubImage3D(
-                    GLTextureTarget.GL_TEXTURE_3D.value,
+            GLTools.getDSAInstance().glTextureSubImage3d(
+                    GLTexture.this.textureId,
                     this.level,
                     this.xOffset, this.yOffset, this.zOffset,
-                    this.width, this.height, this.depth,
-                    this.format.value,
-                    this.type.value, this.data);
-
-            assert GL11.glGetError() == GL11.GL_NO_ERROR : String.format("glTexSubImage3D(GL_TEXTURE_3D, %d, %d, %d, %d, %d, %d, %d, %s, %s, [data]) failed!",
-                    this.level, this.xOffset, this.yOffset, this.zOffset,
-                    this.width, this.height, this.depth,
-                    this.format, this.type);
-
-            GL11.glBindTexture(GLTextureTarget.GL_TEXTURE_3D.value, 0);
-
-            assert GL11.glGetError() == GL11.GL_NO_ERROR : "glBindTexture(GL_TEXTURE_3D, 0) failed!";
+                    this.width, this.height, this.depth, this.format.value,
+                    this.level, this.data);
 
             GLTexture.this.target = GLTextureTarget.GL_TEXTURE_3D;
         }
@@ -399,27 +382,13 @@ public class GLTexture extends GLObject {
                 throw new GLException("GLTexture is not valid!");
             }
 
-            GL11.glBindTexture(
-                    GLTextureTarget.GL_TEXTURE_2D.value,
-                    GLTexture.this.textureId);
-
-            assert GL11.glGetError() == GL11.GL_NO_ERROR : String.format("glBindTexture(GL_TEXTURE_2D, %d) failed!",
-                    GLTexture.this.textureId);
-
-            GL11.glTexSubImage2D(
-                    GLTextureTarget.GL_TEXTURE_2D.value,
+            GLTools.getDSAInstance().glTextureSubImage2d(
                     GLTexture.this.textureId,
-                    this.xOffset, this.yOffset,
-                    this.width, this.height,
-                    this.format.value,
-                    this.type.value, this.data);
+                    this.level, this.xOffset, this.yOffset,
+                    this.width, this.height, this.format.value,
+                    this.level, this.data);
 
-            assert GL11.glGetError() == GL11.GL_NO_ERROR : String.format("glTexSubImage3D(GL_TEXTURE_2D, %d, %d, %d, %d, %d, %s, %s, [data]) failed!",
-                    GLTexture.this.textureId, this.xOffset, this.yOffset, this.width, this.height, this.format, this.type);
-
-            GL11.glBindTexture(GLTextureTarget.GL_TEXTURE_2D.value, 0);
-
-            assert GL11.glGetError() == GL11.GL_NO_ERROR : "glBindTexture(GL_TEXTURE_2D, 0) failed!";
+            GLTexture.this.target = GLTextureTarget.GL_TEXTURE_2D;
         }
 
     }
@@ -505,27 +474,12 @@ public class GLTexture extends GLObject {
                 throw new GLException("GLTexture is not valid!");
             }
 
-            GL11.glBindTexture(
-                    GLTextureTarget.GL_TEXTURE_1D.value,
-                    GLTexture.this.textureId);
+            GLTools.getDSAInstance().glTextureSubImage1d(
+                    GLTexture.this.textureId,
+                    this.level, this.xOffset, this.width, this.format.value,
+                    this.level, this.data);
 
-            assert GL11.glGetError() == GL11.GL_NO_ERROR : String.format("glBindTexture(GL_TEXTURE_1D, %d) failed!",
-                    GLTexture.this.textureId);
-
-            GL11.glTexSubImage1D(
-                    GLTextureTarget.GL_TEXTURE_1D.value,
-                    this.level,
-                    this.xOffset, this.width,
-                    this.format.value,
-                    this.type.value,
-                    this.data);
-
-            assert GL11.glGetError() == GL11.GL_NO_ERROR : String.format("glTexSubImage1D(GL_TEXTURE_1D, %d, %d, %d, %s, %s, [data]) failed!",
-                    this.level, this.xOffset, this.width, this.format, this.type);
-
-            GL11.glBindTexture(GLTextureTarget.GL_TEXTURE_1D.value, 0);
-
-            assert GL11.glGetError() == GL11.GL_NO_ERROR : "glBindTexture(GL_TEXTURE_1D, 0) failed!";
+            GLTexture.this.target = GLTextureTarget.GL_TEXTURE_1D;
         }
     }
 
@@ -1205,69 +1159,29 @@ public class GLTexture extends GLObject {
 
             final int target = GL11.GL_TEXTURE_2D;
 
-            GL11.glBindTexture(target, GLTexture.this.textureId);
+            GLTools.getDSAInstance()
+                    .glTextureParameteri(textureId, target, GL11.GL_TEXTURE_MIN_FILTER, this.params.minFilter.value);
 
-            assert GL11.glGetError() == GL11.GL_NO_ERROR : String.format("glBindTexture(GL_TEXTURE_2D, %d) failed!", GLTexture.this.textureId);
+            GLTools.getDSAInstance()
+                    .glTextureParameteri(textureId, target, GL11.GL_TEXTURE_MAG_FILTER, this.params.magFilter.value);
 
-            GL11.glTexParameteri(
-                    target,
-                    GL11.GL_TEXTURE_MIN_FILTER,
-                    this.params.minFilter.value);
+            GLTools.getDSAInstance()
+                    .glTextureParameteri(textureId, target, GL11.GL_TEXTURE_WRAP_S, this.params.wrapS.value);
 
-            assert GL11.glGetError() == GL11.GL_NO_ERROR : String.format("glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, %s) failed!", this.params.minFilter);
+            GLTools.getDSAInstance()
+                    .glTextureParameteri(textureId, target, GL11.GL_TEXTURE_WRAP_T, this.params.wrapT.value);
 
-            GL11.glTexParameteri(
-                    target,
-                    GL11.GL_TEXTURE_MAG_FILTER,
-                    this.params.magFilter.value);
+            GLTools.getDSAInstance()
+                    .glTextureParameteri(textureId, target, GL12.GL_TEXTURE_WRAP_R, this.params.wrapR.value);
 
-            assert GL11.glGetError() == GL11.GL_NO_ERROR : String.format("glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, %s) failed!", this.params.magFilter);
+            GLTools.getDSAInstance()
+                    .glTextureParameterf(textureId, target, GL12.GL_TEXTURE_MIN_LOD, this.params.minLOD);
 
-            GL11.glTexParameteri(
-                    target,
-                    GL11.GL_TEXTURE_WRAP_S,
-                    this.params.wrapS.value);
+            GLTools.getDSAInstance()
+                    .glTextureParameterf(textureId, target, GL12.GL_TEXTURE_MAX_LOD, this.params.maxLOD);
 
-            assert GL11.glGetError() == GL11.GL_NO_ERROR : String.format("glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, %s) failed!", this.params.wrapS);
-
-            GL11.glTexParameteri(
-                    target,
-                    GL11.GL_TEXTURE_WRAP_T,
-                    this.params.wrapT.value);
-
-            assert GL11.glGetError() == GL11.GL_NO_ERROR : String.format("glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, %s) failed!", this.params.wrapT);
-
-            GL11.glTexParameteri(
-                    target,
-                    GL12.GL_TEXTURE_WRAP_R,
-                    this.params.wrapR.value);
-
-            assert GL11.glGetError() == GL11.GL_NO_ERROR : String.format("glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_R, %s) failed!", this.params.wrapR);
-
-            GL11.glTexParameterf(
-                    target,
-                    GL12.GL_TEXTURE_MIN_LOD,
-                    this.params.minLOD);
-
-            assert GL11.glGetError() == GL11.GL_NO_ERROR : String.format("glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MIN_LOD, %f) failed!", this.params.minLOD);
-
-            GL11.glTexParameterf(
-                    target,
-                    GL12.GL_TEXTURE_MAX_LOD,
-                    this.params.maxLOD);
-
-            assert GL11.glGetError() == GL11.GL_NO_ERROR : String.format("glGetParameterf(GL_TEXTURE_2D, GL_TEXTURE_MAX_LOD, %f) failed!", this.params.maxLOD);
-
-            GL11.glTexParameterf(
-                    target,
-                    EXTTextureFilterAnisotropic.GL_TEXTURE_MAX_ANISOTROPY_EXT,
-                    this.params.anisotropicLevel);
-
-            assert GL11.glGetError() == GL11.GL_NO_ERROR : String.format("glTexParameterf(GLTEXTURE_2D, GL_TEXTURE_MAX_ANISOTROPY_EXT, %f) failed!", this.params.anisotropicLevel);
-
-            GL11.glBindTexture(target, 0);
-
-            assert GL11.glGetError() == GL11.GL_NO_ERROR : "glBindTexture(GL_TEXTURE_2D, 0) failed!";
+            GLTools.getDSAInstance()
+                    .glTextureParameterf(textureId, target, EXTTextureFilterAnisotropic.GL_TEXTURE_MAX_ANISOTROPY_EXT, this.params.anisotropicLevel);                        
         }
     }
 
@@ -1337,10 +1251,10 @@ public class GLTexture extends GLObject {
             }
 
             this.maxUnits = GL11.glGetInteger(GL11.GL_MAX_TEXTURE_SIZE);
-            
+
             assert GL11.glGetError() == GL11.GL_NO_ERROR : String.format("glGetInteger(GL_MAX_TEXTURE_SIZE) = %d failed!", this.maxUnits);
             assert this.maxUnits > 0;
-            
+
             return this.maxUnits;
         }
 

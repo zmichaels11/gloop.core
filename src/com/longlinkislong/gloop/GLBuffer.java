@@ -10,9 +10,6 @@ import java.nio.ByteOrder;
 import java.util.Objects;
 import org.lwjgl.opengl.GL11;
 import org.lwjgl.opengl.GL15;
-import org.lwjgl.opengl.GL30;
-import org.lwjgl.opengl.GL31;
-import org.lwjgl.opengl.GL44;
 
 /**
  * GLBuffer represents an OpenGL Buffer object.
@@ -21,12 +18,11 @@ import org.lwjgl.opengl.GL44;
  * @see <a href="https://www.opengl.org/wiki/Buffer_Object">Buffer Object</a>
  * @since 15.05.14
  */
-public class GLBuffer extends GLObject {
-
+public class GLBuffer extends GLObject {    
     private static final int INVALID_BUFFER_ID = -1;
     protected int bufferId = INVALID_BUFFER_ID;
     private ByteBuffer mappedBuffer = null;
-
+    
     /**
      * Constructs a new GLBuffer when possible on the default GLThread.
      *
@@ -86,47 +82,28 @@ public class GLBuffer extends GLObject {
         @Override
         public void run() {
             if (!GLBuffer.this.isValid()) {
-                GLBuffer.this.bufferId = GL15.glGenBuffers();
+                GLBuffer.this.bufferId = GLTools.getDSAInstance().glCreateBuffers();
             } else {
                 throw new GLException("GLBuffer is already initialized!");
-            }                                    
+            }
         }
     }
 
-    private ParameterQuery lastParameterQuery = null;
-
-    /**
-     * Sends an OpenGL query asking for a property. It will bind the GLBuffer as
-     * an GL_ARRAY_BUFFER prior to sending the request. This function can cause
-     * thread sync.
-     *
-     * @param pName the parameter name to query
-     * @return th result of the query
-     * @since 15.05.13
-     */
-    public final int getParameter(final GLBufferParameterName pName) {
-        return this.getParameter(GLBufferTarget.GL_ARRAY_BUFFER, pName);
-    }
+    private ParameterQuery lastParameterQuery = null;    
 
     /**
      * Sends an OpenGL query asking for a property
-     *
-     * @param target the target to bind the GLBuffer to. Default is
-     * GL_ARRAY_BUFFER. This function can cause thread sync.
+     *     
      * @param pName the parameter name to query.
      * @return the GLBuffer parameter value.
      * @since 15.05.13
      */
-    public final int getParameter(
-            final GLBufferTarget target, final GLBufferParameterName pName) {
+    public final int getParameter(final GLBufferParameterName pName) {
 
-        if (lastParameterQuery != null
-                && target == lastParameterQuery.target
-                && pName == lastParameterQuery.pName) {
-
+        if (lastParameterQuery != null && pName == lastParameterQuery.pName) {
             return lastParameterQuery.glCall(this.getThread());
         } else {
-            this.lastParameterQuery = new ParameterQuery(target, pName);
+            this.lastParameterQuery = new ParameterQuery(pName);
 
             return this.lastParameterQuery.glCall(this.getThread());
         }
@@ -140,40 +117,17 @@ public class GLBuffer extends GLObject {
      */
     public class ParameterQuery extends GLQuery<Integer> {
 
-        final GLBufferTarget target;
         final GLBufferParameterName pName;
-
-        /**
-         * Constructs a new ParameterQuery, binding the GLBuffer to the target
-         * GL_ARRAY_BUFFER.
-         *
-         * @param pName the query to request
-         * @since 15.05.13
-         */
-        public ParameterQuery(
-                final GLBufferParameterName pName) {
-            this(GLBufferTarget.GL_ARRAY_BUFFER, pName);
-        }
 
         /**
          * Constructs a new ParameterQuery.
          *
-         * @param target the target to bind the GLBuffer to
          * @param pName the query to request
          * @since 15.05.13
          */
-        public ParameterQuery(
-                final GLBufferTarget target,
-                final GLBufferParameterName pName) {
+        public ParameterQuery(final GLBufferParameterName pName) {
 
-            Objects.requireNonNull(this.target = target);
             Objects.requireNonNull(this.pName = pName);
-
-            if (this.target != GLBufferTarget.GL_ARRAY_BUFFER
-                    || this.target != GLBufferTarget.GL_ELEMENT_ARRAY_BUFFER) {
-
-                throw new GLException("Target must be either GL_ARRAY_BUFFER or GL_ELEMENT_BUFFER!");
-            }
         }
 
         @Override
@@ -182,17 +136,7 @@ public class GLBuffer extends GLObject {
                 throw new GLException("Invalid GLBuffer!");
             }
 
-            GL15.glBindBuffer(this.target.value, GLBuffer.this.bufferId);
-            
-            assert GL11.glGetError() == GL11.GL_NO_ERROR : String.format("glBindBuffer(%s, %d) failed!",
-                    this.target, GLBuffer.this.bufferId);
-            
-            final int rVal = GL15.glGetBufferParameteri(this.target.value, this.pName.value);
-            
-            assert GL11.glGetError() == GL11.GL_NO_ERROR : String.format("glGetBufferParameteri(%s, %s) failed!",
-                    this.target, this.pName);
-            
-            return rVal;
+            return GLTools.getDSAInstance().glGetNamedBufferParameteri(GLBuffer.this.bufferId, this.pName.value);
         }
 
     }
@@ -221,9 +165,9 @@ public class GLBuffer extends GLObject {
         public void run() {
             if (GLBuffer.this.isValid()) {
                 GL15.glDeleteBuffers(GLBuffer.this.bufferId);
-                
+
                 assert GL11.glGetError() == GL11.GL_NO_ERROR : String.format("glDeleteBuffers(%d) failed!", GLBuffer.this.bufferId);
-                
+
                 GLBuffer.this.bufferId = INVALID_BUFFER_ID;
             }
         }
@@ -232,56 +176,34 @@ public class GLBuffer extends GLObject {
     private UploadTask lastUploadTask = null;
 
     /**
-     * Uploads the supplied data to the GLBuffer. GL_ARRAY_BUFFER is used for
-     * the target and GL_STATIC_DRAW is used for the usage.
-     *
-     * @param data the date to upload.
-     * @since 15.06.05
-     */
-    public void upload(final ByteBuffer data) {
-        this.upload(GLBufferTarget.GL_ARRAY_BUFFER, data, GLBufferUsage.GL_STATIC_DRAW);        
-    }
-
-    /**
      * Uploads the supplied data to the GLBuffer. GL_STATIC_DRAW is used for
      * usage.
      *
-     * @param target the target to bind to. Under most circumstances, this
-     * should be GL_ARRAY_BUFFER or GL_ELEMENT_ARRAY_BUFFER.
      * @param data the data to upload
      * @since 15.05.13
      */
-    public void upload(final GLBufferTarget target, final ByteBuffer data) {
-        this.upload(target, data, GLBufferUsage.GL_STATIC_DRAW);
+    public void upload(final ByteBuffer data) {
+        this.upload(data, GLBufferUsage.GL_STATIC_DRAW);
     }
 
     /**
      * Uploads the supplied data to the GLBuffer.
      *
-     * @param target the target to bind to. Under most circumstances, this
-     * should be GL_ARRAY_BUFFER or GL_ELEMENT_ARRAY_BUFFER.
      * @param data the data to upload
      * @param usage the usage of the data. Under most circumstances, this should
      * be GL_STATIC_DRAW. GL_DYNAMIC_DRAW should be used if the GLBuffer is ever
      * mapped.
      * @since 15.05.13
      */
-    public void upload(
-            final GLBufferTarget target,
-            final ByteBuffer data,
-            final GLBufferUsage usage) {
+    public void upload(final ByteBuffer data, final GLBufferUsage usage) {
 
         if (lastUploadTask != null
-                && lastUploadTask.target == target
                 && lastUploadTask.usage == usage
                 && lastUploadTask.data == data) {
 
             this.lastUploadTask.glRun(this.getThread());
         } else {
-            this.lastUploadTask = new UploadTask(
-                    target,
-                    data,
-                    usage);
+            this.lastUploadTask = new UploadTask(data, usage);
             this.lastUploadTask.glRun(this.getThread());
         }
     }
@@ -292,9 +214,7 @@ public class GLBuffer extends GLObject {
      *
      * @since 15.05.13
      */
-    public class UploadTask extends GLTask {
-
-        final GLBufferTarget target;
+    public class UploadTask extends GLTask {        
         final GLBufferUsage usage;
         final ByteBuffer data;
 
@@ -302,36 +222,30 @@ public class GLBuffer extends GLObject {
          * Constructs a new UploadTask. The GLBuffer is bound to the specified
          * target and GL_STATIC_DRAW is used for the mode.
          *
-         * @param target the target to bind the GLBuffer to.
          * @param data the data to upload.
          * @since 15.05.13
          */
-        public UploadTask(final GLBufferTarget target, final ByteBuffer data) {
-            this(target, data, GLBufferUsage.GL_STATIC_DRAW);
+        public UploadTask(final ByteBuffer data) {
+            this(data, GLBufferUsage.GL_STATIC_DRAW);
         }
 
         /**
          * Constructs a new UploadTask. The GLBuffer is bound to the specified
          * target for upload.
          *
-         * @param target the target to bind to.
          * @param data the data to upload
          * @param usage the mode to set the data to. GL_STATIC_DRAW or
          * GL_DYNAMIC_DRAW are satisfactory for most tasks.
          * @since 15.05.13
          */
-        public UploadTask(
-                final GLBufferTarget target,
-                final ByteBuffer data,
-                final GLBufferUsage usage) {
+        public UploadTask(final ByteBuffer data, final GLBufferUsage usage) {
 
             if (!data.isDirect()) {
                 throw new GLException("Backing data buffer is not direct!");
             } else if (data.order() != ByteOrder.nativeOrder()) {
                 throw new GLException("Data is not in native order!");
             }
-
-            this.target = target;
+            
             this.usage = usage;
             this.data = data;
         }
@@ -342,42 +256,30 @@ public class GLBuffer extends GLObject {
                 throw new GLException("GLBuffer is invalid!");
             }
 
-            GL15.glBindBuffer(this.target.value, GLBuffer.this.bufferId);
-            
-            assert GL11.glGetError() == GL11.GL_NO_ERROR : String.format("glBindBuffer(%s, %d) failed!",
-                    this.target, GLBuffer.this.bufferId);
-            
-            GL15.glBufferData(this.target.value, this.data, this.usage.value);
-            
-            assert GL11.glGetError() == GL11.GL_NO_ERROR : String.format("glBufferData(%s, [data], %s) failed!",
-                    this.target, this.usage);
+            GLTools.getDSAInstance().glNamedBufferData(GLBuffer.this.bufferId, this.data, this.usage.value);
         }
-    }
-
-    /**
-     * Allocates the specified number of bytes for the GLBuffer. GL_ARRAY_BUFFER
-     * is used for the target.
-     *
-     * @param size the number of bytes to allocate
-     * @since 15.05.13
-     */
-    public void allocate(final long size) {
-        this.allocate(GLBufferTarget.GL_ARRAY_BUFFER, size);
     }
 
     /**
      * Allocates the specified number of bytes for the GLBuffer
      *
-     * @param target the target to bind the GLBuffer to.
      * @param size the number of bytes to allocate
      * @since 15.05.13
      */
-    public void allocate(final GLBufferTarget target, final long size) {
-        this.allocate(target, size, GLBufferUsage.GL_DYNAMIC_DRAW);
+    public void allocate(final long size) {
+        this.allocate(size, GLBufferUsage.GL_DYNAMIC_DRAW);
     }
 
-    public void allocate(final GLBufferTarget target, final long size, final GLBufferUsage usage) {
-        new AllocateTask(target, size, usage).glRun(this.getThread());
+    /**
+     * Allocates the specified number of bytes for the GLBuffer with the
+     * requested usage hint.
+     *
+     * @param size the number of bytes to allocate.
+     * @param usage the usage hint.
+     * @since 15.07.06
+     */
+    public void allocate(final long size, final GLBufferUsage usage) {
+        new AllocateTask(size, usage).glRun(this.getThread());
     }
 
     /**
@@ -387,38 +289,29 @@ public class GLBuffer extends GLObject {
      * @since 15.05.13
      */
     public class AllocateTask extends GLTask {
-
-        private final GLBufferTarget target;
-        private final long size;
-        private final GLBufferUsage usage;
+        public final long size;
+        public final GLBufferUsage usage;
 
         /**
          * Constructs a new AllocateTask using the default usage
          * (GL_DYNAMIC_DRAW).
          *
-         * @param target the target to bind the buffer to
          * @param size the number of bytes to allocate
          * @since 15.05.13
          */
-        public AllocateTask(final GLBufferTarget target, final long size) {
-
-            this(target, size, GLBufferUsage.GL_DYNAMIC_DRAW);
+        public AllocateTask(final long size) {
+            this(size, GLBufferUsage.GL_DYNAMIC_DRAW);
         }
 
         /**
          * Constructs a new AllocateTask.
          *
-         * @param target the target to bind the buffer to
          * @param size the number of bytes to allocate
          * @param usage the usage to use.
          * @since 15.05.13
          */
-        public AllocateTask(
-                final GLBufferTarget target,
-                final long size,
-                final GLBufferUsage usage) {
-
-            Objects.requireNonNull(this.target = target);
+        public AllocateTask(final long size, final GLBufferUsage usage) {
+            
             Objects.requireNonNull(this.usage = usage);
 
             if ((this.size = size) < 0) {
@@ -432,15 +325,7 @@ public class GLBuffer extends GLObject {
                 throw new GLException("Invalid GLBuffer!");
             }
 
-            GL15.glBindBuffer(this.target.value, GLBuffer.this.bufferId);
-            
-            assert GL11.glGetError() == GL11.GL_NO_ERROR : String.format("glBindBuffer(%s, %d) failed!",
-                    this.target, GLBuffer.this.bufferId);
-            
-            GL15.glBufferData(this.target.value, this.size, this.usage.value);
-            
-            assert GL11.glGetError() == GL11.GL_NO_ERROR : String.format("glBufferData(%s, %d, %s) failed!",
-                    this.target, this.size, this.usage);
+            GLTools.getDSAInstance().glNamedBufferData(GLBuffer.this.bufferId, this.size, this.usage.value);
         }
 
     }
@@ -577,20 +462,9 @@ public class GLBuffer extends GLObject {
             }
 
             final ByteBuffer out;
-
-            GL15.glBindBuffer(this.target.value, bufferId);
             
-            assert GL11.glGetError() == GL11.GL_NO_ERROR: String.format("glBindBuffer(%s, %d) failed!",
-                    this.target, bufferId);
-            
-
             if (this.writeBuffer == null) {
-                final int size = GL15.glGetBufferParameteri(
-                        this.target.value,
-                        GLBufferParameterName.GL_BUFFER_SIZE.value);
-                
-                assert GL11.glGetError() == GL11.GL_NO_ERROR : String.format("glGetBufferParameteri(%s, GL_BUFFER_SIZE) = %d failed!",
-                        this.target, size);
+                final int size = GLTools.getDSAInstance().glGetNamedBufferParameteri(GLBuffer.this.bufferId, GLBufferParameterName.GL_BUFFER_SIZE.value);            
 
                 out = ByteBuffer.allocateDirect(size)
                         .order(ByteOrder.nativeOrder());
@@ -599,13 +473,7 @@ public class GLBuffer extends GLObject {
                 out = this.writeBuffer;
             }
 
-            GL15.glGetBufferSubData(
-                    this.target.value,
-                    this.offset,
-                    out);
-            
-            assert GL11.glGetError() == GL11.GL_NO_ERROR : String.format("glGetBufferSubData(%s, %d, [data]) failed!",
-                    this.target.value, this.offset);
+            GLTools.getDSAInstance().glGetNamedBufferSubData(GLBuffer.this.bufferId, this.offset, out);            
 
             return out;
         }
@@ -739,27 +607,19 @@ public class GLBuffer extends GLObject {
             }
 
             final ByteBuffer oldBuffer = GLBuffer.this.mappedBuffer;
-
-            GL15.glBindBuffer(this.target.value, GLBuffer.this.bufferId);
+            final ByteBuffer newBuffer = GLTools.getDSAInstance()
+                    .glMapNamedBufferRange(
+                            GLBuffer.this.bufferId, 
+                            this.offset, this.length, 
+                            this.access, oldBuffer);            
             
-            assert GL11.glGetError() == GL11.GL_NO_ERROR : String.format("glBindBuffer(%s, %d) failed!",
-                    this.target, GLBuffer.this.bufferId);
-            
-            final ByteBuffer newBuffer = GL30.glMapBufferRange(
-                    this.target.value,
-                    this.offset, this.length,
-                    this.access,
-                    oldBuffer);
-            
-            assert GL11.glGetError() == GL11.GL_NO_ERROR: String.format("glMapBufferRange(%s, %d, %d, %d, [data]) failed!",
-                    this.target, this.offset, this.length, this.access);
 
             GLBuffer.this.mappedBuffer = newBuffer;
 
             return newBuffer;
         }
     }
-    
+
     /**
      * Maps the GLBuffer to a ByteBuffer for read-write access. This function
      * uses OpenGL 4.4 persist hints GL_MAP_PERSISTENT and GL_MAP_COHERENT as
@@ -768,7 +628,7 @@ public class GLBuffer extends GLObject {
      * order to achieve thread safety, you should use glFenceSync to ensure you
      * are not writing data to the buffer as it is being read by the CPU as this
      * has undefined results. Calling this function can force a thread sync.
-     * 
+     *
      * @see
      * <a href="https://www.opengl.org/wiki/GLAPI/glMapBufferRange#Function_Definition">glMapBufferRange</a>
      *
@@ -791,14 +651,14 @@ public class GLBuffer extends GLObject {
      * order to achieve thread safety, you should use glFenceSync to ensure you
      * are not writing data to the buffer as it is being read by the CPU as this
      * has undefined results. Calling this function can force a thread sync.
-     * 
+     *
      * @see
      * <a href="https://www.opengl.org/wiki/GLAPI/glMapBufferRange#Function_Definition">glMapBufferRange</a>
-     * 
+     *
      * @param target the target to bind the GLBuffer to.
      * @param length the number of bytes to map.
      * @param accessBits the flags indicating the desired access.
-     * @return 
+     * @return
      */
     public ByteBuffer mapPersist(
             final GLBufferTarget target, final long length,
@@ -806,7 +666,6 @@ public class GLBuffer extends GLObject {
 
         return this.mapPersist(target, length, accessBits, 0, accessBits.length);
     }
-
 
     /**
      * Maps the GLBuffer to a ByteBuffer for read-write access. This function
@@ -816,17 +675,16 @@ public class GLBuffer extends GLObject {
      * order to achieve thread safety, you should use glFenceSync to ensure you
      * are not writing data to the buffer as it is being read by the CPU as this
      * has undefined results. Calling this function can force a thread sync.
-     * 
+     *
      * @see
      * <a href="https://www.opengl.org/wiki/GLAPI/glMapBufferRange#Function_Definition">glMapBufferRange</a>
-     * 
+     *
      * @param target the target to bind the GLBuffer to.
      * @param length the number of bytes to map.
      * @param accessBits the flags indicating the desired access.
-     * @param accessOffset the offset to start reading from the access
-     * flags.
+     * @param accessOffset the offset to start reading from the access flags.
      * @param accessLength the number of access flags to read.
-     * @return 
+     * @return
      */
     public ByteBuffer mapPersist(
             final GLBufferTarget target, final long length,
@@ -836,7 +694,7 @@ public class GLBuffer extends GLObject {
                 target, length,
                 accessBits, accessOffset, accessLength).glCall(this.getThread());
     }
-    
+
     /**
      * Maps the GLBuffer to a ByteBuffer for read-write access. This function
      * uses OpenGL 4.4 persist hints GL_MAP_PERSISTENT and GL_MAP_COHERENT as
@@ -845,12 +703,13 @@ public class GLBuffer extends GLObject {
      * order to achieve thread safety, you should use glFenceSync to ensure you
      * are not writing data to the buffer as it is being read by the CPU as this
      * has undefined results. Calling this function can force a thread sync.
-     * 
+     *
      * @see
      * <a href="https://www.opengl.org/wiki/GLAPI/glMapBufferRange#Function_Definition">glMapBufferRange</a>
-     * 
+     *
      */
     public class MapPersistQuery extends GLQuery<ByteBuffer> {
+
         final GLBufferTarget target;
         final int access;
         final long length;
@@ -892,7 +751,7 @@ public class GLBuffer extends GLObject {
             for (int i = accessOffset; i < accessOffset + accessLength; i++) {
                 bitVal |= accessBits[i].value;
             }
-            
+
             bitVal |= GLBufferAccess.GL_MAP_PERSISTENT.value;
             bitVal |= GLBufferAccess.GL_MAP_COHERENT.value;
 
@@ -905,26 +764,15 @@ public class GLBuffer extends GLObject {
                 throw new GLException("Invalid GLBuffer!");
             }
 
-            final ByteBuffer oldBuffer = GLBuffer.this.mappedBuffer;
+            final ByteBuffer oldBuffer = GLBuffer.this.mappedBuffer;            
 
-            GL15.glBindBuffer(this.target.value, GLBuffer.this.bufferId);
-            
-            assert GL11.glGetError() == GL11.GL_NO_ERROR : String.format("glBindBuffer(%s, %d) failed!",
-                    this.target, GLBuffer.this.bufferId);
-                        
-            GL44.glBufferStorage(this.target.value, this.length, this.access);
-            
-            assert GL11.glGetError() == GL11.GL_NO_ERROR : String.format("glBufferStorage(%s, %d, %d) failed!",
-                    this.target, this.length, this.access);
-            
-            final ByteBuffer newBuffer = GL30.glMapBufferRange(
-                    this.target.value,
-                    0, this.length,
-                    this.access,
-                    oldBuffer);
-            
-            assert GL11.glGetError() == GL11.GL_NO_ERROR : String.format("glMapBufferRange(%s, 0, %d, %d, [data]) failed!",
-                    this.target, this.length, this.access);
+            GLTools.getDSAInstance().glNamedBufferStorage(this.target.value, this.length, this.access);                                   
+
+            final ByteBuffer newBuffer = GLTools.getDSAInstance()
+                    .glMapNamedBufferRange(
+                            this.target.value, 
+                            0, this.length, 
+                            this.access, oldBuffer);                        
 
             GLBuffer.this.mappedBuffer = newBuffer;
 
@@ -979,14 +827,7 @@ public class GLBuffer extends GLObject {
                 throw new GLException("Invalid GLBuffer!");
             }
 
-            GL15.glBindBuffer(this.target.value, bufferId);
-            
-            assert GL11.glGetError() == GL11.GL_NO_ERROR : String.format("glBindBuffer(%s, %d) failed!",
-                    this.target, bufferId);
-            
-            GL15.glUnmapBuffer(this.target.value);
-            
-            assert GL11.glGetError() == GL11.GL_NO_ERROR : String.format("glUnmapBuffer(%s) failed!", this.target);
+            GLTools.getDSAInstance().glUnmapNamedBuffer(GLBuffer.this.bufferId);            
         }
 
     }
@@ -1055,29 +896,9 @@ public class GLBuffer extends GLObject {
                 throw new GLException("Invalid GLBuffer!");
             }
 
-            GL15.glBindBuffer(
-                    GLBufferTarget.GL_COPY_READ_BUFFER.value,
-                    this.src.bufferId);
-
-            assert GL11.glGetError() == GL11.GL_NO_ERROR : String.format("glBindBuffer(GL_COPY_READ_BUFFER, %d) failed!",
-                    this.src.bufferId);
-            
-            GL15.glBindBuffer(
-                    GLBufferTarget.GL_COPY_WRITE_BUFFER.value,
-                    this.dest.bufferId);
-            
-            assert GL11.glGetError() == GL11.GL_NO_ERROR: String.format("glBindBuffer(GL_COPY_WRITE_BUFFER, %d) failed!",
-                    this.dest.bufferId);
-
-            GL31.glCopyBufferSubData(
-                    GLBufferTarget.GL_COPY_READ_BUFFER.value,
-                    GLBufferTarget.GL_COPY_WRITE_BUFFER.value,
-                    this.srcOffset,
-                    this.destOffset,
-                    this.size);
-            
-            assert GL11.glGetError() == GL11.GL_NO_ERROR : String.format("glCopyBufferSubData(GL_COPY_READ_BUFFER, GL_COPY_WRITE_BUFFER, %d, %d, %d) failed!",
-                    this.srcOffset, this.destOffset, this.size);
+            GLTools.getDSAInstance().glCopyNamedBufferSubData(
+                            src.bufferId, dest.bufferId, 
+                            srcOffset, destOffset, size);            
         }
     }
 }

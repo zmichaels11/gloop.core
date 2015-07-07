@@ -5,6 +5,7 @@
  */
 package com.longlinkislong.gloop;
 
+import com.longlinkislong.gloop.dsa.ARBDSA;
 import com.longlinkislong.gloop.dsa.DirectStateAccess;
 import com.longlinkislong.gloop.dsa.EXTDSA;
 import com.longlinkislong.gloop.dsa.FakeDSA;
@@ -1307,18 +1308,45 @@ public class GLTools {
     }
 
     private static DirectStateAccess DSA = null;
-    private static final DirectStateAccess[] DSA_IMPLEMENTATIONS = {GL45DSA.getInstance(), EXTDSA.getInstance(), FakeDSA.getInstance()};
+    private static final DirectStateAccess[] DSA_IMPLEMENTATIONS = {GL45DSA.getInstance(), ARBDSA.getInstance(), EXTDSA.getInstance(), FakeDSA.getInstance()};
 
     protected static DirectStateAccess getDSAInstance() {
         if (DSA == null) {
             for(DirectStateAccess dsaImp : DSA_IMPLEMENTATIONS) {
-                if(dsaImp.isSupported()) {
+                if(dsaImp.isSupported()) {                    
                     DSA = dsaImp;
                     break;
                 }
             }
         }
         
-        return DSA;
+        return DSA;        
+    }
+    
+    public static String getDSAImplement() {
+        return getDSAInstance().toString();
+    }
+    
+    static {
+        final String dsa = System.getProperty("gloop.gltools.dsa", "");
+        
+        switch(dsa) {
+            case "fake":
+                System.out.println("Using DSA: FakeDSA");
+                DSA = FakeDSA.getInstance();
+                break;
+            case "ext":
+                System.out.println("Using DSA: EXTDSA");
+                DSA = EXTDSA.getInstance();
+                break;
+            case "gl45":
+                System.out.println("Using DSA: GL45DSA");
+                DSA = GL45DSA.getInstance();                
+                break;
+            case "arb":
+                System.out.println("Using DSA: ARBDSA");
+                DSA = ARBDSA.getInstance();
+                break;
+        }
     }
 }
