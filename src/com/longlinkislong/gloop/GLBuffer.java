@@ -18,11 +18,12 @@ import org.lwjgl.opengl.GL15;
  * @see <a href="https://www.opengl.org/wiki/Buffer_Object">Buffer Object</a>
  * @since 15.05.14
  */
-public class GLBuffer extends GLObject {    
+public class GLBuffer extends GLObject {
+
     private static final int INVALID_BUFFER_ID = -1;
     protected int bufferId = INVALID_BUFFER_ID;
     private ByteBuffer mappedBuffer = null;
-    
+
     /**
      * Constructs a new GLBuffer when possible on the default GLThread.
      *
@@ -89,11 +90,11 @@ public class GLBuffer extends GLObject {
         }
     }
 
-    private ParameterQuery lastParameterQuery = null;    
+    private ParameterQuery lastParameterQuery = null;
 
     /**
      * Sends an OpenGL query asking for a property
-     *     
+     *
      * @param pName the parameter name to query.
      * @return the GLBuffer parameter value.
      * @since 15.05.13
@@ -214,7 +215,8 @@ public class GLBuffer extends GLObject {
      *
      * @since 15.05.13
      */
-    public class UploadTask extends GLTask {        
+    public class UploadTask extends GLTask {
+
         final GLBufferUsage usage;
         final ByteBuffer data;
 
@@ -245,7 +247,7 @@ public class GLBuffer extends GLObject {
             } else if (data.order() != ByteOrder.nativeOrder()) {
                 throw new GLException("Data is not in native order!");
             }
-            
+
             this.usage = usage;
             this.data = data;
         }
@@ -289,6 +291,7 @@ public class GLBuffer extends GLObject {
      * @since 15.05.13
      */
     public class AllocateTask extends GLTask {
+
         public final long size;
         public final GLBufferUsage usage;
 
@@ -311,7 +314,7 @@ public class GLBuffer extends GLObject {
          * @since 15.05.13
          */
         public AllocateTask(final long size, final GLBufferUsage usage) {
-            
+
             Objects.requireNonNull(this.usage = usage);
 
             if ((this.size = size) < 0) {
@@ -462,9 +465,9 @@ public class GLBuffer extends GLObject {
             }
 
             final ByteBuffer out;
-            
+
             if (this.writeBuffer == null) {
-                final int size = GLTools.getDSAInstance().glGetNamedBufferParameteri(GLBuffer.this.bufferId, GLBufferParameterName.GL_BUFFER_SIZE.value);            
+                final int size = GLTools.getDSAInstance().glGetNamedBufferParameteri(GLBuffer.this.bufferId, GLBufferParameterName.GL_BUFFER_SIZE.value);
 
                 out = ByteBuffer.allocateDirect(size)
                         .order(ByteOrder.nativeOrder());
@@ -473,7 +476,7 @@ public class GLBuffer extends GLObject {
                 out = this.writeBuffer;
             }
 
-            GLTools.getDSAInstance().glGetNamedBufferSubData(GLBuffer.this.bufferId, this.offset, out);            
+            GLTools.getDSAInstance().glGetNamedBufferSubData(GLBuffer.this.bufferId, this.offset, out);
 
             return out;
         }
@@ -609,10 +612,9 @@ public class GLBuffer extends GLObject {
             final ByteBuffer oldBuffer = GLBuffer.this.mappedBuffer;
             final ByteBuffer newBuffer = GLTools.getDSAInstance()
                     .glMapNamedBufferRange(
-                            GLBuffer.this.bufferId, 
-                            this.offset, this.length, 
-                            this.access, oldBuffer);            
-            
+                            GLBuffer.this.bufferId,
+                            this.offset, this.length,
+                            this.access, oldBuffer);
 
             GLBuffer.this.mappedBuffer = newBuffer;
 
@@ -658,7 +660,7 @@ public class GLBuffer extends GLObject {
      * @param target the target to bind the GLBuffer to.
      * @param length the number of bytes to map.
      * @param accessBits the flags indicating the desired access.
-     * @return
+     * @return the ByteBuffer containing the data.
      */
     public ByteBuffer mapPersist(
             final GLBufferTarget target, final long length,
@@ -684,7 +686,8 @@ public class GLBuffer extends GLObject {
      * @param accessBits the flags indicating the desired access.
      * @param accessOffset the offset to start reading from the access flags.
      * @param accessLength the number of access flags to read.
-     * @return
+     * @return the ByteBuffer containing the data.
+     * @since 15.07.08
      */
     public ByteBuffer mapPersist(
             final GLBufferTarget target, final long length,
@@ -764,15 +767,15 @@ public class GLBuffer extends GLObject {
                 throw new GLException("Invalid GLBuffer!");
             }
 
-            final ByteBuffer oldBuffer = GLBuffer.this.mappedBuffer;            
+            final ByteBuffer oldBuffer = GLBuffer.this.mappedBuffer;
 
-            GLTools.getDSAInstance().glNamedBufferStorage(this.target.value, this.length, this.access);                                   
+            GLTools.getDSAInstance().glNamedBufferStorage(this.target.value, this.length, this.access);
 
             final ByteBuffer newBuffer = GLTools.getDSAInstance()
                     .glMapNamedBufferRange(
-                            this.target.value, 
-                            0, this.length, 
-                            this.access, oldBuffer);                        
+                            this.target.value,
+                            0, this.length,
+                            this.access, oldBuffer);
 
             GLBuffer.this.mappedBuffer = newBuffer;
 
@@ -827,7 +830,7 @@ public class GLBuffer extends GLObject {
                 throw new GLException("Invalid GLBuffer!");
             }
 
-            GLTools.getDSAInstance().glUnmapNamedBuffer(GLBuffer.this.bufferId);            
+            GLTools.getDSAInstance().glUnmapNamedBuffer(GLBuffer.this.bufferId);
         }
 
     }
@@ -897,8 +900,8 @@ public class GLBuffer extends GLObject {
             }
 
             GLTools.getDSAInstance().glCopyNamedBufferSubData(
-                            src.bufferId, dest.bufferId, 
-                            srcOffset, destOffset, size);            
+                    src.bufferId, dest.bufferId,
+                    srcOffset, destOffset, size);
         }
     }
 }

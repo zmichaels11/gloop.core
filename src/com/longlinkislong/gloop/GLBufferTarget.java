@@ -213,18 +213,7 @@ public enum GLBufferTarget {
      * @return true if the GLBufferTarget is supported.
      * @since 15.07.02
      */
-    public abstract boolean isSupported();
-
-    /**
-     * Alternative to use if the requested GLBufferTarget is not supported.
-     *
-     * @param fallback
-     * @return fallback if the the requested type is not supported.
-     * @since 15.07.02
-     */
-    public GLBufferTarget ifNotSupported(GLBufferTarget fallback) {
-        return this.isSupported() ? this : fallback;
-    }    
+    public abstract boolean isSupported();    
     
     /**
      * Converts an OpenGL GLenum value to a GLBufferTarget constant. This method

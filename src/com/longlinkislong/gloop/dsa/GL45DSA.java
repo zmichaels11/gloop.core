@@ -159,12 +159,12 @@ public class GL45DSA implements DirectStateAccess {
     }
 
     @Override
-    public void glTextureParameteri(int textureId, int ignored, int pName, int val) {
+    public void glTextureParameteri(int textureId, int pName, int val) {
         GL45.glTextureParameterIi(textureId, pName, val);
     }
 
     @Override
-    public void glTextureParameterf(int textureId, int ignored, int pName, float val) {
+    public void glTextureParameterf(int textureId, int pName, float val) {
         GL45.glTextureParameterf(textureId, pName, val);
     }
     
@@ -184,7 +184,7 @@ public class GL45DSA implements DirectStateAccess {
     }
 
     @Override
-    public void glBindTextureUnit(int unit, int ignored, int textureId) {
+    public void glBindTextureUnit(int unit, int textureId) {
         GL45.glBindTextureUnit(unit, textureId);
     }
 
@@ -210,6 +210,26 @@ public class GL45DSA implements DirectStateAccess {
     @Override
     public void glProgramUniform4i(int programId, int location, int v0, int v1, int v2, int v3) {
         GL41.glProgramUniform4i(programId, location, v0, v1, v2, v3);
+    }
+
+    @Override
+    public void glTextureStorage1d(int textureId, int levels, int internalFormat, int width) {
+        GL45.glTextureStorage1D(textureId, levels, internalFormat, width);
+    }
+
+    @Override
+    public void glTextureStorage2d(int textureId, int levels, int internalFormat, int width, int height) {
+        GL45.glTextureStorage2D(textureId, levels, internalFormat, width, height);
+    }
+
+    @Override
+    public void glTextureStorage3d(int textureId, int levels, int internalFormat, int width, int height, int depth) {
+        GL45.glTextureStorage3D(textureId, levels, internalFormat, width, height, depth);
+    }    
+    
+    @Override
+    public void glGenerateTextureMipmap(int textureId) {
+        GL45.glGenerateTextureMipmap(textureId);
     }
 
     private static class Holder {

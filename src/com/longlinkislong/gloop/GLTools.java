@@ -143,16 +143,18 @@ public class GLTools {
      * the buffer is direct and native order.
      *
      * @param data the buffer to check
-     * @throws GLException if the buffer is not direct or if the buffer is not
-     * in native order.
+     * @throws GLException if buffer is not direct.
+     * @throws GLException if buffer is not in native byte order.     
      * @since 15.06.13
      */
-    public static void checkBuffer(final ByteBuffer data) {
+    public static ByteBuffer checkBuffer(final ByteBuffer data) {
         if (!data.isDirect()) {
             throw new GLException("ByteBuffer is not direct!");
         } else if (data.order() != ByteOrder.nativeOrder()) {
             throw new GLException("ByteBuffer is not in native order!");
         }
+        
+        return data;
     }
 
     /**
@@ -1012,9 +1014,10 @@ public class GLTools {
     /**
      * Reads from an InputStream line by line and returns the entire source.
      *
-     * @param src
-     * @return
-     * @throws IOException
+     * @param src the InputStream to read from.
+     * @return the text read from the InputStream.
+     * @throws IOException if the source cannot be read.
+     * @since 15.07.08
      */
     public static String readAll(final InputStream src) throws IOException {
         final StringBuilder out = new StringBuilder();
@@ -1307,30 +1310,64 @@ public class GLTools {
 
     }
 
+    /**
+     * Checks if the given value is a power of 2.
+     *
+     * @param value the value to test.
+     * @return true if it is roughly a power of 2.
+     * @since 15.07.07
+     */
+    public static boolean isPowerOf2(double value) {
+        final double val = Math.log(value) / Math.log(2);
+
+        return GLTools.compare(val, Math.floor(val), GLTools.HIGHP);
+    }
+
+    /**
+     * Estimates the number of mipmaps that should be generated for the
+     * specified texture.
+     *
+     * @param width the width of the image
+     * @param height the height of the image
+     * @return the recommended number of mipmaps.
+     * @since 15.07.07
+     */
+    public static int recommendedMipmaps(int width, int height) {
+        final int sz = Math.min(width, height);
+
+        if (isPowerOf2(sz)) {
+            final int recommended = (int) (Math.log(sz) / Math.log(2)) - 1;
+
+            return Math.max(recommended, 1);
+        } else {
+            return 1;
+        }
+    }
+
     private static DirectStateAccess DSA = null;
     private static final DirectStateAccess[] DSA_IMPLEMENTATIONS = {GL45DSA.getInstance(), ARBDSA.getInstance(), EXTDSA.getInstance(), FakeDSA.getInstance()};
 
     protected static DirectStateAccess getDSAInstance() {
         if (DSA == null) {
-            for(DirectStateAccess dsaImp : DSA_IMPLEMENTATIONS) {
-                if(dsaImp.isSupported()) {                    
+            for (DirectStateAccess dsaImp : DSA_IMPLEMENTATIONS) {
+                if (dsaImp.isSupported()) {
                     DSA = dsaImp;
                     break;
                 }
             }
         }
-        
-        return DSA;        
+
+        return DSA;
     }
-    
+
     public static String getDSAImplement() {
         return getDSAInstance().toString();
     }
-    
+
     static {
         final String dsa = System.getProperty("gloop.gltools.dsa", "");
-        
-        switch(dsa) {
+
+        switch (dsa) {
             case "fake":
                 System.out.println("Using DSA: FakeDSA");
                 DSA = FakeDSA.getInstance();
@@ -1341,7 +1378,7 @@ public class GLTools {
                 break;
             case "gl45":
                 System.out.println("Using DSA: GL45DSA");
-                DSA = GL45DSA.getInstance();                
+                DSA = GL45DSA.getInstance();
                 break;
             case "arb":
                 System.out.println("Using DSA: ARBDSA");

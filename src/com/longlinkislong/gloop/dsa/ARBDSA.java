@@ -9,9 +9,10 @@ import java.nio.ByteBuffer;
 import java.nio.DoubleBuffer;
 import java.nio.FloatBuffer;
 import org.lwjgl.opengl.ARBDirectStateAccess;
+import org.lwjgl.opengl.ARBSeparateShaderObjects;
 import org.lwjgl.opengl.ContextCapabilities;
-import org.lwjgl.opengl.EXTDirectStateAccess;
 import org.lwjgl.opengl.GL;
+import org.lwjgl.opengl.GL11;
 import org.lwjgl.opengl.GL41;
 
 /**
@@ -23,21 +24,52 @@ public class ARBDSA implements DirectStateAccess {
     public static DirectStateAccess getInstance() {
         return Holder.INSTANCE;
     }
-    
+
+    @Override
+    public void glTextureStorage1d(int textureId, int levels, int internalFormat, int width) {
+        ARBDirectStateAccess.glTextureStorage1D(textureId, levels, internalFormat, width);
+    }
+
+    @Override
+    public void glTextureStorage2d(int textureId, int levels, int internalFormat, int width, int height) {
+        ARBDirectStateAccess.glTextureStorage2D(textureId, levels, internalFormat, width, height);
+    }
+
+    @Override
+    public void glTextureStorage3d(int textureId, int levels, int internalFormat, int width, int height, int depth) {
+        ARBDirectStateAccess.glTextureStorage3D(textureId, levels, internalFormat, width, height, depth);
+    }
+
+    @Override
+    public void glTextureParameteri(int textureId, int pName, int val) {
+        ARBDirectStateAccess.glTextureParameteri(textureId, pName, val);
+    }
+
+    @Override
+    public void glTextureParameterf(int textureId, int pName, float val) {
+        ARBDirectStateAccess.glTextureParameterf(textureId, pName, val);
+    }
+
+    @Override
+    public int glGetNamedBufferParameteri(int bufferId, int pName) {
+        return ARBDirectStateAccess.glGetNamedBufferParameteri(bufferId, pName);
+    }
+
     private static class Holder {
+
         private static final DirectStateAccess INSTANCE = new ARBDSA();
     }
-    
+
     @Override
     public String toString() {
         return "ARBDSA";
     }
-    
+
     @Override
     public boolean isSupported() {
-        final ContextCapabilities cap = GL.getCurrent().getCapabilities();
-                
-        return cap.GL_ARB_direct_state_access && cap.OpenGL41 && cap.GL_EXT_direct_state_access;
+        final ContextCapabilities cap = GL.getCurrent().getCapabilities();        
+
+        return cap.GL_ARB_direct_state_access && FakeDSA.getInstance().isSupported();
     }
 
     @Override
@@ -96,105 +128,237 @@ public class ARBDSA implements DirectStateAccess {
     }
 
     @Override
-    public void glProgramUniform1f(int programId, int location, float value) {        
-        GL41.glProgramUniform1f(location, location, value);
+    public void glProgramUniform1f(int programId, int location, float value) {
+        final ContextCapabilities cap = GL.getCapabilities();
+
+        if (cap.OpenGL41) {
+            GL41.glProgramUniform1f(location, location, value);
+        } else if (cap.GL_ARB_separate_shader_objects) {
+            ARBSeparateShaderObjects.glProgramUniform1f(programId, location, value);
+        } else {
+            FakeDSA.getInstance().glProgramUniform1f(programId, location, value);
+        }
     }
 
     @Override
     public void glProgramUniform2f(int programId, int location, float v0, float v1) {
-        GL41.glProgramUniform2f(location, location, v0, v1);
+        final ContextCapabilities cap = GL.getCapabilities();
+
+        if (cap.OpenGL41) {
+            GL41.glProgramUniform2f(location, location, v0, v1);
+        } else if (cap.GL_ARB_separate_shader_objects) {
+            ARBSeparateShaderObjects.glProgramUniform2f(programId, location, v0, v1);
+        } else {
+            FakeDSA.getInstance().glProgramUniform2f(programId, location, v0, v1);
+        }
     }
 
     @Override
     public void glProgramUniform3f(int programId, int location, float v0, float v1, float v2) {
-        GL41.glProgramUniform3f(location, location, v0, v1, v2);
+        final ContextCapabilities cap = GL.getCapabilities();
+
+        if (cap.OpenGL41) {
+            GL41.glProgramUniform3f(location, location, v0, v1, v2);
+        } else if (cap.GL_ARB_separate_shader_objects) {
+            ARBSeparateShaderObjects.glProgramUniform3f(programId, location, v0, v1, v2);
+        } else {
+            FakeDSA.getInstance().glProgramUniform3f(programId, location, v0, v1, v2);
+        }
     }
 
     @Override
     public void glProgramUniform4f(int programId, int location, float v0, float v1, float v2, float v3) {
-        GL41.glProgramUniform4f(programId, location, v0, v1, v2, v3);
+        final ContextCapabilities cap = GL.getCapabilities();
+
+        if (cap.OpenGL41) {
+            GL41.glProgramUniform4f(location, location, v0, v1, v2, v3);
+        } else if (cap.GL_ARB_separate_shader_objects) {
+            ARBSeparateShaderObjects.glProgramUniform4f(programId, location, v0, v1, v2, v3);
+        } else {
+            FakeDSA.getInstance().glProgramUniform4f(programId, location, v0, v1, v2, v3);
+        }
     }
 
     @Override
     public void glProgramUniform1i(int programId, int location, int value) {
-        GL41.glProgramUniform1i(programId, location, value);
+        final ContextCapabilities cap = GL.getCapabilities();
+
+        if (cap.OpenGL41) {
+            GL41.glProgramUniform1i(programId, location, value);
+        } else if (cap.GL_ARB_separate_shader_objects) {
+            ARBSeparateShaderObjects.glProgramUniform1i(programId, location, value);
+        } else {
+            FakeDSA.getInstance().glProgramUniform1i(programId, location, value);
+        }
     }
 
     @Override
     public void glProgramUniform2i(int programId, int location, int v0, int v1) {
-        GL41.glProgramUniform2i(programId, location, v0, v1);
+        final ContextCapabilities cap = GL.getCapabilities();
+
+        if (cap.OpenGL41) {
+            GL41.glProgramUniform2i(programId, location, v0, v1);
+        } else if (cap.GL_ARB_separate_shader_objects) {
+            ARBSeparateShaderObjects.glProgramUniform2i(programId, location, v0, v1);
+        } else {
+            FakeDSA.getInstance().glProgramUniform2i(programId, location, v0, v1);
+        }
     }
 
     @Override
     public void glProgramUniform3i(int programId, int location, int v0, int v1, int v2) {
-        GL41.glProgramUniform3i(programId, location, v0, v1, v2);
+        final ContextCapabilities cap = GL.getCapabilities();
+
+        if (cap.OpenGL41) {
+            GL41.glProgramUniform3i(programId, location, v0, v1, v2);
+        } else if (cap.GL_ARB_separate_shader_objects) {
+            ARBSeparateShaderObjects.glProgramUniform3i(programId, location, v0, v1, v2);
+        } else {
+            FakeDSA.getInstance().glProgramUniform3i(programId, location, v0, v1, v2);
+        }
     }
 
     @Override
     public void glProgramUniform4i(int programId, int location, int v0, int v1, int v2, int v3) {
-        GL41.glProgramUniform4i(programId, location, v0, v1, v2, v3);
+        final ContextCapabilities cap = GL.getCapabilities();
+
+        if (cap.OpenGL41) {
+            GL41.glProgramUniform4i(programId, location, v0, v1, v2, v3);
+        } else if (cap.GL_ARB_separate_shader_objects) {
+            ARBSeparateShaderObjects.glProgramUniform4i(programId, location, v0, v1, v2, v3);
+        } else {
+            FakeDSA.getInstance().glProgramUniform4i(programId, location, v0, v1, v2, v3);
+        }
     }
 
     @Override
     public void glProgramUniform1d(int programId, int location, double value) {
-        GL41.glProgramUniform1d(programId, location, value);
+        final ContextCapabilities cap = GL.getCapabilities();
+
+        if (cap.OpenGL41) {
+            GL41.glProgramUniform1d(programId, location, value);
+        } else if (cap.GL_ARB_separate_shader_objects) {
+            ARBSeparateShaderObjects.glProgramUniform1d(programId, location, value);
+        } else {
+            FakeDSA.getInstance().glProgramUniform1d(programId, location, value);
+        }
     }
 
     @Override
     public void glProgramUniform2d(int programId, int location, double v0, double v1) {
-        GL41.glProgramUniform2d(programId, location, v0, v1);
+        final ContextCapabilities cap = GL.getCapabilities();
+
+        if (cap.OpenGL41) {
+            GL41.glProgramUniform2d(programId, location, v0, v1);
+        } else if (cap.GL_ARB_separate_shader_objects) {
+            ARBSeparateShaderObjects.glProgramUniform2d(programId, location, v0, v1);
+        } else {
+            FakeDSA.getInstance().glProgramUniform2d(programId, location, v0, v1);
+        }
     }
 
     @Override
     public void glProgramUniform3d(int programId, int location, double v0, double v1, double v2) {
-        GL41.glProgramUniform3d(programId, location, v0, v1, v2);
+        final ContextCapabilities cap = GL.getCapabilities();
+
+        if (cap.OpenGL41) {
+            GL41.glProgramUniform3d(programId, location, v0, v1, v2);
+        } else if (cap.GL_ARB_separate_shader_objects) {
+            ARBSeparateShaderObjects.glProgramUniform3d(programId, location, v0, v1, v2);
+        } else {
+            FakeDSA.getInstance().glProgramUniform3d(programId, location, v0, v1, v2);
+        }
     }
 
     @Override
     public void glProgramUniform4d(int programId, int location, double v0, double v1, double v2, double v3) {
-        GL41.glProgramUniform4d(programId, location, v0, v1, v2, v3);
+        final ContextCapabilities cap = GL.getCapabilities();
+
+        if (cap.OpenGL41) {
+            GL41.glProgramUniform4d(programId, location, v0, v1, v2, v3);
+        } else if (cap.GL_ARB_separate_shader_objects) {
+            ARBSeparateShaderObjects.glProgramUniform4d(programId, location, v0, v1, v2, v3);
+        } else {
+            FakeDSA.getInstance().glProgramUniform4d(programId, location, v0, v1, v2, v3);
+        }
     }
 
     @Override
     public void glProgramUniformMatrix2f(int programId, int location, boolean needsTranspose, FloatBuffer data) {
-        GL41.glProgramUniformMatrix2fv(programId, location, needsTranspose, data);
+        final ContextCapabilities cap = GL.getCapabilities();
+
+        if (cap.OpenGL41) {
+            GL41.glProgramUniformMatrix2fv(programId, location, needsTranspose, data);
+        } else if(cap.GL_ARB_separate_shader_objects) {
+            ARBSeparateShaderObjects.glProgramUniformMatrix2fv(programId, location, needsTranspose, data);
+        } else {
+            FakeDSA.getInstance().glProgramUniformMatrix2f(programId, location, needsTranspose, data);
+        }
     }
 
     @Override
     public void glProgramUniformMatrix3f(int programId, int location, boolean needsTranspose, FloatBuffer data) {
-        GL41.glProgramUniformMatrix3fv(programId, location, needsTranspose, data);
+        final ContextCapabilities cap = GL.getCapabilities();
+
+        if (cap.OpenGL41) {
+            GL41.glProgramUniformMatrix3fv(programId, location, needsTranspose, data);
+        } else if(cap.GL_ARB_separate_shader_objects) {
+            ARBSeparateShaderObjects.glProgramUniformMatrix3fv(programId, location, needsTranspose, data);
+        } else {
+            FakeDSA.getInstance().glProgramUniformMatrix3f(programId, location, needsTranspose, data);
+        }
     }
 
     @Override
     public void glProgramUniformMatrix4f(int programId, int location, boolean needsTranspose, FloatBuffer data) {
-        GL41.glProgramUniformMatrix4fv(programId, location, needsTranspose, data);
+        final ContextCapabilities cap = GL.getCapabilities();
+
+        if (cap.OpenGL41) {
+            GL41.glProgramUniformMatrix4fv(programId, location, needsTranspose, data);
+        } else if(cap.GL_ARB_separate_shader_objects) {
+            ARBSeparateShaderObjects.glProgramUniformMatrix4fv(programId, location, needsTranspose, data);
+        } else {
+            FakeDSA.getInstance().glProgramUniformMatrix4f(programId, location, needsTranspose, data);
+        }
     }
 
     @Override
     public void glProgramUniformMatrix2d(int programId, int location, boolean needsTranspose, DoubleBuffer data) {
-        GL41.glProgramUniformMatrix2dv(programId, location, needsTranspose, data);
+        final ContextCapabilities cap = GL.getCapabilities();
+
+        if (cap.OpenGL41) {
+            GL41.glProgramUniformMatrix2dv(programId, location, needsTranspose, data);
+        } else if(cap.GL_ARB_separate_shader_objects) {
+            ARBSeparateShaderObjects.glProgramUniformMatrix2dv(programId, location, needsTranspose, data);
+        } else {
+            FakeDSA.getInstance().glProgramUniformMatrix2d(programId, location, needsTranspose, data);
+        }
     }
 
     @Override
     public void glProgramUniformMatrix3d(int programId, int location, boolean needsTranspose, DoubleBuffer data) {
-        GL41.glProgramUniformMatrix3dv(programId, location, needsTranspose, data);
+        final ContextCapabilities cap = GL.getCapabilities();
+
+        if (cap.OpenGL41) {
+            GL41.glProgramUniformMatrix3dv(programId, location, needsTranspose, data);
+        } else if(cap.GL_ARB_separate_shader_objects) {
+            ARBSeparateShaderObjects.glProgramUniformMatrix3dv(programId, location, needsTranspose, data);
+        } else {
+            FakeDSA.getInstance().glProgramUniformMatrix3d(programId, location, needsTranspose, data);
+        }
     }
 
     @Override
     public void glProgramUniformMatrix4d(int programId, int location, boolean needsTranspose, DoubleBuffer data) {
-        GL41.glProgramUniformMatrix4dv(programId, location, needsTranspose, data);
-    }
+        final ContextCapabilities cap = GL.getCapabilities();
 
-    @Override
-    public void glTextureParameteri(int textureId, int target, int pName, int val) {   
-        EXTDirectStateAccess.glTextureParameteriEXT(textureId, target, pName, val);
-        //ARBDirectStateAccess.glTextureParameteri(textureId, pName, val);
-    }
-
-    @Override
-    public void glTextureParameterf(int textureId, int target, int pName, float val) {
-        EXTDirectStateAccess.glTextureParameterfEXT(textureId, target, pName, val);        
-        //ARBDirectStateAccess.glTextureParameterf(textureId, pName, val);
+        if (cap.OpenGL41) {
+            GL41.glProgramUniformMatrix4dv(programId, location, needsTranspose, data);
+        } else if(cap.GL_ARB_separate_shader_objects) {
+            ARBSeparateShaderObjects.glProgramUniformMatrix4dv(programId, location, needsTranspose, data);
+        } else {
+            FakeDSA.getInstance().glProgramUniformMatrix4d(programId, location, needsTranspose, data);
+        }
     }
 
     @Override
@@ -213,13 +377,14 @@ public class ARBDSA implements DirectStateAccess {
     }
 
     @Override
-    public void glBindTextureUnit(int unit, int target, int textureId) {
+    public void glBindTextureUnit(int unit, int textureId) {
         ARBDirectStateAccess.glBindTextureUnit(unit, textureId);
-    }
+
+        assert GL11.glGetError() == GL11.GL_NO_ERROR : String.format("glBindTextureUnit(%d, %d) failed!", unit, textureId);
+    }    
 
     @Override
-    public int glGetNamedBufferParameteri(int bufferId, int pName) {
-        return ARBDirectStateAccess.glGetNamedBufferParameteri(bufferId, pName);
+    public void glGenerateTextureMipmap(int textureId) {
+        ARBDirectStateAccess.glGenerateTextureMipmap(textureId);
     }
-    
 }

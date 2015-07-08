@@ -39,7 +39,7 @@ public enum GLSyncStatus {
      *
      * @param glEnum the glEnum value to check.
      * @return the associated GLSyncStatus if applicable.
-     * @sinec 15.07.06
+     * @since 15.07.06
      */
     public static GLSyncStatus valueOf(final int glEnum) {
         for (GLSyncStatus status : values()) {

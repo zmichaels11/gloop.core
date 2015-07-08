@@ -68,7 +68,7 @@ public class GLSampler extends GLObject {
      * thread.
      *
      * @return the default sampler.
-     * @sine 15.07.06
+     * @since 15.07.06
      */
     public static GLSampler getDefaultSampler() {
         return getDefaultSampler(GLThread.getDefaultInstance());

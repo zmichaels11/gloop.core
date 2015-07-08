@@ -5,7 +5,10 @@
  */
 package com.longlinkislong.gloop;
 
+import com.longlinkislong.gloop.dsa.DirectStateAccess;
+import com.longlinkislong.gloop.dsa.EXTDirectStateAccessPatch;
 import java.nio.ByteBuffer;
+import java.nio.ByteOrder;
 import java.util.Objects;
 import org.lwjgl.opengl.EXTTextureFilterAnisotropic;
 import org.lwjgl.opengl.GL11;
@@ -14,38 +17,165 @@ import org.lwjgl.opengl.GL13;
 import org.lwjgl.opengl.GL15;
 import org.lwjgl.opengl.GL20;
 import org.lwjgl.opengl.GL21;
-import org.lwjgl.opengl.GL30;
 import org.lwjgl.opengl.GL31;
 
 /**
+ * GLTexture represents an immutable OpenGL texture object. Currently only
+ * supports 1D, 2D, or 3D textures.
  *
  * @author zmichaels
+ * @since 15.07.08
  */
 public class GLTexture extends GLObject {
 
     private static final int INVALID_TEXTURE_ID = -1;
-    protected int textureId = INVALID_TEXTURE_ID;
-    private int width = 0;
-    private int height = 0;
-    private int depth = 0;
+    protected volatile int textureId = INVALID_TEXTURE_ID;
+    private volatile int width = 0;
+    private volatile int height = 0;
+    private volatile int depth = 0;
     private GLTextureTarget target;
     public static final int GENERATE_MIPMAP = -1;
 
+    /**
+     * Constructs a new GLTexture on the default OpenGL thread.
+     *
+     * @since 15.07.08
+     */
     public GLTexture() {
-        super();
-        this.init();
+        this(GLThread.getDefaultInstance());
     }
 
+    /**
+     * Constructs a new GLTexture on the specified OpenGL thread.
+     *
+     * @param thread the OpenGL thread.
+     * @since 15.07.08
+     */
     public GLTexture(final GLThread thread) {
         super(thread);
-        this.init();
     }
 
+    /**
+     * Constructs a new GLTexture on the default OpenGL thread and allocates a
+     * 3D texture object. This constructor is the same as using the constructor
+     * GLTexture() and immediately calling allocate(int, format, width, height,
+     * depth).
+     *
+     * @param mipmaps the number of mipmap levels to allocate.
+     * @param pixelFormat the sized pixel format.
+     * @param width the width of the base mipmap level.
+     * @param height the height of the base mipmap level.
+     * @param depth the depth of the base mipmap level.
+     * @since 15.07.08
+     */
+    public GLTexture(final int mipmaps, final GLTextureInternalFormat pixelFormat, final int width, final int height, final int depth) {
+        this();
+        this.allocate(mipmaps, pixelFormat, width, height, depth);
+    }
+
+    /**
+     * Constructs a new GLTexture on the default OpenGL thread and allocates a
+     * 2D texture object. This constructor is the same as using the constructor
+     * GLTexture() and immediately calling allocate(int, format, width, height).
+     *
+     * @param mipmaps the number of mipmap levels to allocate.
+     * @param pixelFormat the sized pixel format.
+     * @param width the width of the base mipmap level.
+     * @param height the height of the base mipmap level.
+     * @since 15.07.08
+     */
+    public GLTexture(final int mipmaps, final GLTextureInternalFormat pixelFormat, final int width, final int height) {
+        this();
+        this.allocate(mipmaps, pixelFormat, width, height);
+    }
+
+    /**
+     * Constructs a new GLTexture on the default OpenGL thread and allocates a
+     * 1D texture object. This constructor is the same as using the constructor
+     * GLTexture() and immediately calling allocate(int, format, width).
+     *
+     * @param mipmaps the number of mipmap levels to allocate.
+     * @param pixelFormat the sized pixel format.
+     * @param width the width of the base mipmap level.
+     * @since 15.07.08
+     */
+    public GLTexture(final int mipmaps, final GLTextureInternalFormat pixelFormat, final int width) {
+        this();
+        this.allocate(mipmaps, pixelFormat, width);
+    }
+
+    /**
+     * Constructs a new GLTexture on the specified OpenGL thread and allocates a
+     * 3D texture object. This constructor is the same as using the constructor
+     * GLTexture(thread) and immediately calling allocate(int, format, width,
+     * height, depth).
+     *
+     * @param thread the OpenGL thread to construct the object on.
+     * @param mipmaps the number of mipmap levels to allocate.
+     * @param pixelFormat the sized pixel format.
+     * @param width the width of the base mipmap level.
+     * @param height the height of the base mipmap level.
+     * @param depth the depth of the base mipmap level.
+     * @since 15.07.08
+     */
+    public GLTexture(final GLThread thread, final int mipmaps, final GLTextureInternalFormat pixelFormat, final int width, final int height, final int depth) {
+        this(thread);
+        this.allocate(mipmaps, pixelFormat, width, height, depth);
+    }
+
+    /**
+     * Constructs a new GLTexture on the specified OpenGL thread and allocates a
+     * 2D texture object. This constructor is the same as using the constructor
+     * GLTexture(thread) and immediately calling allocate(int, format, width,
+     * height).
+     *
+     * @param thread the OpenGL thread to construct the object on.
+     * @param mipmaps the number of mipmap levels to allocate.
+     * @param pixelFormat the sized pixel format.
+     * @param width the width of the base mipmap level.
+     * @param height the height of the base mipmap level.
+     * @since 15.07.08
+     */
+    public GLTexture(final GLThread thread, final int mipmaps, final GLTextureInternalFormat pixelFormat, final int width, final int height) {
+        this(thread);
+        this.allocate(mipmaps, pixelFormat, width, height);
+    }
+
+    /**
+     * Constructs a new GLTexture on the specified OpenGL thread and allocates
+     * the 1D texture object. This constructor is the same as using the
+     * constructor GLTexture(thread) and immediately calling allocate(int,
+     * format, width).
+     *
+     * @param thread the OpenGL thread to construct the object on.
+     * @param mipmaps the number of mipmap levels to allocate.
+     * @param pixelFormat the sized pixel format.
+     * @param width the width of the base mipmap level.
+     * @since 15.07.08
+     */
+    public GLTexture(final GLThread thread, final int mipmaps, final GLTextureInternalFormat pixelFormat, final int width) {
+        this(thread);
+        this.allocate(mipmaps, pixelFormat, width);
+    }
+
+    /**
+     * Retrieves the type of texture.
+     *
+     * @return GL_TEXTURE1D, GL_TEXTURE_2D, or GL_TEXTURE_3D.
+     * @since 15.07.08
+     */
     public GLTextureTarget getTarget() {
         return this.target;
     }
 
-    public int getWidth() {
+    /**
+     * Retrieves the width of the texture.
+     *
+     * @return the width.
+     * @throws GLException if the texture has not been allocated yet.
+     * @since 15.07.08
+     */
+    public int getWidth() throws GLException {
         if (this.width == 0) {
             throw new GLException("Width has not been set!");
         } else {
@@ -53,7 +183,15 @@ public class GLTexture extends GLObject {
         }
     }
 
-    public int getHeight() {
+    /**
+     * Retrieves the height of the texture. This will be return 1 for 1D
+     * textures.
+     *
+     * @return the height.
+     * @throws GLException if the texture has not been allocated yet.
+     * @since 15.07.08
+     */
+    public int getHeight() throws GLException {
         if (this.height == 0) {
             throw new GLException("Height has not been set!");
         } else {
@@ -61,7 +199,15 @@ public class GLTexture extends GLObject {
         }
     }
 
-    public int getDepth() {
+    /**
+     * Retrieves the depth of the texture. This will return 1 for 1D or 2D
+     * textures.
+     *
+     * @return the depth
+     * @throws GLException if the texture has not been allocated yet.
+     * @since 15.07.08
+     */
+    public int getDepth() throws GLException {
         if (this.depth == 0) {
             throw new GLException("Depth has not been set!");
         } else {
@@ -69,83 +215,50 @@ public class GLTexture extends GLObject {
         }
     }
 
+    /**
+     * Checks if the texture has been allocated.
+     *
+     * @return true if the texture has been allocated and has not yet been
+     * deleted.
+     * @since 15.07.08
+     */
     public boolean isValid() {
         return textureId != INVALID_TEXTURE_ID;
     }
 
-    private final InitTask initTask = new InitTask();
+    private BindTask lastBindTask = null;
 
-    public final void init() {
-        this.initTask.glRun(this.getThread());
-    }
-
-    public void setMipmapRange(final int base, final int max) {
-        new SetMipmapRangeTask(base, max).glRun(this.getThread());
-    }
-
-    public class SetMipmapRangeTask extends GLTask {
-
-        final int baseLevel;
-        final int maxLevel;
-
-        public SetMipmapRangeTask(final int baseLevel, final int maxLevel) {
-            this.baseLevel = baseLevel;
-            this.maxLevel = maxLevel;
+    /**
+     * Binds the GLTexture to the specified texture unit.
+     *
+     * @param textureUnit the texture unit to bind to.
+     * @since 15.07.08
+     */
+    public void bind(final int textureUnit) {
+        if (this.lastBindTask == null || this.lastBindTask.activeTexture != textureUnit) {
+            this.lastBindTask = new BindTask(textureUnit);
         }
 
-        @Override
-        public void run() {
-            if (!GLTexture.this.isValid()) {
-                throw new GLException("Invalid GLTexture!");
-            }
-
-            GL11.glBindTexture(GL11.GL_TEXTURE_2D, GLTexture.this.textureId);
-
-            assert GL11.glGetError() == GL11.GL_NO_ERROR : String.format("glBindTexture(GL_TEXTURE_2D, %d) failed!",
-                    GLTexture.this.textureId);
-
-            GL11.glTexParameteri(GL11.GL_TEXTURE_2D, GL12.GL_TEXTURE_BASE_LEVEL, this.baseLevel);
-
-            assert GL11.glGetError() == GL11.GL_NO_ERROR : String.format("glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_BASE_LEVEL, %d) failed!",
-                    this.baseLevel);
-
-            GL11.glTexParameteri(GL11.GL_TEXTURE_2D, GL12.GL_TEXTURE_MAX_LEVEL, this.maxLevel);
-
-            assert GL11.glGetError() == GL11.GL_NO_ERROR : String.format("glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAX_LEVEL, %d) failed!",
-                    this.maxLevel);
-
-            GL11.glBindTexture(GL11.GL_TEXTURE_2D, 0);
-
-            assert GL11.glGetError() == GL11.GL_NO_ERROR : "glBindTexture(GL_TEXTURE_2D, 0) failed!";
-        }
+        this.lastBindTask.glRun(this.getThread());
     }
 
-    public class InitTask extends GLTask {
-
-        @Override
-        public void run() {
-            if (GLTexture.this.isValid()) {
-                throw new GLException("Cannot reinit GLTexture!");
-            }
-
-            GLTexture.this.textureId = GL11.glGenTextures();
-        }
-    }
-
-    private BindTask lastBind = null;
-
-    public void bind(final int activeTexture) {
-        if (this.lastBind == null || this.lastBind.activeTexture != activeTexture) {
-            this.lastBind = new BindTask(activeTexture);
-        }
-
-        this.lastBind.glRun(this.getThread());
-    }
-
+    /**
+     * A GLTask that binds the texture to the specified texture unit.
+     *
+     * @since 15.07.08
+     */
     public class BindTask extends GLTask {
 
-        final int activeTexture;
+        public final int activeTexture;
 
+        /**
+         * Constructs a new bind task using the specified texture unit.
+         *
+         * @param activeTexture the texture unit to bind to. Must be greater
+         * than 0 and less than the maximum supported texture units.
+         * @throws GLException if the specified texture unit is less than 0.
+         * @since 15.07.08
+         */
         public BindTask(final int activeTexture) {
             this.activeTexture = activeTexture;
 
@@ -157,37 +270,48 @@ public class GLTexture extends GLObject {
         @Override
         public void run() {
             if (!GLTexture.this.isValid()) {
-                throw new GLException("GLTexture is not valid!");
+                throw new GLException("GLTexture is not valid! You must allocate a texture prior to binding it.");
             }
 
-            //TODO: skip if already bound            
-            GL13.glActiveTexture(GL13.GL_TEXTURE0 + this.activeTexture);
+            final DirectStateAccess dsa = GLTools.getDSAInstance();
 
-            assert GL11.glGetError() == GL11.GL_NO_ERROR : String.format("glActiveTexture(GL_TEXTURE%d) failed!",
-                    this.activeTexture);
-
-            GL11.glBindTexture(GLTexture.this.target.value, GLTexture.this.textureId);
-
-            assert GL11.glGetError() == GL11.GL_NO_ERROR : String.format("glBindTexture(%s, %d) failed!",
-                    GLTexture.this.target, GLTexture.this.textureId);
+            if (dsa instanceof EXTDirectStateAccessPatch) {
+                ((EXTDirectStateAccessPatch) dsa).glBindTextureUnit(GL13.GL_TEXTURE0 + this.activeTexture, GLTexture.this.target.value, textureId);
+            } else {
+                dsa.glBindTextureUnit(this.activeTexture, GLTexture.this.textureId);
+            }
         }
     }
 
-    private final DeleteTask deleteTask = new DeleteTask();
-
+    /**
+     * Deletes the texture and reverts the GLTexture object back to its initial
+     * state.
+     *
+     * @since 15.07.08
+     */
     public void delete() {
-        this.deleteTask.glRun(this.getThread());
+        new DeleteTask().glRun(this.getThread());
     }
 
+    /**
+     * A GLTask that deletes the texture object and restores the GLTexture to
+     * its initial state.
+     *
+     * @since 15.07.08
+     */
     public class DeleteTask extends GLTask {
 
         @Override
         public void run() {
             if (GLTexture.this.isValid()) {
                 GL11.glDeleteTextures(GLTexture.this.textureId);
+
+                assert GL11.glGetError() == GL11.GL_NO_ERROR : String.format("glDeleteTextures(%d) failed!", GLTexture.this.textureId);
+
                 GLTexture.this.textureId = INVALID_TEXTURE_ID;
+                GLTexture.this.width = GLTexture.this.height = GLTexture.this.depth = 0;
             } else {
-                throw new GLException("GLTexture is not valid!");
+                throw new GLException("GLTexture is not valid! Cannot delete a texture if it does not exist.");
             }
         }
     }
@@ -208,7 +332,23 @@ public class GLTexture extends GLObject {
 
     private UpdateImage3DTask lastUpdateImage3D = null;
 
-    public void updateImage(
+    /**
+     * Updates a 3D segment of the specified mipmap level.
+     *
+     * @param level the mipmap level to write.
+     * @param xOffset the x-offset to write to.
+     * @param yOffset the y-offset to write to.
+     * @param zOffset the z-offset to write to.
+     * @param width the number of pixels along the x-axis to write.
+     * @param height the number of pixels along the y-axis to write.
+     * @param depth the number of pixels along the z-axis to write.
+     * @param format the pixel format the data is stored in.
+     * @param type the data type the pixel data is stored as.
+     * @param data the pixel data.
+     * @return self reference.
+     * @since 15.07.08
+     */
+    public GLTexture updateImage(
             final int level,
             final int xOffset, final int yOffset, final int zOffset,
             final int width, final int height, final int depth,
@@ -237,21 +377,52 @@ public class GLTexture extends GLObject {
 
             this.lastUpdateImage3D.glRun(this.getThread());
         }
+
+        return this;
     }
 
+    /**
+     * A GLTask that updates a 3D image.
+     *
+     * @since 15.07.08
+     */
     public class UpdateImage3DTask extends GLTask {
 
-        final int level;
-        final int xOffset;
-        final int yOffset;
-        final int zOffset;
-        final int width;
-        final int height;
-        final int depth;
-        final GLTextureFormat format;
-        final GLType type;
-        final ByteBuffer data;
+        public final int level;
+        public final int xOffset;
+        public final int yOffset;
+        public final int zOffset;
+        public final int width;
+        public final int height;
+        public final int depth;
+        public final GLTextureFormat format;
+        public final GLType type;
+        public final ByteBuffer data;
 
+        /**
+         * Constructs a new UpdateImage3DTask.
+         *
+         * @param level the mipmap level.
+         * @param xOffset the x-offset to begin writing to.
+         * @param yOffset the y-offset to begin writing to.
+         * @param zOffset the z-offset to begin writing to.
+         * @param width the number of pixels along the x-axis to write.
+         * @param height the number of pixels along the y-axis to write.
+         * @param depth the number of pixels along the z-axis to write.
+         * @param format the pixel format type.
+         * @param type the data type.
+         * @param data the pixel data.
+         * @throws GLException if the level is less than 0.
+         * @throws GLException if xOffset is less than 0.
+         * @throws GLException if yOffset is less than 0.
+         * @throws GLException if zOffset is less than 0.
+         * @throws GLException if data is not direct.
+         * @throws GLException if data is not in native byte order.
+         * @throws NullPointerException if format is null.
+         * @throws NullPointerException if type is null.
+         * @throws NullPointerException if data is null.
+         * @since 15.07.08
+         */
         public UpdateImage3DTask(
                 final int level,
                 final int xOffset, final int yOffset, final int zOffset,
@@ -276,7 +447,9 @@ public class GLTexture extends GLObject {
             Objects.requireNonNull(this.format = format);
             Objects.requireNonNull(this.type = type);
 
-            GLTools.checkBuffer(this.data = data);
+            this.data = GLTools.checkBuffer(
+                    data.asReadOnlyBuffer().order(ByteOrder.nativeOrder()));
+
             GLTexture.this.setSize(
                     this.width = width,
                     this.height = height,
@@ -294,15 +467,27 @@ public class GLTexture extends GLObject {
                     this.level,
                     this.xOffset, this.yOffset, this.zOffset,
                     this.width, this.height, this.depth, this.format.value,
-                    this.level, this.data);
-
-            GLTexture.this.target = GLTextureTarget.GL_TEXTURE_3D;
+                    this.type.value, this.data);
         }
     }
 
     private UpdateImage2DTask lastSetSubImage2D = null;
 
-    public void updateImage(
+    /**
+     * Updates a 2D segment of the specified mipmap level.
+     *
+     * @param level the mipmap level to write.
+     * @param xOffset the x-offset to write to.
+     * @param yOffset the y-offset to write to.
+     * @param width the number of pixels along the x-axis to write.
+     * @param height the number of pixels along the y-axis to write.
+     * @param format the pixel format the data is stored in.
+     * @param type the data type the pixel data is stored as.
+     * @param data the pixel data.
+     * @return self reference.
+     * @since 15.07.08
+     */
+    public GLTexture updateImage(
             final int level,
             final int xOffset, final int yOffset,
             final int width, final int height,
@@ -331,20 +516,46 @@ public class GLTexture extends GLObject {
             this.lastSetSubImage2D.glRun(this.getThread());
         }
 
-        GLTexture.this.target = GLTextureTarget.GL_TEXTURE_2D;
+        return this;
     }
 
+    /**
+     * A GLTask that updates a 3D image.
+     *
+     * @since 15.07.08
+     */
     public class UpdateImage2DTask extends GLTask {
 
-        final int level;
-        final int xOffset;
-        final int yOffset;
-        final int width;
-        final int height;
-        final GLTextureFormat format;
-        final GLType type;
-        final ByteBuffer data;
+        public final int level;
+        public final int xOffset;
+        public final int yOffset;
+        public final int width;
+        public final int height;
+        public final GLTextureFormat format;
+        public final GLType type;
+        public final ByteBuffer data;
 
+        /**
+         * Constructs a new UpdateImage2DTask
+         *
+         * @param level the mipmap level to write to.
+         * @param xOffset the x-offset to begin writing to.
+         * @param yOffset the y-offset to begin writing to.
+         * @param width the number of pixels along the x-axis to write.
+         * @param height the number of pixels along the y-axis to write.
+         * @param format the pixel format the data is stored as.
+         * @param type the data type the data is stored as.
+         * @param data the pixel data.
+         * @throws GLException if mipmaps is less than 0.
+         * @throws GLException if xOffset is less than 0.
+         * @throws GLException if yOffset is less than 0.
+         * @throws GLException if data is not direct.
+         * @throws GLException if data is not in native byte order.
+         * @throws NullPointerException if format is null.
+         * @throws NullPointerException if type is null.
+         * @throws NullPointerException if data is null.
+         * @since 15.07.08
+         */
         public UpdateImage2DTask(
                 final int level,
                 final int xOffset, final int yOffset,
@@ -353,7 +564,7 @@ public class GLTexture extends GLObject {
                 final GLType type, final ByteBuffer data) {
 
             if (level < 0) {
-                throw new GLException("Level cannot be less than 0!");
+                throw new GLException("Mipmap level cannot be less than 0!");
             } else {
                 this.level = level;
             }
@@ -368,7 +579,7 @@ public class GLTexture extends GLObject {
             Objects.requireNonNull(this.format = format);
             Objects.requireNonNull(this.type = type);
 
-            GLTools.checkBuffer(this.data = data);
+            this.data = GLTools.checkBuffer(data.asReadOnlyBuffer().order(ByteOrder.nativeOrder()));
 
             GLTexture.this.setSize(
                     this.width = width,
@@ -386,16 +597,26 @@ public class GLTexture extends GLObject {
                     GLTexture.this.textureId,
                     this.level, this.xOffset, this.yOffset,
                     this.width, this.height, this.format.value,
-                    this.level, this.data);
-
-            GLTexture.this.target = GLTextureTarget.GL_TEXTURE_2D;
+                    this.type.value, this.data);
         }
 
     }
 
     private Update1DTask lastSetSubImage1D = null;
 
-    public void updateImage(
+    /**
+     * Updates a 1D segment of the specified mipmap level.
+     *
+     * @param level the mipmap level to write.
+     * @param xOffset the x-offset to write to.
+     * @param width the number of pixels along the x-axis to write.
+     * @param format the pixel format the data is stored as.
+     * @param type the data type the data is stored as.
+     * @param data the pixel data.
+     * @return self reference.
+     * @since 15.07.08
+     */
+    public GLTexture updateImage(
             final int level,
             final int xOffset, final int width,
             final GLTextureFormat format,
@@ -419,25 +640,43 @@ public class GLTexture extends GLObject {
 
             this.lastSetSubImage2D.glRun(this.getThread());
         }
+
+        return this;
     }
 
+    /**
+     * A GLTask that updates a 1D segment of a texture.
+     *
+     * @since 15.07.08
+     */
     public class Update1DTask extends GLTask {
 
-        final int level;
-        final int xOffset;
-        final int width;
-        final GLTextureFormat format;
-        final GLType type;
-        final ByteBuffer data;
+        public final int level;
+        public final int xOffset;
+        public final int width;
+        public final GLTextureFormat format;
+        public final GLType type;
+        public final ByteBuffer data;
 
-        public Update1DTask(
-                final int xOffset, final int width,
-                final GLTextureFormat format,
-                final GLType type, final ByteBuffer data) {
-
-            this(0, xOffset, width, format, type, data);
-        }
-
+        /**
+         * Constructs a new Update1DTask.
+         *
+         * @param level the mipmap level to update.
+         * @param xOffset the x-offset to write to.
+         * @param width the number of pixels along the x-axis to write.
+         * @param format the pixel format the data is stored in.
+         * @param type the data type the data is stored in.
+         * @param data the pixel data.
+         * @throws GLException if mipmaps is less than 0.
+         * @throws GLException if xOffset is less than 0.
+         * @throws GLException if width is less than 0.
+         * @throws GLException if data is not direct.
+         * @throws GLException if data is not in native byte order.
+         * @throws NullPointerException if format is null.
+         * @throws NullPointerException if type is null.
+         * @throws NullPointerException if data is null.
+         * @since 15.07.08
+         */
         public Update1DTask(
                 final int level,
                 final int xOffset, final int width,
@@ -465,7 +704,7 @@ public class GLTexture extends GLObject {
 
             Objects.requireNonNull(this.format = format);
             Objects.requireNonNull(this.type = type);
-            GLTools.checkBuffer(this.data = data);
+            this.data = GLTools.checkBuffer(data.asReadOnlyBuffer().order(ByteOrder.nativeOrder()));
         }
 
         @Override
@@ -477,52 +716,73 @@ public class GLTexture extends GLObject {
             GLTools.getDSAInstance().glTextureSubImage1d(
                     GLTexture.this.textureId,
                     this.level, this.xOffset, this.width, this.format.value,
-                    this.level, this.data);
-
-            GLTexture.this.target = GLTextureTarget.GL_TEXTURE_1D;
+                    this.type.value, this.data);
         }
     }
 
-    public void allocateImage(
-            final int level,
+    /**
+     * Allocates the texture object as a 3D texture. Each mipmap level allocated
+     * is half the dimensions of the previous level.
+     *
+     * @param mipmaps the number of mipmaps to allocate.
+     * @param internalFormat the sized pixel format.
+     * @param width the width of the base mipmap level.
+     * @param height the height of the base mipmap level.
+     * @param depth the depth of the base mipmap level.
+     * @return self reference.
+     * @since 15.07.08
+     */
+    public final GLTexture allocate(
+            final int mipmaps,
             final GLTextureInternalFormat internalFormat,
-            final GLTextureFormat format,
-            final int width, final int height, final int depth,
-            final GLType type) {
+            final int width, final int height, final int depth) {
 
         new AllocateImage3DTask(
-                level,
-                internalFormat, format,
-                width, height, depth,
-                type).glRun(this.getThread());
+                mipmaps,
+                internalFormat,
+                width, height, depth).glRun(this.getThread());
+
+        return this;
     }
 
+    /**
+     * A GLTask that allocates data for the GLTexture.
+     *
+     * @since 15.07.08
+     */
     public class AllocateImage3DTask extends GLTask {
 
-        final int level;
-        final GLTextureInternalFormat internalFormat;
-        final GLTextureFormat format;
-        final int width;
-        final int height;
-        final int depth;
-        final GLType type;
+        public final int mipmaps;
+        public final GLTextureInternalFormat internalFormat;
+        public final int width;
+        public final int height;
+        public final int depth;
 
+        /**
+         * Constructs a new AllocateImage3DTask.
+         *
+         * @param level the number of mipmaps to allocate.
+         * @param internalFormat the sized pixel format.
+         * @param width the width of the base mipmap level.
+         * @param height the height of the base mipmap level.
+         * @param depth the depth of the base mipmap level.
+         * @throws GLException if mipmaps is less than 1.
+         * @throws GLException if width is less than 1.
+         * @throws GLException if height is less than 1.
+         * @throws GLException if depth is less than 1.
+         * @throws NullPointerException if internalFormat is null.
+         * @since 15.07.08
+         */
         public AllocateImage3DTask(
                 final int level,
                 final GLTextureInternalFormat internalFormat,
-                final GLTextureFormat format,
-                final int width, final int height, final int depth,
-                final GLType type) {
+                final int width, final int height, final int depth) {
 
-            if (level < 0) {
-                throw new GLException("Level cannot be less than 0!");
-            } else {
-                this.level = level;
+            if ((this.mipmaps = level) < 1) {
+                throw new GLException("Mipmap levels cannot be less than 1!");
             }
 
             Objects.requireNonNull(this.internalFormat = internalFormat);
-            Objects.requireNonNull(this.format = format);
-            Objects.requireNonNull(this.type = type);
 
             GLTexture.this.setSize(
                     this.width = width,
@@ -536,466 +796,189 @@ public class GLTexture extends GLObject {
                 throw new GLException("GLTexture is not valid!");
             }
 
-            GL11.glBindTexture(
-                    GLTextureTarget.GL_TEXTURE_3D.value,
-                    GLTexture.this.textureId);
+            final DirectStateAccess dsa = GLTools.getDSAInstance();
 
-            assert GL11.glGetError() == GL11.GL_NO_ERROR : String.format("glBindTexture(GL_TEXTURE_3D, %d) failed!",
-                    GLTexture.this.textureId);
-
-            GL12.glTexImage3D(
-                    GLTextureTarget.GL_TEXTURE_3D.value,
-                    this.level,
-                    this.internalFormat.value,
-                    this.width, this.height, this.depth,
-                    0,
-                    this.format.value,
-                    this.type.value,
-                    0);
-
-            assert GL11.glGetError() == GL11.GL_NO_ERROR : String.format("glTexImage3D(GL_TEXTURE_3D, %d, %s, %d, %d, %d, 0, %s, %d, 0) failed!",
-                    this.level, this.internalFormat, this.width, this.height, this.depth, this.format, this.type);
-
-            GL11.glBindTexture(GLTextureTarget.GL_TEXTURE_3D.value, 0);
-
-            assert GL11.glGetError() == GL11.GL_NO_ERROR : "glBindTexture(GL_TEXTURE_3D, 0) failed!";
+            GLTexture.this.textureId = dsa.glCreateTextures(GL12.GL_TEXTURE_3D);
+            dsa.glTextureStorage3d(textureId, mipmaps, this.internalFormat.value, width, height, depth);
+            GLTexture.this.target = GLTextureTarget.GL_TEXTURE_3D;
         }
     }
 
-    public void allocate(
-            final int level,
+    /**
+     * Allocates the texture object as a 2D texture. Each mipmap level allocated
+     * is half the dimensions of the previous level.
+     *
+     * @param mipmaps the number of mipmaps to allocate.
+     * @param internalFormat the sized pixel format.
+     * @param width the width of the base mipmap level.
+     * @param height the depth of the base mipmap level.
+     * @return self reference.
+     * @since 15.07.08
+     */
+    public final GLTexture allocate(
+            final int mipmaps,
             final GLTextureInternalFormat internalFormat,
-            final GLTextureFormat format,
-            final int width, final int height,
-            final GLType type) {
+            final int width, final int height) {
 
         new AllocateImage2DTask(
-                level,
-                internalFormat, format,
-                width, height,
-                type).glRun(this.getThread());
+                mipmaps,
+                internalFormat,
+                width, height).glRun(this.getThread());
+
+        return this;
     }
 
+    /**
+     * A GLTask that allocates the data for the GLTexture.
+     *
+     * @since 15.07.08
+     */
     public class AllocateImage2DTask extends GLTask {
 
-        final int level;
-        final GLTextureInternalFormat internalFormat;
-        final GLTextureFormat format;
-        final int width;
-        final int height;
-        final GLType type;
+        public final int mipmaps;
+        public final GLTextureInternalFormat internalFormat;
+        public final int width;
+        public final int height;
 
+        /**
+         * Constructs a new AllocateImage2DTask.
+         *
+         * @param level the number of mipmap levels to allocate.
+         * @param internalFormat the sized pixel format.
+         * @param width the width of the base mipmap level.
+         * @param height the height of the base mipmap level.
+         * @throws GLException if mipmaps is less than 1.
+         * @throws GLException if width is less than 1.
+         * @throws GLException if height is less than 1.
+         * @throws NullPointerException if internalFormat is null.
+         * @since 15.07.08
+         */
         public AllocateImage2DTask(
                 final int level,
                 final GLTextureInternalFormat internalFormat,
-                final GLTextureFormat format,
-                final int width, final int height,
-                final GLType type) {
+                final int width, final int height) {
 
-            if (level < 0) {
-                throw new GLException("Level cannot be less than 0!");
-            } else {
-                this.level = level;
+            if ((this.mipmaps = level) < 1) {
+                throw new GLException("Mipmap levels cannot be less than 1!");
             }
 
             Objects.requireNonNull(this.internalFormat = internalFormat);
-            Objects.requireNonNull(this.format = format);
-            Objects.requireNonNull(this.type = type);
-
             GLTexture.this.setSize(this.width = width, this.height = height, 1);
         }
 
         @Override
         public void run() {
-            if (!GLTexture.this.isValid()) {
-                throw new GLException("GLTexture is not valid!");
+            if (GLTexture.this.isValid()) {
+                throw new GLException("GLTexture has already been allocated!");
             }
 
-            GL11.glBindTexture(
-                    GLTextureTarget.GL_TEXTURE_2D.value,
-                    GLTexture.this.textureId);
+            final DirectStateAccess dsa = GLTools.getDSAInstance();
 
-            assert GL11.glGetError() == GL11.GL_NO_ERROR : String.format("glBindTexture(GL_TEXTURE_2D, %d) failed!",
-                    GLTexture.this.textureId);
-
-            GL11.glTexImage2D(
-                    GLTextureTarget.GL_TEXTURE_2D.value,
-                    this.level,
-                    this.internalFormat.value,
-                    this.width, this.height,
-                    0,
-                    this.format.value,
-                    this.type.value,
-                    0);
-
-            assert GL11.glGetError() == GL11.GL_NO_ERROR : String.format("glTexImage2D(GL_TEXTURE_2D, %d, %s, %d, %d, 0, %s, %s, 0) failed!",
-                    this.level, this.internalFormat, this.width, this.height, this.format, this.type);
-
-            GL11.glBindTexture(GLTextureTarget.GL_TEXTURE_2D.value, 0);
-
-            assert GL11.glGetError() == GL11.GL_NO_ERROR : "glBindTexture(GL_TEXTURE_2D, 0) failed!";
-        }
-    }
-
-    public void allocate(
-            final int level,
-            final GLTextureInternalFormat internalFormat,
-            final GLTextureFormat format,
-            final int width,
-            final GLType type) {
-
-        new AllocateImage1DTask(level, internalFormat, format, width, type).glRun(this.getThread());
-    }
-
-    public class AllocateImage1DTask extends GLTask {
-
-        final int level;
-        final GLTextureInternalFormat internalFormat;
-        final GLTextureFormat format;
-        final int width;
-        final GLType type;
-
-        public AllocateImage1DTask(final int level,
-                final GLTextureInternalFormat internalFormat,
-                final GLTextureFormat format,
-                final int width,
-                final GLType type) {
-
-            if (level < 0) {
-                throw new GLException("Level cannot be less than 0!");
-            } else {
-                this.level = level;
-            }
-
-            Objects.requireNonNull(this.internalFormat = internalFormat);
-            Objects.requireNonNull(this.format = format);
-            Objects.requireNonNull(this.type = type);
-
-            GLTexture.this.setSize(this.width = width, 1, 1);
-        }
-
-        @Override
-        public void run() {
-            if (!GLTexture.this.isValid()) {
-                throw new GLException("GLTexture is not valid!");
-            }
-
-            GL11.glBindTexture(
-                    GLTextureTarget.GL_TEXTURE_1D.value,
-                    GLTexture.this.textureId);
-
-            assert GL11.glGetError() == GL11.GL_NO_ERROR : String.format("glBindTexture(GL_TEXTURE_1D, %d) failed!",
-                    GLTexture.this.textureId);
-
-            GL11.glTexImage1D(
-                    GLTextureTarget.GL_TEXTURE_1D.value,
-                    this.level,
-                    this.internalFormat.value,
-                    this.width,
-                    0,
-                    this.format.value,
-                    this.type.value,
-                    0);
-
-            assert GL11.glGetError() == GL11.GL_NO_ERROR : String.format("glTexImage1D(GL_TEXTURE_1D, %d, %s, %d, 0, %s, %s, 0) failed!",
-                    this.level, this.internalFormat, this.width, this.format, this.type);
-
-            GL11.glBindTexture(GLTextureTarget.GL_TEXTURE_1D.value, 0);
-
-            assert GL11.glGetError() == GL11.GL_NO_ERROR : "glBindTexture(GL_TEXTURE_1D, 0) failed!";
-        }
-    }
-
-    public void setImage(
-            final int level,
-            final GLTextureInternalFormat internalFormat,
-            final GLTextureFormat format,
-            final int width, final int height, final int depth,
-            final GLType type, final ByteBuffer data) {
-
-        new SetImage3DTask(
-                level,
-                internalFormat, format,
-                width, height, depth,
-                type, data).glRun(this.getThread());
-    }
-
-    public class SetImage3DTask extends GLTask {
-
-        final int level;
-        final GLTextureInternalFormat internalFormat;
-        final GLTextureFormat format;
-        final int width;
-        final int height;
-        final int depth;
-        final GLType type;
-        final ByteBuffer data;
-        final boolean generateMipmap;
-
-        public SetImage3DTask(
-                final GLTextureInternalFormat internalFormat,
-                final GLTextureFormat format,
-                final int width, final int height, final int depth,
-                final GLType type, final ByteBuffer data) {
-
-            this(0, internalFormat, format, width, height, depth, type, data);
-        }
-
-        public SetImage3DTask(
-                final int level,
-                final GLTextureInternalFormat internalFormat,
-                final GLTextureFormat format,
-                final int width, final int height, final int depth,
-                final GLType type, final ByteBuffer data) {
-
-            Objects.requireNonNull(this.internalFormat = internalFormat);
-            Objects.requireNonNull(this.format = format);
-            Objects.requireNonNull(this.type = type);
-
-            if (level == GLTexture.GENERATE_MIPMAP) {
-                this.level = 0;
-                this.generateMipmap = true;
-            } else if ((this.level = level) < 0) {
-                throw new GLException("Invalid mipmap level: " + level);
-            } else {
-                this.generateMipmap = false;
-            }
-
-            GLTexture.this.setSize(
-                    this.width = width,
-                    this.height = height,
-                    this.depth = depth);
-            GLTools.checkBuffer(this.data = data);
-        }
-
-        @Override
-        public void run() {
-            if (!GLTexture.this.isValid()) {
-                throw new GLException("GLTexture is not valid!");
-            }
-
-            GL11.glBindTexture(
-                    GLTextureTarget.GL_TEXTURE_3D.value,
-                    GLTexture.this.textureId);
-
-            assert GL11.glGetError() == GL11.GL_NO_ERROR : String.format("glBindTexture(GL_TEXTURE_3D, %d) failed!",
-                    GLTexture.this.textureId);
-
-            GL12.glTexImage3D(
-                    GLTextureTarget.GL_TEXTURE_3D.value,
-                    this.level,
-                    this.internalFormat.value,
-                    this.width, this.height, this.depth,
-                    0,
-                    this.format.value,
-                    this.type.value,
-                    this.data);
-
-            assert GL11.glGetError() == GL11.GL_NO_ERROR : String.format("glTexImage3D(GL_TEXTURE_3D, %d, %s, %d, %d, %d, 0, %s, %s, [data]",
-                    this.level, this.internalFormat, this.width, this.height, this.depth, this.format, this.type);
-
-            if (this.generateMipmap) {
-                GL30.glGenerateMipmap(GLTextureTarget.GL_TEXTURE_3D.value);
-
-                assert GL11.glGetError() == GL11.GL_NO_ERROR : "glGenerateMipmap(GL_TEXTURE_3D) failed!";
-            }
-            GL11.glBindTexture(GLTextureTarget.GL_TEXTURE_3D.value, 0);
-
-            assert GL11.glGetError() == GL11.GL_NO_ERROR : "glBindTexture(GL_TEXTURE_3D, 0) failed!";
-
-            GLTexture.this.target = GLTextureTarget.GL_TEXTURE_3D;
-        }
-    }
-
-    public void setImage(
-            final int level,
-            final GLTextureInternalFormat internalFormat,
-            final GLTextureFormat format,
-            final int width, final int height,
-            final GLType type, final ByteBuffer data) {
-
-        new SetImage2DTask(
-                level,
-                internalFormat, format,
-                width, height,
-                type, data).glRun(this.getThread());
-    }
-
-    public class SetImage2DTask extends GLTask {
-
-        final int level;
-        final GLTextureInternalFormat internalFormat;
-        final GLTextureFormat format;
-        final int width;
-        final int height;
-        final GLType type;
-        final ByteBuffer data;
-        final boolean generateMipmap;
-
-        public SetImage2DTask(
-                final GLTextureInternalFormat internalFormat,
-                final GLTextureFormat format,
-                final int width, final int height,
-                final GLType type, final ByteBuffer data) {
-
-            this(0, internalFormat, format, width, height, type, data);
-        }
-
-        public SetImage2DTask(
-                final int level,
-                final GLTextureInternalFormat internalFormat,
-                final GLTextureFormat format,
-                final int width, final int height,
-                final GLType type, final ByteBuffer data) {
-
-            Objects.requireNonNull(this.internalFormat = internalFormat);
-            Objects.requireNonNull(this.format = format);
-            Objects.requireNonNull(this.type = type);
-
-            if (level == GLTexture.GENERATE_MIPMAP) {
-                this.level = 0;
-                this.generateMipmap = true;
-            } else if ((this.level = level) < 0) {
-                throw new GLException("Invalid mipmap level: " + level);
-            } else {
-                this.generateMipmap = false;
-            }
-
-            GLTools.checkBuffer(this.data = data);
-            GLTexture.this.setSize(
-                    this.width = width,
-                    this.height = height, 1);
-        }
-
-        @Override
-        public void run() {
-            if (!GLTexture.this.isValid()) {
-                throw new GLException("GLTexture is invalid!");
-            }
-
-            GL11.glBindTexture(
-                    GLTextureTarget.GL_TEXTURE_2D.value,
-                    GLTexture.this.textureId);
-
-            assert GL11.glGetError() == GL11.GL_NO_ERROR : String.format("glBindTexture(GL_TEXTURE_2D, %d) failed!",
-                    GLTexture.this.textureId);
-
-            GL11.glTexImage2D(
-                    GLTextureTarget.GL_TEXTURE_2D.value, level,
-                    this.internalFormat.value,
-                    this.width, this.height, 0,
-                    this.format.value,
-                    this.type.value,
-                    data);
-
-            assert GL11.glGetError() == GL11.GL_NO_ERROR : String.format("glTexImage2D(GL_TEXTURE_2D, %d, %s, %d, %d, 0, %s, %s, [data]) failed!",
-                    this.level, this.internalFormat, this.width, this.height, this.format, this.type);
-
-            if (this.generateMipmap) {
-                GL30.glGenerateMipmap(GLTextureTarget.GL_TEXTURE_2D.value);
-
-                assert GL11.glGetError() == GL11.GL_NO_ERROR : "glGenerateMipmap(GL_TEXTURE_2D) failed!";
-            }
-            GL11.glBindTexture(GLTextureTarget.GL_TEXTURE_2D.value, 0);
-
-            assert GL11.glGetError() == GL11.GL_NO_ERROR : "glBindTexture(GL_TEXTURE_2D, 0) failed!";
-
+            GLTexture.this.textureId = dsa.glCreateTextures(GL11.GL_TEXTURE_2D);
+            dsa.glTextureStorage2d(textureId, mipmaps, this.internalFormat.value, width, height);
             GLTexture.this.target = GLTextureTarget.GL_TEXTURE_2D;
         }
     }
 
-    public void setImage(
-            final int level,
+    /**
+     * Allocates the texture object as a 1D texture. Each mipmap level will
+     * allocated is half the dimensions of the previous level.
+     *
+     * @param mipmaps the number of mipmaps to allocate.
+     * @param internalFormat the sized pixel format.
+     * @param width the width of the base mipmap level.
+     * @return self reference.
+     * @since 15.07.08
+     */
+    public final GLTexture allocate(
+            final int mipmaps,
             final GLTextureInternalFormat internalFormat,
-            final GLTextureFormat format,
-            final int width,
-            final GLType type, final ByteBuffer data) {
+            final int width) {
 
-        new SetImage1DTask(
-                level,
-                internalFormat, format,
-                width,
-                type, data).glRun(this.getThread());
+        new AllocateImage1DTask(mipmaps, internalFormat, width).glRun(this.getThread());
+
+        return this;
     }
 
-    public class SetImage1DTask extends GLTask {
+    /**
+     * A GLTask that allocates the texture object as a 1D texture.
+     *
+     * @since 15.07.08
+     */
+    public class AllocateImage1DTask extends GLTask {
 
-        final int level;
-        final GLTextureInternalFormat internalFormat;
-        final GLTextureFormat format;
-        final int width;
-        final GLType type;
-        final ByteBuffer data;
-        final boolean generateMipmap;
+        public final int mipmaps;
+        public final GLTextureInternalFormat internalFormat;
+        public final int width;
 
-        public SetImage1DTask(
-                final GLTextureInternalFormat interalFormat,
-                final GLTextureFormat format,
-                final int width,
-                final GLType type, final ByteBuffer data) {
+        /**
+         * Constructs a new AllocateImage1D task.
+         *
+         * @param mipmapLevels the number of mipmaps to allocate.
+         * @param internalFormat the sized pixel format.
+         * @param width the width of the base mipmap level.
+         * @throws GLException if mipmapLevels is less than 1.
+         * @throws GLException if width is less than 1.
+         * @throws NullPointerException if internalFormat is null.
+         * @since 15.07.08
+         */
+        public AllocateImage1DTask(final int mipmapLevels,
+                final GLTextureInternalFormat internalFormat,
+                final int width) {
 
-            this(0, interalFormat, format, width, type, data);
-        }
-
-        public SetImage1DTask(
-                final int level, final GLTextureInternalFormat internalFormat,
-                final GLTextureFormat format, final int width,
-                final GLType type,
-                final ByteBuffer data) {
-
-            Objects.requireNonNull(this.internalFormat = internalFormat);
-            Objects.requireNonNull(this.format = format);
-            Objects.requireNonNull(this.type = type);
-
-            if (level == GLTexture.GENERATE_MIPMAP) {
-                this.level = 0;
-                this.generateMipmap = true;
-            } else if ((this.level = level) < 0) {
-                throw new GLException("Invalid mipmap level: " + level);
-            } else {
-                this.generateMipmap = false;
+            if ((this.mipmaps = mipmapLevels) < 1) {
+                throw new GLException("Mipmap levels cannot be less than 1!");
             }
 
-            GLTools.checkBuffer(this.data = data);
+            Objects.requireNonNull(this.internalFormat = internalFormat);
             GLTexture.this.setSize(this.width = width, 1, 1);
         }
 
         @Override
         public void run() {
-            if (!GLTexture.this.isValid()) {
-                throw new GLException("GLTexture is invalid!");
+            if (GLTexture.this.isValid()) {
+                throw new GLException("GLTexture has already been allocated!");
             }
 
-            GL11.glBindTexture(
-                    GLTextureTarget.GL_TEXTURE_1D.value,
-                    GLTexture.this.textureId);
+            final DirectStateAccess dsa = GLTools.getDSAInstance();
 
-            assert GL11.glGetError() == GL11.GL_NO_ERROR : String.format("glBindTexture(GL_TEXTURE_1D, %d) failed!",
-                    GLTexture.this.textureId);
-
-            GL11.glTexSubImage1D(
-                    GLTextureTarget.GL_TEXTURE_1D.value,
-                    GLTexture.this.textureId,
-                    this.width,
-                    0,
-                    this.format.value,
-                    this.type.value,
-                    this.data);
-
-            assert GL11.glGetError() == GL11.GL_NO_ERROR : String.format("glTexSubImage1D(GL_TEXTURE_1D, %d, %d, 0, %s, %s, [data]) failed!",
-                    GLTexture.this.textureId, this.width, 0, this.format, this.type);
-
-            if (this.generateMipmap) {
-                GL30.glGenerateMipmap(GLTextureTarget.GL_TEXTURE_1D.value);
-
-                assert GL11.glGetError() == GL11.GL_NO_ERROR : "glGenerateMipmap(GL_TEXTURE_1D) failed!";
-            }
-
-            GL11.glBindTexture(GLTextureTarget.GL_TEXTURE_1D.value, 0);
-
-            assert GL11.glGetError() == GL11.GL_NO_ERROR : "glBindTexture(GL_TEXTURE_1D, 0) failed!";
+            GLTexture.this.textureId = dsa.glCreateTextures(GL11.GL_TEXTURE_1D);
+            dsa.glTextureStorage1d(textureId, mipmaps, this.internalFormat.value, width);
             GLTexture.this.target = GLTextureTarget.GL_TEXTURE_1D;
         }
+    }
+
+    /**
+     * Generates mipmaps for the GLTexture.
+     *
+     * @since 15.07.08
+     */
+    public void generateMipmap() {
+        new GenerateMipmapTask().glRun(this.getThread());
+    }
+
+    /**
+     * A GLTask that generates mipmap levels.
+     *
+     * @since 15.07.08
+     */
+    public class GenerateMipmapTask extends GLTask {
+
+        @Override
+        public void run() {
+            if (!GLTexture.this.isValid()) {
+                throw new GLException("Invalid GLTexture object!");
+            }
+
+            final DirectStateAccess dsa = GLTools.getDSAInstance();
+
+            if (dsa instanceof EXTDirectStateAccessPatch) {
+                ((EXTDirectStateAccessPatch) dsa).glGenerateTextureMipmap(textureId, GLTexture.this.target.value);
+            } else {
+                dsa.glGenerateTextureMipmap(textureId);
+            }
+        }
+
     }
 
     private SetTextureBufferTask lastSetTexBufferTask = null;
@@ -1103,7 +1086,7 @@ public class GLTexture extends GLObject {
         @Override
         public void run() {
             if (!GLTexture.this.isValid()) {
-                throw new GLException("GLTexture is invalid!");
+                throw new GLException("GLTexture is invalid! You must allocate a texture prior to assigning a texture buffer!");
             }
 
             if (!this.buffer.isValid()) {
@@ -1139,14 +1122,34 @@ public class GLTexture extends GLObject {
         }
     }
 
-    public void setAttributes(final GLTextureParameters params) {
+    /**
+     * Sets the texture parameters for the GLTexture object.
+     *
+     * @param params the texture parameters.
+     * @return self reference.
+     * @since 15.07.08
+     */
+    public GLTexture setAttributes(final GLTextureParameters params) {
         new SetAttributesTask(params).glRun(this.getThread());
+        return this;
     }
 
+    /**
+     * A GLTask that sets the texture parameters.
+     *
+     * @since 15.07.08
+     */
     public class SetAttributesTask extends GLTask {
 
-        final GLTextureParameters params;
+        public final GLTextureParameters params;
 
+        /**
+         * Constructs a new SetAttributesTask.
+         *
+         * @param params the texture parameters.
+         * @throws NullPointerException if params is null.
+         * @since 15.07.08
+         */
         public SetAttributesTask(final GLTextureParameters params) {
             Objects.requireNonNull(this.params = params);
         }
@@ -1154,34 +1157,34 @@ public class GLTexture extends GLObject {
         @Override
         public void run() {
             if (!GLTexture.this.isValid()) {
-                throw new GLException("Invalid GLTexture!");
+                throw new GLException("Invalid GLTexture! GLTexture must be allocated prior to setting attributes.");
             }
 
-            final int target = GL11.GL_TEXTURE_2D;
+            final DirectStateAccess dsa = GLTools.getDSAInstance();
 
-            GLTools.getDSAInstance()
-                    .glTextureParameteri(textureId, target, GL11.GL_TEXTURE_MIN_FILTER, this.params.minFilter.value);
+            if (dsa instanceof EXTDirectStateAccessPatch) {
+                final EXTDirectStateAccessPatch patch = (EXTDirectStateAccessPatch) dsa;
+                final int target = GLTexture.this.target.value;
 
-            GLTools.getDSAInstance()
-                    .glTextureParameteri(textureId, target, GL11.GL_TEXTURE_MAG_FILTER, this.params.magFilter.value);
+                patch.glTextureParameteri(textureId, target, GL11.GL_TEXTURE_MIN_FILTER, this.params.minFilter.value);
+                patch.glTextureParameteri(textureId, target, GL11.GL_TEXTURE_MAG_FILTER, this.params.magFilter.value);
+                patch.glTextureParameteri(textureId, target, GL11.GL_TEXTURE_WRAP_S, this.params.wrapS.value);
+                patch.glTextureParameteri(textureId, target, GL11.GL_TEXTURE_WRAP_T, this.params.wrapT.value);
+                patch.glTextureParameteri(textureId, target, GL12.GL_TEXTURE_WRAP_R, this.params.wrapR.value);
+                patch.glTextureParameterf(textureId, target, GL12.GL_TEXTURE_MIN_LOD, this.params.minLOD);
+                patch.glTextureParameterf(textureId, target, GL12.GL_TEXTURE_MAX_LOD, this.params.maxLOD);
+                patch.glTextureParameterf(textureId, target, EXTTextureFilterAnisotropic.GL_TEXTURE_MAX_ANISOTROPY_EXT, this.params.anisotropicLevel);
+            } else {
+                dsa.glTextureParameteri(textureId, GL11.GL_TEXTURE_MIN_FILTER, this.params.minFilter.value);
+                dsa.glTextureParameteri(textureId, GL11.GL_TEXTURE_MAG_FILTER, this.params.magFilter.value);
+                dsa.glTextureParameteri(textureId, GL11.GL_TEXTURE_WRAP_S, this.params.wrapS.value);
+                dsa.glTextureParameteri(textureId, GL11.GL_TEXTURE_WRAP_T, this.params.wrapT.value);
+                dsa.glTextureParameteri(textureId, GL12.GL_TEXTURE_WRAP_R, this.params.wrapR.value);
+                dsa.glTextureParameterf(textureId, GL12.GL_TEXTURE_MIN_LOD, this.params.minLOD);
+                dsa.glTextureParameterf(textureId, GL12.GL_TEXTURE_MAX_LOD, this.params.maxLOD);
+                dsa.glTextureParameterf(textureId, EXTTextureFilterAnisotropic.GL_TEXTURE_MAX_ANISOTROPY_EXT, this.params.anisotropicLevel);
+            }
 
-            GLTools.getDSAInstance()
-                    .glTextureParameteri(textureId, target, GL11.GL_TEXTURE_WRAP_S, this.params.wrapS.value);
-
-            GLTools.getDSAInstance()
-                    .glTextureParameteri(textureId, target, GL11.GL_TEXTURE_WRAP_T, this.params.wrapT.value);
-
-            GLTools.getDSAInstance()
-                    .glTextureParameteri(textureId, target, GL12.GL_TEXTURE_WRAP_R, this.params.wrapR.value);
-
-            GLTools.getDSAInstance()
-                    .glTextureParameterf(textureId, target, GL12.GL_TEXTURE_MIN_LOD, this.params.minLOD);
-
-            GLTools.getDSAInstance()
-                    .glTextureParameterf(textureId, target, GL12.GL_TEXTURE_MAX_LOD, this.params.maxLOD);
-
-            GLTools.getDSAInstance()
-                    .glTextureParameterf(textureId, target, EXTTextureFilterAnisotropic.GL_TEXTURE_MAX_ANISOTROPY_EXT, this.params.anisotropicLevel);                        
         }
     }
 

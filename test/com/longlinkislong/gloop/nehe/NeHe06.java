@@ -197,7 +197,7 @@ public class NeHe06 {
             final int[] pixels = new int[bImg.getWidth() * bImg.getHeight()];
 
             final GLTextureParameters attribs = new GLTextureParameters()
-                    .withFilter(GLTextureMinFilter.GL_LINEAR_MIPMAP_LINEAR, GLTextureMagFilter.GL_LINEAR)
+                    .withFilter(GLTextureMinFilter.GL_LINEAR, GLTextureMagFilter.GL_LINEAR)
                     .withWrap(GLTextureWrap.GL_CLAMP_TO_EDGE, GLTextureWrap.GL_CLAMP_TO_EDGE, GLTextureWrap.GL_CLAMP_TO_EDGE);
 
             bImg.getRGB(0, 0, bImg.getWidth(), bImg.getHeight(), pixels, 0, bImg.getWidth());
@@ -205,15 +205,11 @@ public class NeHe06 {
             Arrays.stream(pixels).forEach(pBuf::putInt);
 
             pBuf.flip();
-
-            texture.setAttributes(attribs);
-            texture.setImage(
-                    GLTexture.GENERATE_MIPMAP,
-                    GLTextureInternalFormat.GL_RGBA8,
-                    GLTextureFormat.GL_BGRA,
-                    bImg.getWidth(), bImg.getHeight(),
-                    GLType.GL_UNSIGNED_BYTE, pBuf);
-
+            
+            texture
+                    .allocate(1, GLTextureInternalFormat.GL_RGBA8, bImg.getWidth(), bImg.getHeight())
+                    .setAttributes(attribs)
+                    .updateImage(0, 0, 0, bImg.getWidth(), bImg.getHeight(), GLTextureFormat.GL_BGRA, GLType.GL_UNSIGNED_BYTE, pBuf);            
         }
 
         this.drawTask = GLTask.create(() -> {
@@ -230,12 +226,11 @@ public class NeHe06 {
                 final GLMat4F tr = GLMat4F.translation(0f, 0f, -5f);
 
                 trCube = rz.multiply(ry.multiply(rx.multiply(tr)));
-            }
-
-            program.use();
+            }            
 
             setTr.set(trCube).glRun();
             texture.bind(0);
+            program.use();
             vaoCube.drawElements(GLDrawMode.GL_TRIANGLES, cubeVerts, GLIndexElementType.GL_UNSIGNED_INT, 0);
 
             xRot += 0.015f;
