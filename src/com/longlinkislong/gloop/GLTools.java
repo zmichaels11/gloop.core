@@ -143,6 +143,7 @@ public class GLTools {
      * the buffer is direct and native order.
      *
      * @param data the buffer to check
+     * @return the ByteBuffer
      * @throws GLException if buffer is not direct.
      * @throws GLException if buffer is not in native byte order.     
      * @since 15.06.13
