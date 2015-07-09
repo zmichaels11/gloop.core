@@ -232,6 +232,46 @@ public class GL45DSA implements DirectStateAccess {
         GL45.glGenerateTextureMipmap(textureId);
     }
 
+    @Override
+    public int glCreateVertexArrays() {
+        return GL45.glCreateVertexArrays();
+    }
+
+    @Override
+    public void glEnableVertexArrayAttrib(int vaobj, int index) {
+        GL45.glEnableVertexArrayAttrib(vaobj, index);
+    }
+
+    @Override
+    public void glDisableVertexArrayAttrib(int vaobj, int index) {
+        GL45.glDisableVertexArrayAttrib(vaobj, index);
+    }
+
+    @Override
+    public void glVertexArrayElementBuffer(int vaobj, int index) {
+        GL45.glVertexArrayElementBuffer(vaobj, index);
+    }
+
+    @Override
+    public void glVertexArrayVertexBuffer(int vaobj, int bindingIndex, int buffer, long offset, int stride) {
+        GL45.glVertexArrayVertexBuffer(vaobj, bindingIndex, buffer, offset, stride);
+    }
+
+    @Override
+    public void glVertexArrayAttribFormat(int vaobj, int attribIndex, int size, int type, boolean normalized, int relativeOffset) {
+        GL45.glVertexArrayAttribFormat(vaobj, attribIndex, size, type, normalized, relativeOffset);
+    }
+
+    @Override
+    public void glVertexArrayAttribBinding(int vaobj, int attribIndex, int bindingIndex) {
+        GL45.glVertexArrayAttribBinding(vaobj, attribIndex, bindingIndex);
+    }
+
+    @Override
+    public void glVertexArrayBindingDivisor(int vaobj, int attribIndex, int divisor) {
+        GL45.glVertexArrayBindingDivisor(vaobj, attribIndex, divisor);
+    }
+
     private static class Holder {
 
         private static final DirectStateAccess INSTANCE = new GL45DSA();

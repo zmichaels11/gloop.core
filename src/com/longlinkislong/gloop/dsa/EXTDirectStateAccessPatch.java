@@ -32,10 +32,32 @@ public interface EXTDirectStateAccessPatch extends DirectStateAccess {
     
     void glTextureImage3d(int texture, int target, int level, int internalFormat, int width, int height, int depth, int border, int format, int type, ByteBuffer pixels);
     
-    void glTextureImage3d(int texture, int target, int level, int internalFormat, int width, int height, int depth, int border, int format, int type, long ptr);
+    void glTextureImage3d(int texture, int target, int level, int internalFormat, int width, int height, int depth, int border, int format, int type, long ptr);        
+    
+    void glVertexArrayVertexAttribOffset(int vaobj, int bufferId, int index, int size, int type, boolean normalized, int stride, long offset);
     
     @Override
-    default void glTextureParameteri(int textureId, int pName, int val) {        
+    default void glVertexArrayElementBuffer(int vaobj, int index) {
+        throw new UnsupportedOperationException("glVertexArrayElementBuffer is not supported in implementation: " + this.getClass().getName());
+    }
+    
+    @Override
+    default void glVertexArrayVertexBuffer(int vaobj, int bindingIndex, int buffer, long offset, int stride) {
+        throw new UnsupportedOperationException("glVertexArrayVertexBuffer is not supported in implementation: " + this.getClass().getName());
+    }
+    
+    @Override
+    default void glVertexArrayAttribFormat(int vaobj, int attribIndex, int size, int type, boolean normalized, int relativeOffset) {
+        throw new UnsupportedOperationException("glVertexArrayAttribFormat is not supported in implementation: " + this.getClass().getName());
+    }
+    
+    @Override
+    default void glVertexArrayAttribBinding(int vaobj, int attribIndex, int bindingIndex) {
+        throw new UnsupportedOperationException("glVertexArrayAttribBinding is not supported in implementation: " + this.getClass().getName());
+    }        
+    
+    @Override
+    default void glTextureParameteri(int textureId, int pName, int val) {             
         throw new UnsupportedOperationException("glTextureParameteri requires target in implementation: " + this.getClass().getName());
     }
     

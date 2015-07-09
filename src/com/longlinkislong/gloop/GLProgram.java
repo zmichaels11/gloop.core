@@ -15,6 +15,11 @@ import java.util.Iterator;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
+import org.lwjgl.opengl.ARBComputeShader;
+import org.lwjgl.opengl.ARBProgramInterfaceQuery;
+import org.lwjgl.opengl.ARBShaderStorageBufferObject;
+import org.lwjgl.opengl.ContextCapabilities;
+import org.lwjgl.opengl.GL;
 import org.lwjgl.opengl.GL11;
 import org.lwjgl.opengl.GL20;
 import org.lwjgl.opengl.GL30;
@@ -27,7 +32,8 @@ import org.lwjgl.opengl.GL43;
  * @author zmichaels
  * @since 15.05.27
  */
-public class GLProgram extends GLObject {    
+public class GLProgram extends GLObject {
+
     private static final FloatBuffer TEMPF = ByteBuffer
             .allocateDirect(16 << 2)
             .order(ByteOrder.nativeOrder())
@@ -40,8 +46,79 @@ public class GLProgram extends GLObject {
     private static final Map<Thread, GLProgram> CURRENT = new HashMap<>();
     private static final int INVALID_PROGRAM_ID = -1;
     protected int programId = INVALID_PROGRAM_ID;
-    private final Map<String, Integer> uniforms = new HashMap<>();        
+    private final Map<String, Integer> uniforms = new HashMap<>();
+
+    @FunctionalInterface
+    private interface TransformFeedbackVaryings {
+
+        void call(int programId, CharSequence[] varyings, int type);
+    }
+
+    private static final TransformFeedbackVaryings NULL_TRANSFORM_FEEDBACK_VARYINGS = (programId, varyings, type) -> {
+        throw new IllegalStateException("glTransformFeedbackVaryings was called before being fetched! An instance of GLProgram.InitTask must run prior to calling glTransformFeedbackVaryings.");
+    };
+    private TransformFeedbackVaryings glTransformFeedbackVaryings = NULL_TRANSFORM_FEEDBACK_VARYINGS;
+
+    @FunctionalInterface
+    private interface DispatchCompute {
+
+        void call(int groupX, int groupY, int groupZ);
+    }
+
+    private static final DispatchCompute NULL_DISPATCH_COMPUTE = (x, y, z) -> {
+        throw new IllegalStateException("glDispatchCompute was called before being fetched! An instance of GLProgram.InitTask must run prior to calling glDispatchCompute.");
+    };
+    private DispatchCompute glDispatchCompute = NULL_DISPATCH_COMPUTE;
     
+    @FunctionalInterface
+    private interface GetProgramResourceLocation {
+        int get(int programId, int resourceType, CharSequence location);
+    }
+    private static final GetProgramResourceLocation NULL_GET_PROGRAM_RESOURCE_LOCATION = (programId, resourceType, location) -> {
+        throw new IllegalStateException("glGetProgramResourceLocation was called before being fetched! An instance of GLProgram.InitTask must run prior to calling glGetProgramResourceLocation.");
+    };
+    private GetProgramResourceLocation glGetProgramResourceLocation = NULL_GET_PROGRAM_RESOURCE_LOCATION;
+    
+    @FunctionalInterface
+    private interface BindBufferBase {
+        void call(int target, int bindIndex, int bufferId);
+    }
+    
+    private static final BindBufferBase NULL_BIND_BUFFER_BASE = (target, bindIndex, bufferId) -> {
+        throw new IllegalStateException("glBindBufferBase was called before being fetched! An instance of GLProgram.InitTask must run prior to calling glBindBufferBase.");
+    };
+    private BindBufferBase glBindBufferBase = NULL_BIND_BUFFER_BASE;
+    
+    @FunctionalInterface
+    private interface ShaderStorageBlockBinding {
+        void call(int programId, int blockIndex, int bindingIndex);
+    }
+    
+    private static final ShaderStorageBlockBinding NULL_SHADER_STORAGE_BLOCK_BINDING = (programId, blockIndex, bindingIndex) -> {
+        throw new IllegalStateException("glShaderStorageBlockBinding was called before being fetched! An instance of GLProgram.InitTask must run prior to calling glShaderStorageBlockBinding.");
+    };
+    private ShaderStorageBlockBinding glShaderStorageBlockBinding = NULL_SHADER_STORAGE_BLOCK_BINDING;
+    
+    @FunctionalInterface
+    private interface GetUniformBlockIndex {
+        int get(int programId, CharSequence uniformBlockLocation);
+    }
+    
+    private static final GetUniformBlockIndex NULL_GET_UNIFORM_BLOCK_INDEX = (programId, blockLocation) -> {
+        throw new IllegalStateException("glGetUniformBlockIndex was called before being fetched! An instance of GLProgram.InitTask must run prior to calling glGetUniformBlockIndex.");
+    };
+    private GetUniformBlockIndex glGetUniformBlockIndex = NULL_GET_UNIFORM_BLOCK_INDEX;
+    
+    @FunctionalInterface
+    private interface UniformBlockBinding {
+        void call(int programId, int blockIndex, int bindingPoint);
+    }
+    
+    private static final UniformBlockBinding NULL_UNIFORM_BLOCK_BINDING = (programId, blockIndex, bindingPoint) -> {
+        throw new IllegalStateException("glUniformBlockBinding was called before being fetched! An instance of GLProgram.InitTask must run prior to calling glUniformBlockBinding.");
+    };
+    private UniformBlockBinding glUniformBlockBinding = NULL_UNIFORM_BLOCK_BINDING;
+
     /**
      * Constructs a new GLProgram using the default GLThread.
      *
@@ -119,7 +196,7 @@ public class GLProgram extends GLObject {
     private int getUniformLoc(final String uName) {
         if (this.uniforms.containsKey(uName)) {
             return this.uniforms.get(uName);
-        } else {                        
+        } else {
             final int uLoc = GL20.glGetUniformLocation(programId, uName);
 
             assert GL11.glGetError() == GL11.GL_NO_ERROR : String.format("glGetUniformLocation(%d, %s) failed!", programId, uName);
@@ -163,7 +240,7 @@ public class GLProgram extends GLObject {
             if (!GLProgram.this.isValid()) {
                 throw new GLException("Invalid GLProgram!");
             } else {
-                this.attribs.nameMap.forEach((name, index) -> {                    
+                this.attribs.nameMap.forEach((name, index) -> {
                     GL20.glBindAttribLocation(
                             GLProgram.this.programId,
                             index, name);
@@ -182,7 +259,7 @@ public class GLProgram extends GLObject {
                         varyings[i] = it.next();
                     }
 
-                    GL30.glTransformFeedbackVaryings(
+                    GLProgram.this.glTransformFeedbackVaryings.call(
                             GLProgram.this.programId,
                             varyings,
                             GL30.GL_SEPARATE_ATTRIBS);
@@ -314,22 +391,22 @@ public class GLProgram extends GLObject {
         public void run() {
             if (!GLProgram.this.isValid()) {
                 throw new GLException("GLProgram is not valid!");
-            }            
+            }
 
             final int uLoc = GLProgram.this.getUniformLoc(uName);
-            
+
             TEMPD.clear();
             TEMPD.put(this.values).flip();
 
             switch (this.count) {
                 case 4:
-                    GLTools.getDSAInstance().glProgramUniformMatrix2d(GLProgram.this.programId, uLoc, false, TEMPD);                    
+                    GLTools.getDSAInstance().glProgramUniformMatrix2d(GLProgram.this.programId, uLoc, false, TEMPD);
                     break;
                 case 9:
-                    GLTools.getDSAInstance().glProgramUniformMatrix3d(GLProgram.this.programId, uLoc, false, TEMPD);                    
+                    GLTools.getDSAInstance().glProgramUniformMatrix3d(GLProgram.this.programId, uLoc, false, TEMPD);
                     break;
                 case 16:
-                    GLTools.getDSAInstance().glProgramUniformMatrix4d(GLProgram.this.programId, uLoc, false, TEMPD);                    
+                    GLTools.getDSAInstance().glProgramUniformMatrix4d(GLProgram.this.programId, uLoc, false, TEMPD);
                     break;
             }
         }
@@ -428,17 +505,17 @@ public class GLProgram extends GLObject {
             if (!GLProgram.this.isValid()) {
                 throw new GLException("GLProgram is not valid!");
             }
-            
+
             final int uLoc = GLProgram.this.getUniformLoc(this.uName);
             TEMPF.put(values);
             TEMPF.flip();
 
             switch (this.count) {
                 case 4:
-                    GLTools.getDSAInstance().glProgramUniformMatrix2f(GLProgram.this.programId, uLoc, false, TEMPF);                    
+                    GLTools.getDSAInstance().glProgramUniformMatrix2f(GLProgram.this.programId, uLoc, false, TEMPF);
                     break;
                 case 9:
-                    GLTools.getDSAInstance().glProgramUniformMatrix3f(GLProgram.this.programId, uLoc, false, TEMPF);                    
+                    GLTools.getDSAInstance().glProgramUniformMatrix3f(GLProgram.this.programId, uLoc, false, TEMPF);
                     break;
                 case 16:
                     GLTools.getDSAInstance().glProgramUniformMatrix4f(GLProgram.this.programId, uLoc, false, TEMPF);
@@ -589,13 +666,13 @@ public class GLProgram extends GLObject {
         public void run() {
             if (!GLProgram.this.isValid()) {
                 throw new GLException("GLProgram is not valid!");
-            }                       
+            }
 
             final int uLoc = GLProgram.this.getUniformLoc(this.uName);
 
             switch (this.count) {
                 case 1:
-                    GLTools.getDSAInstance().glProgramUniform1d(GLProgram.this.programId, uLoc, this.values[0]);                    
+                    GLTools.getDSAInstance().glProgramUniform1d(GLProgram.this.programId, uLoc, this.values[0]);
                     break;
                 case 2:
                     GLTools.getDSAInstance().glProgramUniform2d(GLProgram.this.programId, uLoc, this.values[0], this.values[1]);
@@ -703,13 +780,13 @@ public class GLProgram extends GLObject {
         public void run() {
             if (!GLProgram.this.isValid()) {
                 throw new GLException("GLProgram is not valid!");
-            }            
+            }
 
             final int uLoc = GLProgram.this.getUniformLoc(this.uName);
 
             switch (this.count) {
                 case 1:
-                    GLTools.getDSAInstance().glProgramUniform1i(GLProgram.this.programId, uLoc, this.values[0]);                    
+                    GLTools.getDSAInstance().glProgramUniform1i(GLProgram.this.programId, uLoc, this.values[0]);
                     break;
                 case 2:
                     GLTools.getDSAInstance().glProgramUniform2i(GLProgram.this.programId, uLoc, this.values[0], this.values[1]);
@@ -860,7 +937,7 @@ public class GLProgram extends GLObject {
         public void run() {
             if (!GLProgram.this.isValid()) {
                 throw new GLException("GLProgram is not valid!");
-            }            
+            }
 
             final int uLoc = GLProgram.this.getUniformLoc(this.uName);
 
@@ -869,7 +946,7 @@ public class GLProgram extends GLObject {
                     GLTools.getDSAInstance().glProgramUniform1f(GLProgram.this.programId, uLoc, this.values[0]);
                     break;
                 case 2:
-                    GLTools.getDSAInstance().glProgramUniform2f(GLProgram.this.programId, uLoc, this.values[0], this.values[1]);                    
+                    GLTools.getDSAInstance().glProgramUniform2f(GLProgram.this.programId, uLoc, this.values[0], this.values[1]);
                     break;
                 case 3:
                     GLTools.getDSAInstance().glProgramUniform3f(GLProgram.this.programId, uLoc, this.values[0], this.values[1], this.values[2]);
@@ -1044,7 +1121,67 @@ public class GLProgram extends GLObject {
                 throw new GLException("Cannot reinit GLProgram!");
             }
 
-            GLProgram.this.programId = GL20.glCreateProgram();
+            final ContextCapabilities cap = GL.getCapabilities();
+            
+            if(cap.OpenGL30) {
+                GLProgram.this.glBindBufferBase = GL30::glBindBufferBase;                
+            } else {
+                GLProgram.this.glBindBufferBase = (target, index, bufferId) -> {
+                    throw new UnsupportedOperationException("glBindBufferBase is not supported! glBindBufferBase requires an OpenGL 3.0 context.");
+                };                
+            }
+            
+            if(cap.OpenGL43) {
+                GLProgram.this.glDispatchCompute = GL43::glDispatchCompute;
+            } else if (cap.GL_ARB_compute_shader) {
+                GLProgram.this.glDispatchCompute = ARBComputeShader::glDispatchCompute;
+            } else {
+                GLProgram.this.glDispatchCompute = (x, y, z) -> {
+                    throw new UnsupportedOperationException("glDispatchCompute is not supported! glDispatchCompute requires either an OpenGL 4.3 context or ARB_compute_shader.");
+                };
+            }
+            
+            if(cap.OpenGL43) {                
+                GLProgram.this.glGetProgramResourceLocation = GL43::glGetProgramResourceLocation;
+            } else if(cap.GL_ARB_program_interface_query) {
+                GLProgram.this.glGetProgramResourceLocation = ARBProgramInterfaceQuery::glGetProgramResourceLocation;
+            } else {
+                GLProgram.this.glGetProgramResourceLocation = (program, programInterface, name) -> {
+                    throw new UnsupportedOperationException("glGetProgramResourceLocation is not supported! glGetProgramResourceLocation requires either an OpenGL 4.3 context or ARB_program_interface_query.");
+                };
+            }
+            
+            if(cap.OpenGL31) {
+                GLProgram.this.glGetUniformBlockIndex = GL31::glGetUniformBlockIndex;
+                GLProgram.this.glUniformBlockBinding = GL31::glUniformBlockBinding;
+            } else {
+                GLProgram.this.glGetUniformBlockIndex = (programId, name) -> {
+                    throw new UnsupportedOperationException("glGetUniformBlockIndex is not supported! glGetUniformBlockIndex requires an OpenGL 3.1 context.");
+                };
+                GLProgram.this.glUniformBlockBinding = (programId, uniformBlockIndex, uniformBlockBinding) -> {
+                    throw new UnsupportedOperationException("glUniformBlockBinding is not supported! glUniformBlockBinding requires an OpenGL 3.1 context.");
+                };
+            }
+            
+            if(cap.OpenGL43) {
+                GLProgram.this.glShaderStorageBlockBinding = GL43::glShaderStorageBlockBinding;                
+            } else if(cap.GL_ARB_shader_storage_buffer_object) {
+                GLProgram.this.glShaderStorageBlockBinding = ARBShaderStorageBufferObject::glShaderStorageBlockBinding;
+            } else {
+                GLProgram.this.glShaderStorageBlockBinding = (programId, storageBlockIndex, storageBlockBinding) -> {
+                    throw new UnsupportedOperationException("glShaderStorageBlockBinding is not supported! glShaderStorageBlockBinding requires either an OpenGL 4.3 context or ARB_shader_storage_buffer_object.");
+                };
+            }
+            
+            if(cap.OpenGL30) {
+                GLProgram.this.glTransformFeedbackVaryings = GL30::glTransformFeedbackVaryings;                
+            } else {
+                GLProgram.this.glTransformFeedbackVaryings = (programId, varyings, bufferMode) -> {
+                    throw new UnsupportedOperationException("glTransformFeedbackVaryings is not supported! glTransformFeedbackVaryings requires an OpenGL 3.0 context.");
+                };
+            }                        
+            
+            GLProgram.this.programId = GL20.glCreateProgram();            
 
             assert GL11.glGetError() == GL11.GL_NO_ERROR : System.out.printf("glCreateProgram = %d failed!", GLProgram.this.programId);
         }
@@ -1077,6 +1214,13 @@ public class GLProgram extends GLObject {
             assert GL11.glGetError() == GL11.GL_NO_ERROR : String.format("glDeleteProgram(%d) failed!", GLProgram.this.programId);
 
             GLProgram.this.programId = INVALID_PROGRAM_ID;
+            GLProgram.this.glBindBufferBase = NULL_BIND_BUFFER_BASE;
+            GLProgram.this.glDispatchCompute = NULL_DISPATCH_COMPUTE;
+            GLProgram.this.glGetProgramResourceLocation = NULL_GET_PROGRAM_RESOURCE_LOCATION;
+            GLProgram.this.glGetUniformBlockIndex = NULL_GET_UNIFORM_BLOCK_INDEX;
+            GLProgram.this.glShaderStorageBlockBinding = NULL_SHADER_STORAGE_BLOCK_BINDING;
+            GLProgram.this.glTransformFeedbackVaryings = NULL_TRANSFORM_FEEDBACK_VARYINGS;
+            GLProgram.this.glUniformBlockBinding = NULL_UNIFORM_BLOCK_BINDING;
         }
     }
 
@@ -1113,7 +1257,7 @@ public class GLProgram extends GLObject {
 
             final int uLoc = GLProgram.this.getUniformLoc(uName);
 
-            GLTools.getDSAInstance().glProgramUniform1i(GLProgram.this.programId, uLoc, this.bindTask.activeTexture);            
+            GLTools.getDSAInstance().glProgramUniform1i(GLProgram.this.programId, uLoc, this.bindTask.activeTexture);
         }
     }
 
@@ -1164,19 +1308,18 @@ public class GLProgram extends GLObject {
             } else if (!this.buffer.isValid()) {
                 throw new GLException("Invalid GLBuffer object!");
             }
-
-            final int sBlock = GL43.glGetProgramResourceLocation(GLProgram.this.programId, GL43.GL_SHADER_STORAGE_BLOCK, this.storageName);
+            
+            final int sBlock = GLProgram.this.glGetProgramResourceLocation.get(GLProgram.this.programId, GL43.GL_SHADER_STORAGE_BLOCK, this.storageName);
 
             assert GL11.glGetError() == GL11.GL_NO_ERROR : String.format("glGetProgramResourceLocation(%d, GL_SHADER_STORAGE_BLOCK, %s) failed!",
                     GLProgram.this.programId, this.storageName);
 
-            
-            GL30.glBindBufferBase(GLBufferTarget.GL_SHADER_STORAGE_BUFFER.value, this.bindingPoint, this.buffer.bufferId);
+            GLProgram.this.glBindBufferBase.call(GLBufferTarget.GL_SHADER_STORAGE_BUFFER.value, this.bindingPoint, this.buffer.bufferId);
 
             assert GL11.glGetError() == GL11.GL_NO_ERROR : String.format("glBindBufferBase(GL_SHADER_STORAGE_BUFFER, %d, %d) failed!",
                     this.bindingPoint, this.buffer.bufferId);
 
-            GL43.glShaderStorageBlockBinding(GLProgram.this.programId, sBlock, this.bindingPoint);
+            GLProgram.this.glShaderStorageBlockBinding.call(GLProgram.this.programId, sBlock, this.bindingPoint);
 
             assert GL11.glGetError() == GL11.GL_NO_ERROR : String.format("glShaderStorageBlockBinding(%d, %d, %d) failed!",
                     GLProgram.this.programId, sBlock, this.bindingPoint);
@@ -1228,19 +1371,19 @@ public class GLProgram extends GLObject {
                 throw new GLException("Invalid GLProgram object!");
             } else if (!this.buffer.isValid()) {
                 throw new GLException("Invalid GLBuffer object!");
-            }            
-            
-            final int uBlock = GL31.glGetUniformBlockIndex(GLProgram.this.programId, this.blockName);
+            }
+
+            final int uBlock = GLProgram.this.glGetUniformBlockIndex.get(GLProgram.this.programId, this.blockName);
 
             assert GL11.glGetError() == GL11.GL_NO_ERROR : String.format("glGetUniformBlockIndex(%d, %s) = %d failed!",
                     GLProgram.this.programId, this.blockName, uBlock);
 
-            GL30.glBindBufferBase(GLBufferTarget.GL_UNIFORM_BUFFER.value, this.bindingPoint, this.buffer.bufferId);
+            GLProgram.this.glBindBufferBase.call(GLBufferTarget.GL_UNIFORM_BUFFER.value, this.bindingPoint, this.buffer.bufferId);
 
             assert GL11.glGetError() == GL11.GL_NO_ERROR : String.format("glBindBufferBase(GL_UNIFORM_BUFFER, %d, %d) failed!",
                     this.bindingPoint, this.buffer.bufferId);
-
-            GL31.glUniformBlockBinding(GLProgram.this.programId, uBlock, this.bindingPoint);
+            
+            GLProgram.this.glUniformBlockBinding.call(GLProgram.this.programId, uBlock, this.bindingPoint);
 
             assert GL11.glGetError() == GL11.GL_NO_ERROR : String.format("glUniformBlockBinding(%d, %d, %d) failed!",
                     GLProgram.this.programId, uBlock, this.bindingPoint);
@@ -1293,8 +1436,7 @@ public class GLProgram extends GLObject {
             }
 
             GLProgram.this.use();
-            GL43.glDispatchCompute(this.numX, this.numY, this.numZ);
-
+            GLProgram.this.glDispatchCompute.call(this.numX, this.numY, this.numZ);
             assert GL11.glGetError() == GL11.GL_NO_ERROR : String.format("glDispatchCompute(%d, %d, %d) failed!", this.numX, this.numY, this.numZ);
         }
     }

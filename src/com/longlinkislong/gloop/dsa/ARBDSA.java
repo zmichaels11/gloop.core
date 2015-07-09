@@ -55,6 +55,46 @@ public class ARBDSA implements DirectStateAccess {
         return ARBDirectStateAccess.glGetNamedBufferParameteri(bufferId, pName);
     }
 
+    @Override
+    public int glCreateVertexArrays() {
+        return ARBDirectStateAccess.glCreateVertexArrays();
+    }
+
+    @Override
+    public void glEnableVertexArrayAttrib(int vaobj, int index) {
+        ARBDirectStateAccess.glEnableVertexArrayAttrib(vaobj, index);
+    }
+
+    @Override
+    public void glDisableVertexArrayAttrib(int vaobj, int index) {
+        ARBDirectStateAccess.glDisableVertexArrayAttrib(vaobj, index);
+    }
+
+    @Override
+    public void glVertexArrayElementBuffer(int vaobj, int index) {
+        ARBDirectStateAccess.glVertexArrayElementBuffer(vaobj, index);
+    }
+
+    @Override
+    public void glVertexArrayVertexBuffer(int vaobj, int bindingIndex, int buffer, long offset, int stride) {
+        ARBDirectStateAccess.glVertexArrayVertexBuffer(vaobj, bindingIndex, buffer, offset, stride);
+    }
+
+    @Override
+    public void glVertexArrayAttribFormat(int vaobj, int attribIndex, int size, int type, boolean normalized, int relativeOffset) {
+        ARBDirectStateAccess.glVertexArrayAttribFormat(vaobj, attribIndex, size, type, normalized, relativeOffset);
+    }
+
+    @Override
+    public void glVertexArrayAttribBinding(int vaobj, int attribIndex, int bindingIndex) {
+        ARBDirectStateAccess.glVertexArrayAttribBinding(vaobj, attribIndex, bindingIndex);
+    }
+
+    @Override
+    public void glVertexArrayBindingDivisor(int vaobj, int attribIndex, int divisor) {
+        ARBDirectStateAccess.glVertexArrayBindingDivisor(vaobj, attribIndex, divisor);
+    }
+
     private static class Holder {
 
         private static final DirectStateAccess INSTANCE = new ARBDSA();

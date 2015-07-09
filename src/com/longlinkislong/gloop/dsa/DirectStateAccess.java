@@ -21,7 +21,21 @@ public interface DirectStateAccess {
 
     int glCreateTextures(int target);
     
+    int glCreateVertexArrays();
     
+    void glEnableVertexArrayAttrib(int vaobj, int index);
+    
+    void glDisableVertexArrayAttrib(int vaobj, int index);
+    
+    void glVertexArrayElementBuffer(int vaobj, int index);
+    
+    void glVertexArrayVertexBuffer(int vaobj, int bindingIndex, int buffer, long offset, int stride);
+    
+    void glVertexArrayAttribFormat(int vaobj, int attribIndex, int size, int type, boolean normalized, int relativeOffset);
+    
+    void glVertexArrayAttribBinding(int vaobj, int attribIndex, int bindingIndex);
+    
+    void glVertexArrayBindingDivisor(int vaobj, int attribIndex, int divisor);
 
     void glNamedBufferData(int bufferId, long size, int usage);
 
