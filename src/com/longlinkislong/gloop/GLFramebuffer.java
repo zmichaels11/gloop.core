@@ -5,12 +5,18 @@
  */
 package com.longlinkislong.gloop;
 
+import com.longlinkislong.gloop.dsa.DirectStateAccess;
+import com.longlinkislong.gloop.dsa.EXTDirectStateAccessPatch;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.nio.IntBuffer;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Objects;
+import org.lwjgl.opengl.ARBFramebufferObject;
+import org.lwjgl.opengl.ContextCapabilities;
+import org.lwjgl.opengl.EXTFramebufferObject;
+import org.lwjgl.opengl.GL;
 import org.lwjgl.opengl.GL11;
 import org.lwjgl.opengl.GL20;
 import org.lwjgl.opengl.GL30;
@@ -81,7 +87,7 @@ public class GLFramebuffer extends GLObject {
      */
     public static GLFramebuffer getDefaultFramebuffer(final GLThread thread) {
         if (!DEFAULT_FRAMEBUFFERS.containsKey(thread)) {
-            final GLFramebuffer fb = new GLFramebuffer(thread, 0);            
+            final GLFramebuffer fb = new GLFramebuffer(thread, 0);
 
             DEFAULT_FRAMEBUFFERS.put(thread, fb);
 
@@ -125,9 +131,7 @@ public class GLFramebuffer extends GLObject {
                 throw new GLException("GLFramebuffer already initialized!");
             }
 
-            GLFramebuffer.this.framebufferId = GL30.glGenFramebuffers();
-
-            assert GL11.glGetError() == GL11.GL_NO_ERROR : String.format("glGenFramebuffers() = %d failed!", GLFramebuffer.this.framebufferId);
+            GLFramebuffer.this.framebufferId = GLTools.getDSAInstance().glCreateFramebuffers();
         }
 
     }
@@ -150,15 +154,26 @@ public class GLFramebuffer extends GLObject {
 
         @Override
         public void run() {
-            if(GLFramebuffer.this.isLocked) {
+            if (GLFramebuffer.this.isLocked) {
                 throw new GLException("Cannot delete null instance of GLFramebuffer!");
             } else if (!GLFramebuffer.this.isValid()) {
                 throw new GLException("GLFramebuffer is not valid!");
             }
 
-            GL30.glDeleteFramebuffers(GLFramebuffer.this.framebufferId);
+            final ContextCapabilities cap = GL.getCapabilities();
 
-            assert GL11.glGetError() == GL11.GL_NO_ERROR : String.format("glDeleteFramebuffers(%d) failed!", GLFramebuffer.this.framebufferId);
+            if (cap.OpenGL30) {
+                GL30.glDeleteFramebuffers(GLFramebuffer.this.framebufferId);
+                assert GL11.glGetError() == GL11.GL_NO_ERROR : String.format("glDeleteFramebuffers(%d) failed!", GLFramebuffer.this.framebufferId);
+            } else if (cap.GL_ARB_framebuffer_object) {
+                ARBFramebufferObject.glDeleteFramebuffers(GLFramebuffer.this.framebufferId);
+                assert GL11.glGetError() == GL11.GL_NO_ERROR : String.format("glDeleteFramebuffersARB(%d) failed!", GLFramebuffer.this.framebufferId);
+            } else if (cap.GL_EXT_framebuffer_object) {
+                EXTFramebufferObject.glDeleteFramebuffersEXT(GLFramebuffer.this.framebufferId);
+                assert GL11.glGetError() == GL11.GL_NO_ERROR : String.format("glDeleteFramebuffersEXT(%d) failed!", GLFramebuffer.this.framebufferId);
+            } else {
+                throw new GLException("glDeleteFramebuffers is not supported! glDeleteFramebuffers requires either: an OpenGL 3.0 context, ARB_framebuffer_Object, or EXT_framebuffer_object.");
+            }
 
             GLFramebuffer.this.framebufferId = INVALID_FRAMEBUFFER_ID;
         }
@@ -342,46 +357,38 @@ public class GLFramebuffer extends GLObject {
                 throw new GLException("Invalid GLFramebuffer!");
             }
 
-            GL30.glBindFramebuffer(GL30.GL_FRAMEBUFFER, GLFramebuffer.this.framebufferId);
+            final DirectStateAccess dsa = GLTools.getDSAInstance();
 
-            assert GL11.glGetError() == GL11.GL_NO_ERROR : String.format("glBindFramebuffer(GL_FRAMEBUFFER, %d) failed!", GLFramebuffer.this.framebufferId);
+            if (dsa instanceof EXTDirectStateAccessPatch) {
+                final EXTDirectStateAccessPatch patch = (EXTDirectStateAccessPatch) dsa;
+                final GLTextureTarget target = this.depthStencilAttachment.getTarget();
 
-            final GLTextureTarget target = this.depthStencilAttachment.getTarget();
-
-            switch (target) {
-                case GL_TEXTURE_1D:
-                    
-                    GL30.glFramebufferTexture1D(
-                            GL30.GL_FRAMEBUFFER,
-                            GL30.GL_DEPTH_STENCIL_ATTACHMENT,
-                            target.value,
-                            this.depthStencilAttachment.textureId,
-                            this.level);
-
-                    
-                    assert GL11.glGetError() == GL11.GL_NO_ERROR : String.format("glFramebufferTexture1D(GL_FRAMEBUFFER, GL_DEPTH_STENCIL_ATTACHMENT, %d, %d, %d) failed!",
-                            target.value, this.depthStencilAttachment.textureId, this.level);
-
-                    break;
-                case GL_TEXTURE_2D:
-                    GL30.glFramebufferTexture2D(
-                            GL30.GL_FRAMEBUFFER,
-                            GL30.GL_DEPTH_STENCIL_ATTACHMENT,
-                            target.value,
-                            this.depthStencilAttachment.textureId,
-                            this.level);
-
-                    assert GL11.glGetError() == GL11.GL_NO_ERROR : String.format("glFramebufferTexture2D(GL_FRAMEBUFFER, GL_DEPTH_STENCIL_ATTACHMENT, %d, %d, %d) failed!",
-                            target.value, this.depthStencilAttachment.textureId, this.level);
-
-                    break;
-                default:
-                    throw new GLException("Texture target type: " + target + " is currently unsupported.");
+                switch (target) {
+                    case GL_TEXTURE_1D:
+                        patch.glNamedFramebufferTexture1D(
+                                GLFramebuffer.this.framebufferId,
+                                GL30.GL_DEPTH_STENCIL_ATTACHMENT,
+                                target.value,
+                                this.depthStencilAttachment.textureId,
+                                this.level);
+                        break;
+                    case GL_TEXTURE_2D:
+                        patch.glNamedFramebufferTexture2D(
+                                GLFramebuffer.this.framebufferId,
+                                GL30.GL_DEPTH_STENCIL_ATTACHMENT,
+                                target.value,
+                                this.depthStencilAttachment.textureId,
+                                this.level);
+                        break;
+                    default:
+                        throw new GLException("Texture target type: " + target + " is currently not supported.");
+                }
+            } else {
+                dsa.glNamedFramebufferTexture(
+                        GLFramebuffer.this.framebufferId,
+                        GL30.GL_DEPTH_STENCIL_ATTACHMENT,
+                        this.depthStencilAttachment.textureId, level);
             }
-
-            GL30.glBindFramebuffer(GL30.GL_FRAMEBUFFER, 0);
-
-            assert GL11.glGetError() == GL11.GL_NO_ERROR : "glBindFramebuffer(GL_FRAMEBUFFER, 0) failed!";
         }
     }
 
@@ -445,48 +452,45 @@ public class GLFramebuffer extends GLObject {
 
         @Override
         public void run() {
-            if(GLFramebuffer.this.isLocked) {
+            if (GLFramebuffer.this.isLocked) {
                 throw new GLException("Cannot add attachments to null instance of GLFramebuffer!");
             } else if (!GLFramebuffer.this.isValid()) {
                 throw new GLException("Invalid GLFramebuffer!");
             }
 
-            GL30.glBindFramebuffer(GL30.GL_FRAMEBUFFER, GLFramebuffer.this.framebufferId);
+            final DirectStateAccess dsa = GLTools.getDSAInstance();
 
-            assert GL11.glGetError() == GL11.GL_NO_ERROR : String.format("glBindFramebuffer(GL_FRAMEBUFFER, %d) failed!", GLFramebuffer.this.framebufferId);
+            if (dsa instanceof EXTDirectStateAccessPatch) {
+                final EXTDirectStateAccessPatch patch = (EXTDirectStateAccessPatch) dsa;
+                final GLTextureTarget target = this.depthAttachment.getTarget();
 
-            final GLTextureTarget target = this.depthAttachment.getTarget();
-
-            switch (target) {
-                case GL_TEXTURE_1D:
-                    GL30.glFramebufferTexture1D(
-                            GL30.GL_FRAMEBUFFER,
-                            GL30.GL_DEPTH_ATTACHMENT,
-                            target.value,
-                            this.depthAttachment.textureId,
-                            this.level);
-
-                    assert GL11.glGetError() == GL11.GL_NO_ERROR : String.format("glFramebufferTexture1D(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, %d, %d, %d) failed!",
-                            target.value, this.depthAttachment.textureId, this.level);
-                    break;
-                case GL_TEXTURE_2D:
-                    GL30.glFramebufferTexture2D(
-                            GL30.GL_FRAMEBUFFER,
-                            GL30.GL_DEPTH_ATTACHMENT,
-                            target.value,
-                            this.depthAttachment.textureId,
-                            this.level);
-
-                    assert GL11.glGetError() == GL11.GL_NO_ERROR : String.format("glFramebufferTexture2D(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, %d, %d, %d) failed!",
-                            target.value, this.depthAttachment.textureId, this.level);
-                    break;
-                default:
-                    throw new GLException("Texture target type: " + target + " is currently unsupported.");
+                switch (target) {
+                    case GL_TEXTURE_1D:
+                        patch.glNamedFramebufferTexture1D(
+                                GLFramebuffer.this.framebufferId,
+                                GL30.GL_DEPTH_ATTACHMENT,
+                                target.value,
+                                this.depthAttachment.textureId,
+                                this.level);
+                        break;
+                    case GL_TEXTURE_2D:
+                        patch.glNamedFramebufferTexture2D(
+                                GLFramebuffer.this.framebufferId,
+                                GL30.GL_DEPTH_ATTACHMENT,
+                                target.value,
+                                this.depthAttachment.textureId,
+                                this.level);
+                        break;
+                    default:
+                        throw new GLException("Texture target type: " + target + " is currently not supported!");
+                }
+            } else {
+                dsa.glNamedFramebufferTexture(
+                        GLFramebuffer.this.framebufferId,
+                        GL30.GL_DEPTH_ATTACHMENT,
+                        this.depthAttachment.textureId,
+                        this.level);
             }
-
-            GL30.glBindFramebuffer(GL30.GL_FRAMEBUFFER, 0);
-
-            assert GL11.glGetError() == GL11.GL_NO_ERROR : "glBindFramebuffer(GL_FRAMEBUFFER, 0) failed!";
         }
     }
 
@@ -542,6 +546,7 @@ public class GLFramebuffer extends GLObject {
 
         /**
          * Constructs a new AddColorAttachmentTask.
+         *
          * @param name the name to associate the attachment with.
          * @param attachment the attachment.
          * @param level the mipmap level.
@@ -565,49 +570,45 @@ public class GLFramebuffer extends GLObject {
 
         @Override
         public void run() {
-            if(GLFramebuffer.this.isLocked) {
+            if (GLFramebuffer.this.isLocked) {
                 throw new GLException("Cannot add color attachment to null instance of GLFramebuffer!");
             } else if (!GLFramebuffer.this.isValid()) {
                 throw new GLException("Invalid GLFramebuffer!");
             }
 
-            GL30.glBindFramebuffer(GL30.GL_FRAMEBUFFER, GLFramebuffer.this.framebufferId);
-            
-            assert GL11.glGetError() == GL11.GL_NO_ERROR : String.format("glBindFramebuffer(GL_FRAMEBUFFER, %d) failed!", GLFramebuffer.this.framebufferId);
-            
-            final GLTextureTarget target = this.colorAttachment.getTarget();
+            final DirectStateAccess dsa = GLTools.getDSAInstance();
 
-            switch (target) {
-                case GL_TEXTURE_1D:
-                    GL30.glFramebufferTexture1D(
-                            GL30.GL_FRAMEBUFFER,
-                            this.attachmentId,
-                            target.value,
-                            this.colorAttachment.textureId,
-                            this.level);
-                    
-                    assert GL11.glGetError() == GL11.GL_NO_ERROR : String.format("glFramebufferTexture1D(GL_FRAMEBUFFER, %d, %d, %d, %d) failed!",
-                            this.attachmentId, target.value, this.colorAttachment.textureId, this.level);
-                    break;
-                case GL_TEXTURE_2D:
-                    GL30.glFramebufferTexture2D(
-                            GL30.GL_FRAMEBUFFER,
-                            this.attachmentId,
-                            target.value,
-                            this.colorAttachment.textureId,
-                            this.level);
-                    
-                    assert GL11.glGetError() == GL11.GL_NO_ERROR : String.format("glFramebufferTexture2D(GL_FRAMEBUFFER, %d, %d, %d, %d) failed!",
-                            this.attachmentId, target.value, this.colorAttachment.textureId, this.level);
-                    break;
-                default:
-                    throw new GLException("Texture target type: " + target + " is currently unsupported.");
+            if (dsa instanceof EXTDirectStateAccessPatch) {
+                final EXTDirectStateAccessPatch patch = (EXTDirectStateAccessPatch) dsa;
+                final GLTextureTarget target = this.colorAttachment.getTarget();
+
+                switch (target) {
+                    case GL_TEXTURE_1D:
+                        patch.glNamedFramebufferTexture1D(
+                                GLFramebuffer.this.framebufferId,
+                                this.attachmentId,
+                                target.value,
+                                this.colorAttachment.textureId,
+                                this.level);
+                        break;
+                    case GL_TEXTURE_2D:
+                        patch.glNamedFramebufferTexture2D(
+                                GLFramebuffer.this.framebufferId,
+                                this.attachmentId,
+                                target.value,
+                                this.colorAttachment.textureId,
+                                this.level);
+                        break;
+                    default:
+                        throw new GLException("Texture target type: " + target + " is not supported!");
+                }
+            } else {
+                dsa.glNamedFramebufferTexture(
+                        GLFramebuffer.this.framebufferId,
+                        this.attachmentId,
+                        this.colorAttachment.textureId,
+                        this.level);
             }
-
-            GL30.glBindFramebuffer(GL30.GL_FRAMEBUFFER, 0);
-            
-            assert GL11.glGetError() == GL11.GL_NO_ERROR : "glBindFramebuffer(GL_FRAMEBUFFER, 0) failed!";
         }
-
     }
 }

@@ -10,7 +10,6 @@ import java.nio.DoubleBuffer;
 import java.nio.FloatBuffer;
 import org.lwjgl.opengl.ARBBufferStorage;
 import org.lwjgl.opengl.ARBSeparateShaderObjects;
-import org.lwjgl.opengl.ARBVertexAttribBinding;
 import org.lwjgl.opengl.ContextCapabilities;
 import org.lwjgl.opengl.EXTDirectStateAccess;
 import org.lwjgl.opengl.GL;
@@ -271,6 +270,11 @@ public class EXTDSA implements EXTDirectStateAccessPatch {
     public int glCreateTextures(int target) {
         return FakeDSA.getInstance().glCreateTextures(target);
     }
+    
+    @Override
+    public int glCreateFramebuffers() {
+        return FakeDSA.getInstance().glCreateFramebuffers();
+    }
 
     @Override
     public void glNamedBufferStorage(int bufferId, ByteBuffer data, int flags) {
@@ -402,57 +406,22 @@ public class EXTDSA implements EXTDirectStateAccessPatch {
     }
 
     @Override
-    public void glVertexArrayVertexAttribOffset(int vaobj, int bufferId, int index, int size, int type, boolean normalized, int stride, long offset) {        
-        EXTDirectStateAccess.glVertexArrayVertexAttribOffsetEXT(vaobj, bufferId, index, size, type, normalized, stride, offset);        
+    public void glNamedFramebufferTexture1D(int framebuffer, int attachment, int texTarget, int texture, int level) {
+        EXTDirectStateAccess.glNamedFramebufferTexture1DEXT(framebuffer, attachment, texTarget, texture, level);
+        assert GL11.glGetError() == GL11.GL_NO_ERROR : String.format("glNamedFramebufferTexture1D(%d, %d, %d, %d, %d) failed!", framebuffer, attachment, texTarget, texture, level);
     }
 
     @Override
-    public int glCreateVertexArrays() {
-        return FakeDSA.getInstance().glCreateVertexArrays();
+    public void glNamedFramebufferTexture2D(int framebuffer, int attachment, int texTarget, int texture, int level) {
+        EXTDirectStateAccess.glNamedFramebufferTexture2DEXT(framebuffer, attachment, texTarget, texture, level);
+        assert GL11.glGetError() == GL11.GL_NO_ERROR : String.format("glNamedFramebufferTexture2D(%d, %d, %d, %d, %d) failed!", framebuffer, attachment, texTarget, texture, level);
     }
 
     @Override
-    public void glEnableVertexArrayAttrib(int vaobj, int index) {
-        EXTDirectStateAccess.glEnableVertexArrayAttribEXT(vaobj, index);
+    public void glNamedFramebufferTexture(int framebuffer, int attachment, int texture, int level) {
+        EXTDirectStateAccess.glNamedFramebufferTextureEXT(framebuffer, attachment, texture, level);
+        assert GL11.glGetError() == GL11.GL_NO_ERROR : String.format("glNamedFramebufferTextureEXT(%d, %d, %d, %d) failed!", framebuffer, attachment, texture, level);
     }
-
-    @Override
-    public void glDisableVertexArrayAttrib(int vaobj, int index) {
-        EXTDirectStateAccess.glDisableVertexArrayAttribEXT(vaobj, index);
-    }    
-
-    @Override
-    public void glVertexArrayAttribFormat(int vaobj, int attribIndex, int size, int type, boolean normalized, int relativeOffset) {
-        final ContextCapabilities cap = GL.getCapabilities();
-        
-        if(cap.GL_ARB_vertex_attrib_binding) {
-            ARBVertexAttribBinding.glVertexArrayVertexAttribFormatEXT(vaobj, attribIndex, size, type, normalized, relativeOffset);
-        } else {
-            FakeDSA.getInstance().glVertexArrayAttribFormat(vaobj, attribIndex, size, type, normalized, relativeOffset);
-        }
-    }
-
-    @Override
-    public void glVertexArrayAttribBinding(int vaobj, int attribIndex, int bindingIndex) {
-        final ContextCapabilities cap = GL.getCapabilities();
-        
-        if(cap.GL_ARB_vertex_attrib_binding) {
-            ARBVertexAttribBinding.glVertexArrayVertexAttribBindingEXT(vaobj, attribIndex, bindingIndex);
-        } else {
-            FakeDSA.getInstance().glVertexArrayAttribBinding(vaobj, attribIndex, bindingIndex);
-        }
-    }
-
-    @Override
-    public void glVertexArrayBindingDivisor(int vaobj, int attribIndex, int divisor) {
-        final ContextCapabilities cap = GL.getCapabilities();
-        
-        if(cap.GL_ARB_vertex_attrib_binding) {
-            ARBVertexAttribBinding.glVertexArrayVertexBindingDivisorEXT(vaobj, attribIndex, divisor);            
-        } else {
-            FakeDSA.getInstance().glVertexArrayBindingDivisor(vaobj, attribIndex, divisor);
-        }
-    }        
 
     private static class Holder {
 

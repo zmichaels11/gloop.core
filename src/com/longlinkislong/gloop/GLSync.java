@@ -5,6 +5,10 @@
  */
 package com.longlinkislong.gloop;
 
+import java.nio.IntBuffer;
+import org.lwjgl.opengl.ARBSync;
+import org.lwjgl.opengl.ContextCapabilities;
+import org.lwjgl.opengl.GL;
 import org.lwjgl.opengl.GL11;
 import org.lwjgl.opengl.GL32;
 
@@ -35,6 +39,44 @@ public class GLSync extends GLObject {
 
     private static final long INVALID_SYNC = -1;
     private volatile long sync = INVALID_SYNC;
+    
+    @FunctionalInterface
+    private interface FenceSync {
+        long get(int sync, int flags);
+    }
+    
+    private static final FenceSync NULL_FENCE_SYNC = (sync, flags) -> {
+        throw new IllegalStateException("glFenceSync was called before it was fetched! glFenceSync requires an instance of GLSync.InitTask to run prior to being called.");
+    };
+    private FenceSync glFenceSync = NULL_FENCE_SYNC;
+    
+    @FunctionalInterface
+    private interface GetSynci {
+        int get(long sync, int pName, IntBuffer buffer);
+    }
+    
+    private static final GetSynci NULL_GET_SYNCI = (sync, pName, buffer) -> {
+        throw new IllegalStateException("glGetSynci was called before it was fetched! glGetSynci requires an instance of GLSync.InitTask to run prior to being called.");
+    };
+    private GetSynci glGetSynci = NULL_GET_SYNCI;
+    
+    @FunctionalInterface
+    private interface DeleteSync {
+        void call(long sync);
+    }
+    
+    private static final DeleteSync NULL_DELETE_SYNC = (sync) -> {
+        throw new IllegalStateException("glDeleteSync was called before it was fetched! glDeleteSync requires an instance of GLSync.InitTask to run prior to being called.");
+    };
+    private DeleteSync glDeleteSync = NULL_DELETE_SYNC;
+    
+    private interface ClientWaitSync {
+        int call(long sync, int waitbits, long timeout);
+    }
+    private static final ClientWaitSync NULL_CLIENT_WAIT_SYNC = (sync, bits, timeout) -> {
+        throw new IllegalStateException("glClientWaitSync was called before it was fetched! glClientWaitSync requires an instance of GLSync.InitTask to run prior to being called.");
+    };
+    private ClientWaitSync glClientWaitSync = NULL_CLIENT_WAIT_SYNC;
 
     /**
      * Constructs a new GLSync object on the specified OpenGL thread.
@@ -44,6 +86,7 @@ public class GLSync extends GLObject {
      */
     public GLSync(final GLThread thread) {
         super(thread);
+        this.init();
     }
 
     /**
@@ -53,6 +96,49 @@ public class GLSync extends GLObject {
      */
     public GLSync() {
         this(GLThread.getDefaultInstance());
+    }
+    
+    /**
+     * Initializes the GLSync object.
+     */
+    public final void init() {
+        new InitTask().glRun(this.getThread());
+    }
+    
+    /**
+     * A GLTask that initializes the GLSync object.
+     * @since 15.07.09
+     */
+    public class InitTask extends GLTask {
+        @Override
+        public void run() {
+            final ContextCapabilities cap = GL.getCapabilities();
+            
+            if(cap.OpenGL32) {                
+                GLSync.this.glFenceSync = GL32::glFenceSync;
+                GLSync.this.glGetSynci = GL32::glGetSynci;
+                GLSync.this.glDeleteSync = GL32::glDeleteSync;
+                GLSync.this.glClientWaitSync = GL32::glClientWaitSync;
+            } else if(cap.GL_ARB_sync) {
+                GLSync.this.glFenceSync = ARBSync::glFenceSync;
+                GLSync.this.glGetSynci = ARBSync::glGetSynci;
+                GLSync.this.glDeleteSync = ARBSync::glDeleteSync;
+                GLSync.this.glClientWaitSync = ARBSync::glClientWaitSync;
+            } else {
+                GLSync.this.glFenceSync = (sync, flags) -> {
+                    throw new UnsupportedOperationException("glFenceSync is not supported! glFenceSync requires either an OpenGL 3.2 context or ARB_sync.");
+                };
+                GLSync.this.glGetSynci = (sync, pName, buffer) -> {
+                    throw new UnsupportedOperationException("glGetSynci is not supported! glSynci requires either an OpenGL 3.2 context or ARB_sync.");
+                };
+                GLSync.this.glDeleteSync = (sync) -> {
+                    throw new UnsupportedOperationException("glDeleteSync is not supported! glDeleteSync requires either an OpenGL 3.2 context or ARB_sync.");
+                };
+                GLSync.this.glClientWaitSync = (sync, bits, timeout) -> {
+                    throw new UnsupportedOperationException("glClientWaitSync is not supported! glClientWaitSync requires either an OpenGL 3.2 context or ARB_sync.");
+                };
+            }
+        }
     }
 
     /**
@@ -87,7 +173,7 @@ public class GLSync extends GLObject {
                 throw new GLException("GLSync object is already fenced!");
             }
 
-            GLSync.this.sync = GL32.glFenceSync(GL32.GL_SYNC_GPU_COMMANDS_COMPLETE, 0);
+            GLSync.this.sync = GLSync.this.glFenceSync.get(GL32.GL_SYNC_GPU_COMMANDS_COMPLETE, 0);
 
             assert GL11.glGetError() == GL11.GL_NO_ERROR : String.format("glFenceSync(GL_SYNC_GPU_COMMANDS_COMPLETE, 0) = %d failed!", GLSync.this.sync);
         }
@@ -115,8 +201,7 @@ public class GLSync extends GLObject {
             if (!GLSync.this.isFenced()) {
                 throw new GLException("GLSync object needs to be fenced prior to requesting a sync status!");
             }
-
-            final int val = GL32.glGetSynci(GLSync.this.sync, GL32.GL_SYNC_STATUS, null);
+            final int val = GLSync.this.glGetSynci.get(GLSync.this.sync, GL32.GL_SYNC_STATUS, null);
             final GLSyncStatus status = GLSyncStatus.valueOf(val);
 
             assert status != null : "Unknown GLSyncStatus: " + val;
@@ -148,11 +233,15 @@ public class GLSync extends GLObject {
                 throw new GLException("GLSync object needs to be fenced prior to sending a DeleteSynctask!");
             }
 
-            GL32.glDeleteSync(GLSync.this.sync);
+            GLSync.this.glDeleteSync.call(GLSync.this.sync);            
 
             assert GL11.glGetError() == GL11.GL_NO_ERROR : String.format("glDeleteSync(%d) failed!", GLSync.this.sync);
 
             GLSync.this.sync = INVALID_SYNC;
+            GLSync.this.glClientWaitSync = NULL_CLIENT_WAIT_SYNC;
+            GLSync.this.glDeleteSync = NULL_DELETE_SYNC;
+            GLSync.this.glFenceSync = NULL_FENCE_SYNC;
+            GLSync.this.glGetSynci = NULL_GET_SYNCI;
         }
     }
 
@@ -211,7 +300,7 @@ public class GLSync extends GLObject {
 
         @Override
         public GLWaitSyncStatus call() throws Exception {
-            final int rVal = GL32.glClientWaitSync(GLSync.this.sync, GL32.GL_SYNC_FLUSH_COMMANDS_BIT, this.timeout);
+            final int rVal = GLSync.this.glClientWaitSync.call(GLSync.this.sync, GL32.GL_SYNC_FLUSH_COMMANDS_BIT, this.timeout);
             final GLWaitSyncStatus status = GLWaitSyncStatus.valueOf(rVal);
 
             assert status != null : "Unknown GLWaitSyncStatus: " + rVal;

@@ -14,6 +14,10 @@ import org.lwjgl.opengl.GL12;
  * @author zmichaels
  */
 public interface EXTDirectStateAccessPatch extends DirectStateAccess {
+    void glNamedFramebufferTexture1D(int framebuffer, int attachment, int texTarget, int texture, int level);
+    
+    void glNamedFramebufferTexture2D(int framebuffer, int attachment, int texTarget, int texture, int level);        
+    
     void glTextureParameteri(int textureId, int target, int pName, int val);
     
     void glTextureParameterf(int textureId, int target, int pName, float val);
@@ -32,29 +36,7 @@ public interface EXTDirectStateAccessPatch extends DirectStateAccess {
     
     void glTextureImage3d(int texture, int target, int level, int internalFormat, int width, int height, int depth, int border, int format, int type, ByteBuffer pixels);
     
-    void glTextureImage3d(int texture, int target, int level, int internalFormat, int width, int height, int depth, int border, int format, int type, long ptr);        
-    
-    void glVertexArrayVertexAttribOffset(int vaobj, int bufferId, int index, int size, int type, boolean normalized, int stride, long offset);
-    
-    @Override
-    default void glVertexArrayElementBuffer(int vaobj, int index) {
-        throw new UnsupportedOperationException("glVertexArrayElementBuffer is not supported in implementation: " + this.getClass().getName());
-    }
-    
-    @Override
-    default void glVertexArrayVertexBuffer(int vaobj, int bindingIndex, int buffer, long offset, int stride) {
-        throw new UnsupportedOperationException("glVertexArrayVertexBuffer is not supported in implementation: " + this.getClass().getName());
-    }
-    
-    @Override
-    default void glVertexArrayAttribFormat(int vaobj, int attribIndex, int size, int type, boolean normalized, int relativeOffset) {
-        throw new UnsupportedOperationException("glVertexArrayAttribFormat is not supported in implementation: " + this.getClass().getName());
-    }
-    
-    @Override
-    default void glVertexArrayAttribBinding(int vaobj, int attribIndex, int bindingIndex) {
-        throw new UnsupportedOperationException("glVertexArrayAttribBinding is not supported in implementation: " + this.getClass().getName());
-    }        
+    void glTextureImage3d(int texture, int target, int level, int internalFormat, int width, int height, int depth, int border, int format, int type, long ptr);                            
     
     @Override
     default void glTextureParameteri(int textureId, int pName, int val) {             
@@ -111,5 +93,10 @@ public interface EXTDirectStateAccessPatch extends DirectStateAccess {
             height = Math.max(1, (height / 2));
             depth = Math.max(1, (depth / 2));
         }
+    }
+    
+    @Override
+    default void glNamedFramebufferTexture(int framebuffer, int attachment, int texture, int level) {
+        throw new UnsupportedOperationException("glNamedFramebufferTexture requires target for implementation: " + this.getClass().getName());
     }
 }

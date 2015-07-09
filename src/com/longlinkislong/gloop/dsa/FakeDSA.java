@@ -5,7 +5,6 @@
  */
 package com.longlinkislong.gloop.dsa;
 
-import com.longlinkislong.gloop.softgl.SoftVertexArray;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.nio.DoubleBuffer;
@@ -13,8 +12,6 @@ import java.nio.FloatBuffer;
 import org.lwjgl.opengl.ARBBufferStorage;
 import org.lwjgl.opengl.ARBFramebufferObject;
 import org.lwjgl.opengl.ARBGPUShaderFP64;
-import org.lwjgl.opengl.ARBVertexArrayObject;
-import org.lwjgl.opengl.ARBVertexAttribBinding;
 import org.lwjgl.opengl.ContextCapabilities;
 import org.lwjgl.opengl.EXTFramebufferObject;
 import org.lwjgl.opengl.GL;
@@ -25,9 +22,7 @@ import org.lwjgl.opengl.GL15;
 import org.lwjgl.opengl.GL20;
 import org.lwjgl.opengl.GL30;
 import org.lwjgl.opengl.GL31;
-import org.lwjgl.opengl.GL33;
 import org.lwjgl.opengl.GL40;
-import org.lwjgl.opengl.GL43;
 import org.lwjgl.opengl.GL44;
 
 /**
@@ -46,22 +41,23 @@ public class FakeDSA implements EXTDirectStateAccessPatch {
         IGNORE_BUFFER_STORAGE_SUPPORT = Boolean.parseBoolean(System.getProperty("gloop.dsa.ignore_buffer_storage_support", "true"));
     }
 
-    private int saveVao = 0;
+    private int saveFramebuffer = 0;
 
-    private void saveVertexArray() {
-        this.saveVao = GL11.glGetInteger(GL30.GL_VERTEX_ARRAY_BINDING);
-        assert GL11.glGetError() == GL11.GL_NO_ERROR : String.format("glGetInteger(GL_VERTEX_ARRAY_BINDING) = %d failed!", this.saveVao);
+    private void saveFramebuffer() {
+        this.saveFramebuffer = GL11.glGetInteger(GL30.GL_FRAMEBUFFER_BINDING);
     }
 
-    private void restoreVertexArray() {
+    private void restoreFramebuffer() {
         final ContextCapabilities cap = GL.getCapabilities();
 
         if (cap.OpenGL30) {
-            GL30.glBindVertexArray(this.saveVao);
-        } else if (cap.GL_ARB_vertex_array_object) {
-            ARBVertexArrayObject.glBindVertexArray(this.saveVao);
+            GL30.glBindFramebuffer(GL30.GL_FRAMEBUFFER, this.saveFramebuffer);
+        } else if (cap.GL_ARB_framebuffer_object) {
+            ARBFramebufferObject.glBindFramebuffer(GL30.GL_FRAMEBUFFER, this.saveFramebuffer);
+        } else if (cap.GL_EXT_framebuffer_object) {
+            EXTFramebufferObject.glBindFramebufferEXT(GL30.GL_FRAMEBUFFER, this.saveFramebuffer);
         } else {
-            SoftVertexArray.glBindVertexArray(this.saveVao);
+            throw new UnsupportedOperationException("glBindFramebuffer is not supported! glBindFramebuffer requires either: an OpenGL 3.0 context, ARB_framebuffer_object, or EXT_framebuffer_object.");
         }
     }
 
@@ -155,6 +151,39 @@ public class FakeDSA implements EXTDirectStateAccessPatch {
     @Override
     public String toString() {
         return "FakeDSA";
+    }
+
+    @Override
+    public int glCreateFramebuffers() {
+        final ContextCapabilities cap = GL.getCapabilities();
+        final int id;
+
+        if (cap.OpenGL30) {
+            id = GL30.glGenFramebuffers();
+            assert GL11.glGetError() == GL11.GL_NO_ERROR : String.format("glGenFramebuffers() = %d failed!", id);
+            this.saveFramebuffer();
+            GL30.glBindFramebuffer(GL30.GL_FRAMEBUFFER, id);
+            assert GL11.glGetError() == GL11.GL_NO_ERROR : String.format("glBindFramebuffer(GL_FRAMEBUFFER, %d) failed!", id);
+            this.restoreFramebuffer();
+        } else if (cap.GL_ARB_framebuffer_object) {
+            id = ARBFramebufferObject.glGenFramebuffers();
+            assert GL11.glGetError() == GL11.GL_NO_ERROR : String.format("glGenFramebuffersARB() = %d failed!", id);
+            this.saveFramebuffer();
+            ARBFramebufferObject.glBindFramebuffer(GL30.GL_FRAMEBUFFER, id);
+            assert GL11.glGetError() == GL11.GL_NO_ERROR : String.format("glBindFramebufferARB(GL_FRAMEBUFFER, %d) failed!", id);
+            this.restoreFramebuffer();
+        } else if (cap.GL_EXT_framebuffer_object) {
+            id = EXTFramebufferObject.glGenFramebuffersEXT();
+            assert GL11.glGetError() == GL11.GL_NO_ERROR : String.format("glGenFramebuffersEXT() = %d failed!", id);
+            this.saveFramebuffer();
+            EXTFramebufferObject.glBindFramebufferEXT(GL30.GL_FRAMEBUFFER, id);
+            assert GL11.glGetError() == GL11.GL_NO_ERROR : String.format("glBindFramebufferEXT(GL_FRAMEBUFFER, %d) failed!", id);
+            this.restoreFramebuffer();
+        } else {
+            throw new UnsupportedOperationException("glGenFramebuffers is not supported! glGenFramebuffers requires an OpenGL 3.0 context, ARB_framebuffer_object, or EXT_framebuffer_object.");
+        }
+
+        return id;
     }
 
     @Override
@@ -819,149 +848,52 @@ public class FakeDSA implements EXTDirectStateAccessPatch {
     }
 
     @Override
-    public void glVertexArrayVertexAttribOffset(int vaobj, int bufferId, int index, int size, int type, boolean normalized, int stride, long offset) {
-        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
-    }
-
-    @Override
-    public int glCreateVertexArrays() {
+    public void glNamedFramebufferTexture1D(int framebuffer, int attachment, int texTarget, int texture, int level) {
         final ContextCapabilities cap = GL.getCapabilities();
-        final int vaoId;
 
         if (cap.OpenGL30) {
-            vaoId = GL30.glGenVertexArrays();
-            this.saveVertexArray();
-            GL30.glBindVertexArray(vaoId);
-            this.restoreVertexArray();
-        } else if (cap.GL_ARB_vertex_array_object) {
-            vaoId = ARBVertexArrayObject.glGenVertexArrays();
-            this.saveVertexArray();
-            ARBVertexArrayObject.glBindVertexArray(vaoId);
-            this.restoreVertexArray();
+            this.saveFramebuffer();
+            GL30.glFramebufferTexture1D(framebuffer, attachment, texTarget, texture, level);
+            assert GL11.glGetError() == GL11.GL_NO_ERROR : String.format("glFramebufferTexture1D(%d, %d, %d, %d, %d) failed!", framebuffer, attachment, texTarget, texture, level);
+            this.restoreFramebuffer();
+        } else if (cap.GL_ARB_framebuffer_object) {
+            this.saveFramebuffer();
+            ARBFramebufferObject.glFramebufferTexture1D(framebuffer, attachment, texTarget, texture, level);
+            assert GL11.glGetError() == GL11.GL_NO_ERROR : String.format("glFramebufferTexture1DARB(%d, %d, %d, %d, %d) failed!", framebuffer, attachment, texTarget, texture, level);
+            this.restoreFramebuffer();
+        } else if (cap.GL_EXT_framebuffer_object) {
+            this.saveFramebuffer();
+            EXTFramebufferObject.glFramebufferTexture1DEXT(framebuffer, attachment, texTarget, texture, level);
+            assert GL11.glGetError() == GL11.GL_NO_ERROR : String.format("glFramebufferTexture1DEXT(%d, %d, %d, %d, %d) failed!", framebuffer, attachment, texTarget, texture, level);
+            this.restoreFramebuffer();
         } else {
-            vaoId = SoftVertexArray.glGenVertexArrays();
+            throw new UnsupportedOperationException("glFramebufferTexture1D is not supported. glFramebufferTexture1D requires either: an OpenGL 3.0 context, ARB_framebuffer_object, or EXT_framebuffer_object.");
         }
 
-        return vaoId;
+        this.restoreFramebuffer();
     }
 
     @Override
-    public void glEnableVertexArrayAttrib(int vaobj, int index) {
+    public void glNamedFramebufferTexture2D(int framebuffer, int attachment, int texTarget, int texture, int level) {
         final ContextCapabilities cap = GL.getCapabilities();
-        this.saveVertexArray();
 
         if (cap.OpenGL30) {
-            this.saveVertexArray();
-            GL30.glBindVertexArray(vaobj);
-            GL20.glEnableVertexAttribArray(index);
-            this.restoreVertexArray();
-
-            //TODO: restore attrib enabled???
-        } else if (cap.GL_ARB_vertex_array_object) {
-            this.saveVertexArray();
-            ARBVertexArrayObject.glBindVertexArray(vaobj);
-            GL20.glEnableVertexAttribArray(index);
-            this.restoreVertexArray();
+            this.saveFramebuffer();
+            GL30.glFramebufferTexture2D(framebuffer, attachment, texTarget, texture, level);
+            assert GL11.glGetError() == GL11.GL_NO_ERROR : String.format("glFramebufferTexture2D(%d, %d, %d, %d, %d) failed!", framebuffer, attachment, texTarget, texture, level);
+            this.restoreFramebuffer();
+        } else if (cap.GL_ARB_framebuffer_object) {
+            this.saveFramebuffer();
+            ARBFramebufferObject.glFramebufferTexture2D(framebuffer, attachment, texTarget, texture, level);
+            assert GL11.glGetError() == GL11.GL_NO_ERROR : String.format("glFramebufferTexture2DARB(%d, %d, %d, %d, %d) failed!", framebuffer, attachment, texTarget, texture, level);
+            this.restoreFramebuffer();
+        } else if (cap.GL_EXT_framebuffer_object) {
+            this.saveFramebuffer();
+            EXTFramebufferObject.glFramebufferTexture2DEXT(framebuffer, attachment, texTarget, texture, level);
+            assert GL11.glGetError() == GL11.GL_NO_ERROR : String.format("glFramebufferTexture2DEXT(%d, %d, %d, %d, %d) failed!", framebuffer, attachment, texTarget, texture, level);
+            this.restoreFramebuffer();
         } else {
-            this.saveVertexArray();
-            SoftVertexArray.glBindVertexArray(vaobj);
-            SoftVertexArray.glEnableVertexAttribArray(index);
-            this.restoreVertexArray();
-        }
-    }
-
-    @Override
-    public void glDisableVertexArrayAttrib(int vaobj, int index) {
-        
-        final ContextCapabilities cap = GL.getCapabilities();
-        this.saveVertexArray();
-
-        if (cap.OpenGL30) {
-            this.saveVertexArray();
-            GL30.glBindVertexArray(vaobj);
-            GL20.glDisableVertexAttribArray(index);
-            this.restoreVertexArray();
-
-            //TODO: restore attrib enabled???
-        } else if (cap.GL_ARB_vertex_array_object) {
-            this.saveVertexArray();
-            ARBVertexArrayObject.glBindVertexArray(vaobj);
-            GL20.glDisableVertexAttribArray(index);
-            this.restoreVertexArray();
-        } else {
-            this.saveVertexArray();
-            SoftVertexArray.glBindVertexArray(vaobj);
-            SoftVertexArray.glDisableVertexAttribArray(index);
-            this.restoreVertexArray();
-        }
-    }
-    
-    @Override
-    public void glVertexArrayVertexBuffer(int vaobj, int bindingIndex, int buffer, long offset, int stride) {
-        final ContextCapabilities cap = GL.getCapabilities();
-
-        if (cap.OpenGL43) {
-            this.saveVertexArray();
-            GL30.glBindVertexArray(vaobj);
-            GL43.glBindVertexBuffer(bindingIndex, buffer, offset, stride);
-            this.restoreVertexArray();
-        } else if (cap.GL_ARB_vertex_attrib_binding) {
-            this.saveVertexArray();
-            GL30.glBindVertexArray(vaobj);
-            ARBVertexAttribBinding.glBindVertexBuffer(bindingIndex, buffer, offset, stride);
-            this.restoreVertexArray();
-        } else {
-            throw new UnsupportedOperationException("glBindVertexBuffer(bindingIndex, buffer, offset, stride) is not supported!");
-        }
-    }
-
-    @Override
-    public void glVertexArrayAttribFormat(int vaobj, int attribIndex, int size, int type, boolean normalized, int relativeOffset) {
-        final ContextCapabilities cap = GL.getCapabilities();
-
-        if (cap.OpenGL43) {
-            this.saveVertexArray();
-            GL30.glBindVertexArray(vaobj);
-            GL43.glVertexAttribFormat(attribIndex, size, type, normalized, relativeOffset);
-            this.restoreVertexArray();
-        } else if (cap.GL_ARB_vertex_attrib_binding) {
-            this.saveVertexArray();
-            GL30.glBindVertexArray(vaobj);
-            ARBVertexAttribBinding.glVertexAttribFormat(attribIndex, size, type, normalized, relativeOffset);
-            this.restoreVertexArray();
-        } else {
-            throw new UnsupportedOperationException("glVertexAttribFormat(attribIndex, size, type, normalized, relativeOffset) is not supported!");
-        }
-    }
-
-    @Override
-    public void glVertexArrayAttribBinding(int vaobj, int attribIndex, int bindingIndex) {
-        final ContextCapabilities cap = GL.getCapabilities();
-
-        if (cap.OpenGL43) {
-            this.saveVertexArray();
-            GL30.glBindVertexArray(vaobj);
-            GL43.glVertexAttribBinding(attribIndex, bindingIndex);
-            this.restoreVertexArray();
-        } else if (cap.GL_ARB_vertex_array_object) {
-            this.saveVertexArray();
-            GL30.glBindVertexArray(vaobj);
-            ARBVertexAttribBinding.glVertexAttribBinding(attribIndex, bindingIndex);
-            this.restoreVertexArray();
-        } else {
-            throw new UnsupportedOperationException("glVertexAttribBinding(attribIndex, bindingIndex) is not supported!");
-        }
-    }
-
-    @Override
-    public void glVertexArrayBindingDivisor(int vaobj, int attribIndex, int divisor) {
-        final ContextCapabilities cap = GL.getCapabilities();
-
-        if (cap.OpenGL33) {
-            this.saveVertexArray();
-            GL30.glBindVertexArray(vaobj);
-            GL33.glVertexAttribDivisor(attribIndex, divisor);
-            this.restoreVertexArray();
+            throw new UnsupportedOperationException("glFramebufferTexture2D is not supported. glFramebufferTexture2D requires either: an OpenGL 3.0 context, ARB_framebuffer_object, or EXT_framebuffer_object.");
         }
     }
 

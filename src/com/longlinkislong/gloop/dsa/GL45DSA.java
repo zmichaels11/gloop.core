@@ -22,32 +22,37 @@ public class GL45DSA implements DirectStateAccess {
     public String toString() {
         return "GL45DSA";
     }
-    
+
+    @Override
+    public int glCreateFramebuffers() {
+        return GL45.glCreateFramebuffers();
+    }
+
     @Override
     public int glCreateBuffers() {
         return GL45.glCreateBuffers();
     }
-    
+
     @Override
     public int glCreateTextures(int target) {
         return GL45.glCreateTextures(target);
     }
-        
+
     @Override
-    public boolean isSupported() {        
+    public boolean isSupported() {
         return GL.getCurrent().getCapabilities().OpenGL45;
     }
-    
+
     @Override
     public void glGetNamedBufferSubData(int bufferId, long offset, ByteBuffer out) {
         GL45.glGetNamedBufferSubData(bufferId, offset, out);
     }
-    
+
     @Override
     public int glGetNamedBufferParameteri(int bufferId, int pName) {
         return GL45.glGetNamedBufferParameteri(bufferId, pName);
     }
-    
+
     @Override
     public void glNamedBufferData(int bufferId, long size, int usage) {
         GL45.glNamedBufferData(bufferId, size, usage);
@@ -167,17 +172,17 @@ public class GL45DSA implements DirectStateAccess {
     public void glTextureParameterf(int textureId, int pName, float val) {
         GL45.glTextureParameterf(textureId, pName, val);
     }
-    
+
     @Override
     public void glTextureSubImage1d(int textureId, int level, int xOffset, int width, int format, int type, ByteBuffer pixels) {
         GL45.glTextureSubImage1D(textureId, level, xOffset, width, format, type, pixels);
     }
-    
+
     @Override
     public void glTextureSubImage2d(int textureId, int level, int xOffset, int yOffset, int width, int height, int format, int type, ByteBuffer pixels) {
         GL45.glTextureSubImage2D(textureId, level, xOffset, yOffset, width, height, format, type, pixels);
     }
-    
+
     @Override
     public void glTextureSubImage3d(int textureId, int level, int xOffset, int yOffset, int zOffset, int width, int height, int depth, int format, int type, ByteBuffer pixels) {
         GL45.glTextureSubImage3D(textureId, level, xOffset, yOffset, zOffset, width, height, depth, format, type, pixels);
@@ -225,51 +230,16 @@ public class GL45DSA implements DirectStateAccess {
     @Override
     public void glTextureStorage3d(int textureId, int levels, int internalFormat, int width, int height, int depth) {
         GL45.glTextureStorage3D(textureId, levels, internalFormat, width, height, depth);
-    }    
-    
+    }
+
     @Override
     public void glGenerateTextureMipmap(int textureId) {
         GL45.glGenerateTextureMipmap(textureId);
     }
 
     @Override
-    public int glCreateVertexArrays() {
-        return GL45.glCreateVertexArrays();
-    }
-
-    @Override
-    public void glEnableVertexArrayAttrib(int vaobj, int index) {
-        GL45.glEnableVertexArrayAttrib(vaobj, index);
-    }
-
-    @Override
-    public void glDisableVertexArrayAttrib(int vaobj, int index) {
-        GL45.glDisableVertexArrayAttrib(vaobj, index);
-    }
-
-    @Override
-    public void glVertexArrayElementBuffer(int vaobj, int index) {
-        GL45.glVertexArrayElementBuffer(vaobj, index);
-    }
-
-    @Override
-    public void glVertexArrayVertexBuffer(int vaobj, int bindingIndex, int buffer, long offset, int stride) {
-        GL45.glVertexArrayVertexBuffer(vaobj, bindingIndex, buffer, offset, stride);
-    }
-
-    @Override
-    public void glVertexArrayAttribFormat(int vaobj, int attribIndex, int size, int type, boolean normalized, int relativeOffset) {
-        GL45.glVertexArrayAttribFormat(vaobj, attribIndex, size, type, normalized, relativeOffset);
-    }
-
-    @Override
-    public void glVertexArrayAttribBinding(int vaobj, int attribIndex, int bindingIndex) {
-        GL45.glVertexArrayAttribBinding(vaobj, attribIndex, bindingIndex);
-    }
-
-    @Override
-    public void glVertexArrayBindingDivisor(int vaobj, int attribIndex, int divisor) {
-        GL45.glVertexArrayBindingDivisor(vaobj, attribIndex, divisor);
+    public void glNamedFramebufferTexture(int framebuffer, int attachment, int texture, int level) {
+        GL45.glNamedFramebufferTexture(framebuffer, attachment, texture, level);
     }
 
     private static class Holder {
