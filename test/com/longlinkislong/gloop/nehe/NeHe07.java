@@ -235,7 +235,7 @@ public class NeHe07 {
                         .updateImage(0, 0, 0, bImg.getWidth(), bImg.getHeight(), GL_BGRA, GLType.GL_UNSIGNED_BYTE, pBuf);
             }
 
-            texture[2] = new GLTexture(1, GL_RGBA8, bImg.getWidth(), bImg.getHeight());
+            texture[2] = new GLTexture(mipmaps, GL_RGBA8, bImg.getWidth(), bImg.getHeight());
             {
                 texture[2]
                         .setAttributes(baseParams
@@ -244,7 +244,7 @@ public class NeHe07 {
                         .generateMipmap();
             }
 
-            texture[3] = new GLTexture(1, GL_RGBA8, bImg.getWidth(), bImg.getHeight());
+            texture[3] = new GLTexture(mipmaps, GL_RGBA8, bImg.getWidth(), bImg.getHeight());
             {
                 texture[3]
                         .setAttributes(baseParams
@@ -252,7 +252,7 @@ public class NeHe07 {
                         .updateImage(0, 0, 0, bImg.getWidth(), bImg.getHeight(), GL_BGRA, GLType.GL_UNSIGNED_BYTE, pBuf)
                         .generateMipmap();
             }
-            texture[4] = new GLTexture(1, GL_RGBA8, bImg.getWidth(), bImg.getHeight());
+            texture[4] = new GLTexture(mipmaps, GL_RGBA8, bImg.getWidth(), bImg.getHeight());
             {
                 texture[4]
                         .setAttributes(baseParams.withFilter(GLTextureMinFilter.GL_LINEAR_MIPMAP_LINEAR, GLTextureMagFilter.GL_LINEAR).withAnisotropic(GLTextureParameters.getTextureMaxAnisotropyLevel()))

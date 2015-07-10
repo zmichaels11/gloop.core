@@ -633,16 +633,15 @@ public class GLBuffer extends GLObject {
      *
      * @see
      * <a href="https://www.opengl.org/wiki/GLAPI/glMapBufferRange#Function_Definition">glMapBufferRange</a>
-     *
-     * @param target the target to bind the GLBuffer to.
+     *     
      * @param length the number of bytes to map.
      * @return the mapped ByteBuffer.
      * @see
      * <a href="https://www.opengl.org/wiki/GLAPI/glMapBufferRange#Function_Definition">glMapBufferRange</a>
      * @since 15.05.13
      */
-    public ByteBuffer mapPersist(final GLBufferTarget target, final long length) {
-        return this.mapPersist(target, length, GLBufferAccess.GL_MAP_READ, GLBufferAccess.GL_MAP_WRITE);
+    public ByteBuffer mapPersist(final long length) {
+        return this.mapPersist(length, GLBufferAccess.GL_MAP_READ, GLBufferAccess.GL_MAP_WRITE);
     }
 
     /**
@@ -656,17 +655,14 @@ public class GLBuffer extends GLObject {
      *
      * @see
      * <a href="https://www.opengl.org/wiki/GLAPI/glMapBufferRange#Function_Definition">glMapBufferRange</a>
-     *
-     * @param target the target to bind the GLBuffer to.
+     *     
      * @param length the number of bytes to map.
      * @param accessBits the flags indicating the desired access.
      * @return the ByteBuffer containing the data.
      */
-    public ByteBuffer mapPersist(
-            final GLBufferTarget target, final long length,
-            final GLBufferAccess... accessBits) {
+    public ByteBuffer mapPersist(final long length, final GLBufferAccess... accessBits) {
 
-        return this.mapPersist(target, length, accessBits, 0, accessBits.length);
+        return this.mapPersist(length, accessBits, 0, accessBits.length);
     }
 
     /**
@@ -680,8 +676,7 @@ public class GLBuffer extends GLObject {
      *
      * @see
      * <a href="https://www.opengl.org/wiki/GLAPI/glMapBufferRange#Function_Definition">glMapBufferRange</a>
-     *
-     * @param target the target to bind the GLBuffer to.
+     *     
      * @param length the number of bytes to map.
      * @param accessBits the flags indicating the desired access.
      * @param accessOffset the offset to start reading from the access flags.
@@ -689,13 +684,10 @@ public class GLBuffer extends GLObject {
      * @return the ByteBuffer containing the data.
      * @since 15.07.08
      */
-    public ByteBuffer mapPersist(
-            final GLBufferTarget target, final long length,
+    public ByteBuffer mapPersist(final long length,
             final GLBufferAccess[] accessBits, final int accessOffset, final int accessLength) {
 
-        return new MapPersistQuery(
-                target, length,
-                accessBits, accessOffset, accessLength).glCall(this.getThread());
+        return new MapPersistQuery(length, accessBits, accessOffset, accessLength).glCall(this.getThread());
     }
 
     /**
@@ -711,9 +703,7 @@ public class GLBuffer extends GLObject {
      * <a href="https://www.opengl.org/wiki/GLAPI/glMapBufferRange#Function_Definition">glMapBufferRange</a>
      *
      */
-    public class MapPersistQuery extends GLQuery<ByteBuffer> {
-
-        final GLBufferTarget target;
+    public class MapPersistQuery extends GLQuery<ByteBuffer> {        
         final int access;
         final long length;
 
@@ -725,10 +715,9 @@ public class GLBuffer extends GLObject {
          * @param accessBits the flags indicating the desired access.
          * @since 15.06.23
          */
-        public MapPersistQuery(final GLBufferTarget target, final long length,
-                final GLBufferAccess... accessBits) {
+        public MapPersistQuery(final long length, final GLBufferAccess... accessBits) {
 
-            this(target, length, accessBits, 0, accessBits.length);
+            this(length, accessBits, 0, accessBits.length);
         }
 
         /**
@@ -743,11 +732,9 @@ public class GLBuffer extends GLObject {
          * @param accessLength the number of access flags to read.
          * @since 15.05.13
          */
-        public MapPersistQuery(
-                final GLBufferTarget target, final long length,
+        public MapPersistQuery(final long length,
                 final GLBufferAccess[] accessBits, final int accessOffset, final int accessLength) {
-
-            this.target = target;
+            
             this.length = length;
 
             int bitVal = 0;
@@ -769,11 +756,11 @@ public class GLBuffer extends GLObject {
 
             final ByteBuffer oldBuffer = GLBuffer.this.mappedBuffer;
 
-            GLTools.getDSAInstance().glNamedBufferStorage(this.target.value, this.length, this.access);
+            GLTools.getDSAInstance().glNamedBufferStorage(GLBuffer.this.bufferId, this.length, this.access);
 
             final ByteBuffer newBuffer = GLTools.getDSAInstance()
                     .glMapNamedBufferRange(
-                            this.target.value,
+                            GLBuffer.this.bufferId,
                             0, this.length,
                             this.access, oldBuffer);
 
