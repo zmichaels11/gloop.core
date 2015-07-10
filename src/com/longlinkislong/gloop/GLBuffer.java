@@ -709,8 +709,7 @@ public class GLBuffer extends GLObject {
 
         /**
          * Constructs a new MapQuery using a sequence of accessbits.
-         *
-         * @param target the target to bind the GLBuffer to.
+         *         
          * @param length the length of the range to be mapped.
          * @param accessBits the flags indicating the desired access.
          * @since 15.06.23
@@ -722,8 +721,7 @@ public class GLBuffer extends GLObject {
 
         /**
          * Constructs a new MapQuery.
-         *
-         * @param target the target to bind to
+         *         
          * @param length the length of the range to be mapped.
          * @param accessBits the flags indicating the desired access to the
          * range.
