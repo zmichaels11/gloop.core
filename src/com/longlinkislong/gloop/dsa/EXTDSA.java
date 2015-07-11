@@ -5,10 +5,12 @@
  */
 package com.longlinkislong.gloop.dsa;
 
+import com.longlinkislong.gloop.GLErrorType;
 import java.nio.ByteBuffer;
 import java.nio.DoubleBuffer;
 import java.nio.FloatBuffer;
 import org.lwjgl.opengl.ARBBufferStorage;
+import org.lwjgl.opengl.ARBDirectStateAccess;
 import org.lwjgl.opengl.ARBSeparateShaderObjects;
 import org.lwjgl.opengl.ContextCapabilities;
 import org.lwjgl.opengl.EXTDirectStateAccess;
@@ -16,6 +18,7 @@ import org.lwjgl.opengl.GL;
 import org.lwjgl.opengl.GL11;
 import org.lwjgl.opengl.GL12;
 import org.lwjgl.opengl.GL41;
+import org.lwjgl.opengl.GL42;
 
 /**
  *
@@ -240,8 +243,10 @@ public class EXTDSA implements EXTDSADriver {
     @Override
     public void glTextureImage2d(int texture, int target, int level, int internalFormat, int width, int height, int border, int format, int type, long ptr) {
         EXTDirectStateAccess.glTextureImage2DEXT(texture, target, level, internalFormat, width, height, border, format, type, ptr);
-        assert GL11.glGetError() == GL11.GL_NO_ERROR : String.format("glTextureImage2DEXT(%d, %d, %d, %d, %d, %d, %d, %d, %d, %d) failed!",
-                texture, target, level, internalFormat, width, height, format, border, type, ptr);
+        GLErrorType.getGLError().ifPresent(err -> {
+            throw err.toGLException();
+        });
+        assert GL11.glGetError() == GL11.GL_NO_ERROR : String.format("glTextureImage2DEXT(%d, %d, %d, %d, %d, %d, %d, %d, %d, %d) failed!", texture, target, level, internalFormat, width, height, format, border, type, ptr);
     }
 
     @Override
@@ -270,7 +275,7 @@ public class EXTDSA implements EXTDSADriver {
     public int glCreateTextures(int target) {
         return FakeDSA.getInstance().glCreateTextures(target);
     }
-    
+
     @Override
     public int glCreateFramebuffers() {
         return FakeDSA.getInstance().glCreateFramebuffers();
@@ -421,7 +426,7 @@ public class EXTDSA implements EXTDSADriver {
     public void glNamedFramebufferTexture(int framebuffer, int attachment, int texture, int level) {
         EXTDirectStateAccess.glNamedFramebufferTextureEXT(framebuffer, attachment, texture, level);
         assert GL11.glGetError() == GL11.GL_NO_ERROR : String.format("glNamedFramebufferTextureEXT(%d, %d, %d, %d) failed!", framebuffer, attachment, texture, level);
-    }
+    }    
 
     private static class Holder {
 

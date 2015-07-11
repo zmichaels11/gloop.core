@@ -59,12 +59,12 @@ public class NeHe06 {
 
     public NeHe06() throws IOException {
         this.window = new GLWindow(640, 480, "NeHe06");
-        
+
         final GLClear clear = this.window.getGLThread().currentClear();
         final GLDepthTest depthTest = new GLDepthTest()
                 .withEnabled(GL_ENABLED)
                 .withDepthFunc(GLDepthFunc.GL_LESS);
-        
+
         depthTest.applyDepthFunc();
 
         final GLVertexAttributes vAttribs = new GLVertexAttributes();
@@ -205,11 +205,12 @@ public class NeHe06 {
             Arrays.stream(pixels).forEach(pBuf::putInt);
 
             pBuf.flip();
-            
+
             texture
                     .allocate(1, GLTextureInternalFormat.GL_RGBA8, bImg.getWidth(), bImg.getHeight())
-                    .setAttributes(attribs)
-                    .updateImage(0, 0, 0, bImg.getWidth(), bImg.getHeight(), GLTextureFormat.GL_BGRA, GLType.GL_UNSIGNED_BYTE, pBuf);            
+                    .updateImage(0, 0, 0, bImg.getWidth(), bImg.getHeight(), GLTextureFormat.GL_BGRA, GLType.GL_UNSIGNED_BYTE, pBuf)
+                    .generateMipmap()
+                    .setAttributes(attribs);
         }
 
         this.drawTask = GLTask.create(() -> {
@@ -226,7 +227,7 @@ public class NeHe06 {
                 final GLMat4F tr = GLMat4F.translation(0f, 0f, -5f);
 
                 trCube = rz.multiply(ry.multiply(rx.multiply(tr)));
-            }            
+            }
 
             setTr.set(trCube).glRun();
             texture.bind(0);
@@ -240,6 +241,10 @@ public class NeHe06 {
             this.window.update();
 
         });
+
+        GLTask.create(() -> {
+            System.out.println("Using DSA Driver: " + GLTools.getDSAImplement());
+        }).glRun();
     }
 
     public void start() {

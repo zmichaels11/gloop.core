@@ -10,6 +10,7 @@ import com.longlinkislong.gloop.dsa.DSADriver;
 import com.longlinkislong.gloop.dsa.EXTDSA;
 import com.longlinkislong.gloop.dsa.FakeDSA;
 import com.longlinkislong.gloop.dsa.GL45DSA;
+import com.longlinkislong.gloop.dsa.NoDSA;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStream;
@@ -1565,22 +1566,31 @@ public class GLTools {
     static {
         // check for driver override.
         final String dsa = System.getProperty("gloop.gltools.dsa", "");
-        switch (dsa) {
+        switch (dsa.toLowerCase()) {
+            case "fakedsa":
             case "fake":
                 System.out.println("Using DSA driver: FakeDSA");
                 DSA = FakeDSA.getInstance();
                 break;
+            case "extdsa":
             case "ext":
                 System.out.println("Using DSA driver: EXTDSA");
                 DSA = EXTDSA.getInstance();
                 break;
+            case "gl45dsa":
             case "gl45":
                 System.out.println("Using DSA driver: GL45DSA");
                 DSA = GL45DSA.getInstance();
                 break;
+            case "arbdsa":
             case "arb":
                 System.out.println("Using DSA driver: ARBDSA");
                 DSA = ARBDSA.getInstance();
+                break;
+            case "nodsa":
+            case "no":
+                System.out.println("Using DSA Driver: NoDSA");
+                DSA = NoDSA.getInstance();
                 break;
         }
 
@@ -1591,7 +1601,7 @@ public class GLTools {
 
         // populate the known plugins with the default plugins.
         Stream
-                .of(GL45DSA.class, ARBDSA.class, EXTDSA.class, FakeDSA.class)
+                .of(GL45DSA.class, ARBDSA.class, EXTDSA.class, FakeDSA.class, NoDSA.class)
                 .map(Class::getName)
                 .forEach(plugins::add);
 
@@ -1622,6 +1632,9 @@ public class GLTools {
         final String[] blacklisted = dsaBlacklist.split(",");
 
         for (String blacklistedDSA : blacklisted) {
+            if(blacklistedDSA.trim().isEmpty()) {
+               continue; 
+            }
             Optional<Class<?>> blacklistedDSADriver = Optional.empty();
 
             for (Class<?> driver : dsaDrivers) {

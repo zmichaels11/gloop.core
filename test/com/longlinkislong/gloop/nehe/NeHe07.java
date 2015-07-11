@@ -221,43 +221,43 @@ public class NeHe07 {
 
             texture[0] = new GLTexture(1, GL_RGBA8, bImg.getWidth(), bImg.getHeight());
             {
-                texture[0]
+                texture[0]                        
+                        .updateImage(0, 0, 0, bImg.getWidth(), bImg.getHeight(), GL_BGRA, GLType.GL_UNSIGNED_BYTE, pBuf)
                         .setAttributes(baseParams
-                                .withFilter(GLTextureMinFilter.GL_NEAREST, GLTextureMagFilter.GL_NEAREST))
-                        .updateImage(0, 0, 0, bImg.getWidth(), bImg.getHeight(), GL_BGRA, GLType.GL_UNSIGNED_BYTE, pBuf);
+                                .withFilter(GLTextureMinFilter.GL_NEAREST, GLTextureMagFilter.GL_NEAREST));
             }
 
             texture[1] = new GLTexture(1, GL_RGBA8, bImg.getWidth(), bImg.getHeight());
             {
-                texture[1]
+                texture[1]                        
+                        .updateImage(0, 0, 0, bImg.getWidth(), bImg.getHeight(), GL_BGRA, GLType.GL_UNSIGNED_BYTE, pBuf)
                         .setAttributes(baseParams
-                                .withFilter(GLTextureMinFilter.GL_LINEAR, GLTextureMagFilter.GL_LINEAR))
-                        .updateImage(0, 0, 0, bImg.getWidth(), bImg.getHeight(), GL_BGRA, GLType.GL_UNSIGNED_BYTE, pBuf);
+                                .withFilter(GLTextureMinFilter.GL_LINEAR, GLTextureMagFilter.GL_LINEAR));
             }
 
             texture[2] = new GLTexture(mipmaps, GL_RGBA8, bImg.getWidth(), bImg.getHeight());
             {
-                texture[2]
-                        .setAttributes(baseParams
-                                .withFilter(GLTextureMinFilter.GL_LINEAR_MIPMAP_NEAREST, GLTextureMagFilter.GL_LINEAR))
+                texture[2]                        
                         .updateImage(0, 0, 0, bImg.getWidth(), bImg.getHeight(), GL_BGRA, GLType.GL_UNSIGNED_BYTE, pBuf)
-                        .generateMipmap();
+                        .generateMipmap()
+                        .setAttributes(baseParams
+                                .withFilter(GLTextureMinFilter.GL_LINEAR_MIPMAP_NEAREST, GLTextureMagFilter.GL_LINEAR));
             }
 
             texture[3] = new GLTexture(mipmaps, GL_RGBA8, bImg.getWidth(), bImg.getHeight());
             {
-                texture[3]
-                        .setAttributes(baseParams
-                                .withFilter(GLTextureMinFilter.GL_LINEAR_MIPMAP_LINEAR, GLTextureMagFilter.GL_LINEAR))
+                texture[3]                        
                         .updateImage(0, 0, 0, bImg.getWidth(), bImg.getHeight(), GL_BGRA, GLType.GL_UNSIGNED_BYTE, pBuf)
-                        .generateMipmap();
+                        .generateMipmap()
+                        .setAttributes(baseParams
+                                .withFilter(GLTextureMinFilter.GL_LINEAR_MIPMAP_LINEAR, GLTextureMagFilter.GL_LINEAR));
             }
             texture[4] = new GLTexture(mipmaps, GL_RGBA8, bImg.getWidth(), bImg.getHeight());
             {
-                texture[4]
-                        .setAttributes(baseParams.withFilter(GLTextureMinFilter.GL_LINEAR_MIPMAP_LINEAR, GLTextureMagFilter.GL_LINEAR).withAnisotropic(GLTextureParameters.getTextureMaxAnisotropyLevel()))
+                texture[4]                        
                         .updateImage(0, 0, 0, bImg.getWidth(), bImg.getHeight(), GL_BGRA, GLType.GL_UNSIGNED_BYTE, pBuf)
-                        .generateMipmap();
+                        .generateMipmap()
+                        .setAttributes(baseParams.withFilter(GLTextureMinFilter.GL_LINEAR_MIPMAP_LINEAR, GLTextureMagFilter.GL_LINEAR).withAnisotropic(GLTextureParameters.getTextureMaxAnisotropyLevel()));
             }
         }
 

@@ -953,8 +953,9 @@ public class GLTexture extends GLObject {
      *
      * @since 15.07.08
      */
-    public void generateMipmap() {
+    public GLTexture generateMipmap() {
         new GenerateMipmapTask().glRun(this.getThread());
+        return this;
     }
 
     /**
