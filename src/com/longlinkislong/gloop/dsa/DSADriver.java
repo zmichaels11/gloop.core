@@ -10,19 +10,26 @@ import java.nio.DoubleBuffer;
 import java.nio.FloatBuffer;
 
 /**
+ * An implementation of the ARB_direct_state_access plugin to OpenGL.
  *
  * @author zmichaels
+ * @since 15.07.10
  */
-public interface DirectStateAccess {
+public interface DSADriver {
 
+    /**
+     * Checks if the current context supports this driver.
+     * @return true if all features of the driver are supported.
+     * @since 15.07.10
+     */
     boolean isSupported();
 
     int glCreateBuffers();
 
     int glCreateTextures(int target);
-    
+
     int glCreateFramebuffers();
-    
+
     void glNamedFramebufferTexture(int framebuffer, int attachment, int texture, int level);
 
     void glNamedBufferData(int bufferId, long size, int usage);

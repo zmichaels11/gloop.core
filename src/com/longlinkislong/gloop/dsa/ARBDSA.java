@@ -19,9 +19,9 @@ import org.lwjgl.opengl.GL41;
  *
  * @author zmichaels
  */
-public class ARBDSA implements DirectStateAccess {
+public class ARBDSA implements DSADriver {
 
-    public static DirectStateAccess getInstance() {
+    public static DSADriver getInstance() {
         return Holder.INSTANCE;
     }
 
@@ -67,7 +67,7 @@ public class ARBDSA implements DirectStateAccess {
 
     private static class Holder {
 
-        private static final DirectStateAccess INSTANCE = new ARBDSA();
+        private static final DSADriver INSTANCE = new ARBDSA();
     }
 
     @Override

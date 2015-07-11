@@ -21,7 +21,7 @@ import org.lwjgl.opengl.GL41;
  *
  * @author zmichaels
  */
-public class EXTDSA implements EXTDirectStateAccessPatch {
+public class EXTDSA implements EXTDSADriver {
 
     @Override
     public String toString() {
@@ -257,7 +257,7 @@ public class EXTDSA implements EXTDirectStateAccessPatch {
         assert GL11.glGetError() == GL11.GL_NO_ERROR : String.format("glGenerateTextureMipmap(%d, %d) failed!", texture, target);
     }
 
-    public static DirectStateAccess getInstance() {
+    public static DSADriver getInstance() {
         return Holder.INSTANCE;
     }
 
@@ -425,6 +425,6 @@ public class EXTDSA implements EXTDirectStateAccessPatch {
 
     private static class Holder {
 
-        private static final DirectStateAccess INSTANCE = new EXTDSA();
+        private static final DSADriver INSTANCE = new EXTDSA();
     }
 }

@@ -5,8 +5,8 @@
  */
 package com.longlinkislong.gloop;
 
-import com.longlinkislong.gloop.dsa.DirectStateAccess;
-import com.longlinkislong.gloop.dsa.EXTDirectStateAccessPatch;
+import com.longlinkislong.gloop.dsa.DSADriver;
+import com.longlinkislong.gloop.dsa.EXTDSADriver;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.util.Objects;
@@ -273,10 +273,10 @@ public class GLTexture extends GLObject {
                 throw new GLException("GLTexture is not valid! You must allocate a texture prior to binding it.");
             }
 
-            final DirectStateAccess dsa = GLTools.getDSAInstance();
+            final DSADriver dsa = GLTools.getDSAInstance();
 
-            if (dsa instanceof EXTDirectStateAccessPatch) {
-                ((EXTDirectStateAccessPatch) dsa).glBindTextureUnit(GL13.GL_TEXTURE0 + this.activeTexture, GLTexture.this.target.value, textureId);
+            if (dsa instanceof EXTDSADriver) {
+                ((EXTDSADriver) dsa).glBindTextureUnit(GL13.GL_TEXTURE0 + this.activeTexture, GLTexture.this.target.value, textureId);
             } else {
                 dsa.glBindTextureUnit(this.activeTexture, GLTexture.this.textureId);
             }
@@ -796,7 +796,7 @@ public class GLTexture extends GLObject {
                 throw new GLException("GLTexture is not valid!");
             }
 
-            final DirectStateAccess dsa = GLTools.getDSAInstance();
+            final DSADriver dsa = GLTools.getDSAInstance();
 
             GLTexture.this.textureId = dsa.glCreateTextures(GL12.GL_TEXTURE_3D);
             dsa.glTextureStorage3d(textureId, mipmaps, this.internalFormat.value, width, height, depth);
@@ -872,7 +872,7 @@ public class GLTexture extends GLObject {
                 throw new GLException("GLTexture has already been allocated!");
             }
 
-            final DirectStateAccess dsa = GLTools.getDSAInstance();
+            final DSADriver dsa = GLTools.getDSAInstance();
 
             GLTexture.this.textureId = dsa.glCreateTextures(GL11.GL_TEXTURE_2D);
             dsa.glTextureStorage2d(textureId, mipmaps, this.internalFormat.value, width, height);
@@ -940,7 +940,7 @@ public class GLTexture extends GLObject {
                 throw new GLException("GLTexture has already been allocated!");
             }
 
-            final DirectStateAccess dsa = GLTools.getDSAInstance();
+            final DSADriver dsa = GLTools.getDSAInstance();
 
             GLTexture.this.textureId = dsa.glCreateTextures(GL11.GL_TEXTURE_1D);
             dsa.glTextureStorage1d(textureId, mipmaps, this.internalFormat.value, width);
@@ -970,10 +970,10 @@ public class GLTexture extends GLObject {
                 throw new GLException("Invalid GLTexture object!");
             }
 
-            final DirectStateAccess dsa = GLTools.getDSAInstance();
+            final DSADriver dsa = GLTools.getDSAInstance();
 
-            if (dsa instanceof EXTDirectStateAccessPatch) {
-                ((EXTDirectStateAccessPatch) dsa).glGenerateTextureMipmap(textureId, GLTexture.this.target.value);
+            if (dsa instanceof EXTDSADriver) {
+                ((EXTDSADriver) dsa).glGenerateTextureMipmap(textureId, GLTexture.this.target.value);
             } else {
                 dsa.glGenerateTextureMipmap(textureId);
             }
@@ -1160,10 +1160,10 @@ public class GLTexture extends GLObject {
                 throw new GLException("Invalid GLTexture! GLTexture must be allocated prior to setting attributes.");
             }
 
-            final DirectStateAccess dsa = GLTools.getDSAInstance();
+            final DSADriver dsa = GLTools.getDSAInstance();
 
-            if (dsa instanceof EXTDirectStateAccessPatch) {
-                final EXTDirectStateAccessPatch patch = (EXTDirectStateAccessPatch) dsa;
+            if (dsa instanceof EXTDSADriver) {
+                final EXTDSADriver patch = (EXTDSADriver) dsa;
                 final int target = GLTexture.this.target.value;
 
                 patch.glTextureParameteri(textureId, target, GL11.GL_TEXTURE_MIN_FILTER, this.params.minFilter.value);

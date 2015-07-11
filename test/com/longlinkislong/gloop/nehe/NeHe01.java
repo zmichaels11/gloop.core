@@ -24,8 +24,8 @@ public class NeHe01 {
             System.out.printf("OpenGL Version: %s\n", GL11.glGetString(GL11.GL_VERSION));
             System.out.printf("OpenGL Vendor: %s\n", GL11.glGetString(GL11.GL_VENDOR));
             System.out.printf("OpenGL Renderer: %s\n", GL11.glGetString(GL11.GL_RENDERER));
-            System.out.printf("OpenGL GLSL Version: %s\n", GL11.glGetString(GL20.GL_SHADING_LANGUAGE_VERSION));
-            System.out.printf("Using DSA: %s\n", GLTools.getDSAImplement());
+            System.out.printf("OpenGL GLSL Version: %s\n", GL11.glGetString(GL20.GL_SHADING_LANGUAGE_VERSION));            
+            System.out.printf("Using DSA driver: %s\n", GLTools.getDSAImplement());
         }));
         window.getGLThread().scheduleGLTask(window.new UpdateTask());
         

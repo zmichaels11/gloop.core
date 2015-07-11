@@ -29,7 +29,7 @@ import org.lwjgl.opengl.GL44;
  *
  * @author zmichaels
  */
-public class FakeDSA implements EXTDirectStateAccessPatch {
+public class FakeDSA implements EXTDSADriver {
 
     private static final boolean CAN_CAST_DOUBLE_TO_FLOAT;
     private static final boolean IGNORE_FRAMEBUFFER_SUPPORT;
@@ -684,7 +684,7 @@ public class FakeDSA implements EXTDirectStateAccessPatch {
         assert GL11.glGetError() == GL11.GL_NO_ERROR : String.format("glBindTexture(%d, %d) failed!", target, textureId);
     }
 
-    public static DirectStateAccess getInstance() {
+    public static DSADriver getInstance() {
         return Holder.INSTANCE;
     }
 
@@ -899,6 +899,6 @@ public class FakeDSA implements EXTDirectStateAccessPatch {
 
     private static class Holder {
 
-        private static final DirectStateAccess INSTANCE = new FakeDSA();
+        private static final DSADriver INSTANCE = new FakeDSA();
     }
 }

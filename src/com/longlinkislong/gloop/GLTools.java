@@ -6,7 +6,7 @@
 package com.longlinkislong.gloop;
 
 import com.longlinkislong.gloop.dsa.ARBDSA;
-import com.longlinkislong.gloop.dsa.DirectStateAccess;
+import com.longlinkislong.gloop.dsa.DSADriver;
 import com.longlinkislong.gloop.dsa.EXTDSA;
 import com.longlinkislong.gloop.dsa.FakeDSA;
 import com.longlinkislong.gloop.dsa.GL45DSA;
@@ -14,12 +14,19 @@ import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.nio.FloatBuffer;
 import java.nio.IntBuffer;
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.ListIterator;
+import java.util.Optional;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 import org.lwjgl.opengl.ContextCapabilities;
 import org.lwjgl.opengl.GL;
 import org.lwjgl.opengl.GL11;
@@ -145,7 +152,7 @@ public class GLTools {
      * @param data the buffer to check
      * @return the ByteBuffer
      * @throws GLException if buffer is not direct.
-     * @throws GLException if buffer is not in native byte order.     
+     * @throws GLException if buffer is not in native byte order.
      * @since 15.06.13
      */
     public static ByteBuffer checkBuffer(final ByteBuffer data) {
@@ -154,7 +161,7 @@ public class GLTools {
         } else if (data.order() != ByteOrder.nativeOrder()) {
             throw new GLException("ByteBuffer is not in native order!");
         }
-        
+
         return data;
     }
 
@@ -1175,46 +1182,200 @@ public class GLTools {
     }
 
     /**
-     * Converts color data packed as integers to an array packed as shorts.
+     * Converts a 32bit fixed-point to a 16bit fixed-point.
      *
-     * @param out array to write to
-     * @param outOffset offset to the array to write to
-     * @param in0 array to read data from
-     * @param in0Offset offset to the array to read from
-     * @param length the number elements to read
-     * @since 15.06.22
+     * @param value the 32bit.
+     * @return the 16bit.
+     * @since 15.07.09
      */
-    public static void int8888ToShort4444(
-            final short[] out, final int outOffset,
-            final int[] in0, final int in0Offset, final int length) {
+    public static int fx32fx16(int value) {
+        final int uint16 = value & 0xFFFF;
+        final double scale = uint16 / (double) 0xFFFFFFFF;
+        return (int) (0xFFFF * scale) & 0xFFFF;
+    }
 
-        for (int i = 0; i < length; i++) {
-            final int val = in0[in0Offset + i];
-            final int inB0 = ((0xFF000000 & val) >> 24) / 2;
-            final int inB1 = ((0x00FF0000 & val) >> 16) / 2;
-            final int inB2 = ((0x0000FF00 & val) >> 8) / 2;
-            final int inB3 = (0x000000FF & val) / 2;
+    /**
+     * Converts a 16bit fixed-point to a 12bit fixed-point.
+     *
+     * @param value the 16bit.
+     * @return the 12bit.
+     * @since 15.07.09
+     */
+    public static int fx16fx12(int value) {
+        final int uint16 = value & 0xFFFF;
+        final double scale = uint16 / (double) 0xFFFF;
+        return (int) (0xFFF * scale) & 0xFFF;
+    }
 
-            out[outOffset + i] = (short) ((inB0 << 12 & 0xFF)
-                    | (inB1 << 8 & 0xFF)
-                    | (inB2 << 4 & 0xFF)
-                    | (inB3 & 0xFF));
-        }
+    /**
+     * Converts a 16bit fixed-point to an 11bit fixed-point.
+     *
+     * @param value the 16bit.
+     * @return the 10bit.
+     * @since 15.07.09
+     */
+    public static int fx16fx11(int value) {
+        final int uint16 = value & 0xFFFF;
+        final double scale = uint16 / (double) 0xFFFF;
+        return (int) (0x7FF * scale) & 0x7FF;
+    }
+
+    /**
+     * Converts a 16bit fixed-point to a 10bit fixed-point.
+     *
+     * @param value the 16bit.
+     * @return the 10bit.
+     * @since 15.07.09
+     */
+    public static int fx16fx10(int value) {
+        final int uint16 = value & 0xFFFF;
+        final double scale = uint16 / (double) 0xFFFF;
+        return (int) (0x3FF * scale) & 0x3FF;
+    }
+
+    /**
+     * Converts a 16bit fixed-point to a 9bit fixed-point.
+     *
+     * @param value the 16bit.
+     * @return the 9bit.
+     * @since 15.07.09
+     */
+    public static int fx16fx9(int value) {
+        final int uint16 = value & 0xFFFF;
+        final double scale = uint16 / (double) 0xFFFF;
+        return (int) (0x1FF * scale) & 0x1FF;
+    }
+
+    /**
+     * Converts a 16bit fixed-point to an 8bit fixed-point.
+     *
+     * @param value the 16bit.
+     * @return the 8bit.
+     * @since 15.07.09
+     */
+    public static int fx16fx8(int value) {
+        final int uint16 = value & 0xFFFF;
+        final double scale = uint16 / (double) 0xFFFF;
+        return (int) (0xFF * scale) & 0xFF;
+    }
+
+    /**
+     * Converts an 8bit fixed-point to a 6bit fixed-point.
+     *
+     * @param value the 8bit.
+     * @return the 6bit.
+     * @since 15.07.09
+     */
+    public static int fx8fx6(int value) {
+        final int uint8 = value & 0xFF;
+        final double scale = uint8 / (double) 0xFF;
+        return (int) (0x3F * scale) & 0x3F;
+    }
+
+    /**
+     * Converts an 8bit fixed-point to a 5bit fixed-point.
+     *
+     * @param value the 8bit.
+     * @return the 5bit.
+     * @since 15.07.09
+     */
+    public static int fx8fx5(int value) {
+        final int uint8 = value & 0xFF;
+        final double scale = uint8 / (double) 0xFF;
+        return (int) (0x1F * scale) & 0x1F;
+    }
+
+    /**
+     * Converts an 8bit fixed-point to a 4bit fixed-point.
+     *
+     * @param value the 8bit
+     * @return the 4bit.
+     * @since 15.07.09
+     */
+    public static int fx8fx4(int value) {
+        final int uint8 = value & 0xFF;
+        final double scale = uint8 / (double) 0xFF;
+        return (int) (0xF * scale) & 0xF;
+    }
+
+    /**
+     * Converts an 8bit fixed-point to a 3bit fixed-point.
+     *
+     * @param value the 8bit.
+     * @return the 3bit.
+     * @since 15.07.09
+     */
+    public static int fx8fx3(int value) {
+        final int uint8 = value & 0xFF;
+        final double scale = uint8 / (double) 0xFF;
+        return (int) (0x7 * scale) & 0x7;
+    }
+
+    /**
+     * Converts an 8bit fixed-point to a 2bit fixed-point.
+     *
+     * @param value the 8bit.
+     * @return the 2bit.
+     */
+    public static int fx8fx2(int value) {
+        final int uint8 = value & 0xFF;
+        final double scale = uint8 / (double) 0xFF;
+        return (int) (0x3 * scale) & 0x3;
     }
 
     private static final VendorQuery VENDOR_QUERY = new VendorQuery();
+    /**
+     * Constant for describing an AMD GPU.
+     *
+     * @since 15.07.09
+     */
     public static final String GPU_AMD = "AMD";
+    /**
+     * Constant for describing an NVidia GPU.
+     *
+     * @since 15.07.09
+     */
     public static final String GPU_NVIDIA = "NVIDIA";
+
+    /**
+     * Constant for describing an Intel GPU.
+     *
+     * @since 15.07.09
+     */
     public static final String GPU_INTEL = "INTEL";
 
+    /**
+     * Checks if the specified OpenGL version is supported on the context of the
+     * specified OpenGL thread.
+     *
+     * @param version the version to check.
+     * @param thread the OpenGL to get the context from.
+     * @return true if the context supports the specified version.
+     * @since 15.07.09
+     */
     public static boolean hasOpenGLVersion(final int version, GLThread thread) {
         return newOpenGLVersionQuery(version).glCall(thread);
     }
 
+    /**
+     * Checks if the specified OpenGL version is supported.
+     *
+     * @param version the version to check.
+     * @return true if it is supported.
+     * @since 15.07.09
+     */
     public static boolean hasOpenGLVersion(final int version) {
         return newOpenGLVersionQuery(version).glCall();
     }
 
+    /**
+     * Constructs a new GLQuery that checks if the requested version of OpenGL
+     * is supported.
+     *
+     * @param version the version to check.
+     * @return true if the version is supported.
+     * @since 15.07.09
+     */
     public static GLQuery<Boolean> newOpenGLVersionQuery(final int version) {
         return GLQuery.create(GLTools::_hasOpenGLVersion, version);
     }
@@ -1262,18 +1423,42 @@ public class GLTools {
         }
     }
 
+    /**
+     * Checks if the vendor is AMD.
+     *
+     * @return true if the GPU is an AMD card.
+     * @since 15.07.09
+     */
     public static boolean isGPUAmd() {
         return getVendor().equals(GPU_AMD);
     }
 
+    /**
+     * Checks if the vendor is NVidia.
+     *
+     * @return true if the GPU is an NVidia card.
+     * @since 15.07.09
+     */
     public static boolean isNVidia() {
         return getVendor().equals(GPU_NVIDIA);
     }
 
+    /**
+     * Checks if the vendor is Intel.
+     *
+     * @return true if the GPU is an Intel card.
+     * @since 15.07.09
+     */
     public static boolean isIntel() {
         return getVendor().equals(GPU_INTEL);
     }
 
+    /**
+     * Retrieves the name of the GPU vendor.
+     *
+     * @return the vendor name.
+     * @since 15.07.09
+     */
     public static String getVendor() {
         if (VendorQuery.isSet()) {
             return VendorQuery.VENDOR;
@@ -1282,6 +1467,11 @@ public class GLTools {
         }
     }
 
+    /**
+     * A GLTask that checks the GPU vendor.
+     *
+     * @since 15.07.09
+     */
     public static class VendorQuery extends GLQuery<String> {
 
         private static String VENDOR = null;
@@ -1345,12 +1535,12 @@ public class GLTools {
         }
     }
 
-    private static DirectStateAccess DSA = null;
-    private static final DirectStateAccess[] DSA_IMPLEMENTATIONS = {GL45DSA.getInstance(), ARBDSA.getInstance(), EXTDSA.getInstance(), FakeDSA.getInstance()};
+    private static DSADriver DSA = null;
+    private static final DSADriver[] DSA_IMPLEMENTATIONS;
 
-    protected static DirectStateAccess getDSAInstance() {
+    protected static DSADriver getDSAInstance() {
         if (DSA == null) {
-            for (DirectStateAccess dsaImp : DSA_IMPLEMENTATIONS) {
+            for (DSADriver dsaImp : DSA_IMPLEMENTATIONS) {
                 if (dsaImp.isSupported()) {
                     DSA = dsaImp;
                     break;
@@ -1361,30 +1551,100 @@ public class GLTools {
         return DSA;
     }
 
+    /**
+     * Retrieves the name of the implementation for Direct State Access that is
+     * currently being used.
+     *
+     * @return the DSA name.
+     * @since 15.07.09
+     */
     public static String getDSAImplement() {
         return getDSAInstance().toString();
     }
 
     static {
+        // check for driver override.
         final String dsa = System.getProperty("gloop.gltools.dsa", "");
-
         switch (dsa) {
             case "fake":
-                System.out.println("Using DSA: FakeDSA");
+                System.out.println("Using DSA driver: FakeDSA");
                 DSA = FakeDSA.getInstance();
                 break;
             case "ext":
-                System.out.println("Using DSA: EXTDSA");
+                System.out.println("Using DSA driver: EXTDSA");
                 DSA = EXTDSA.getInstance();
                 break;
             case "gl45":
-                System.out.println("Using DSA: GL45DSA");
+                System.out.println("Using DSA driver: GL45DSA");
                 DSA = GL45DSA.getInstance();
                 break;
             case "arb":
-                System.out.println("Using DSA: ARBDSA");
+                System.out.println("Using DSA driver: ARBDSA");
                 DSA = ARBDSA.getInstance();
                 break;
         }
+
+        // check for all plugins
+        final List<Class<? extends DSADriver>> dsaDrivers = new ArrayList<>();
+        final String dsaPlugins = System.getProperty("gloop.gltools.dsa.plugins", "");
+        final List<String> plugins = new ArrayList<>();
+
+        // populate the known plugins with the default plugins.
+        Stream
+                .of(GL45DSA.class, ARBDSA.class, EXTDSA.class, FakeDSA.class)
+                .map(Class::getName)
+                .forEach(plugins::add);
+
+        // detect user-specified plugins
+        Arrays
+                .stream(dsaPlugins.split(","))
+                .map(String::trim)
+                .filter(String::isEmpty)
+                .forEach(plugins::add);
+
+        // find the implementations.
+        for (String plugin : plugins) {
+            if (plugin == null || plugin.isEmpty()) {
+                continue;
+            }
+
+            try {
+                final Class<?> dsaPlugin = Class.forName(plugin);
+
+                dsaDrivers.add(dsaPlugin.asSubclass(DSADriver.class));
+            } catch (ClassNotFoundException ex) {
+                throw new RuntimeException("Could not find DSA driver: " + plugin);
+            }
+        }
+
+        // remove all plugins that are blacklisted.
+        final String dsaBlacklist = System.getProperty("gloop.gltools.dsa.blacklist", "");
+        final String[] blacklisted = dsaBlacklist.split(",");
+
+        for (String blacklistedDSA : blacklisted) {
+            Optional<Class<?>> blacklistedDSADriver = Optional.empty();
+
+            for (Class<?> driver : dsaDrivers) {
+                if (driver.getName().toLowerCase().endsWith(blacklistedDSA.toLowerCase())) {
+                    blacklistedDSADriver = Optional.of(driver);
+                    System.out.println("Blacklisting DSA driver: " + driver.getName());
+                    break;
+                }
+            }
+
+            blacklistedDSADriver.ifPresent(dsaDrivers::remove);
+        }
+
+        // construct the array of available DSADrivers from the list of known plugins
+        DSA_IMPLEMENTATIONS = dsaDrivers.stream().map(def -> {
+            try {
+                final Method singletonGetter = def.getMethod("getInstance");
+
+                return singletonGetter.invoke(null);
+            } catch (IllegalAccessException | IllegalArgumentException | InvocationTargetException | NoSuchMethodException ex) {
+                throw new RuntimeException("Unable to initialize DSA Driver: " + def.getName(), ex);
+            }
+        }).collect(Collectors.toList())
+                .toArray(new DSADriver[dsaDrivers.size()]);
     }
 }

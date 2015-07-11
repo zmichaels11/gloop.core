@@ -5,8 +5,8 @@
  */
 package com.longlinkislong.gloop;
 
-import com.longlinkislong.gloop.dsa.DirectStateAccess;
-import com.longlinkislong.gloop.dsa.EXTDirectStateAccessPatch;
+import com.longlinkislong.gloop.dsa.DSADriver;
+import com.longlinkislong.gloop.dsa.EXTDSADriver;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.nio.IntBuffer;
@@ -357,10 +357,10 @@ public class GLFramebuffer extends GLObject {
                 throw new GLException("Invalid GLFramebuffer!");
             }
 
-            final DirectStateAccess dsa = GLTools.getDSAInstance();
+            final DSADriver dsa = GLTools.getDSAInstance();
 
-            if (dsa instanceof EXTDirectStateAccessPatch) {
-                final EXTDirectStateAccessPatch patch = (EXTDirectStateAccessPatch) dsa;
+            if (dsa instanceof EXTDSADriver) {
+                final EXTDSADriver patch = (EXTDSADriver) dsa;
                 final GLTextureTarget target = this.depthStencilAttachment.getTarget();
 
                 switch (target) {
@@ -458,10 +458,10 @@ public class GLFramebuffer extends GLObject {
                 throw new GLException("Invalid GLFramebuffer!");
             }
 
-            final DirectStateAccess dsa = GLTools.getDSAInstance();
+            final DSADriver dsa = GLTools.getDSAInstance();
 
-            if (dsa instanceof EXTDirectStateAccessPatch) {
-                final EXTDirectStateAccessPatch patch = (EXTDirectStateAccessPatch) dsa;
+            if (dsa instanceof EXTDSADriver) {
+                final EXTDSADriver patch = (EXTDSADriver) dsa;
                 final GLTextureTarget target = this.depthAttachment.getTarget();
 
                 switch (target) {
@@ -576,10 +576,10 @@ public class GLFramebuffer extends GLObject {
                 throw new GLException("Invalid GLFramebuffer!");
             }
 
-            final DirectStateAccess dsa = GLTools.getDSAInstance();
+            final DSADriver dsa = GLTools.getDSAInstance();
 
-            if (dsa instanceof EXTDirectStateAccessPatch) {
-                final EXTDirectStateAccessPatch patch = (EXTDirectStateAccessPatch) dsa;
+            if (dsa instanceof EXTDSADriver) {
+                final EXTDSADriver patch = (EXTDSADriver) dsa;
                 final GLTextureTarget target = this.colorAttachment.getTarget();
 
                 switch (target) {

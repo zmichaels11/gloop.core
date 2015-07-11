@@ -107,4 +107,13 @@ public enum GLTextureInternalFormat {
         this.value = value;
         
     }
+    
+    public static GLTextureInternalFormat valueOf(int glEnum) {
+        for(GLTextureInternalFormat fmt : values()) {
+            if(fmt.value == glEnum) {
+                return fmt;
+            }
+        }        
+        return null;
+    }
 }

@@ -16,7 +16,7 @@ import org.lwjgl.opengl.GL45;
  *
  * @author zmichaels
  */
-public class GL45DSA implements DirectStateAccess {
+public class GL45DSA implements DSADriver {
 
     @Override
     public String toString() {
@@ -193,7 +193,7 @@ public class GL45DSA implements DirectStateAccess {
         GL45.glBindTextureUnit(unit, textureId);
     }
 
-    public static DirectStateAccess getInstance() {
+    public static DSADriver getInstance() {
         return Holder.INSTANCE;
     }
 
@@ -244,6 +244,6 @@ public class GL45DSA implements DirectStateAccess {
 
     private static class Holder {
 
-        private static final DirectStateAccess INSTANCE = new GL45DSA();
+        private static final DSADriver INSTANCE = new GL45DSA();
     }
 }
