@@ -29,7 +29,7 @@ public class GL45DSA implements DSADriver {
     }
 
     @Override
-    public int glCreateBuffers() {
+    public int glCreateBuffers() {        
         return GL45.glCreateBuffers();
     }
 
@@ -240,6 +240,11 @@ public class GL45DSA implements DSADriver {
     @Override
     public void glNamedFramebufferTexture(int framebuffer, int attachment, int texture, int level) {
         GL45.glNamedFramebufferTexture(framebuffer, attachment, texture, level);
+    }
+
+    @Override
+    public void glNamedBufferReadPixels(int bufferId, int x, int y, int width, int height, int format, int type, long ptr) {
+        FakeDSA.getInstance().glNamedBufferReadPixels(bufferId, x, y, width, height, format, type, ptr);
     }
 
     private static class Holder {

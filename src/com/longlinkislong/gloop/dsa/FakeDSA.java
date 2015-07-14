@@ -20,6 +20,7 @@ import org.lwjgl.opengl.GL12;
 import org.lwjgl.opengl.GL13;
 import org.lwjgl.opengl.GL15;
 import org.lwjgl.opengl.GL20;
+import org.lwjgl.opengl.GL21;
 import org.lwjgl.opengl.GL30;
 import org.lwjgl.opengl.GL31;
 import org.lwjgl.opengl.GL40;
@@ -895,6 +896,15 @@ public class FakeDSA implements EXTDSADriver {
         } else {
             throw new UnsupportedOperationException("glFramebufferTexture2D is not supported. glFramebufferTexture2D requires either: an OpenGL 3.0 context, ARB_framebuffer_object, or EXT_framebuffer_object.");
         }
+    }
+
+    @Override
+    public void glNamedBufferReadPixels(int bufferId, int x, int y, int width, int height, int format, int type, long ptr) {
+        final int prevPixBuffer = GL11.glGetInteger(GL21.GL_PIXEL_PACK_BUFFER_BINDING);
+
+        GL15.glBindBuffer(GL21.GL_PIXEL_PACK_BUFFER, bufferId);
+        GL11.glReadPixels(x, y, width, height, format, type, ptr);
+        GL15.glBindBuffer(GL21.GL_PIXEL_PACK_BUFFER, prevPixBuffer);
     }
 
     private static class Holder {

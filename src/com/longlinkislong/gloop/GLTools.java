@@ -1539,7 +1539,12 @@ public class GLTools {
     private static DSADriver DSA = null;
     private static final DSADriver[] DSA_IMPLEMENTATIONS;
 
-    protected static DSADriver getDSAInstance() {
+    /**
+     * Retrieves the current DSADriver.
+     * @return the DSADriver.
+     * @since 15.07.13
+     */
+    public static DSADriver getDSAInstance() {
         if (DSA == null) {
             for (DSADriver dsaImp : DSA_IMPLEMENTATIONS) {
                 if (dsaImp.isSupported()) {
@@ -1548,6 +1553,8 @@ public class GLTools {
                 }
             }
         }
+        
+        
 
         return DSA;
     }
@@ -1601,7 +1608,7 @@ public class GLTools {
 
         // populate the known plugins with the default plugins.
         Stream
-                .of(GL45DSA.class, ARBDSA.class, EXTDSA.class, FakeDSA.class, NoDSA.class)
+                .of(GL45DSA.class, ARBDSA.class, FakeDSA.class)
                 .map(Class::getName)
                 .forEach(plugins::add);
 

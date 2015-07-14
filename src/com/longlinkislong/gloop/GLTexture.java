@@ -42,7 +42,7 @@ public class GLTexture extends GLObject {
      * @since 15.07.08
      */
     public GLTexture() {
-        this(GLThread.getDefaultInstance());
+        this(GLThread.getDefaultInstance());        
     }
 
     /**

@@ -98,7 +98,7 @@ public interface EXTDSADriver extends DSADriver {
             height = Math.max(1, (height / 2));
             depth = Math.max(1, (depth / 2));
         }
-    }
+    }     
 
     /**
      * Retrieves an OpenGL texture format that is a version of the guessed

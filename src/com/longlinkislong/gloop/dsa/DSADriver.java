@@ -29,6 +29,8 @@ public interface DSADriver {
     int glCreateTextures(int target);
 
     int glCreateFramebuffers();
+    
+    void glNamedBufferReadPixels(int bufferId, int x, int y, int width, int height, int format, int type, long ptr);
 
     void glNamedFramebufferTexture(int framebuffer, int attachment, int texture, int level);
 
@@ -84,7 +86,7 @@ public interface DSADriver {
 
     void glProgramUniformMatrix3d(int programId, int location, boolean needsTranspose, DoubleBuffer data);
 
-    void glProgramUniformMatrix4d(int programId, int location, boolean needsTranspose, DoubleBuffer data);
+    void glProgramUniformMatrix4d(int programId, int location, boolean needsTranspose, DoubleBuffer data);        
 
     void glTextureParameteri(int textureId, int pName, int val);
 

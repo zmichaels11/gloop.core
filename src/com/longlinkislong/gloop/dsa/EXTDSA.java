@@ -10,7 +10,6 @@ import java.nio.ByteBuffer;
 import java.nio.DoubleBuffer;
 import java.nio.FloatBuffer;
 import org.lwjgl.opengl.ARBBufferStorage;
-import org.lwjgl.opengl.ARBDirectStateAccess;
 import org.lwjgl.opengl.ARBSeparateShaderObjects;
 import org.lwjgl.opengl.ContextCapabilities;
 import org.lwjgl.opengl.EXTDirectStateAccess;
@@ -18,7 +17,6 @@ import org.lwjgl.opengl.GL;
 import org.lwjgl.opengl.GL11;
 import org.lwjgl.opengl.GL12;
 import org.lwjgl.opengl.GL41;
-import org.lwjgl.opengl.GL42;
 
 /**
  *
@@ -427,6 +425,11 @@ public class EXTDSA implements EXTDSADriver {
         EXTDirectStateAccess.glNamedFramebufferTextureEXT(framebuffer, attachment, texture, level);
         assert GL11.glGetError() == GL11.GL_NO_ERROR : String.format("glNamedFramebufferTextureEXT(%d, %d, %d, %d) failed!", framebuffer, attachment, texture, level);
     }    
+
+    @Override
+    public void glNamedBufferReadPixels(int bufferId, int x, int y, int width, int height, int format, int type, long ptr) {
+        FakeDSA.getInstance().glNamedBufferReadPixels(bufferId, x, y, width, height, format, type, ptr);
+    }        
 
     private static class Holder {
 
