@@ -98,38 +98,38 @@ public class NeHe07 {
 
         final GLBuffer vCube = new GLBuffer();
         {
-            final List<GLVec3> vPos = new ArrayList<>();
-            vPos.add(GLVec3F.create(-1f, -1f, 1f));
-            vPos.add(GLVec3F.create(1f, -1f, 1f));
-            vPos.add(GLVec3F.create(1f, 1f, 1f));
-            vPos.add(GLVec3F.create(-1f, 1f, 1f));
+            final List<GLVec3> verts = new ArrayList<>();
+            verts.add(GLVec3F.create(-1f, -1f, 1f));
+            verts.add(GLVec3F.create(1f, -1f, 1f));
+            verts.add(GLVec3F.create(1f, 1f, 1f));
+            verts.add(GLVec3F.create(-1f, 1f, 1f));
 
-            vPos.add(GLVec3F.create(-1f, -1f, -1f));
-            vPos.add(GLVec3F.create(-1f, 1f, 1f));
-            vPos.add(GLVec3F.create(1f, 1f, -1f));
-            vPos.add(GLVec3F.create(1f, -1f, -1f));
+            verts.add(GLVec3F.create(-1f, -1f, -1f));
+            verts.add(GLVec3F.create(-1f, 1f, -1f));
+            verts.add(GLVec3F.create(1f, 1f, -1f));
+            verts.add(GLVec3F.create(1f, -1f, -1f));
 
-            vPos.add(GLVec3F.create(-1f, 1f, -1f));
-            vPos.add(GLVec3F.create(-1f, 1f, 1f));
-            vPos.add(GLVec3F.create(1f, 1f, 1f));
-            vPos.add(GLVec3F.create(1f, 1f, -1f));
+            verts.add(GLVec3F.create(1f, -1f, -1f));
+            verts.add(GLVec3F.create(1f, 1f, -1f));
+            verts.add(GLVec3F.create(1f, 1f, 1f));
+            verts.add(GLVec3F.create(1f, -1f, 1f));
 
-            vPos.add(GLVec3F.create(-1f, -1f, -1f));
-            vPos.add(GLVec3F.create(1f, -1f, -1f));
-            vPos.add(GLVec3F.create(1f, -1f, 1f));
-            vPos.add(GLVec3F.create(-1f, -1f, 1f));
+            verts.add(GLVec3F.create(-1f, -1f, 1f));
+            verts.add(GLVec3F.create(-1f, 1f, 1f));
+            verts.add(GLVec3F.create(-1f, 1f, -1f));
+            verts.add(GLVec3F.create(-1f, -1f, -1f));
 
-            vPos.add(GLVec3F.create(1f, -1f, -1f));
-            vPos.add(GLVec3F.create(1f, 1f, -1f));
-            vPos.add(GLVec3F.create(1f, 1f, 1f));
-            vPos.add(GLVec3F.create(1f, -1f, 1f));
+            verts.add(GLVec3F.create(1f, 1f, 1f));
+            verts.add(GLVec3F.create(1f, 1f, -1f));
+            verts.add(GLVec3F.create(-1f, 1f, -1f));
+            verts.add(GLVec3F.create(-1f, 1f, 1f));
 
-            vPos.add(GLVec3F.create(-1f, -1f, -1f));
-            vPos.add(GLVec3F.create(-1f, -1f, 1f));
-            vPos.add(GLVec3F.create(-1f, 1f, 1f));
-            vPos.add(GLVec3F.create(-1f, 1f, -1f));
+            verts.add(GLVec3F.create(1f, -1f, -1f));
+            verts.add(GLVec3F.create(1f, -1f, 1f));
+            verts.add(GLVec3F.create(-1f, -1f, 1f));
+            verts.add(GLVec3F.create(-1f, -1f, -1f));
 
-            vCube.upload(GLTools.wrapVec3F(vPos));
+            vCube.upload(GLTools.wrapVec3F(verts));
         }
 
         final GLBuffer tCube = new GLBuffer();
@@ -171,12 +171,12 @@ public class NeHe07 {
 
         final GLBuffer iCube = new GLBuffer();
         iCube.upload(GLTools.wrapInt(
-                0, 1, 2, 2, 3, 0,
-                4, 5, 6, 6, 7, 4,
-                8, 9, 10, 10, 11, 8,
-                12, 13, 14, 14, 15, 12,
-                16, 17, 18, 18, 19, 16,
-                20, 21, 22, 22, 23, 20));
+                0, 1, 2, 0, 2, 3,
+                4, 5, 6, 4, 6, 7,
+                8, 9, 10, 8, 10, 11,
+                12, 13, 14, 12, 14, 15,
+                16, 17, 18, 16, 18, 19,
+                20, 21, 22, 20, 22, 23));
         final int cubeVerts = 36;
 
         final GLVertexArray vaoCube = new GLVertexArray();

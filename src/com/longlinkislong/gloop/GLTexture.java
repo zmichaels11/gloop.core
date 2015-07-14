@@ -638,7 +638,7 @@ public class GLTexture extends GLObject {
                     format,
                     type, data);
 
-            this.lastSetSubImage2D.glRun(this.getThread());
+            this.lastSetSubImage1D.glRun(this.getThread());
         }
 
         return this;

@@ -17,8 +17,7 @@ public class GLPolygonParameters extends GLObject {
     public static final float DEFAULT_POINT_SIZE = 1f;
     public static final float DEFAULT_LINE_SIZE = 1f;
     public static final GLFrontFaceMode DEFAULT_FRONT_FACE = GLFrontFaceMode.GL_CCW;
-    public static final GLPolygonMode DEFAULT_FRONT_MODE = GLPolygonMode.GL_FILL;
-    public static final GLPolygonMode DEFAULT_BACK_MODE = GLPolygonMode.GL_FILL;
+    public static final GLPolygonMode DEFAULT_MODE = GLPolygonMode.GL_FILL;
     public static final float DEFAULT_POLYGON_OFFSET_FACTOR = 0f;
     public static final float DEFAULT_POLYGON_OFFSET_UNITS = 0f;
     public static final GLCullMode DEFAULT_CULL_MODE = GLCullMode.GL_BACK;
@@ -27,7 +26,7 @@ public class GLPolygonParameters extends GLObject {
     public final GLCullMode cullMode;
     public final float pointSize, lineSize;
     public final GLFrontFaceMode frontFace;
-    public final GLPolygonMode frontMode, backMode;
+    public final GLPolygonMode mode;
     public final float polygonOffsetFactor, polygonOffsetUnits;
 
     public GLPolygonParameters() {
@@ -39,7 +38,7 @@ public class GLPolygonParameters extends GLObject {
                 thread,
                 DEFAULT_POINT_SIZE, DEFAULT_LINE_SIZE,
                 DEFAULT_FRONT_FACE,
-                DEFAULT_FRONT_MODE, DEFAULT_BACK_MODE,
+                DEFAULT_MODE,
                 DEFAULT_POLYGON_OFFSET_FACTOR, DEFAULT_POLYGON_OFFSET_UNITS,
                 GLEnableStatus.GL_ENABLED, DEFAULT_CULL_MODE);
     }
@@ -48,16 +47,15 @@ public class GLPolygonParameters extends GLObject {
             final GLThread thread,
             final float pointSize, final float lineSize,
             final GLFrontFaceMode frontFace,
-            final GLPolygonMode frontMode, final GLPolygonMode backMode,
+            final GLPolygonMode mode,
             final float polygonOffsetFactor, final float polygonOffsetUnits,
             final GLEnableStatus cullEnabled, final GLCullMode cullMode) {
 
         super(thread);
         this.pointSize = pointSize;
         this.lineSize = lineSize;
-        Objects.requireNonNull(this.frontFace = frontFace);
-        Objects.requireNonNull(this.frontMode = frontMode);
-        Objects.requireNonNull(this.backMode = backMode);
+        this.frontFace = Objects.requireNonNull(frontFace);
+        this.mode = Objects.requireNonNull(mode);
         this.polygonOffsetFactor = polygonOffsetFactor;
         this.polygonOffsetUnits = polygonOffsetUnits;
         this.cullEnabled = cullEnabled;
@@ -71,7 +69,7 @@ public class GLPolygonParameters extends GLObject {
                         thread,
                         this.pointSize, this.lineSize,
                         this.frontFace,
-                        this.frontMode, this.backMode,
+                        this.mode,
                         this.polygonOffsetFactor, this.polygonOffsetUnits,
                         this.cullEnabled, this.cullMode);
     }
@@ -81,7 +79,7 @@ public class GLPolygonParameters extends GLObject {
                 this.getThread(),
                 size, this.lineSize,
                 this.frontFace,
-                this.frontMode, this.backMode,
+                this.mode,
                 this.polygonOffsetFactor, this.polygonOffsetUnits,
                 this.cullEnabled, this.cullMode);
     }
@@ -91,7 +89,7 @@ public class GLPolygonParameters extends GLObject {
                 this.getThread(),
                 this.pointSize, size,
                 this.frontFace,
-                this.frontMode, this.backMode,
+                this.mode,
                 this.polygonOffsetFactor, this.polygonOffsetUnits,
                 this.cullEnabled, this.cullMode);
     }
@@ -103,21 +101,18 @@ public class GLPolygonParameters extends GLObject {
                         this.getThread(),
                         this.pointSize, this.lineSize,
                         frontFace,
-                        this.frontMode, this.backMode,
+                        this.mode,
                         this.polygonOffsetFactor, this.polygonOffsetUnits,
                         this.cullEnabled, this.cullMode);
     }
 
-    public GLPolygonParameters withPolygonMode(
-            final GLPolygonMode frontMode, final GLPolygonMode backMode) {
+    public GLPolygonParameters withPolygonMode(final GLPolygonMode mode) {
 
-        return this.frontMode == frontMode && this.backMode == backMode
-                ? this
-                : new GLPolygonParameters(
+        return this.mode == mode ? this : new GLPolygonParameters(
                         this.getThread(),
                         this.pointSize, this.lineSize,
                         this.frontFace,
-                        frontMode, backMode,
+                        mode,
                         this.polygonOffsetFactor, this.polygonOffsetUnits,
                         this.cullEnabled, this.cullMode);
     }
@@ -129,7 +124,7 @@ public class GLPolygonParameters extends GLObject {
                 this.getThread(),
                 this.pointSize, this.lineSize,
                 this.frontFace,
-                this.frontMode, this.backMode,
+                this.mode,
                 factor, units,
                 this.cullEnabled, this.cullMode);
     }
@@ -141,7 +136,7 @@ public class GLPolygonParameters extends GLObject {
                         this.getThread(),
                         this.pointSize, this.lineSize,
                         this.frontFace,
-                        this.frontMode, this.backMode,
+                        this.mode,
                         this.polygonOffsetFactor, this.polygonOffsetUnits,
                         enabled, mode);
     }
@@ -161,49 +156,45 @@ public class GLPolygonParameters extends GLObject {
         @Override
         public void run() {
             final GLThread thread = GLThread.THREAD_MAP.get(Thread.currentThread());
-            
+
             thread.currentPolygonParameters = GLPolygonParameters.this.withGLThread(thread);
-            
+
             GL11.glPointSize(GLPolygonParameters.this.pointSize);
-            
+
             assert GL11.glGetError() == GL11.GL_NO_ERROR : String.format("glPointSize(%f) failed!", GLPolygonParameters.this.pointSize);
-            
+
             GL11.glLineWidth(GLPolygonParameters.this.lineSize);
-            
+
             assert GL11.glGetError() == GL11.GL_NO_ERROR : String.format("glLineWidth(%f) failed!", GLPolygonParameters.this.lineSize);
-            
+
             GL11.glFrontFace(GLPolygonParameters.this.frontFace.value);
-            
+
             assert GL11.glGetError() == GL11.GL_NO_ERROR : String.format("glFrontFace(%s) failed!", GLPolygonParameters.this.frontFace);
 
             switch (GLPolygonParameters.this.cullEnabled) {
                 case GL_ENABLED:
                     GL11.glEnable(GL11.GL_CULL_FACE);
-                    
+
                     assert GL11.glGetError() == GL11.GL_NO_ERROR : "glEnable(GL_CULL_FACE) failed!";
-                            
+
                     GL11.glCullFace(GLPolygonParameters.this.cullMode.value);
-                    
+
                     assert GL11.glGetError() == GL11.GL_NO_ERROR : String.format("glCullFace(%s) failed!", GLPolygonParameters.this.cullMode);
                     break;
                 case GL_DISABLED:
                     GL11.glDisable(GL11.GL_CULL_FACE);
-                    
+
                     assert GL11.glGetError() == GL11.GL_NO_ERROR : "glDisable(GL_CULL_FACE) failed!";
             }
 
-            GL11.glPolygonMode(GL11.GL_FRONT, GLPolygonParameters.this.frontMode.value);
-            
-            assert GL11.glGetError() == GL11.GL_NO_ERROR : String.format("glPolygonMode(GL_FRONT, %s) failed!", GLPolygonParameters.this.frontMode);
-            
-            GL11.glPolygonMode(GL11.GL_BACK, GLPolygonParameters.this.backMode.value);
-            
-            assert GL11.glGetError() == GL11.GL_NO_ERROR : String.format("glPolygonMode(GL_BACK, %s) failed!", GLPolygonParameters.this.backMode);
-            
+            GL11.glPolygonMode(GL11.GL_FRONT_AND_BACK, GLPolygonParameters.this.mode.value);
+
+            assert GL11.glGetError() == GL11.GL_NO_ERROR : String.format("glPolygonMode(GL_FRONT_AND_BACK, %s) failed!", GLPolygonParameters.this.mode);            
+
             GL11.glPolygonOffset(
                     GLPolygonParameters.this.polygonOffsetFactor,
                     GLPolygonParameters.this.polygonOffsetUnits);
-            
+
             assert GL11.glGetError() == GL11.GL_NO_ERROR : String.format("glPolygonOffset(%f, %f) failed!", GLPolygonParameters.this.polygonOffsetFactor, GLPolygonParameters.this.polygonOffsetUnits);
         }
 
