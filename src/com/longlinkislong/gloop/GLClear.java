@@ -257,7 +257,7 @@ public class GLClear extends GLObject {
 
         @Override
         public void run() {
-            final GLThread thread = GLThread.THREAD_MAP.get(Thread.currentThread());
+            final GLThread thread = GLThread.getCurrent();
             
             thread.currentClear = GLClear.this.withGLThread(thread);            
             GL11.glClearColor(GLClear.this.red, GLClear.this.green, GLClear.this.blue, GLClear.this.alpha);

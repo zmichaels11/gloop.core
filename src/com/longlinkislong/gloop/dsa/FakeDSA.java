@@ -854,17 +854,20 @@ public class FakeDSA implements EXTDSADriver {
 
         if (cap.OpenGL30) {
             this.saveFramebuffer();
-            GL30.glFramebufferTexture1D(framebuffer, attachment, texTarget, texture, level);
+            GL30.glBindFramebuffer(GL30.GL_FRAMEBUFFER, framebuffer);
+            GL30.glFramebufferTexture1D(GL30.GL_FRAMEBUFFER, attachment, texTarget, texture, level);
             assert GL11.glGetError() == GL11.GL_NO_ERROR : String.format("glFramebufferTexture1D(%d, %d, %d, %d, %d) failed!", framebuffer, attachment, texTarget, texture, level);
             this.restoreFramebuffer();
         } else if (cap.GL_ARB_framebuffer_object) {
             this.saveFramebuffer();
-            ARBFramebufferObject.glFramebufferTexture1D(framebuffer, attachment, texTarget, texture, level);
+            ARBFramebufferObject.glBindFramebuffer(GL30.GL_FRAMEBUFFER, framebuffer);
+            ARBFramebufferObject.glFramebufferTexture1D(GL30.GL_FRAMEBUFFER, attachment, texTarget, texture, level);
             assert GL11.glGetError() == GL11.GL_NO_ERROR : String.format("glFramebufferTexture1DARB(%d, %d, %d, %d, %d) failed!", framebuffer, attachment, texTarget, texture, level);
             this.restoreFramebuffer();
         } else if (cap.GL_EXT_framebuffer_object) {
             this.saveFramebuffer();
-            EXTFramebufferObject.glFramebufferTexture1DEXT(framebuffer, attachment, texTarget, texture, level);
+            EXTFramebufferObject.glBindFramebufferEXT(GL30.GL_FRAMEBUFFER, framebuffer);
+            EXTFramebufferObject.glFramebufferTexture1DEXT(GL30.GL_FRAMEBUFFER, attachment, texTarget, texture, level);
             assert GL11.glGetError() == GL11.GL_NO_ERROR : String.format("glFramebufferTexture1DEXT(%d, %d, %d, %d, %d) failed!", framebuffer, attachment, texTarget, texture, level);
             this.restoreFramebuffer();
         } else {
@@ -880,17 +883,23 @@ public class FakeDSA implements EXTDSADriver {
 
         if (cap.OpenGL30) {
             this.saveFramebuffer();
-            GL30.glFramebufferTexture2D(framebuffer, attachment, texTarget, texture, level);
+            GL30.glBindFramebuffer(GL30.GL_FRAMEBUFFER, framebuffer);
+            assert GL11.glGetError() == GL11.GL_NO_ERROR : String.format("glBindFramebuffer(GL_FRAMEBUFFER, %d) failed!", framebuffer);
+            GL30.glFramebufferTexture2D(GL30.GL_FRAMEBUFFER, attachment, texTarget, texture, level);
             assert GL11.glGetError() == GL11.GL_NO_ERROR : String.format("glFramebufferTexture2D(%d, %d, %d, %d, %d) failed!", framebuffer, attachment, texTarget, texture, level);
             this.restoreFramebuffer();
         } else if (cap.GL_ARB_framebuffer_object) {
             this.saveFramebuffer();
-            ARBFramebufferObject.glFramebufferTexture2D(framebuffer, attachment, texTarget, texture, level);
+            ARBFramebufferObject.glBindFramebuffer(GL30.GL_FRAMEBUFFER, framebuffer);
+            assert GL11.glGetError() == GL11.GL_NO_ERROR : String.format("glBindFramebufferARB(GL_FRAMEBUFFER, %d) failed!", framebuffer);
+            ARBFramebufferObject.glFramebufferTexture2D(GL30.GL_FRAMEBUFFER, attachment, texTarget, texture, level);
             assert GL11.glGetError() == GL11.GL_NO_ERROR : String.format("glFramebufferTexture2DARB(%d, %d, %d, %d, %d) failed!", framebuffer, attachment, texTarget, texture, level);
             this.restoreFramebuffer();
         } else if (cap.GL_EXT_framebuffer_object) {
             this.saveFramebuffer();
-            EXTFramebufferObject.glFramebufferTexture2DEXT(framebuffer, attachment, texTarget, texture, level);
+            EXTFramebufferObject.glBindFramebufferEXT(GL30.GL_FRAMEBUFFER, framebuffer);
+            assert GL11.glGetError() == GL11.GL_NO_ERROR : String.format("glBindFramebufferEXT(GL_FRAMEBUFFER, %d) failed!", framebuffer);
+            EXTFramebufferObject.glFramebufferTexture2DEXT(GL30.GL_FRAMEBUFFER, attachment, texTarget, texture, level);
             assert GL11.glGetError() == GL11.GL_NO_ERROR : String.format("glFramebufferTexture2DEXT(%d, %d, %d, %d, %d) failed!", framebuffer, attachment, texTarget, texture, level);
             this.restoreFramebuffer();
         } else {

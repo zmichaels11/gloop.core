@@ -23,12 +23,14 @@ import java.util.concurrent.TimeoutException;
 import java.util.stream.Collectors;
 
 /**
+ * GLThread is a representation of an OpenGL thread.
  *
  * @author zmichaels
+ * @since 15.07.01
  */
 public class GLThread implements ExecutorService {
 
-    static final Map<Thread, GLThread> THREAD_MAP = new HashMap<>();
+    private static final Map<Thread, GLThread> THREAD_MAP = new HashMap<>();
     final Deque<GLBlending> blendStack = new LinkedList<>();
     final Deque<GLClear> clearStack = new LinkedList<>();
     final Deque<GLDepthTest> depthTestStack = new LinkedList<>();
@@ -84,6 +86,11 @@ public class GLThread implements ExecutorService {
         return this.currentClear;
     }
 
+    /**
+     * Pushes the current clear object onto the stack.
+     *
+     * @since 15.07.16
+     */
     public void pushClear() {
         this.clearStack.push(this.currentClear);
     }
@@ -162,14 +169,31 @@ public class GLThread implements ExecutorService {
         return mask;
     }
 
+    /**
+     * Retrieves the current polygon parameters.
+     *
+     * @return the current polygon parameters.
+     * @since 15.07.16
+     */
     public GLPolygonParameters currentPolygonParameters() {
         return this.currentPolygonParameters;
     }
 
+    /**
+     * Pushes the current polygon parameters onto the stack.
+     *
+     * @since 15.07.16
+     */
     public void pushPolygonParameters() {
         this.polygonParameterStack.push(this.currentPolygonParameters);
     }
 
+    /**
+     * Restores the previous polygon parameters.
+     *
+     * @return the previous polygon parameters.
+     * @since 15.07.16
+     */
     public GLPolygonParameters popPolygonParameters() {
         final GLPolygonParameters params = this.polygonParameterStack.pop();
         params.applyParameters();
@@ -248,14 +272,32 @@ public class GLThread implements ExecutorService {
         this.internalExecutor.shutdown();
     }
 
-    protected boolean isCurrent() {
+    /**
+     * Checks if the OpenGL thread is the current thread.
+     *
+     * @return true if the GLThread is current.
+     * @since 15.07.16
+     */
+    public boolean isCurrent() {
         return (Thread.currentThread() == this.internalThread);
     }
 
+    /**
+     * Submits a task to run on the OpenGL thread.
+     *
+     * @param task the task to run.
+     * @since 15.07.16
+     */
     public void submitGLTask(final GLTask task) {
         this.internalExecutor.execute(task);
     }
 
+    /**
+     * Schedules an OpenGL task to run at every iteration of the main loop.
+     *
+     * @param task the task to schedule.
+     * @since 15.07.16
+     */
     public void scheduleGLTask(final GLTask task) {
         this.internalExecutor.execute(new GLTask() {
 
@@ -296,6 +338,15 @@ public class GLThread implements ExecutorService {
         });
     }
 
+    /**
+     * Submits a GLQuery object to the OpenGL thread. A GLQuery is a task that
+     * should be ran on the OpenGL thread and is expected to return some value.
+     *
+     * @param <ReturnType> the return type.
+     * @param query the function to run on the OpenGL thread.
+     * @return a Future object that will contain the result.
+     * @since 15.07.16
+     */
     public <ReturnType> GLFuture<ReturnType> submitGLQuery(
             final GLQuery<ReturnType> query) {
 
@@ -387,6 +438,12 @@ public class GLThread implements ExecutorService {
         this.submitGLTask(GLTask.create(command));
     }
 
+    /**
+     * Inserts a query that returns when it has been processed by the OpenGL
+     * thread.
+     *
+     * @since 15.07.16
+     */
     public class BarrierQuery extends GLQuery<Void> {
 
         @Override
@@ -428,7 +485,23 @@ public class GLThread implements ExecutorService {
         private final static GLThread INSTANCE = new GLThread();
     }
 
+    /**
+     * Retrieves the default GLThread instance.
+     *
+     * @return the default OpenGL thread.
+     * @since 15.07.16
+     */
     public static GLThread getDefaultInstance() {
         return Holder.INSTANCE;
+    }
+
+    /**
+     * Retrieves the current GLThread.
+     *
+     * @return the current OpenGL thread.
+     * @since 15.07.16
+     */
+    public static GLThread getCurrent() {
+        return THREAD_MAP.get(Thread.currentThread());
     }
 }

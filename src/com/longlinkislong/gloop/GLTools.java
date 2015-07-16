@@ -1541,6 +1541,7 @@ public class GLTools {
 
     /**
      * Retrieves the current DSADriver.
+     *
      * @return the DSADriver.
      * @since 15.07.13
      */
@@ -1548,14 +1549,16 @@ public class GLTools {
         if (DSA == null) {
             for (DSADriver dsaImp : DSA_IMPLEMENTATIONS) {
                 if (dsaImp.isSupported()) {
-                    DSA = dsaImp;
+                    DSA = dsaImp;                    
                     break;
                 }
             }
+            
+            if(DEBUG) {
+                System.out.println("Using DSADriver: " + GLTools.getDSAImplement());
+            }
         }
         
-        
-
         return DSA;
     }
 
@@ -1570,33 +1573,47 @@ public class GLTools {
         return getDSAInstance().toString();
     }
 
+    private static final boolean DEBUG;
+
     static {
+        DEBUG = Boolean.getBoolean("debug");
+
         // check for driver override.
         final String dsa = System.getProperty("gloop.gltools.dsa", "");
         switch (dsa.toLowerCase()) {
             case "fakedsa":
             case "fake":
-                System.out.println("Using DSA driver: FakeDSA");
+                if (DEBUG) {
+                    System.out.println("[GLTools]: Forcing DSA driver: FakeDSA");
+                }
                 DSA = FakeDSA.getInstance();
                 break;
             case "extdsa":
             case "ext":
-                System.out.println("Using DSA driver: EXTDSA");
+                if (DEBUG) {
+                    System.out.println("[GLTools]: Forcing DSA driver: EXTDSA");
+                }
                 DSA = EXTDSA.getInstance();
                 break;
             case "gl45dsa":
             case "gl45":
-                System.out.println("Using DSA driver: GL45DSA");
+                if (DEBUG) {
+                    System.out.println("[GLTools]: Forcing DSA driver: GL45DSA");
+                }
                 DSA = GL45DSA.getInstance();
                 break;
             case "arbdsa":
             case "arb":
-                System.out.println("Using DSA driver: ARBDSA");
+                if (DEBUG) {
+                    System.out.println("[GLTools]: Forcing DSA driver: ARBDSA");
+                }
                 DSA = ARBDSA.getInstance();
                 break;
             case "nodsa":
             case "no":
-                System.out.println("Using DSA Driver: NoDSA");
+                if (DEBUG) {
+                    System.out.println("[GLTools]: Forcing DSA Driver: NoDSA");
+                }
                 DSA = NoDSA.getInstance();
                 break;
         }
@@ -1625,6 +1642,10 @@ public class GLTools {
                 continue;
             }
 
+            if(DEBUG) {
+                System.out.println("[GLTools]: Adding DSADriver: " + plugin);
+            }
+            
             try {
                 final Class<?> dsaPlugin = Class.forName(plugin);
 
@@ -1639,9 +1660,14 @@ public class GLTools {
         final String[] blacklisted = dsaBlacklist.split(",");
 
         for (String blacklistedDSA : blacklisted) {
-            if(blacklistedDSA.trim().isEmpty()) {
-               continue; 
+            if (blacklistedDSA.trim().isEmpty()) {
+                continue;
             }
+            
+            if(DEBUG) {
+                System.out.println("[GLTools]: Blacklisting DSADriver: " + blacklistedDSA);
+            }
+            
             Optional<Class<?>> blacklistedDSADriver = Optional.empty();
 
             for (Class<?> driver : dsaDrivers) {

@@ -68,7 +68,7 @@ public class NeHe08 {
             .withDepthFunc(GLDepthFunc.GL_LESS);
     final GLBlending blend = new GLBlending()
             .withEnabled(GLEnableStatus.GL_ENABLED)
-            .withBlendFunc(GLBlendFunc.GL_SRC_ALPHA, GLBlendFunc.GL_ONE, GLBlendFunc.GL_SRC_ALPHA, GLBlendFunc.GL_ONE);    
+            .withBlendFunc(GLBlendFunc.GL_SRC_ALPHA, GLBlendFunc.GL_ONE_MINUS_SRC_ALPHA, GLBlendFunc.GL_SRC_ALPHA, GLBlendFunc.GL_ONE_MINUS_SRC_ALPHA);    
 
     final GLVertexAttributes vAttribs = new GLVertexAttributes();
 

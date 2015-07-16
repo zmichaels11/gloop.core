@@ -8,6 +8,10 @@ package com.longlinkislong.gloop.dsa;
 import java.nio.ByteBuffer;
 import java.nio.DoubleBuffer;
 import java.nio.FloatBuffer;
+import org.lwjgl.opengl.ARBFramebufferObject;
+import org.lwjgl.opengl.ContextCapabilities;
+import org.lwjgl.opengl.EXTFramebufferObject;
+import org.lwjgl.opengl.GL;
 import org.lwjgl.opengl.GL11;
 import org.lwjgl.opengl.GL12;
 import org.lwjgl.opengl.GL13;
@@ -27,8 +31,23 @@ public class NoDSA implements EXTDSADriver {
 
     @Override
     public void glNamedFramebufferTexture1D(int framebuffer, int attachment, int texTarget, int texture, int level) {
-        GL30.glBindFramebuffer(GL30.GL_FRAMEBUFFER, framebuffer);
-        GL30.glFramebufferTexture1D(GL30.GL_FRAMEBUFFER, attachment, texTarget, texture, level);
+        final ContextCapabilities cap = GL.getCapabilities();
+
+        if (cap.OpenGL30) {
+            GL30.glBindFramebuffer(GL30.GL_FRAMEBUFFER, framebuffer);
+            assert GL11.glGetError() == GL11.GL_NO_ERROR : String.format("glBindFramebuffer(GL_FRAMEBUFFER, %d) failed!", framebuffer);
+            
+            GL30.glFramebufferTexture1D(GL30.GL_FRAMEBUFFER, attachment, texTarget, texture, level);
+            assert GL11.glGetError() == GL11.GL_NO_ERROR : String.format("glFramebufferTexture1D(GL_FRAMEBUFFER, %d, %d, %d, %d) failed!", attachment, texTarget, texture, level);
+        } else if(cap.GL_ARB_framebuffer_object) {
+            ARBFramebufferObject.glBindFramebuffer(ARBFramebufferObject.GL_FRAMEBUFFER, framebuffer);
+            ARBFramebufferObject.glFramebufferTexture1D(ARBFramebufferObject.GL_FRAMEBUFFER, attachment, texTarget, texture, level);
+        } else if(cap.GL_EXT_framebuffer_object) {
+            EXTFramebufferObject.glBindFramebufferEXT(EXTFramebufferObject.GL_FRAMEBUFFER_EXT, framebuffer);
+            EXTFramebufferObject.glFramebufferTexture1DEXT(EXTFramebufferObject.GL_FRAMEBUFFER_EXT, attachment, texTarget, texture, level);
+        } else {
+            throw new UnsupportedOperationException("Framebuffers require either: an OpenGL 3.0 context, ARB_framebuffer_object, or EXT_framebuffer_object.");
+        }
     }
 
     @Override
@@ -325,7 +344,7 @@ public class NoDSA implements EXTDSADriver {
     public void glNamedBufferReadPixels(int bufferId, int x, int y, int width, int height, int format, int type, long ptr) {
         GL15.glBindBuffer(GL21.GL_PIXEL_PACK_BUFFER, bufferId);
         GL11.glReadPixels(x, y, width, height, format, type, ptr);
-    }    
+    }
 
     private static class Holder {
 

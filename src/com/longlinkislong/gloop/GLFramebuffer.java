@@ -176,6 +176,9 @@ public class GLFramebuffer extends GLObject {
             }
 
             GLFramebuffer.this.framebufferId = INVALID_FRAMEBUFFER_ID;
+            GLFramebuffer.this.attachments.clear();
+            GLFramebuffer.this.lastBindTask = null;
+            GLFramebuffer.this.nextColorAttachment = GL30.GL_COLOR_ATTACHMENT0;
         }
     }
 
@@ -202,7 +205,7 @@ public class GLFramebuffer extends GLObject {
      * @since 15.07.06
      */
     public void bind(final CharSequence[] attachments, final int offset, final int length) {
-        if (this.lastBindTask != null) {
+        if (this.lastBindTask != null && this.lastBindTask.attachmentNames.length == length) {
             for (int i = offset; i < length; i++) {
                 if (!attachments[i].toString().equals(this.lastBindTask.attachmentNames[i - offset])) {
                     this.lastBindTask = null;
@@ -280,10 +283,9 @@ public class GLFramebuffer extends GLObject {
             GL30.glBindFramebuffer(GL30.GL_FRAMEBUFFER, GLFramebuffer.this.framebufferId);
 
             assert GL11.glGetError() == GL11.GL_NO_ERROR : String.format("glBindFramebuffer(GL_FRAMEBUFFER, %d) failed!", GLFramebuffer.this.framebufferId);
-
-            if (this.attachments != null) {
+            
+            if (this.attachments != null) {                                
                 GL20.glDrawBuffers(this.attachments);
-
                 assert GL11.glGetError() == GL11.GL_NO_ERROR : String.format("glDrawBuffers(%s) failed!", GLTools.IntBufferToString(attachments));
             }
         }
@@ -294,10 +296,12 @@ public class GLFramebuffer extends GLObject {
      * is used.
      *
      * @param attachment the texture to write the stencil data to.
+     * @return self reference
      * @since 15.07.06
      */
-    public void addDepthStencilAttachment(final GLTexture attachment) {
+    public GLFramebuffer addDepthStencilAttachment(final GLTexture attachment) {
         this.addDepthStencilAttachment(attachment, 0);
+        return this;
     }
 
     /**
@@ -305,10 +309,12 @@ public class GLFramebuffer extends GLObject {
      *
      * @param attachment the texture to write the stencil data to.
      * @param level the mipmap level of the texture.
+     * @return 
      * @since 15.07.06
      */
-    public void addDepthStencilAttachment(final GLTexture attachment, final int level) {
+    public GLFramebuffer addDepthStencilAttachment(final GLTexture attachment, final int level) {
         new AddDepthStencilAttachmentTask(attachment, level).glRun(this.getThread());
+        return this;
     }
 
     /**
@@ -396,10 +402,12 @@ public class GLFramebuffer extends GLObject {
      * Adds a depth attachment to the framebuffer. Mipmap level 0 is used.
      *
      * @param depthAttachment the texture to write the depth data to.
+     * @return self reference
      * @since 15.07.06
      */
-    public void addDepthAttachment(final GLTexture depthAttachment) {
+    public GLFramebuffer addDepthAttachment(final GLTexture depthAttachment) {
         this.addDepthAttachment(depthAttachment, 0);
+        return this;
     }
 
     /**
@@ -407,10 +415,12 @@ public class GLFramebuffer extends GLObject {
      *
      * @param depthAttachment the texture to write the depth data to.
      * @param level the mipmap level to write the data to.
+     * @return self reference
      * @since 15.07.06
      */
-    public void addDepthAttachment(final GLTexture depthAttachment, final int level) {
+    public GLFramebuffer addDepthAttachment(final GLTexture depthAttachment, final int level) {
         new AddDepthAttachmentTask(depthAttachment, level).glRun(this.getThread());
+        return this;
     }
 
     /**
@@ -499,12 +509,14 @@ public class GLFramebuffer extends GLObject {
      *
      * @param name the name to associate with the attachment.
      * @param attachment the texture to attach.
+     * @return self reference
      * @since 15.07.06
      */
-    public void addColorAttachment(
+    public GLFramebuffer addColorAttachment(
             final CharSequence name, final GLTexture attachment) {
 
         this.addColorAttachment(name, attachment, 0);
+        return this;
     }
 
     /**
@@ -513,13 +525,15 @@ public class GLFramebuffer extends GLObject {
      * @param name the name to associate with the attachment.
      * @param attachment the texture to attach.
      * @param level the mipmap level to use.
+     * @return self reference
      * @since 15.07.06
      */
-    public void addColorAttachment(
+    public GLFramebuffer addColorAttachment(
             final CharSequence name,
             final GLTexture attachment, final int level) {
 
         new AddColorAttachmentTask(name, attachment, level).glRun(this.getThread());
+        return this;
     }
 
     /**
@@ -608,7 +622,7 @@ public class GLFramebuffer extends GLObject {
                         this.attachmentId,
                         this.colorAttachment.textureId,
                         this.level);
-            }
+            }                        
         }
     }
 }

@@ -93,7 +93,7 @@ public class GLMask extends GLObject {
 
         @Override
         public void run() {
-            final GLThread thread = GLThread.THREAD_MAP.get(Thread.currentThread());
+            final GLThread thread = GLThread.getCurrent();
             
             thread.currentMask = GLMask.this.withGLThread(thread);
             

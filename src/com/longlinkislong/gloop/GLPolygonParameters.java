@@ -155,7 +155,7 @@ public class GLPolygonParameters extends GLObject {
 
         @Override
         public void run() {
-            final GLThread thread = GLThread.THREAD_MAP.get(Thread.currentThread());
+            final GLThread thread = GLThread.getCurrent();
 
             thread.currentPolygonParameters = GLPolygonParameters.this.withGLThread(thread);
 

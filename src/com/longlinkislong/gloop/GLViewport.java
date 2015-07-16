@@ -113,7 +113,7 @@ public class GLViewport extends GLObject {
 
         @Override
         public void run() {
-            final GLThread thread = GLThread.THREAD_MAP.get(Thread.currentThread());
+            final GLThread thread = GLThread.getCurrent();
             
             thread.currentViewport = GLViewport.this.withGLThread(thread);
             GL11.glViewport(
