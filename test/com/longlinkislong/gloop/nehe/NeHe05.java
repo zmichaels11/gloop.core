@@ -43,7 +43,7 @@ public class NeHe05 {
     private float rCube = 0f;
 
     public NeHe05() throws IOException {
-        this.window = new GLWindow();
+        this.window = new GLWindow(640, 480, "NeHe05");
 
         final GLClear clear = this.window.getGLThread().currentClear();
 

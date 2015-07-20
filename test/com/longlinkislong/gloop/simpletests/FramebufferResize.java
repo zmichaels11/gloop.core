@@ -214,7 +214,7 @@ public class FramebufferResize {
     void render() {
         final float t = System.nanoTime() / 1000000000.0f;
         final GLVec2D mousePos = this.window.getMouse().getMousePosition();
-        final GLThread thread = GLThread.getCurrent();
+        final GLThread thread = GLThread.getCurrent().orElseThrow(RuntimeException::new);
 
         this.resizeFramebuffer((int) mousePos.x(), (int) mousePos.y());
 

@@ -39,7 +39,7 @@ public class NeHe03 {
     private final GLVertexArray vaoSquare;
 
     public NeHe03() throws IOException {
-        this.window = new GLWindow();
+        this.window = new GLWindow(640, 480, "NeHe03");
 
         final InputStream inVsh = this.getClass()
                 .getResourceAsStream("color.vs");

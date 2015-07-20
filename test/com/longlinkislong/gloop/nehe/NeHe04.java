@@ -14,6 +14,7 @@ import com.longlinkislong.gloop.GLProgram;
 import com.longlinkislong.gloop.GLShader;
 import com.longlinkislong.gloop.GLShaderType;
 import com.longlinkislong.gloop.GLTask;
+import com.longlinkislong.gloop.GLThread;
 import com.longlinkislong.gloop.GLTools;
 import com.longlinkislong.gloop.GLVec3;
 import com.longlinkislong.gloop.GLVec3F;
@@ -39,7 +40,7 @@ public class NeHe04 {
     private float rotQuad = 0f;
 
     public NeHe04() throws IOException {
-        this.window = new GLWindow();
+        this.window = new GLWindow(640, 480, "NeHe04");
 
         final GLClear clear = this.window.getGLThread().currentClear();
 
@@ -173,7 +174,8 @@ public class NeHe04 {
     }
 
     public void start() {
-        this.window.getGLThread().scheduleGLTask(this.drawTask);
+        this.window.getGLThread().scheduleGLTask(this.drawTask);        
+        this.window.getGLThread().scheduleGLTask(new GLThread.FrameStatsTask());
         this.window.setVisible(true);
     }
 

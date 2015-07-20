@@ -283,7 +283,7 @@ public class GLBlending extends GLObject {
 
         @Override
         public void run() {
-            final GLThread thread = GLThread.getCurrent();
+            final GLThread thread = GLThread.getCurrent().orElseThrow(GLException::new);
 
             thread.currentBlend = GLBlending.this.withGLThread(thread);
 

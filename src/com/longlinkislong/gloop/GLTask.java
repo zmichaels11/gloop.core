@@ -53,7 +53,7 @@ public abstract class GLTask implements Runnable {
         } else {
             thread.submitGLTask(this);
         }
-    }
+    }        
 
     /**
      * Combines this GLTask and another GLTask into a single GLTask. The order

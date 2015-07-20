@@ -11,6 +11,7 @@ import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.concurrent.Callable;
 import java.util.concurrent.CancellationException;
 import java.util.concurrent.ExecutionException;
@@ -463,6 +464,160 @@ public class GLThread implements ExecutorService {
     }
 
     /**
+     * A GLTask that limits the current framerate to the specified limit.
+     *
+     * @since 15.07.20
+     * @deprecated experimental code.
+     */
+    @Deprecated
+    public static class FrameCapTask extends GLTask {
+
+        private final long targetFrameTime;
+        long lastTime = System.nanoTime();
+
+        /**
+         * Constructs a new FrameCapTask with the target fps.
+         *
+         * @param targetFPS the target fps to limit to.
+         * @since 15.07.20
+         */
+        public FrameCapTask(final double targetFPS) {
+            final double spf = 1.0 / targetFPS;
+            final double nspf = 1000000000.0 * spf;
+
+            this.targetFrameTime = (long) nspf;
+        }
+
+        @Override
+        public void run() {
+            final long now = System.nanoTime();
+            final long dTime = now - this.lastTime;
+
+            this.lastTime = now;
+
+            if (dTime < this.targetFrameTime) {
+                final long sleepTime = this.targetFrameTime - dTime;
+                final long msSleepTime = sleepTime / 1000000;
+                final int nsSleepTime = (int) (sleepTime - msSleepTime * 1000000);
+
+                try {
+                    Thread.sleep(msSleepTime, nsSleepTime);
+                } catch (InterruptedException ex) {
+                    // -\_0_0_/-
+                    Thread.currentThread().interrupt();
+                }
+            }
+        }
+    }
+
+    /**
+     * A GLTask that profiles the current thread.
+     *
+     * @since 15.07.20
+     */
+    public static class FrameStatsTask extends GLTask {
+
+        private double varFPS = 0.0;
+        private double totalVar = 0.0;
+        private double totalFrameTime = 0.0;
+        private double maxFrameTime = Double.NEGATIVE_INFINITY;
+        private double minFrameTime = Double.POSITIVE_INFINITY;
+        private double fps;
+        private long frameCount = 0L;
+        private long lastTime;
+        private int warmup;
+
+        /**
+         * Constructs a new FrameStatsTask with a default warmup period of 300
+         * frames.
+         *
+         * @since 15.07.20
+         */
+        public FrameStatsTask() {
+            this(300);
+        }
+
+        /**
+         * Constructs a new FrameStatsTask that excludes all frames from profile
+         * within the warmup period.
+         *
+         * @param warmupPeriod the number of frames to disregard on initialize.
+         * @since 15.07.20
+         */
+        public FrameStatsTask(final int warmupPeriod) {
+            this.warmup = warmupPeriod;
+        }
+
+        @Override
+        public void run() {
+            final long now = System.currentTimeMillis();
+
+            if (warmup > 0) {
+                this.lastTime = now;
+                this.warmup--;
+                return;
+            }
+
+            final long frameTime = now - this.lastTime;
+            this.lastTime = now;
+
+            if (frameTime > this.maxFrameTime) {
+                this.maxFrameTime = frameTime / 1000.0;
+            }
+
+            if (frameTime < this.minFrameTime) {
+                this.minFrameTime = frameTime / 1000.0;
+            }
+
+            this.totalFrameTime += (frameTime / 1000.0);
+            this.frameCount++;
+            this.fps = 1000.0 / frameTime;
+
+            this.varFPS = this.getAverageFPS() - this.getFPS();
+            this.totalVar += this.varFPS * this.varFPS;
+
+            if (DEBUG) {
+                System.out.println(this);
+            }
+        }
+
+        @Override
+        public String toString() {
+            return String.format("Frame Stats: [fps: %.2f | avg fps: %.2f | min frame time: %.3f | max frame time: %.3f | std frame time: %.2f]", this.getFPS(), this.getAverageFPS(), this.getShortestFrameTime(), this.getLongestFrameTime(), this.getSTDFPS());
+        }
+
+        public double getFPS() {
+            return this.fps;
+        }
+
+        public double getSTDFPS() {
+            return Math.sqrt(this.totalVar / this.frameCount);
+        }
+
+        /**
+         * Retrieves the average fps
+         *
+         * @return the FPS.
+         * @since 15.07.20
+         */
+        public double getAverageFPS() {
+            return (this.frameCount / this.totalFrameTime);
+        }
+
+        public double getShortestFrameTime() {
+            return this.minFrameTime;
+        }
+
+        public double getLongestFrameTime() {
+            return this.maxFrameTime;
+        }
+
+        public long getFrameCount() {
+            return this.frameCount;
+        }
+    }
+
+    /**
      * Creates a new GLThread. This should only be called by GLWindow. The first
      * GLWindow created owns the main GLThread. All subsequent instances of
      * GLWindow have a new GLThread leased to them.
@@ -501,7 +656,23 @@ public class GLThread implements ExecutorService {
      * @return the current OpenGL thread.
      * @since 15.07.16
      */
-    public static GLThread getCurrent() {
-        return THREAD_MAP.get(Thread.currentThread());
+    public static Optional<GLThread> getCurrent() {
+        return Optional.of(THREAD_MAP.get(Thread.currentThread()));
+    }
+
+    /**
+     * Retrieves either the current OpenGL thread or the default OpenGL thread.
+     *
+     * @return an OpenGL thread.
+     * @since 15.07.20
+     */
+    public static GLThread getAny() {
+        return GLThread.getCurrent().orElseGet(GLThread::getDefaultInstance);
+    }
+
+    private static final boolean DEBUG;
+
+    static {
+        DEBUG = Boolean.getBoolean("debug");
     }
 }

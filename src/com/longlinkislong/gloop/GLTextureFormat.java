@@ -8,10 +8,13 @@ package com.longlinkislong.gloop;
 import org.lwjgl.opengl.GL30;
 
 /**
+ * A collection of texture storage formats.
  *
  * @author zmichaels
+ * @since 15.07.01
  */
 public enum GLTextureFormat {
+
     GL_DEPTH_COMPONENT(0x1902),
     GL_DEPTH_STENCIL(GL30.GL_DEPTH_STENCIL),
     GL_RED_INTEGER(0x8D94),
@@ -34,9 +37,28 @@ public enum GLTextureFormat {
     GL_BGRA(0x80E1),
     GL_LUMINANCE(0x1909),
     GL_LUMINANCE_ALPHA(0x190A);
-    
+
     final int value;
+
     GLTextureFormat(final int value) {
         this.value = value;
+    }
+
+    /**
+     * Converts a GLenum value for a Texture Format to an instance of a
+     * GLTextureFormat constant.
+     *
+     * @param glEnum the GLenum value.
+     * @return the corresponding GLTextureFormat if available or null.
+     * @since 15.07.20
+     */
+    public static GLTextureFormat valueOf(final int glEnum) {
+        for (GLTextureFormat format : values()) {
+            if (format.value == glEnum) {
+                return format;
+            }
+        }
+
+        return null;
     }
 }

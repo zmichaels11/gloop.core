@@ -6,6 +6,8 @@
 package com.longlinkislong.gloop.nehe;
 
 import com.longlinkislong.gloop.GLTask;
+import com.longlinkislong.gloop.GLTexture;
+import com.longlinkislong.gloop.GLTextureInternalFormat;
 import com.longlinkislong.gloop.GLTools;
 import com.longlinkislong.gloop.GLWindow;
 import org.lwjgl.opengl.GL11;
@@ -18,7 +20,7 @@ import org.lwjgl.opengl.GL20;
 public class NeHe01 {
 
     public NeHe01() {
-        final GLWindow window = new GLWindow();
+        final GLWindow window = new GLWindow(640, 480, "NeHe01");
 
         window.getGLThread().submitGLTask(GLTask.create(()->{
             System.out.printf("OpenGL Version: %s\n", GL11.glGetString(GL11.GL_VERSION));
@@ -26,6 +28,7 @@ public class NeHe01 {
             System.out.printf("OpenGL Renderer: %s\n", GL11.glGetString(GL11.GL_RENDERER));
             System.out.printf("OpenGL GLSL Version: %s\n", GL11.glGetString(GL20.GL_SHADING_LANGUAGE_VERSION));            
             System.out.printf("Using DSA driver: %s\n", GLTools.getDSAImplement());
+            System.out.printf("Preferred texture format: %s\n", GLTexture.getPreferredTextureFormat(GLTextureInternalFormat.GL_RGBA8));
         }));
         window.getGLThread().scheduleGLTask(window.new UpdateTask());
         

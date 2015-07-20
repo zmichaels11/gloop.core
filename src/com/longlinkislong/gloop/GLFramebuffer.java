@@ -108,6 +108,110 @@ public class GLFramebuffer extends GLObject {
     }
 
     /**
+     * Checks if the framebuffer is complete.
+     *
+     * @return true if the framebuffer is complete.
+     * @since 15.07.20
+     */
+    public boolean isComplete() {
+        return new IsCompleteQuery().glCall(this.getThread());
+    }
+
+    /**
+     * A GLQuery that checks if the framebuffer is complete.
+     *
+     * @since 15.07.20
+     */
+    public class IsCompleteQuery extends GLQuery<Boolean> {
+
+        @Override
+        public Boolean call() throws Exception {
+            final ContextCapabilities cap = GL.getCapabilities();
+
+            if (cap.OpenGL30) {
+                final int currentFB = GL11.glGetInteger(GL30.GL_FRAMEBUFFER_BINDING);
+
+                GL30.glBindFramebuffer(GL30.GL_FRAMEBUFFER, GLFramebuffer.this.framebufferId);
+
+                final int complete = GL30.glCheckFramebufferStatus(GL30.GL_FRAMEBUFFER);
+                final boolean res = complete == GL30.GL_FRAMEBUFFER_COMPLETE;
+
+                GL30.glBindFramebuffer(GL30.GL_FRAMEBUFFER, currentFB);
+
+                return res;
+            } else if (cap.GL_ARB_framebuffer_object) {
+                final int currentFB = GL11.glGetInteger(ARBFramebufferObject.GL_FRAMEBUFFER_BINDING);
+
+                ARBFramebufferObject.glBindFramebuffer(ARBFramebufferObject.GL_FRAMEBUFFER, GLFramebuffer.this.framebufferId);
+
+                final int complete = ARBFramebufferObject.glCheckFramebufferStatus(ARBFramebufferObject.GL_FRAMEBUFFER);
+                final boolean res = complete == ARBFramebufferObject.GL_FRAMEBUFFER_COMPLETE;
+
+                ARBFramebufferObject.glBindFramebuffer(ARBFramebufferObject.GL_FRAMEBUFFER, currentFB);
+                return res;
+            } else if (cap.GL_EXT_framebuffer_object) {
+                final int currentFB = GL11.glGetInteger(EXTFramebufferObject.GL_FRAMEBUFFER_BINDING_EXT);
+
+                EXTFramebufferObject.glBindFramebufferEXT(EXTFramebufferObject.GL_FRAMEBUFFER_EXT, GLFramebuffer.this.framebufferId);
+
+                final int complete = EXTFramebufferObject.glCheckFramebufferStatusEXT(EXTFramebufferObject.GL_FRAMEBUFFER_EXT);
+                final boolean res = complete == EXTFramebufferObject.GL_FRAMEBUFFER_COMPLETE_EXT;
+
+                EXTFramebufferObject.glBindFramebufferEXT(EXTFramebufferObject.GL_FRAMEBUFFER_EXT, currentFB);
+                return res;
+            } else {
+                throw new UnsupportedOperationException("GLFramebuffer requires either an OpenGL3.0 context, arb_framebuffer_object, or ext_framebuffer_object.");
+            }
+        }
+    }   
+
+    /**
+     * Executes a task with the current framebuffer bound. The framebuffer bind
+     * will be undone after the task is executed.
+     *
+     * @since 15.07.20
+     */
+    public class BindlessUseTask extends GLTask {
+
+        final GLTask taskToRun;
+        final GLTask bindTask;
+
+        public BindlessUseTask(final BindTask bindTask, final GLTask task) {
+            this.taskToRun = Objects.requireNonNull(task);
+            this.bindTask = Objects.requireNonNull(bindTask);
+        }
+
+        @Override
+        public void run() {
+            final ContextCapabilities cap = GL.getCapabilities();
+
+            if (cap.OpenGL30) {
+                final int currentFB = GL11.glGetInteger(GL30.GL_FRAMEBUFFER);
+
+                this.bindTask.run();
+                this.taskToRun.run();
+
+                GL30.glBindFramebuffer(GL30.GL_FRAMEBUFFER, currentFB);
+            } else if (cap.GL_ARB_framebuffer_object) {
+                final int currentFB = GL11.glGetInteger(ARBFramebufferObject.GL_FRAMEBUFFER);
+
+                this.bindTask.run();
+                this.taskToRun.run();
+
+                ARBFramebufferObject.glBindFramebuffer(ARBFramebufferObject.GL_FRAMEBUFFER, currentFB);
+            } else if (cap.GL_EXT_framebuffer_object) {
+                final int currentFB = GL11.glGetInteger(EXTFramebufferObject.GL_FRAMEBUFFER_EXT);
+
+                this.bindTask.run();
+                this.taskToRun.run();
+
+                EXTFramebufferObject.glBindFramebufferEXT(EXTFramebufferObject.GL_FRAMEBUFFER_EXT, currentFB);
+            }
+        }
+
+    }
+
+    /**
      * Initializes the GLFramebuffer.
      *
      * @since 15.07.06
@@ -283,8 +387,8 @@ public class GLFramebuffer extends GLObject {
             GL30.glBindFramebuffer(GL30.GL_FRAMEBUFFER, GLFramebuffer.this.framebufferId);
 
             assert GL11.glGetError() == GL11.GL_NO_ERROR : String.format("glBindFramebuffer(GL_FRAMEBUFFER, %d) failed!", GLFramebuffer.this.framebufferId);
-            
-            if (this.attachments != null) {                                
+
+            if (this.attachments != null) {
                 GL20.glDrawBuffers(this.attachments);
                 assert GL11.glGetError() == GL11.GL_NO_ERROR : String.format("glDrawBuffers(%s) failed!", GLTools.IntBufferToString(attachments));
             }
@@ -309,7 +413,7 @@ public class GLFramebuffer extends GLObject {
      *
      * @param attachment the texture to write the stencil data to.
      * @param level the mipmap level of the texture.
-     * @return 
+     * @return
      * @since 15.07.06
      */
     public GLFramebuffer addDepthStencilAttachment(final GLTexture attachment, final int level) {
@@ -622,7 +726,7 @@ public class GLFramebuffer extends GLObject {
                         this.attachmentId,
                         this.colorAttachment.textureId,
                         this.level);
-            }                        
+            }
         }
     }
 }

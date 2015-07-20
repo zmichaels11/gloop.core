@@ -9,8 +9,14 @@ import com.longlinkislong.gloop.dsa.DSADriver;
 import com.longlinkislong.gloop.dsa.EXTDSADriver;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.Objects;
+import org.lwjgl.opengl.ARBInternalformatQuery;
+import org.lwjgl.opengl.ARBInternalformatQuery2;
+import org.lwjgl.opengl.ContextCapabilities;
 import org.lwjgl.opengl.EXTTextureFilterAnisotropic;
+import org.lwjgl.opengl.GL;
 import org.lwjgl.opengl.GL11;
 import org.lwjgl.opengl.GL12;
 import org.lwjgl.opengl.GL13;
@@ -18,6 +24,8 @@ import org.lwjgl.opengl.GL15;
 import org.lwjgl.opengl.GL20;
 import org.lwjgl.opengl.GL21;
 import org.lwjgl.opengl.GL31;
+import org.lwjgl.opengl.GL42;
+import org.lwjgl.opengl.GL43;
 
 /**
  * GLTexture represents an immutable OpenGL texture object. Currently only
@@ -42,7 +50,7 @@ public class GLTexture extends GLObject {
      * @since 15.07.08
      */
     public GLTexture() {
-        this(GLThread.getDefaultInstance());        
+        this(GLThread.getDefaultInstance());
     }
 
     /**
@@ -1260,6 +1268,68 @@ public class GLTexture extends GLObject {
             assert this.maxUnits > 0;
 
             return this.maxUnits;
+        }
+    }
+
+    private static Map<GLTextureInternalFormat, GLTextureFormat> MEM_PREFERRED_FORMATS = new HashMap<>();
+
+    /**
+     * Retrieves the preferred GLTextureFormat for the specified
+     * GLTextureInternalFormat.
+     *
+     * @param format the format to check.
+     * @return the preferred format.
+     * @since 15.07.20
+     */
+    public static GLTextureFormat getPreferredTextureFormat(final GLTextureInternalFormat format) {
+        if (MEM_PREFERRED_FORMATS.containsKey(format)) {
+            return MEM_PREFERRED_FORMATS.get(format);
+        } else {
+            final GLTextureFormat res = new PreferredInternalFormatQuery(format).glCall();
+
+            MEM_PREFERRED_FORMATS.put(format, res);
+            return res;
+        }
+    }
+
+    /**
+     * A GLQuery that checks the preferred texture format for the specified
+     * GLTextureInternalFormat.
+     *
+     * @since 15.07.20
+     */
+    public static class PreferredInternalFormatQuery extends GLQuery<GLTextureFormat> {
+
+        final static Map<GLTextureInternalFormat, GLTextureFormat> MEM_QUERIES = new HashMap<>();
+        final GLTextureInternalFormat testFormat;
+
+        /**
+         * Constructs a new PreferredInternalFormatQuery.
+         *
+         * @param format the GLTextureInternalFormat to query on.
+         * @since 15.07.20
+         */
+        public PreferredInternalFormatQuery(final GLTextureInternalFormat format) {
+            this.testFormat = Objects.requireNonNull(format);
+        }
+
+        @Override
+        public GLTextureFormat call() throws Exception {
+            final ContextCapabilities cap = GL.getCapabilities();
+
+            final int raw;
+            if (cap.OpenGL43) {
+                raw = GL42.glGetInternalformati(GL11.GL_TEXTURE_2D, this.testFormat.value, GL43.GL_TEXTURE_IMAGE_FORMAT);
+            } else if(cap.GL_ARB_internalformat_query2) {
+                raw = ARBInternalformatQuery.glGetInternalformati(GL11.GL_TEXTURE_2D, this.testFormat.value, ARBInternalformatQuery2.GL_TEXTURE_IMAGE_FORMAT);                
+            } else {
+                throw new UnsupportedOperationException("Querying preferred texture format requires either an OpenGL4.3 context or ARB_internal_format_query2 support.");
+            }
+            
+            final GLTextureFormat res = GLTextureFormat.valueOf(raw);
+
+            return res;
+
         }
 
     }
