@@ -38,7 +38,10 @@ public abstract class GLQuery<ReturnType> implements Callable<ReturnType> {
             } else {
                 return thread.submitGLQuery(this).get();
             }
-        } catch (final Exception ex) {
+        } catch (InterruptedException ex) {
+            Thread.currentThread().interrupt();
+            return null;
+        } catch (Exception ex) {
             throw new GLException("Unable to call GLQuery!", ex);
         }
     }
@@ -59,7 +62,10 @@ public abstract class GLQuery<ReturnType> implements Callable<ReturnType> {
             } else {
                 return thread.submitGLQuery(this).get();
             }
-        } catch (final Exception ex) {
+        } catch (InterruptedException ex) {
+            Thread.currentThread().interrupt();
+            return null;
+        } catch (Exception ex) {
             throw new GLException("Unable to call GLQuery!", ex);
         }
     }
@@ -78,8 +84,10 @@ public abstract class GLQuery<ReturnType> implements Callable<ReturnType> {
             public void run() {
                 try {
                     other.accept(GLQuery.this.call());
+                } catch (InterruptedException ex) {
+                    Thread.currentThread().interrupt();
                 } catch (Exception ex) {
-                    throw new GLException("Error processing GLQuery!", ex);
+                    throw new GLException("Unable to call GLQuery!", ex);
                 }
             }
         };
@@ -104,6 +112,8 @@ public abstract class GLQuery<ReturnType> implements Callable<ReturnType> {
                     for (Consumer<ReturnType> other : others) {
                         other.accept(value);
                     }
+                } catch (InterruptedException ex) {
+                    Thread.currentThread().interrupt();
                 } catch (Exception ex) {
                     throw new GLException("Error processing GLQuery!", ex);
                 }

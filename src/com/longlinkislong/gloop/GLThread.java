@@ -438,7 +438,7 @@ public class GLThread implements ExecutorService {
     public void execute(Runnable command) {
         this.submitGLTask(GLTask.create(command));
     }
-
+    
     /**
      * Inserts a query that returns when it has been processed by the OpenGL
      * thread.

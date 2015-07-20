@@ -424,10 +424,10 @@ public class GLWindow {
 
         @Override
         public Double call() throws Exception {
-            if(!GLWindow.this.isValid()) {
+            if (!GLWindow.this.isValid()) {
                 throw new GLException("GLWindow is not valid!");
             }
-            
+
             final long mHandle = GLFW.glfwGetWindowMonitor(GLWindow.this.monitor);
 
             final ByteBuffer mode = GLFW.glfwGetVideoMode(mHandle);
@@ -806,9 +806,6 @@ public class GLWindow {
         this.cleanupTasks.forEach(Runnable::run);
         this.cleanupTasks.clear();
         this.workerThreads.forEach(GLWindow::stop);
-        GLFW.glfwDestroyWindow(this.window);
-        WINDOWS.remove(this.window);
-        this.window = GLWindow.INVALID_WINDOW_ID;
         this.cursorEnterCallback.ifPresent(GLFWCursorEnterCallback::release);
         this.cursorPosCallback.ifPresent(GLFWCursorPosCallback::release);
         this.keyCallback.ifPresent(GLFWKeyCallback::release);
@@ -816,6 +813,14 @@ public class GLWindow {
         this.scrollCallback.ifPresent(GLFWScrollCallback::release);
         this.resizeCallback.ifPresent(GLFWFramebufferSizeCallback::release);
         this.onClose.ifPresent(Runnable::run);
+
+        // stop everything
+        this.thread.submit(() -> {
+            GLFW.glfwDestroyWindow(this.window);
+            WINDOWS.remove(this.window);
+            this.window = GLWindow.INVALID_WINDOW_ID;
+        });
+        
         this.thread.shutdown();
     }
 
@@ -884,7 +889,7 @@ public class GLWindow {
         this.cleanupTasks.clear();
     }
 
-    private WindowHandler handler = new WindowHandler();
+    private final WindowHandler handler = new WindowHandler();
 
     /**
      * Adds a listener for when the window resizes.
