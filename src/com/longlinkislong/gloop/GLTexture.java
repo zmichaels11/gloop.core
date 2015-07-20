@@ -1214,7 +1214,7 @@ public class GLTexture extends GLObject {
      *
      * @since 15.07.06
      */
-    public static class MaxTextureUnitQuery extends GLQuery<Integer> {
+    public static final class MaxTextureUnitQuery extends GLQuery<Integer> {
 
         boolean checked = false;
         int maxUnits;
@@ -1231,6 +1231,12 @@ public class GLTexture extends GLObject {
             assert this.maxUnits > 0;
 
             return this.maxUnits;
+        }
+        
+        @Override
+        protected Integer handleInterruption() {
+            // return the minimum specification for OpenGL 3.0
+            return 8;
         }
     }
 
@@ -1251,7 +1257,7 @@ public class GLTexture extends GLObject {
      *
      * @since 15.07.06
      */
-    public static class MaxTextureSizeQuery extends GLQuery<Integer> {
+    public static final class MaxTextureSizeQuery extends GLQuery<Integer> {
 
         boolean checked = false;
         int maxUnits;
@@ -1268,6 +1274,12 @@ public class GLTexture extends GLObject {
             assert this.maxUnits > 0;
 
             return this.maxUnits;
+        }
+        
+        @Override
+        protected Integer handleInterruption() {
+            // return the minimum specification for OpenGL 3.0
+            return 1 << 12;
         }
     }
 
@@ -1289,7 +1301,7 @@ public class GLTexture extends GLObject {
 
             MEM_PREFERRED_FORMATS.put(format, res);
             return res;
-        }
+        }                
     }
 
     /**
@@ -1298,7 +1310,7 @@ public class GLTexture extends GLObject {
      *
      * @since 15.07.20
      */
-    public static class PreferredInternalFormatQuery extends GLQuery<GLTextureFormat> {
+    public static final class PreferredInternalFormatQuery extends GLQuery<GLTextureFormat> {
 
         final static Map<GLTextureInternalFormat, GLTextureFormat> MEM_QUERIES = new HashMap<>();
         final GLTextureInternalFormat testFormat;
@@ -1329,7 +1341,12 @@ public class GLTexture extends GLObject {
             final GLTextureFormat res = GLTextureFormat.valueOf(raw);
 
             return res;
-
+        }
+        
+        @Override
+        protected GLTextureFormat handleInterruption() {
+            // todo: this should probably return a simple safe  value.
+            return null;
         }
 
     }

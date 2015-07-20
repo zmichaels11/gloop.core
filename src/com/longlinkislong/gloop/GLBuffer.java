@@ -139,6 +139,11 @@ public class GLBuffer extends GLObject {
 
             return GLTools.getDSAInstance().glGetNamedBufferParameteri(GLBuffer.this.bufferId, this.pName.value);
         }
+        
+        @Override
+        protected Integer handleInterruption() {
+            return 0;
+        }
 
     }
 
@@ -455,6 +460,11 @@ public class GLBuffer extends GLObject {
 
             return out;
         }
+        
+        @Override
+        protected ByteBuffer handleInterruption() {
+            return ByteBuffer.allocate(0).asReadOnlyBuffer();
+        }
     }
 
     /**
@@ -642,6 +652,11 @@ public class GLBuffer extends GLObject {
 
             return newBuffer;
         }
+        
+        @Override
+        protected ByteBuffer handleInterruption() {
+            return ByteBuffer.allocate(0).asReadOnlyBuffer();
+        }
     }
 
     /**
@@ -788,6 +803,11 @@ public class GLBuffer extends GLObject {
             GLBuffer.this.mappedBuffer = newBuffer;
 
             return newBuffer;
+        }
+        
+        @Override
+        protected ByteBuffer handleInterruption() {
+            return ByteBuffer.allocate(0).asReadOnlyBuffer();
         }
     }
 

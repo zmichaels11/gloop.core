@@ -33,5 +33,5 @@ public enum GLClearBufferMode {
     
     GLClearBufferMode(final int value) {
         this.value = value;
-    }
+    }        
 }

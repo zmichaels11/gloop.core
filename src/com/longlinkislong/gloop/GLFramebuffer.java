@@ -13,6 +13,7 @@ import java.nio.IntBuffer;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Set;
 import org.lwjgl.opengl.ARBFramebufferObject;
 import org.lwjgl.opengl.ContextCapabilities;
 import org.lwjgl.opengl.EXTFramebufferObject;
@@ -124,8 +125,12 @@ public class GLFramebuffer extends GLObject {
      */
     public class IsCompleteQuery extends GLQuery<Boolean> {
 
+        private GLThread thread;
+
         @Override
         public Boolean call() throws Exception {
+            this.thread = GLThread.getCurrent().orElseThrow(GLException::new);
+
             final ContextCapabilities cap = GL.getCapabilities();
 
             if (cap.OpenGL30) {
@@ -137,6 +142,7 @@ public class GLFramebuffer extends GLObject {
                 final boolean res = complete == GL30.GL_FRAMEBUFFER_COMPLETE;
 
                 GL30.glBindFramebuffer(GL30.GL_FRAMEBUFFER, currentFB);
+                this.thread = null;
 
                 return res;
             } else if (cap.GL_ARB_framebuffer_object) {
@@ -148,6 +154,8 @@ public class GLFramebuffer extends GLObject {
                 final boolean res = complete == ARBFramebufferObject.GL_FRAMEBUFFER_COMPLETE;
 
                 ARBFramebufferObject.glBindFramebuffer(ARBFramebufferObject.GL_FRAMEBUFFER, currentFB);
+                this.thread = null;
+
                 return res;
             } else if (cap.GL_EXT_framebuffer_object) {
                 final int currentFB = GL11.glGetInteger(EXTFramebufferObject.GL_FRAMEBUFFER_BINDING_EXT);
@@ -158,12 +166,30 @@ public class GLFramebuffer extends GLObject {
                 final boolean res = complete == EXTFramebufferObject.GL_FRAMEBUFFER_COMPLETE_EXT;
 
                 EXTFramebufferObject.glBindFramebufferEXT(EXTFramebufferObject.GL_FRAMEBUFFER_EXT, currentFB);
+                this.thread = null;
+
                 return res;
             } else {
                 throw new UnsupportedOperationException("GLFramebuffer requires either an OpenGL3.0 context, arb_framebuffer_object, or ext_framebuffer_object.");
             }
         }
-    }   
+
+        @Override
+        protected Boolean handleInterruption() {
+            if (this.thread == null) {
+                // dont do anything if the task is done.
+                return false;
+            } else if (GLThread.getCurrent().get() != this.thread) {
+                // dont do anything if the thread is wrong.
+                return false;
+            }
+
+            // attempt to reset the framebuffer state to the default.
+            GLFramebuffer.getDefaultFramebuffer().bind();
+
+            return false;
+        }
+    }
 
     /**
      * Executes a task with the current framebuffer bound. The framebuffer bind
@@ -727,6 +753,107 @@ public class GLFramebuffer extends GLObject {
                         this.colorAttachment.textureId,
                         this.level);
             }
+        }
+    }
+
+    /**
+     * Blits a framebuffer to another framebuffer.
+     *
+     * @param readFB the framebuffer to read pixel data from.
+     * @param writeFB the framebuffer to write pixel data to.
+     * @param srcX0 the first x-coordinate from the read framebuffer.
+     * @param srcY0 the first y-coordinate from the read framebuffer.
+     * @param srcX1 the second x-coordinate from the read framebuffer.
+     * @param srcY1 the second y-coordinate from the read framebuffer.
+     * @param dstX0 the first x-coordinate from the write framebuffer.
+     * @param dstY0 the first y-coordinate from the write framebuffer.
+     * @param dstX1 the second x-coordinate from the read framebuffer.
+     * @param dstY1 the second y-coordinate from the read framebuffer.
+     * @param mask the mask for all of the buffers to copy.
+     * @param filter the filter to use if the framebuffers are different sizes.
+     * @since 15.07.20
+     */
+    public static void blit(final GLFramebuffer readFB, final GLFramebuffer writeFB,
+            final int srcX0, final int srcY0, final int srcX1, final int srcY1,
+            final int dstX0, final int dstY0, final int dstX1, final int dstY1,
+            final Set<GLClearBufferMode> mask, final GLTextureMagFilter filter) {
+
+        new BlitTask(readFB, writeFB, srcX0, srcY0, srcX1, srcY1, dstX0, dstY0, dstX1, dstY1, mask, filter).glRun();
+    }
+
+    /**
+     * A GLTask that blits one framebuffer to another framebuffer.
+     *
+     * @since 15.07.20
+     */
+    public static class BlitTask extends GLTask {
+
+        private final GLFramebuffer readFB;
+        private final GLFramebuffer writeFB;
+        private final int srcX0, srcX1, srcY0, srcY1;
+        private final int dstX0, dstX1, dstY0, dstY1;
+        private final int bitfield;
+        private final GLTextureMagFilter filter;
+
+        /**
+         * Constructs a new BlitTask.
+         *
+         * @param readFB the framebuffer to read pixel data from.
+         * @param writeFB the framebuffer to write pixel data to.
+         * @param srcX0 the first x-coordinate from the read framebuffer.
+         * @param srcY0 the first y-coordinate from the read framebuffer.
+         * @param srcX1 the second x-coordinate from the read framebuffer.
+         * @param srcY1 the second y-coordinate from the read framebuffer.
+         * @param dstX0 the first x-coordinate from the write framebuffer.
+         * @param dstY0 the first y-coordinate from the write framebuffer.
+         * @param dstX1 the second x-coordinate from the read framebuffer.
+         * @param dstY1 the second y-coordinate from the read framebuffer.
+         * @param mask the mask for all of the buffers to copy.
+         * @param filter the filter to use if the framebuffers are different
+         * sizes.
+         */
+        public BlitTask(
+                final GLFramebuffer readFB, final GLFramebuffer writeFB,
+                final int srcX0, final int srcY0, final int srcX1, final int srcY1,
+                final int dstX0, final int dstY0, final int dstX1, final int dstY1,
+                final Set<GLClearBufferMode> mask, final GLTextureMagFilter filter) {
+
+            this.readFB = Objects.requireNonNull(readFB);
+            this.writeFB = Objects.requireNonNull(writeFB);
+
+            this.srcX0 = srcX0;
+            this.srcY0 = srcY0;
+            this.srcX1 = srcX1;
+            this.srcY1 = srcY1;
+
+            this.dstX0 = dstX0;
+            this.dstY0 = dstY0;
+            this.dstX1 = dstX1;
+            this.dstY1 = dstY1;
+
+            int bits = 0;
+
+            for (GLClearBufferMode clear : mask) {
+                bits |= clear.value;
+            }
+
+            this.bitfield = bits;
+            this.filter = Objects.requireNonNull(filter);
+        }
+
+        @Override
+        public void run() {
+            if (!this.readFB.isValid()) {
+                throw new GLException("Read framebuffer is not valid!");
+            } else if (!this.writeFB.isValid()) {
+                throw new GLException("Write framebuffer is not valid!");
+            }
+
+            GLTools.getDSAInstance().glBlitNamedFramebuffer(
+                    this.readFB.framebufferId, this.writeFB.framebufferId,
+                    srcX0, srcY0, srcX1, srcY1,
+                    dstX0, dstY0, dstX1, dstY1,
+                    this.bitfield, this.filter.value);
         }
     }
 }

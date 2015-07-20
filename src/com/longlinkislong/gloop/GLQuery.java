@@ -40,7 +40,7 @@ public abstract class GLQuery<ReturnType> implements Callable<ReturnType> {
             }
         } catch (InterruptedException ex) {
             Thread.currentThread().interrupt();
-            return null;
+            return this.handleInterruption();
         } catch (Exception ex) {
             throw new GLException("Unable to call GLQuery!", ex);
         }
@@ -64,10 +64,20 @@ public abstract class GLQuery<ReturnType> implements Callable<ReturnType> {
             }
         } catch (InterruptedException ex) {
             Thread.currentThread().interrupt();
-            return null;
+            return this.handleInterruption();
         } catch (Exception ex) {
             throw new GLException("Unable to call GLQuery!", ex);
         }
+    }
+
+    /**
+     * Optional implementation for handling thread interruption.
+     *
+     * @return some safe value for when the query cannot fully process.
+     * @since 15.07.20
+     */
+    protected ReturnType handleInterruption() {
+        return null;
     }
 
     /**
@@ -84,8 +94,6 @@ public abstract class GLQuery<ReturnType> implements Callable<ReturnType> {
             public void run() {
                 try {
                     other.accept(GLQuery.this.call());
-                } catch (InterruptedException ex) {
-                    Thread.currentThread().interrupt();
                 } catch (Exception ex) {
                     throw new GLException("Unable to call GLQuery!", ex);
                 }
@@ -112,8 +120,6 @@ public abstract class GLQuery<ReturnType> implements Callable<ReturnType> {
                     for (Consumer<ReturnType> other : others) {
                         other.accept(value);
                     }
-                } catch (InterruptedException ex) {
-                    Thread.currentThread().interrupt();
                 } catch (Exception ex) {
                     throw new GLException("Error processing GLQuery!", ex);
                 }

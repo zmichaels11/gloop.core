@@ -300,6 +300,11 @@ public class GL45DSA implements DSADriver {
         FakeDSA.getInstance().glNamedBufferReadPixels(bufferId, x, y, width, height, format, type, ptr);
     }
 
+    @Override
+    public void glBlitNamedFramebuffer(int readFramebuffer, int drawFramebuffer, int srcX0, int srcY0, int srcX1, int srcY1, int dstX0, int dstY0, int dstX1, int dstY1, int mask, int filter) {
+        GL45.glBlitNamedFramebuffer(readFramebuffer, drawFramebuffer, srcX0, srcY0, srcX1, srcY1, dstX0, dstX1, dstY0, dstY1, mask, filter);
+    }
+
     private static class Holder {
 
         private static final DSADriver INSTANCE = new GL45DSA();

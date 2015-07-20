@@ -906,6 +906,31 @@ public class FakeDSA implements EXTDSADriver {
             throw new UnsupportedOperationException("glFramebufferTexture2D is not supported. glFramebufferTexture2D requires either: an OpenGL 3.0 context, ARB_framebuffer_object, or EXT_framebuffer_object.");
         }
     }
+    
+    @Override
+    public void glBlitNamedFramebuffer(int readFramebuffer, int drawFramebuffer, int srcX0, int srcY0, int srcX1, int srcY1, int dstX0, int dstY0, int dstX1, int dstY1, int mask, int filter) {
+        final ContextCapabilities cap = GL.getCapabilities();
+        
+        if(cap.OpenGL30) {
+            final int prevReadFB = GL11.glGetInteger(GL30.GL_READ_FRAMEBUFFER_BINDING);
+            final int prevDrawFB = GL11.glGetInteger(GL30.GL_DRAW_FRAMEBUFFER_BINDING);
+            
+            GL30.glBlitFramebuffer(srcX0, srcY0, srcX1, srcY1, dstX0, dstY0, dstX1, dstY1, mask, filter);
+            
+            GL30.glBindFramebuffer(GL30.GL_DRAW_FRAMEBUFFER, prevDrawFB);
+            GL30.glBindFramebuffer(GL30.GL_READ_FRAMEBUFFER, prevReadFB);
+        } else if(cap.GL_ARB_framebuffer_object) {
+            final int prevReadFB = GL11.glGetInteger(ARBFramebufferObject.GL_READ_FRAMEBUFFER_BINDING);
+            final int prevDrawFB = GL11.glGetInteger(ARBFramebufferObject.GL_DRAW_FRAMEBUFFER_BINDING);
+        
+            ARBFramebufferObject.glBlitFramebuffer(srcX0, srcY0, srcX1, srcY1, dstX0, dstY0, dstX1, dstY1, mask, filter);
+            
+            ARBFramebufferObject.glBindFramebuffer(ARBFramebufferObject.GL_DRAW_FRAMEBUFFER, prevDrawFB);
+            ARBFramebufferObject.glBindFramebuffer(ARBFramebufferObject.GL_READ_FRAMEBUFFER, prevReadFB);
+        } else {
+            throw new UnsupportedOperationException("glBlitFramebuffer requires either an OpenGL3.0 context or ARB_framebuffer_object!");
+        }
+    }
 
     @Override
     public void glNamedBufferReadPixels(int bufferId, int x, int y, int width, int height, int format, int type, long ptr) {

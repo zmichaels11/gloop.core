@@ -332,6 +332,21 @@ public class NoDSA implements EXTDSADriver {
         GL15.glBindBuffer(GL15.GL_ARRAY_BUFFER, pName);
         return GL15.glGetBufferParameteri(GL15.GL_ARRAY_BUFFER, pName);
     }
+    
+    @Override
+    public void glBlitNamedFramebuffer(int readFramebuffer, int drawFramebuffer, int srcX0, int srcY0, int srcX1, int srcY1, int dstX0, int dstY0, int dstX1, int dstY1, int mask, int filter) {
+        final ContextCapabilities cap = GL.getCapabilities();
+        
+        if(cap.OpenGL30) {
+            GL30.glBindFramebuffer(GL30.GL_READ_FRAMEBUFFER, readFramebuffer);
+            GL30.glBindFramebuffer(GL30.GL_DRAW_FRAMEBUFFER, drawFramebuffer);
+            
+            GL30.glBlitFramebuffer(srcX0, srcY0, srcX1, srcY1, dstX0, dstY0, dstX1, dstY1, mask, filter);
+            
+            GL30.glBindFramebuffer(GL30.GL_READ_FRAMEBUFFER, 0);
+            GL30.glBindFramebuffer(GL30.GL_DRAW_FRAMEBUFFER, 0);
+        }
+    }
 
     public static DSADriver getInstance() {
         return Holder.INSTANCE;
