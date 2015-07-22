@@ -174,11 +174,17 @@ public class NeHe04 {
     }
 
     public void start() {
-        this.window.getGLThread().scheduleGLTask(this.drawTask);        
+        this.window.getGLThread().scheduleGLTask(this.drawTask);  
+        this.window.getGLThread().scheduleGLTask(new GLThread.FrameCapTask(60.0));
         this.window.getGLThread().scheduleGLTask(new GLThread.FrameStatsTask());
         this.window.setVisible(true);
     }
 
+    static {
+        System.setProperty("gloop.opengl.swap_interval", "0");
+        System.setProperty("debug", "true");
+    }
+    
     public static void main(String[] args) throws Exception {
         NeHe04 test = new NeHe04();
 

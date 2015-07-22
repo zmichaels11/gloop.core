@@ -19,6 +19,12 @@ import org.lwjgl.opengl.GL20;
  */
 public class NeHe01 {
 
+    static{        
+        System.setProperty("gloop.opengl.version", "4.5");
+        System.setProperty("gloop.gltools.dsa", "arbdsa");
+        System.setProperty("debug", "true");
+    }
+    
     public NeHe01() {
         final GLWindow window = new GLWindow(640, 480, "NeHe01");
 

@@ -147,6 +147,54 @@ public class GLTools {
     public static final double DEGREES_TO_RADIANS = Math.PI / 180.0;
 
     /**
+     * Returns the value clamped to the range [min, max].
+     * @param value the value to clamp.
+     * @param min the minimum value.
+     * @param max the maximum value.
+     * @return the clamped value.
+     * @since 15.07.22
+     */
+    public static int clamp(int value, int min, int max) {
+        return Math.min(Math.max(value, min), max);
+    }
+    
+    /**
+     * Returns the value clamped to the range [min, max].
+     * @param value the value to clamp.
+     * @param min the minimum value.
+     * @param max the maximum value.
+     * @return the clamped value.
+     * @since 15.07.22
+     */
+    public static long clamp(long value, long min, long max) {
+        return Math.min(Math.max(value, min), max);
+    }
+    
+    /**
+     * Returns the value clamped to the range [min, max].
+     * @param value the value to clamp.
+     * @param min the minimum value.
+     * @param max the maximum value.
+     * @return the clamped value.
+     * @since 15.07.22
+     */
+    public static float clamp(float value, float min, float max) {
+        return Math.min(Math.max(value, min), max);
+    }
+    
+    /**
+     * Returns the value clamped to the range [min, max].
+     * @param value the value to clamp.
+     * @param min the minimum value.
+     * @param max the maximum value.
+     * @return the clamped value.
+     * @since 15.07.22
+     */
+    public static double clamp(double value, double min, double max) {
+        return Math.min(Math.max(value, min), max);
+    }
+    
+    /**
      * Checks if the buffer can be used for OpenGL calls. OpenGL requires that
      * the buffer is direct and native order.
      *
@@ -1576,7 +1624,7 @@ public class GLTools {
     private static final boolean DEBUG;
 
     static {
-        DEBUG = Boolean.getBoolean("debug");
+        DEBUG = Boolean.getBoolean("debug") && !System.getProperty("debug.exclude", "").contains("gltools");
 
         // check for driver override.
         final String dsa = System.getProperty("gloop.gltools.dsa", "");

@@ -12,7 +12,7 @@ import org.lwjgl.opengl.GL11;
  * @author zmichaels
  * @since 15.06.18
  */
-public enum GLClearBufferMode {
+public enum GLFramebufferMode {
     /**
      * Clears the color buffer attachment of the current framebuffer.
      * @since 15.06.18
@@ -29,9 +29,9 @@ public enum GLClearBufferMode {
      */
     GL_STENCIL_BUFFER_BIT(GL11.GL_STENCIL_BUFFER_BIT);
     
-    final int value;
+    final int value;    
     
-    GLClearBufferMode(final int value) {
+    GLFramebufferMode(final int value) {
         this.value = value;
     }        
 }

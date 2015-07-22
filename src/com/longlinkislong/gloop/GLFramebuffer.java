@@ -776,7 +776,7 @@ public class GLFramebuffer extends GLObject {
     public static void blit(final GLFramebuffer readFB, final GLFramebuffer writeFB,
             final int srcX0, final int srcY0, final int srcX1, final int srcY1,
             final int dstX0, final int dstY0, final int dstX1, final int dstY1,
-            final Set<GLClearBufferMode> mask, final GLTextureMagFilter filter) {
+            final Set<GLFramebufferMode> mask, final GLTextureMagFilter filter) {
 
         new BlitTask(readFB, writeFB, srcX0, srcY0, srcX1, srcY1, dstX0, dstY0, dstX1, dstY1, mask, filter).glRun();
     }
@@ -816,7 +816,7 @@ public class GLFramebuffer extends GLObject {
                 final GLFramebuffer readFB, final GLFramebuffer writeFB,
                 final int srcX0, final int srcY0, final int srcX1, final int srcY1,
                 final int dstX0, final int dstY0, final int dstX1, final int dstY1,
-                final Set<GLClearBufferMode> mask, final GLTextureMagFilter filter) {
+                final Set<GLFramebufferMode> mask, final GLTextureMagFilter filter) {
 
             this.readFB = Objects.requireNonNull(readFB);
             this.writeFB = Objects.requireNonNull(writeFB);
@@ -833,7 +833,7 @@ public class GLFramebuffer extends GLObject {
 
             int bits = 0;
 
-            for (GLClearBufferMode clear : mask) {
+            for (GLFramebufferMode clear : mask) {
                 bits |= clear.value;
             }
 

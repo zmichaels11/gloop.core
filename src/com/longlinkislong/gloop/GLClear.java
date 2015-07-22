@@ -61,18 +61,18 @@ public class GLClear extends GLObject {
      *
      * @since 15.07.01
      */
-    public static final Set<GLClearBufferMode> DEFAULT_CLEAR_BITS;
+    public static final Set<GLFramebufferMode> DEFAULT_CLEAR_BITS;
 
     static {
-        final Set<GLClearBufferMode> bits = new HashSet<>();
+        final Set<GLFramebufferMode> bits = new HashSet<>();
         DEFAULT_CLEAR_BITS = Collections.unmodifiableSet(bits);
 
-        bits.add(GLClearBufferMode.GL_COLOR_BUFFER_BIT);
-        bits.add(GLClearBufferMode.GL_DEPTH_BUFFER_BIT);
+        bits.add(GLFramebufferMode.GL_COLOR_BUFFER_BIT);
+        bits.add(GLFramebufferMode.GL_DEPTH_BUFFER_BIT);
     }
 
     private final int clearBitField;
-    public final Set<GLClearBufferMode> clearBits;
+    public final Set<GLFramebufferMode> clearBits;
     /**
      * The value to set each pixel's red component to.
      *
@@ -145,7 +145,7 @@ public class GLClear extends GLObject {
             final GLThread thread,
             final float r, final float g, final float b, final float a,
             final double depth,
-            final Set<GLClearBufferMode> clearBits) {
+            final Set<GLFramebufferMode> clearBits) {
 
         super(thread);
 
@@ -155,10 +155,10 @@ public class GLClear extends GLObject {
         this.alpha = a;
         this.depth = depth;
 
-        final Set<GLClearBufferMode> bits = new HashSet<>();
+        final Set<GLFramebufferMode> bits = new HashSet<>();
         int bitField = 0;
 
-        for (GLClearBufferMode bit : clearBits) {
+        for (GLFramebufferMode bit : clearBits) {
             bitField |= bit.value;
             bits.add(bit);
         }
@@ -191,7 +191,7 @@ public class GLClear extends GLObject {
      * @return the GLClear object.
      * @since 15.07.01
      */
-    public GLClear withClearBits(final GLClearBufferMode... modes) {
+    public GLClear withClearBits(final GLFramebufferMode... modes) {
         return this.withClearBits(modes, 0, modes.length);
     }
 
@@ -204,8 +204,8 @@ public class GLClear extends GLObject {
      * @return the GLClear object.
      * @since 15.07.01
      */
-    public GLClear withClearBits(final GLClearBufferMode[] modes, final int offset, final int count) {
-        final Set<GLClearBufferMode> bits = new HashSet<>();
+    public GLClear withClearBits(final GLFramebufferMode[] modes, final int offset, final int count) {
+        final Set<GLFramebufferMode> bits = new HashSet<>();
 
         Arrays.stream(modes, offset, modes.length).forEach(bits::add);
 

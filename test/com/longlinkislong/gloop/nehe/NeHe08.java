@@ -9,7 +9,7 @@ import com.longlinkislong.gloop.GLBlendFunc;
 import com.longlinkislong.gloop.GLBlending;
 import com.longlinkislong.gloop.GLBuffer;
 import com.longlinkislong.gloop.GLClear;
-import com.longlinkislong.gloop.GLClearBufferMode;
+import com.longlinkislong.gloop.GLFramebufferMode;
 import com.longlinkislong.gloop.GLDepthFunc;
 import com.longlinkislong.gloop.GLDepthTest;
 import com.longlinkislong.gloop.GLDrawMode;
@@ -60,7 +60,7 @@ public class NeHe08 {
 
     final GLWindow window = new GLWindow(640, 480, "NeHe08");
     final GLClear clear = new GLClear()
-            .withClearBits(GLClearBufferMode.GL_COLOR_BUFFER_BIT, GLClearBufferMode.GL_DEPTH_BUFFER_BIT)
+            .withClearBits(GLFramebufferMode.GL_COLOR_BUFFER_BIT, GLFramebufferMode.GL_DEPTH_BUFFER_BIT)
             .withClearColor(0f, 0f, 0f, 0f)
             .withClearDepth(1.0);
     final GLDepthTest depthTest = new GLDepthTest()

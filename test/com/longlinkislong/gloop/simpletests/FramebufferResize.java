@@ -7,7 +7,7 @@ package com.longlinkislong.gloop.simpletests;
 
 import com.longlinkislong.gloop.GLBuffer;
 import com.longlinkislong.gloop.GLClear;
-import com.longlinkislong.gloop.GLClearBufferMode;
+import com.longlinkislong.gloop.GLFramebufferMode;
 import com.longlinkislong.gloop.GLDrawMode;
 import com.longlinkislong.gloop.GLFramebuffer;
 import com.longlinkislong.gloop.GLMat4F;
@@ -223,7 +223,7 @@ public class FramebufferResize {
         new GLViewport(0, 0, this.colorAttachment.getWidth(), this.colorAttachment.getHeight()).applyViewport();
 
         new GLClear()
-                .withClearBits(GLClearBufferMode.GL_COLOR_BUFFER_BIT, GLClearBufferMode.GL_DEPTH_BUFFER_BIT)
+                .withClearBits(GLFramebufferMode.GL_COLOR_BUFFER_BIT, GLFramebufferMode.GL_DEPTH_BUFFER_BIT)
                 .withClearColor(0.5f, 0.5f, 0.5f, 1f)
                 .clear();
 
@@ -235,7 +235,7 @@ public class FramebufferResize {
         GLFramebuffer.getDefaultFramebuffer().bind();
 
         new GLClear()
-                .withClearBits(GLClearBufferMode.GL_COLOR_BUFFER_BIT, GLClearBufferMode.GL_DEPTH_BUFFER_BIT)
+                .withClearBits(GLFramebufferMode.GL_COLOR_BUFFER_BIT, GLFramebufferMode.GL_DEPTH_BUFFER_BIT)
                 .withClearColor(0.8f, 0.8f, 0.8f, 0f)
                 .clear();
 

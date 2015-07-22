@@ -22,6 +22,7 @@ import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import java.util.stream.Collectors;
+import org.lwjgl.glfw.GLFW;
 
 /**
  * GLThread is a representation of an OpenGL thread.
@@ -466,14 +467,12 @@ public class GLThread implements ExecutorService {
     /**
      * A GLTask that limits the current framerate to the specified limit.
      *
-     * @since 15.07.20
-     * @deprecated experimental code.
-     */
-    @Deprecated
+     * @since 15.07.20     
+     */    
     public static class FrameCapTask extends GLTask {
 
-        private final long targetFrameTime;
-        long lastTime = System.nanoTime();
+        private final double targetFrameTime;
+        private double lastTime = 0.0;
 
         /**
          * Constructs a new FrameCapTask with the target fps.
@@ -481,27 +480,34 @@ public class GLThread implements ExecutorService {
          * @param targetFPS the target fps to limit to.
          * @since 15.07.20
          */
-        public FrameCapTask(final double targetFPS) {
-            final double spf = 1.0 / targetFPS;
-            final double nspf = 1000000000.0 * spf;
-
-            this.targetFrameTime = (long) nspf;
+        public FrameCapTask(final double targetFPS) {            
+            this.targetFrameTime = 1.0 / targetFPS;
+            
+            if(DEBUG) {
+                System.out.printf("Target thread time: %.2fs\n", this.targetFrameTime);
+            }
         }
 
         @Override
-        public void run() {
-            final long now = System.nanoTime();
-            final long dTime = now - this.lastTime;
+        public void run() {            
+            final double now = GLFW.glfwGetTime();
+            final double dTime = now - this.lastTime;
+            
+            if(dTime == now) {
+                this.lastTime = now;
+                return;
+            }
 
             this.lastTime = now;
 
-            if (dTime < this.targetFrameTime) {
-                final long sleepTime = this.targetFrameTime - dTime;
-                final long msSleepTime = sleepTime / 1000000;
-                final int nsSleepTime = (int) (sleepTime - msSleepTime * 1000000);
+            if (dTime < this.targetFrameTime) {                
 
                 try {
-                    Thread.sleep(msSleepTime, nsSleepTime);
+                    final double sleepS = this.targetFrameTime - dTime;
+                    final double sleepMS = sleepS * 1000.0;
+                    final double sleepNS = sleepS * 1000000000.0 - sleepMS * 1000000.0;
+                                        
+                    Thread.sleep(GLTools.clamp((long) sleepMS, 0L, 100L), GLTools.clamp((int) sleepNS, 0, 999999));
                 } catch (InterruptedException ex) {
                     // -\_0_0_/-
                     Thread.currentThread().interrupt();
@@ -524,7 +530,7 @@ public class GLThread implements ExecutorService {
         private double minFrameTime = Double.POSITIVE_INFINITY;
         private double fps;
         private long frameCount = 0L;
-        private long lastTime;
+        private double lastTime;
         private int warmup;
 
         /**
@@ -550,7 +556,7 @@ public class GLThread implements ExecutorService {
 
         @Override
         public void run() {
-            final long now = System.currentTimeMillis();
+            final double now = GLFW.glfwGetTime();
 
             if (warmup > 0) {
                 this.lastTime = now;
@@ -558,20 +564,21 @@ public class GLThread implements ExecutorService {
                 return;
             }
 
-            final long frameTime = now - this.lastTime;
+            final double frameTime = Math.max(now - this.lastTime, GLTools.ULTRAP);
+            
             this.lastTime = now;
 
             if (frameTime > this.maxFrameTime) {
-                this.maxFrameTime = frameTime / 1000.0;
+                this.maxFrameTime = frameTime;
             }
 
             if (frameTime < this.minFrameTime) {
-                this.minFrameTime = frameTime / 1000.0;
+                this.minFrameTime = frameTime;
             }
 
-            this.totalFrameTime += (frameTime / 1000.0);
+            this.totalFrameTime += frameTime;
             this.frameCount++;
-            this.fps = 1000.0 / frameTime;
+            this.fps = 1.0 / frameTime;
 
             this.varFPS = this.getAverageFPS() - this.getFPS();
             this.totalVar += this.varFPS * this.varFPS;
@@ -583,7 +590,7 @@ public class GLThread implements ExecutorService {
 
         @Override
         public String toString() {
-            return String.format("Frame Stats: [fps: %.2f | avg fps: %.2f | min frame time: %.3f | max frame time: %.3f | std frame time: %.2f]", this.getFPS(), this.getAverageFPS(), this.getShortestFrameTime(), this.getLongestFrameTime(), this.getSTDFPS());
+            return String.format("Frame Stats: [fps: %.2f | avg fps: %.2f | min frame time: %.2fs | max frame time: %.2fs | std frame time: %.2f]", this.getFPS(), this.getAverageFPS(), this.getShortestFrameTime(), this.getLongestFrameTime(), this.getSTDFPS());
         }
 
         public double getFPS() {
