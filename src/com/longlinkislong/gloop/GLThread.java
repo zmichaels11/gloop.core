@@ -439,7 +439,7 @@ public class GLThread implements ExecutorService {
     public void execute(Runnable command) {
         this.submitGLTask(GLTask.create(command));
     }
-    
+
     /**
      * Inserts a query that returns when it has been processed by the OpenGL
      * thread.
@@ -467,12 +467,13 @@ public class GLThread implements ExecutorService {
     /**
      * A GLTask that limits the current framerate to the specified limit.
      *
-     * @since 15.07.20     
-     */    
+     * @since 15.07.20
+     */
     public static class FrameCapTask extends GLTask {
 
         private final double targetFrameTime;
         private double lastTime = 0.0;
+        private double dTime;
 
         /**
          * Constructs a new FrameCapTask with the target fps.
@@ -480,33 +481,43 @@ public class GLThread implements ExecutorService {
          * @param targetFPS the target fps to limit to.
          * @since 15.07.20
          */
-        public FrameCapTask(final double targetFPS) {            
+        public FrameCapTask(final double targetFPS) {
             this.targetFrameTime = 1.0 / targetFPS;
-            
-            if(DEBUG) {
+
+            if (DEBUG) {
                 System.out.printf("Target thread time: %.2fs\n", this.targetFrameTime);
             }
         }
 
+        /**
+         * Retrieves the timestep since last frame in seconds.
+         *
+         * @return the timestep value.
+         * @since 15.07.22
+         */
+        public double getTimestep() {
+            return this.dTime;
+        }
+
         @Override
-        public void run() {            
+        public void run() {
             final double now = GLFW.glfwGetTime();
-            final double dTime = now - this.lastTime;
-            
-            if(dTime == now) {
+            this.dTime = now - this.lastTime;
+
+            if (dTime == now) {
                 this.lastTime = now;
                 return;
             }
 
             this.lastTime = now;
 
-            if (dTime < this.targetFrameTime) {                
+            if (dTime < this.targetFrameTime) {
 
                 try {
                     final double sleepS = this.targetFrameTime - dTime;
                     final double sleepMS = sleepS * 1000.0;
                     final double sleepNS = sleepS * 1000000000.0 - sleepMS * 1000000.0;
-                                        
+
                     Thread.sleep(GLTools.clamp((long) sleepMS, 0L, 100L), GLTools.clamp((int) sleepNS, 0, 999999));
                 } catch (InterruptedException ex) {
                     // -\_0_0_/-
@@ -534,6 +545,7 @@ public class GLThread implements ExecutorService {
         private int warmup;
 
         private final long updateInterval;
+
         /**
          * Constructs a new FrameStatsTask with a default warmup period of 300
          * frames.
@@ -568,7 +580,7 @@ public class GLThread implements ExecutorService {
             }
 
             final double frameTime = Math.max(now - this.lastTime, GLTools.ULTRAP);
-            
+
             this.lastTime = now;
 
             if (frameTime > this.maxFrameTime) {
