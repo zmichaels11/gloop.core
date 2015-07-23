@@ -543,6 +543,7 @@ public class GLThread implements ExecutorService {
         private long frameCount = 0L;
         private double lastTime;
         private int warmup;
+        private double timeStep;
 
         private final long updateInterval;
 
@@ -569,6 +570,16 @@ public class GLThread implements ExecutorService {
             this.updateInterval = Math.max(updateInterval, 1);
         }
 
+        /**
+         * Retrieves the timestep between the last frame and this frame.
+         *
+         * @return the timestep value.
+         * @since 15.07.22
+         */
+        public double getTimeStep() {
+            return this.timeStep;
+        }
+
         @Override
         public void run() {
             final double now = GLFW.glfwGetTime();
@@ -579,21 +590,21 @@ public class GLThread implements ExecutorService {
                 return;
             }
 
-            final double frameTime = Math.max(now - this.lastTime, GLTools.ULTRAP);
+            this.timeStep = Math.max(now - this.lastTime, GLTools.ULTRAP);
 
             this.lastTime = now;
 
-            if (frameTime > this.maxFrameTime) {
-                this.maxFrameTime = frameTime;
+            if (timeStep > this.maxFrameTime) {
+                this.maxFrameTime = timeStep;
             }
 
-            if (frameTime < this.minFrameTime) {
-                this.minFrameTime = frameTime;
+            if (timeStep < this.minFrameTime) {
+                this.minFrameTime = timeStep;
             }
 
-            this.totalFrameTime += frameTime;
+            this.totalFrameTime += timeStep;
             this.frameCount++;
-            this.fps = 1.0 / frameTime;
+            this.fps = 1.0 / timeStep;
 
             this.varFPS = this.getAverageFPS() - this.getFPS();
             this.totalVar += this.varFPS * this.varFPS;
