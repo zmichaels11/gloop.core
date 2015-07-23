@@ -104,8 +104,7 @@ public enum GLTextureInternalFormat {
     final int value;
     
     GLTextureInternalFormat(final int value) {
-        this.value = value;
-        
+        this.value = value;        
     }
     
     public static GLTextureInternalFormat valueOf(int glEnum) {

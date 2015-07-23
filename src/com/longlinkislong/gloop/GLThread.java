@@ -533,6 +533,7 @@ public class GLThread implements ExecutorService {
         private double lastTime;
         private int warmup;
 
+        private final long updateInterval;
         /**
          * Constructs a new FrameStatsTask with a default warmup period of 300
          * frames.
@@ -540,7 +541,7 @@ public class GLThread implements ExecutorService {
          * @since 15.07.20
          */
         public FrameStatsTask() {
-            this(300);
+            this(300, 1);
         }
 
         /**
@@ -548,10 +549,12 @@ public class GLThread implements ExecutorService {
          * within the warmup period.
          *
          * @param warmupPeriod the number of frames to disregard on initialize.
+         * @param updateInterval interval for printing out the display.
          * @since 15.07.20
          */
-        public FrameStatsTask(final int warmupPeriod) {
+        public FrameStatsTask(final int warmupPeriod, final long updateInterval) {
             this.warmup = warmupPeriod;
+            this.updateInterval = Math.max(updateInterval, 1);
         }
 
         @Override
@@ -583,7 +586,7 @@ public class GLThread implements ExecutorService {
             this.varFPS = this.getAverageFPS() - this.getFPS();
             this.totalVar += this.varFPS * this.varFPS;
 
-            if (DEBUG) {
+            if (DEBUG && this.frameCount % this.updateInterval == 0) {
                 System.out.println(this);
             }
         }

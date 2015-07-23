@@ -176,7 +176,7 @@ public class NeHe04 {
     public void start() {
         this.window.getGLThread().scheduleGLTask(this.drawTask);  
         this.window.getGLThread().scheduleGLTask(new GLThread.FrameCapTask(60.0));
-        this.window.getGLThread().scheduleGLTask(new GLThread.FrameStatsTask());
+        this.window.getGLThread().scheduleGLTask(new GLThread.FrameStatsTask(300, 60));
         this.window.setVisible(true);
     }
 
