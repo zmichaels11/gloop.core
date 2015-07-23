@@ -568,6 +568,7 @@ public class GLThread implements ExecutorService {
         public FrameStatsTask(final int warmupPeriod, final long updateInterval) {
             this.warmup = warmupPeriod;
             this.updateInterval = Math.max(updateInterval, 1);
+            this.lastTime = GLFW.glfwGetTime();
         }
 
         /**
@@ -582,17 +583,15 @@ public class GLThread implements ExecutorService {
 
         @Override
         public void run() {
-            final double now = GLFW.glfwGetTime();
-
-            if (warmup > 0) {
-                this.lastTime = now;
-                this.warmup--;
-                return;
-            }
+            final double now = GLFW.glfwGetTime();            
 
             this.timeStep = Math.max(now - this.lastTime, GLTools.ULTRAP);
-
             this.lastTime = now;
+            
+            if (warmup > 0) {                
+                this.warmup--;
+                return;
+            }            
 
             if (timeStep > this.maxFrameTime) {
                 this.maxFrameTime = timeStep;
