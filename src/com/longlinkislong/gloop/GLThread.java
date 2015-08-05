@@ -696,7 +696,7 @@ public class GLThread implements ExecutorService {
      * @since 15.07.16
      */
     public static Optional<GLThread> getCurrent() {
-        return Optional.of(THREAD_MAP.get(Thread.currentThread()));
+        return Optional.ofNullable(THREAD_MAP.get(Thread.currentThread()));
     }
 
     /**
@@ -712,6 +712,6 @@ public class GLThread implements ExecutorService {
     private static final boolean DEBUG;
 
     static {
-        DEBUG = Boolean.getBoolean("debug");
+        DEBUG = Boolean.getBoolean("debug") && !System.getProperty("debug.exclude", "").contains("glthread");
     }
 }

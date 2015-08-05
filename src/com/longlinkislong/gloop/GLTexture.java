@@ -959,6 +959,7 @@ public class GLTexture extends GLObject {
     /**
      * Generates mipmaps for the GLTexture.
      *
+     * @return self reference.
      * @since 15.07.08
      */
     public GLTexture generateMipmap() {

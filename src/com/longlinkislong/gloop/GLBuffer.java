@@ -59,8 +59,6 @@ public class GLBuffer extends GLObject {
         return this.bufferId != INVALID_BUFFER_ID;
     }
 
-    private final GLTask initTask = new InitTask();
-
     /**
      * Initializes this GLBuffer. All GLBuffers are initialized automatically
      * some time after the constructor is called. This method should only be
@@ -69,7 +67,7 @@ public class GLBuffer extends GLObject {
      * @since 15.05.13
      */
     public final void init() {
-        this.initTask.glRun(this.getThread());
+        new InitTask().glRun(this.getThread());
     }
 
     /**
@@ -145,9 +143,7 @@ public class GLBuffer extends GLObject {
             return 0;
         }
 
-    }
-
-    private final GLTask deleteTask = new DeleteTask();
+    }    
 
     /**
      * Deletes the GLBuffer. This call will fail if the GLBuffer has already
@@ -156,7 +152,7 @@ public class GLBuffer extends GLObject {
      * @since 15.05.13
      */
     public void delete() {
-        this.deleteTask.glRun(this.getThread());
+        new DeleteTask().glRun(this.getThread());
     }
 
     /**

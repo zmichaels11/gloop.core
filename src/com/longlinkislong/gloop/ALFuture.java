@@ -11,25 +11,23 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 
 /**
- * A future object that is used with GLQuery objects.
+ *
  * @author zmichaels
- * @param <ReturnType> the return type that is set after the GLQuery executes.
- * @since 15.05.27
  */
-public class GLFuture<ReturnType> implements Future<ReturnType> {
+public class ALFuture<ReturnType> implements Future<ReturnType> {
     private final Future<ReturnType> internal;
     private final ReturnType result;
     
-    protected GLFuture(final Future<ReturnType> internal) {
-        this.internal = internal;   
+    protected ALFuture(final Future<ReturnType> internal) {
+        this.internal = internal;
         this.result = null;
     }
     
-    protected GLFuture(final ReturnType result) {
+    protected ALFuture(final ReturnType result) {
         this.internal = null;
         this.result = result;
-    }        
-        
+    }
+    
     @Override
     public boolean cancel(boolean mayInterruptIfRunning) {
         if(this.result == null) {
@@ -77,14 +75,13 @@ public class GLFuture<ReturnType> implements Future<ReturnType> {
     
     @Override
     public final String toString() {
-        try{
-            return "GLFuture: [" + this.get() + "]";        
+        try {
+            return "ALFuture: [" + this.get() + "]";
         } catch (ExecutionException ex) {
-            return "GLFuture: [NULL]: " + ex;
+            return "ALFuture: [NULL]: " + ex;
         } catch (InterruptedException ex) {
             Thread.currentThread().interrupt();
             return "ALFuture: [NULL]: " + ex;
         }
     }
-    
 }

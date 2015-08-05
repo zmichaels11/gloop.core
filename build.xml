@@ -120,6 +120,19 @@
             <zipfileset src="dist/${ant.project.name}-javadoc.jar"/>
         </zip>
         
+        <zip destfile="dist/${ant.project.name}-gl-only.jar">
+            <zipfileset src="dist/${ant.project.name}.jar">
+                <include name="**/*.class"/>
+                <exclude name="**/AL*"/>                
+            </zipfileset>
+        </zip>
+        
+        <zip destfile="dist/${ant.project.name}-al-only.jar">
+            <zipfileset src="dist/${ant.project.name}.jar">
+                <include name="**/*.class"/>
+                <exclude name="**/GL*"/>
+            </zipfileset>
+        </zip>
         <!-- disabled GLFW-less build for now.
         <zip destfile="dist/${ant.project.name}-min.jar">
             <zipfileset src="dist/${ant.project.name}.jar">
@@ -133,7 +146,7 @@
             </zipfileset>           
         </zip>
         -->
-    </target>
+    </target>        
     <!--
 
     There exist several targets which are by default empty and which can be 

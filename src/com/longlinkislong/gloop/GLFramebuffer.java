@@ -439,7 +439,7 @@ public class GLFramebuffer extends GLObject {
      *
      * @param attachment the texture to write the stencil data to.
      * @param level the mipmap level of the texture.
-     * @return
+     * @return self reference
      * @since 15.07.06
      */
     public GLFramebuffer addDepthStencilAttachment(final GLTexture attachment, final int level) {
