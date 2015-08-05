@@ -14,10 +14,9 @@ import org.lwjgl.openal.AL10;
  *
  * @author zmichaels
  */
-public class ALBuffer extends ALObject {
-
+public class ALBuffer extends ALObject {    
     private static final int INVALID_BUFFER_ID = -1;
-    private int bufferId = INVALID_BUFFER_ID;
+    int bufferId = INVALID_BUFFER_ID;
 
     public ALBuffer() {
         super();
@@ -30,6 +29,12 @@ public class ALBuffer extends ALObject {
 
         this.init();
     }
+    
+    ALBuffer(final ALThread thread, final int id) {
+        super(thread);
+        
+        this.bufferId = id;
+    }       
 
     public boolean isValid() {
         return this.bufferId != INVALID_BUFFER_ID;
