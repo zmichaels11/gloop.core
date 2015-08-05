@@ -5,17 +5,27 @@
  */
 package com.longlinkislong.gloop;
 
-import org.lwjgl.opengl.GL11;
-
 /**
+ * The settings for drawing polygons from vertices.
  *
  * @author zmichaels
+ * @since 15.08.05
  */
 public enum GLPolygonMode {
 
-    GL_POINT(GL11.GL_POINT),
-    GL_LINE(GL11.GL_LINE),
-    GL_FILL(GL11.GL_FILL);
+    /**
+     * Specifies that polygons should be drawn by only drawing the vertices.
+     *
+     * @since 15.08.05
+     */
+    GL_POINT(6912),
+    GL_LINE(6913),
+    /**
+     * Specifies that polygons should be drawn. This is the default operation.
+     *
+     * @since 15.08.05
+     */
+    GL_FILL(6914);
     final int value;
 
     GLPolygonMode(final int value) {

@@ -5,29 +5,28 @@
  */
 package com.longlinkislong.gloop;
 
-import org.lwjgl.opengl.GL11;
-
 /**
  *
  * @author zmichaels
  */
 public enum GLTextureMagFilter {
-    GL_NEAREST(GL11.GL_NEAREST),
-    GL_LINEAR(GL11.GL_LINEAR);
-    
+
+    GL_NEAREST(9728),
+    GL_LINEAR(9729);
+
     final int value;
-    
+
     GLTextureMagFilter(final int value) {
         this.value = value;
     }
-    
+
     public static GLTextureMagFilter valueOf(final int value) {
-        for(GLTextureMagFilter filter : values()) {
-            if(filter.value == value) {
+        for (GLTextureMagFilter filter : values()) {
+            if (filter.value == value) {
                 return filter;
             }
         }
-        
+
         return null;
     }
 }

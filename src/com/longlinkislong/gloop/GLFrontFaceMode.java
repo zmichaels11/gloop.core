@@ -8,26 +8,38 @@ package com.longlinkislong.gloop;
 import org.lwjgl.opengl.GL11;
 
 /**
+ * The order that points are read for drawing a polygon.
  *
  * @author zmichaels
+ * @since 15.08.05
  */
 public enum GLFrontFaceMode {
 
+    /**
+     * Clock-Wise order
+     *
+     * @since 15.08.05
+     */
     GL_CW(GL11.GL_CW),
+    /**
+     * Counter-Clock-Wise order.
+     *
+     * @since 15.08.05
+     */
     GL_CCW(GL11.GL_CCW);
     final int value;
 
     GLFrontFaceMode(final int value) {
         this.value = value;
     }
-    
+
     public static GLFrontFaceMode valueOf(final int value) {
-        for(GLFrontFaceMode mode : values()) {
-            if(mode.value == value) {
+        for (GLFrontFaceMode mode : values()) {
+            if (mode.value == value) {
                 return mode;
             }
         }
-        
+
         return null;
     }
 }

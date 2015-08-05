@@ -17,7 +17,7 @@ public class GLGamepad extends GLObject {
 
     private final String name;
     private final int id;
-    private float[] axes;
+    private final float[] axes;
     private final GLGamepadState buttons[];
     private final int buttonCount;
     private final int axesCount;

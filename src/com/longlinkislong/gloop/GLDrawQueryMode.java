@@ -5,17 +5,15 @@
  */
 package com.longlinkislong.gloop;
 
-import org.lwjgl.opengl.GL30;
-
 /**
  *
  * @author zmichaels
  */
 public enum GLDrawQueryMode {
-    GL_QUERY_WAIT(GL30.GL_QUERY_WAIT),
-    GL_QUERY_NO_WAIT(GL30.GL_QUERY_NO_WAIT),
-    GL_QUERY_BY_REGION_WAIT(GL30.GL_QUERY_BY_REGION_WAIT),
-    GL_QUERY_BY_REGION_NO_WAIT(GL30.GL_QUERY_BY_REGION_NO_WAIT);
+    GL_QUERY_WAIT(36371), 
+    GL_QUERY_NO_WAIT(36372), 
+    GL_QUERY_BY_REGION_WAIT(36373), 
+    GL_QUERY_BY_REGION_NO_WAIT(36374);
     
     final int value;
     

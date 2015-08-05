@@ -6,14 +6,6 @@
 package com.longlinkislong.gloop;
 
 import static com.longlinkislong.gloop.GLTools.hasOpenGLVersion;
-import org.lwjgl.opengl.GL15;
-import org.lwjgl.opengl.GL21;
-import org.lwjgl.opengl.GL30;
-import org.lwjgl.opengl.GL31;
-import org.lwjgl.opengl.GL40;
-import org.lwjgl.opengl.GL42;
-import org.lwjgl.opengl.GL43;
-import org.lwjgl.opengl.GL44;
 
 /**
  * Targets that a GLBuffer may be bound to. Most buffer functions do not
@@ -29,7 +21,7 @@ import org.lwjgl.opengl.GL44;
  */
 public enum GLBufferTarget {
 
-    GL_EXTERNAL_VIRTUAL_MEMORY_BUFFER(0x9160) {
+    GL_EXTERNAL_VIRTUAL_MEMORY_BUFFER(37216) {
                 @Override
                 public boolean isSupported() {
                     return GLTools.isGPUAmd() && hasOpenGLVersion(41);
@@ -41,7 +33,7 @@ public enum GLBufferTarget {
      *
      * @since 15.05.27
      */
-    GL_ARRAY_BUFFER(GL15.GL_ARRAY_BUFFER) {
+    GL_ARRAY_BUFFER(34962) {
                 @Override
                 public boolean isSupported() {
                     return hasOpenGLVersion(15);
@@ -53,7 +45,7 @@ public enum GLBufferTarget {
      *
      * @since 15.05.27
      */
-    GL_UNIFORM_BUFFER(GL31.GL_UNIFORM_BUFFER) {
+    GL_UNIFORM_BUFFER(35345) {
                 @Override
                 public boolean isSupported() {
                     return hasOpenGLVersion(31);
@@ -65,7 +57,7 @@ public enum GLBufferTarget {
      *
      * @since 15.06.23
      */
-    GL_ATOMIC_COUNTER_BUFFER(GL42.GL_ATOMIC_COUNTER_BUFFER) {
+    GL_ATOMIC_COUNTER_BUFFER(37568) {
         @Override
         public boolean isSupported() {
             return hasOpenGLVersion(42);
@@ -77,7 +69,7 @@ public enum GLBufferTarget {
      *
      * @since 15.06.23
      */
-    GL_QUERY_BUFFER(GL44.GL_QUERY_BUFFER) {
+    GL_QUERY_BUFFER(37266) {
         @Override
         public boolean isSupported() {
             return hasOpenGLVersion(44);
@@ -88,7 +80,7 @@ public enum GLBufferTarget {
      *
      * @since 15.05.27
      */
-    GL_COPY_READ_BUFFER(GL31.GL_COPY_READ_BUFFER) {
+    GL_COPY_READ_BUFFER(36662) {
         @Override
         public boolean isSupported() {
             return hasOpenGLVersion(31);
@@ -99,7 +91,7 @@ public enum GLBufferTarget {
      *
      * @since 15.05.27
      */
-    GL_COPY_WRITE_BUFFER(GL31.GL_COPY_WRITE_BUFFER) {
+    GL_COPY_WRITE_BUFFER(36663) {
         @Override
         public boolean isSupported() {
             return hasOpenGLVersion(31);
@@ -112,7 +104,7 @@ public enum GLBufferTarget {
      *
      * @since 15.06.23
      */
-    GL_DISPATCH_INDIRECT_BUFFER(GL43.GL_DISPATCH_INDIRECT_BUFFER){
+    GL_DISPATCH_INDIRECT_BUFFER(37102){
         @Override
         public boolean isSupported() {
             return hasOpenGLVersion(43);
@@ -123,7 +115,7 @@ public enum GLBufferTarget {
      *
      * @since 15.05.27
      */
-    GL_DRAW_INDIRECT_BUFFER(GL40.GL_DRAW_INDIRECT_BUFFER) {
+    GL_DRAW_INDIRECT_BUFFER(36671) {
         @Override
         public boolean isSupported() {
             return hasOpenGLVersion(40);
@@ -135,7 +127,7 @@ public enum GLBufferTarget {
      *
      * @since 15.05.27
      */
-    GL_ELEMENT_ARRAY_BUFFER(GL15.GL_ELEMENT_ARRAY_BUFFER) {
+    GL_ELEMENT_ARRAY_BUFFER(34963) {
         @Override
         public boolean isSupported() {
             return hasOpenGLVersion(15);
@@ -147,7 +139,7 @@ public enum GLBufferTarget {
      *
      * @since 15.06.23
      */
-    GL_TEXTURE_BUFFER(GL31.GL_TEXTURE_BUFFER) {
+    GL_TEXTURE_BUFFER(35882) {
         @Override
         public boolean isSupported() {
             return hasOpenGLVersion(31);
@@ -158,7 +150,7 @@ public enum GLBufferTarget {
      *
      * @since 15.06.23
      */
-    GL_PIXEL_PACK_BUFFER(GL21.GL_PIXEL_PACK_BUFFER) {
+    GL_PIXEL_PACK_BUFFER(35051) {
         @Override
         public boolean isSupported() {
             return hasOpenGLVersion(21);
@@ -169,7 +161,7 @@ public enum GLBufferTarget {
      *
      * @since 15.06.23
      */
-    GL_PIXEL_UNPACK_BUFFER(GL21.GL_PIXEL_UNPACK_BUFFER) {
+    GL_PIXEL_UNPACK_BUFFER(35052) {
         @Override
         public boolean isSupported() {
             return hasOpenGLVersion(21);
@@ -182,7 +174,7 @@ public enum GLBufferTarget {
      *
      * @since 15.05.27
      */
-    GL_SHADER_STORAGE_BUFFER(GL43.GL_SHADER_STORAGE_BUFFER) {
+    GL_SHADER_STORAGE_BUFFER(37074) {
         @Override
         public boolean isSupported() {
             return hasOpenGLVersion(43);
@@ -194,7 +186,7 @@ public enum GLBufferTarget {
      *
      * @since 15.05.27
      */
-    GL_TRANSFORM_FEEDBACK_BUFFER(GL30.GL_TRANSFORM_FEEDBACK_BUFFER) {
+    GL_TRANSFORM_FEEDBACK_BUFFER(35982) {
         @Override
         public boolean isSupported() {
             return hasOpenGLVersion(30);

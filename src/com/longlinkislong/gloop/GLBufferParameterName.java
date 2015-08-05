@@ -5,9 +5,6 @@
  */
 package com.longlinkislong.gloop;
 
-import org.lwjgl.opengl.GL15;
-import org.lwjgl.opengl.GL30;
-
 /**
  * Parameter queries that can be requested
  *
@@ -22,33 +19,33 @@ public enum GLBufferParameterName {
      *
      * @since 15.05.27
      */
-    GL_BUFFER_SIZE(GL15.GL_BUFFER_SIZE),
+    GL_BUFFER_SIZE(34660),
     /**
      * Query for requesting if the buffer is mapped. Returned value will be
      * either GL_TRUE or GL_FALSE.
      *
      * @since 15.05.27
      */
-    GL_BUFFER_MAPPED(GL15.GL_BUFFER_MAPPED),
+    GL_BUFFER_MAPPED(35004),
     /**
      * Query requesting the offset for the mapped buffer.
      *
      * @since 15.05.27
      */
-    GL_BUFFER_MAP_OFFSET(GL30.GL_BUFFER_MAP_OFFSET),
+    GL_BUFFER_MAP_OFFSET(37153),
     /**
      * Query requesting the usage of the mapped buffer.
      *
      * @since 15.05.27
      */
-    GL_BUFFER_USAGE(GL15.GL_BUFFER_USAGE),
+    GL_BUFFER_USAGE(34661),
     /**
      * Query requesting the length of the mapped segment in basic machine units;
      * probably bytes.
      *
      * @since 15.05.27
      */
-    GL_BUFFER_MAP_LENGTH(GL30.GL_BUFFER_MAP_LENGTH);
+    GL_BUFFER_MAP_LENGTH(37152);
 
     final int value;
 

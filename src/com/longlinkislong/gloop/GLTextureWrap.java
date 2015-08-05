@@ -5,19 +5,15 @@
  */
 package com.longlinkislong.gloop;
 
-import org.lwjgl.opengl.GL11;
-import org.lwjgl.opengl.GL12;
-import org.lwjgl.opengl.GL14;
-
 /**
  *
  * @author zmichaels
  */
 public enum GLTextureWrap {
-    GL_CLAMP_TO_EDGE(GL12.GL_CLAMP_TO_EDGE),
-    GL_MIRRORED_REPEAT(GL14.GL_MIRRORED_REPEAT),
-    GL_REPEAT(GL11.GL_REPEAT),
-    GL_MIRROR_CLAMP_TO_EDGE(GL14.GL_MIRRORED_REPEAT);
+    GL_CLAMP_TO_EDGE(33071), 
+    GL_MIRRORED_REPEAT(33648), 
+    GL_REPEAT(10497), 
+    GL_MIRROR_CLAMP_TO_EDGE(33648);
     
     final int value;
     

@@ -1430,7 +1430,7 @@ public class GLTools {
     }
 
     private static boolean _hasOpenGLVersion(final int version) {
-        ContextCapabilities cap = GL.getCurrent().getCapabilities();
+        ContextCapabilities cap = GL.getCapabilities();
 
         switch (version) {
             case 11:
@@ -1583,9 +1583,9 @@ public class GLTools {
             return 1;
         }
     }
-
+    
     private static DSADriver DSA = null;
-    private static final DSADriver[] DSA_IMPLEMENTATIONS;
+    private static final DSADriver[] DSA_IMPLEMENTATIONS;    
 
     /**
      * Retrieves the current DSADriver.
@@ -1608,7 +1608,7 @@ public class GLTools {
         }
         
         return DSA;
-    }
+    }       
 
     /**
      * Retrieves the name of the implementation for Direct State Access that is
@@ -1740,5 +1740,6 @@ public class GLTools {
             }
         }).collect(Collectors.toList())
                 .toArray(new DSADriver[dsaDrivers.size()]);
+                
     }
 }

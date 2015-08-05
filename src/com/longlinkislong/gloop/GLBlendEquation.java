@@ -5,8 +5,6 @@
  */
 package com.longlinkislong.gloop;
 
-import org.lwjgl.opengl.GL14;
-
 /**
  * Types of blend equations.
  * @author zmichaels 
@@ -19,15 +17,15 @@ public enum GLBlendEquation {
      * Uses additive blending
      * @since 15.06.18
      */
-    GL_FUNC_ADD(GL14.GL_FUNC_ADD),
+    GL_FUNC_ADD(32774),
     /**
      * Uses subtractive blending
      * @since 15.06.18
      */
-    GL_FUNC_SUBTRACT(GL14.GL_FUNC_SUBTRACT),
-    GL_FUNC_REVERSE_SUBTRACT(GL14.GL_FUNC_REVERSE_SUBTRACT),
-    GL_MIN(GL14.GL_MIN),
-    GL_MAX(GL14.GL_MAX);
+    GL_FUNC_SUBTRACT(32778),
+    GL_FUNC_REVERSE_SUBTRACT(32779),
+    GL_MIN(32775),
+    GL_MAX(32776);
     
     final int value;
     GLBlendEquation(final int value) {

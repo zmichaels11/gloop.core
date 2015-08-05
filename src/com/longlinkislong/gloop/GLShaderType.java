@@ -5,11 +5,6 @@
  */
 package com.longlinkislong.gloop;
 
-import org.lwjgl.opengl.GL20;
-import org.lwjgl.opengl.GL32;
-import org.lwjgl.opengl.GL40;
-import org.lwjgl.opengl.GL43;
-
 /**
  * Types of shader programs.
  *
@@ -23,37 +18,37 @@ public enum GLShaderType {
      *
      * @since 15.05.27
      */
-    GL_VERTEX_SHADER(GL20.GL_VERTEX_SHADER),
+    GL_VERTEX_SHADER(35633),
     /**
      * Specifies the shader as a fragment shader.
      *
      * @since 15.05.27
      */
-    GL_FRAGMENT_SHADER(GL20.GL_FRAGMENT_SHADER),
+    GL_FRAGMENT_SHADER(35632),
     /**
      * Specifies the shader as a geometry shader.
      *
      * @since 15.05.27
      */
-    GL_GEOMETRY_SHADER(GL32.GL_GEOMETRY_SHADER),
+    GL_GEOMETRY_SHADER(36313),
     /**
      * Specifies the shader as a tessellation control shader.
      *
      * @since 15.05.27
      */
-    GL_TESS_CONTROL_SHADER(GL40.GL_TESS_CONTROL_SHADER),
+    GL_TESS_CONTROL_SHADER(36488),
     /**
      * Specifies the shader as a tessellation evaluation shader.
      *
      * @since 15.05.27
      */
-    GL_TESS_EVALUATION_SHADER(GL40.GL_TESS_EVALUATION_SHADER),
+    GL_TESS_EVALUATION_SHADER(36487),
     /**
      * Specifies the shader as a compute shader.
      *
      * @since 15.05.27
      */
-    GL_COMPUTE_SHADER(GL43.GL_COMPUTE_SHADER);
+    GL_COMPUTE_SHADER(37305);
 
     final int value;
 

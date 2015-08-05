@@ -5,8 +5,6 @@
  */
 package com.longlinkislong.gloop;
 
-import org.lwjgl.opengl.GL11;
-
 /**
  * Different types of clear operations.
  * @author zmichaels
@@ -17,17 +15,17 @@ public enum GLFramebufferMode {
      * Clears the color buffer attachment of the current framebuffer.
      * @since 15.06.18
      */
-    GL_COLOR_BUFFER_BIT(GL11.GL_COLOR_BUFFER_BIT),
+    GL_COLOR_BUFFER_BIT(16384),
     /**
      * Clears the depth buffer attachment of the current framebuffer.
      * @since 15.06.18
      */
-    GL_DEPTH_BUFFER_BIT(GL11.GL_DEPTH_BUFFER_BIT),
+    GL_DEPTH_BUFFER_BIT(256),
     /**
      * Clears the stencil buffer attachment of the current framebuffer.
      * @since 15.06.18
      */
-    GL_STENCIL_BUFFER_BIT(GL11.GL_STENCIL_BUFFER_BIT);
+    GL_STENCIL_BUFFER_BIT(1024);
     
     final int value;    
     

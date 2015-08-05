@@ -5,9 +5,6 @@
  */
 package com.longlinkislong.gloop;
 
-import org.lwjgl.opengl.GL30;
-import org.lwjgl.opengl.GL44;
-
 /**
  * Access settings for a mapped GLBuffer.
  *
@@ -24,42 +21,42 @@ public enum GLBufferAccess {
      *
      * @since 15.06.23
      */
-    GL_MAP_READ(GL30.GL_MAP_READ_BIT),
+    GL_MAP_READ(1),
     /**
      * Indicates that the returned pointer may be used to modify buffer object
      * data.
      *
      * @since 15.06.23
      */
-    GL_MAP_WRITE(GL30.GL_MAP_WRITE_BIT),
+    GL_MAP_WRITE(2),
     /**
      * Indicates that the previous contents of the specific range may be
      * discarded.
      *
      * @since 15.06.23
      */
-    GL_MAP_INVALIDATE_RANGE(GL30.GL_MAP_INVALIDATE_RANGE_BIT),
+    GL_MAP_INVALIDATE_RANGE(4),
     /**
      * Indicates that the previous contents of the entire buffer may be
      * discarded.
      *
      * @since 15.06.23
      */
-    GL_MAP_INVALIDATE_BUFFER(GL30.GL_MAP_INVALIDATE_BUFFER_BIT),
+    GL_MAP_INVALIDATE_BUFFER(8),
     /**
      * Indicates that one or more discrete subranges of the mapping may be
      * modified.
      *
      * @since 15.06.23
      */
-    GL_MAP_FLUSH_EXPLICIT(GL30.GL_MAP_FLUSH_EXPLICIT_BIT),
+    GL_MAP_FLUSH_EXPLICIT(16),
     /**
      * Indicates that OpenGL should not attempt to synchronize pending
      * operations on the buffer prior to returning from glMapBufferRange.
      *
      * @since 15.06.23
      */
-    GL_MAP_UNSYNCHRONIZED(GL30.GL_MAP_UNSYNCHRONIZED_BIT),
+    GL_MAP_UNSYNCHRONIZED(32),
     /**
      * Indicates that the mapping is to be made in a persistent fashion and that
      * the client intends to hold and use the returned pointer during subsequent
@@ -69,7 +66,7 @@ public enum GLBufferAccess {
      *
      * @since 15.06.23
      */
-    GL_MAP_PERSISTENT(GL44.GL_MAP_PERSISTENT_BIT),
+    GL_MAP_PERSISTENT(64),
     /**
      * Indicates that a persistent mapping is also to be coherent. Coherent maps
      * guarantee that the effects of writes to a buffer's data store by either
@@ -77,7 +74,7 @@ public enum GLBufferAccess {
      * further intervention from the application.
      * @since 15.06.23
      */
-    GL_MAP_COHERENT(GL44.GL_MAP_COHERENT_BIT);
+    GL_MAP_COHERENT(128);
 
     final int value;
 

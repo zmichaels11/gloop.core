@@ -5,9 +5,6 @@
  */
 package com.longlinkislong.gloop;
 
-import org.lwjgl.opengl.GL11;
-import org.lwjgl.opengl.GL40;
-
 /**
  * Draw mode specifies how the vertex data is converted into polygons.
  *
@@ -21,46 +18,46 @@ public enum GLDrawMode {
      *
      * @since 15.05.27
      */
-    GL_POINTS(GL11.GL_POINTS),
-    GL_PATCHES(GL40.GL_PATCHES),
+    GL_POINTS(0),
+    GL_PATCHES(14),
     /**
      * Draw mode in which each vertex element is a point forming a continuous
      * line.
      *
      * @since 15.05.27
      */
-    GL_LINE_STRIP(GL11.GL_LINE_STRIP),
+    GL_LINE_STRIP(3),
     /**
      * Draw mode in which each vertex element is a point forming a continuous
      * line. The first vertex element is reused as the last element.
      *
      * @since 15.05.27
      */
-    GL_LINE_LOOP(GL11.GL_LINE_LOOP),
+    GL_LINE_LOOP(2),
     /**
      * Draw mode in which a series of triangles are defined by reusing the last
      * two vertex elements.
      *
      * @since 15.05.27
      */
-    GL_TRIANGLE_STRIP(GL11.GL_TRIANGLE_STRIP),
-    GL_TRIANGLE_FAN(GL11.GL_TRIANGLE_FAN),
+    GL_TRIANGLE_STRIP(5),
+    GL_TRIANGLE_FAN(6),
     /**
      * Draw mode in which every two vertex elements make up a line.
      *
      * @since 15.05.27
      */
-    GL_LINES(GL11.GL_LINES),
+    GL_LINES(1),
     /**
      * Draw mode in which every three vertex elements make up a triangle.
      *
      * @since 15.05.27
      */
-    GL_TRIANGLES(GL11.GL_TRIANGLES),
-    GL_LINES_ADJACENCY(0x000A),
-    GL_TRIANGLES_ADJACENCY(0x000C),
-    GL_LINE_STRIP_ADJACENCY(0x000B),
-    GL_TRIANGLE_STRIP_ADJACENCY(0x000D);
+    GL_TRIANGLES(4),
+    GL_LINES_ADJACENCY(10),
+    GL_TRIANGLES_ADJACENCY(12),
+    GL_LINE_STRIP_ADJACENCY(11),
+    GL_TRIANGLE_STRIP_ADJACENCY(13);
 
     final int value;
 

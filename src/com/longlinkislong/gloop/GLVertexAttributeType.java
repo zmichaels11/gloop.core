@@ -5,8 +5,6 @@
  */
 package com.longlinkislong.gloop;
 
-import org.lwjgl.opengl.GL11;
-
 /**
  * Valid types for vertex attributes.
  *
@@ -25,50 +23,50 @@ public enum GLVertexAttributeType {
      *
      * @since 15.06.24
      */
-    GL_FLOAT(GL11.GL_FLOAT, Float.BYTES),
+    GL_FLOAT(5126, Float.BYTES),
     /**
      * 8 byte floating point type. Not all implementations of OpenGL support
      * doubles for vertex attributes.
      *
      * @since 15.06.24
      */
-    GL_DOUBLE(GL11.GL_DOUBLE, Double.BYTES),
+    GL_DOUBLE(5130, Double.BYTES),
     /**
      * 1 byte signed integer.
      *
      * @since 15.06.24
      */
-    GL_BYTE(GL11.GL_BYTE, Byte.BYTES),
+    GL_BYTE(5120, Byte.BYTES),
     /**
      * 1 byte unsigned integer.
      *
      * @since 15.06.24
      */
-    GL_UNSIGNED_BYTE(GL11.GL_UNSIGNED_BYTE, Byte.BYTES),
+    GL_UNSIGNED_BYTE(5121, Byte.BYTES),
     /**
      * 2 byte signed integer.
      *
      * @since 15.06.24
      */
-    GL_SHORT(GL11.GL_SHORT, Short.BYTES),
+    GL_SHORT(5122, Short.BYTES),
     /**
      * 2 byte unsigned integer.
      *
      * @since 15.06.24
      */
-    GL_UNSIGNED_SHORT(GL11.GL_UNSIGNED_SHORT, Short.BYTES),
+    GL_UNSIGNED_SHORT(5123, Short.BYTES),
     /**
      * 4 byte signed integer.
      *
      * @since 15.06.24
      */
-    GL_INT(GL11.GL_INT, Integer.BYTES),
+    GL_INT(5124, Integer.BYTES),
     /**
      * 4 byte unsigned integer
      *
      * @since 15.06.24
      */
-    GL_UNSIGNED_INT(GL11.GL_UNSIGNED_INT, Integer.BYTES);
+    GL_UNSIGNED_INT(5125, Integer.BYTES);
 
     final int value;
     final int width;

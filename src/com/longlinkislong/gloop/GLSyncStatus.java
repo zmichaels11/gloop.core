@@ -5,8 +5,6 @@
  */
 package com.longlinkislong.gloop;
 
-import org.lwjgl.opengl.GL32;
-
 /**
  * The result of a SyncStatus task.
  *
@@ -20,13 +18,13 @@ public enum GLSyncStatus {
      *
      * @since 15.07.06
      */
-    GL_SIGNALED(GL32.GL_SIGNALED),
+    GL_SIGNALED(37145),
     /**
      * Indicates that the GLSync has not yet signaled.
      *
      * @since 15.07.06
      */
-    GL_UNSIGNALED(GL32.GL_UNSIGNALED);
+    GL_UNSIGNALED(37144);
 
     final int value;
 

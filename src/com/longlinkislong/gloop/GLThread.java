@@ -21,6 +21,7 @@ import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
+import java.util.concurrent.atomic.AtomicLong;
 import java.util.stream.Collectors;
 import org.lwjgl.glfw.GLFW;
 
@@ -460,9 +461,15 @@ public class GLThread implements ExecutorService {
         @Override
         public void run() {
             GLThread.this.internalThread = Thread.currentThread();
+            final long id = THREAD_ID.getAndIncrement();
+            final String name = id == 0 ? "OpenGL Thread: Primary" : "OpenGL Thread: " + id;            
+            
+            GLThread.this.internalThread.setName(name);
             THREAD_MAP.put(GLThread.this.internalThread, GLThread.this);
         }
     }
+    
+    private static final AtomicLong THREAD_ID = new AtomicLong();
 
     /**
      * A GLTask that limits the current framerate to the specified limit.

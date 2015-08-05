@@ -5,8 +5,6 @@
  */
 package com.longlinkislong.gloop;
 
-import org.lwjgl.opengl.GL32;
-
 /**
  * Return statuses for a GPU sync block.
  *
@@ -24,27 +22,27 @@ public enum GLWaitSyncStatus {
      *
      * @since 15.07.06
      */
-    GL_ALREADY_SIGNALED(GL32.GL_ALREADY_SIGNALED),
+    GL_ALREADY_SIGNALED(37146),
     /**
      * Indicates that at least timeout nanoseconds passed and sync did not
      * become signaled.
      *
      * @since 15.07.06
      */
-    GL_TIMEOUT_EXPIRED(GL32.GL_TIMEOUT_EXPIRED),
+    GL_TIMEOUT_EXPIRED(37147),
     /**
      * Indicates that sync was signaled before the timeout expired.
      *
      * @since 15.07.06
      */
-    GL_CONDITION_SATISFIED(GL32.GL_CONDITION_SATISFIED),
+    GL_CONDITION_SATISFIED(37148),
     /**
      * Indicates that an error occurred. Additionally, an OpenGL error will be
      * generated.
      *
      * @since 15.07.06
      */
-    GL_WAIT_FAILED(GL32.GL_WAIT_FAILED);
+    GL_WAIT_FAILED(37149);
 
     final int value;
     

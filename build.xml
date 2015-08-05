@@ -119,6 +119,20 @@
             <zipfileset src="dist/${ant.project.name}.jar"/>
             <zipfileset src="dist/${ant.project.name}-javadoc.jar"/>
         </zip>
+        
+        <!-- disabled GLFW-less build for now.
+        <zip destfile="dist/${ant.project.name}-min.jar">
+            <zipfileset src="dist/${ant.project.name}.jar">
+                <patternset id="no-glfw">
+                    <include name="**/*.java"/>
+                    <exclude name="**/GLMouse*"/>                    
+                    <exclude name="**/GLKey*"/>
+                    <exclude name="**/GLGame*"/>
+                    <exclude name="**/GLWindow*"/>
+                </patternset>
+            </zipfileset>           
+        </zip>
+        -->
     </target>
     <!--
 

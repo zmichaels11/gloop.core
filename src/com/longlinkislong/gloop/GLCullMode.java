@@ -5,8 +5,6 @@
  */
 package com.longlinkislong.gloop;
 
-import org.lwjgl.opengl.GL11;
-
 /**
  * Settings for OpenGL polygon cull mode.
  * @author zmichaels
@@ -17,17 +15,17 @@ public enum GLCullMode {
      * Cull front-facing polygons.
      * @since 15.06.18
      */
-    GL_FRONT(GL11.GL_FRONT),
+    GL_FRONT(1028),
     /**
      * Cull back-facing polygons.
      * @since 15.06.18
      */
-    GL_BACK(GL11.GL_BACK),
+    GL_BACK(1029),
     /**
      * Cull front and back facing polygons.
      * @since 15.06.18
      */
-    GL_FRONT_AND_BACK(GL11.GL_FRONT_AND_BACK);
+    GL_FRONT_AND_BACK(1032);
     final int value;
 
     GLCullMode(final int value) {

@@ -5,8 +5,6 @@
  */
 package com.longlinkislong.gloop;
 
-import org.lwjgl.opengl.GL11;
-
 /**
  * The possible values of a GLenum that represents a boolean value.
  *
@@ -20,13 +18,13 @@ public enum GLBoolean {
      *
      * @since 15.05.27
      */
-    GL_TRUE(GL11.GL_TRUE),
+    GL_TRUE(1),
     /**
      * False. Value is probably 0.
      *
      * @since 15.05.27
      */
-    GL_FALSE(GL11.GL_FALSE);
+    GL_FALSE(0);
 
     final int value;
 

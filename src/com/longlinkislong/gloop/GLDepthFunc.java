@@ -5,8 +5,6 @@
  */
 package com.longlinkislong.gloop;
 
-import org.lwjgl.opengl.GL11;
-
 /**
  * The comparison function used for depth comparison.
  *
@@ -20,43 +18,43 @@ public enum GLDepthFunc {
      *
      * @since 15.06.18
      */
-    GL_NEVER(GL11.GL_NEVER),
+    GL_NEVER(512),
     /**
      * The depth comparison always passes.
      *
      * @since 15.06.18
      */
-    GL_ALWAYS(GL11.GL_ALWAYS),
+    GL_ALWAYS(519),
     /**
      * The depth comparison only passes if the test is less.
      */
-    GL_LESS(GL11.GL_LESS),
+    GL_LESS(513),
     /**
      * The depth comparison only passes if the test is greater.
      * @since 15.06.18
      */
-    GL_GREATER(GL11.GL_GREATER),
+    GL_GREATER(516),
     /**
      * The depth comparison only passes if the inputs are equal.
      * @since 15.06.18
      */
-    GL_EQUAL(GL11.GL_EQUAL),
+    GL_EQUAL(514),
     /**
      * The depth comparison only passes when the test is less than or equal.
      * @since 15.06.18
      */
-    GL_LEQUAL(GL11.GL_LEQUAL),
+    GL_LEQUAL(515),
     /**
      * The depth comparison only passes when the test is greater or equal.
      * @since 15.06.18
      */
-    GL_GEQUAL(GL11.GL_GEQUAL),
+    GL_GEQUAL(518),
     /**
      * The depth comparison only passes when the inputs are not equal.
      *
      * @since 15.06.18
      */
-    GL_NOTEQUAL(GL11.GL_NOTEQUAL);
+    GL_NOTEQUAL(517);
     final int value;
 
     GLDepthFunc(final int value) {
