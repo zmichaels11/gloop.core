@@ -5,7 +5,6 @@
  */
 package com.longlinkislong.gloop;
 
-import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.nio.DoubleBuffer;
 import java.nio.FloatBuffer;
@@ -33,16 +32,6 @@ import org.lwjgl.opengl.GL43;
  * @since 15.05.27
  */
 public class GLProgram extends GLObject {
-
-    private static final FloatBuffer TEMPF = ByteBuffer
-            .allocateDirect(16 << 2)
-            .order(ByteOrder.nativeOrder())
-            .asFloatBuffer();
-    private static final DoubleBuffer TEMPD = ByteBuffer
-            .allocateDirect(16 << 3)
-            .order(ByteOrder.nativeOrder())
-            .asDoubleBuffer();
-
     private static final Map<Thread, GLProgram> CURRENT = new HashMap<>();
     private static final int INVALID_PROGRAM_ID = -1;
     protected int programId = INVALID_PROGRAM_ID;
@@ -394,19 +383,22 @@ public class GLProgram extends GLObject {
             }
 
             final int uLoc = GLProgram.this.getUniformLoc(uName);
-
-            TEMPD.clear();
-            TEMPD.put(this.values).flip();
+            final DoubleBuffer buffer = NativeTools.getInstance()
+                    .nextOVWord()
+                    .order(ByteOrder.nativeOrder())
+                    .asDoubleBuffer();
+            
+            buffer.put(this.values).flip();            
 
             switch (this.count) {
                 case 4:
-                    GLTools.getDSAInstance().glProgramUniformMatrix2d(GLProgram.this.programId, uLoc, false, TEMPD);
+                    GLTools.getDSAInstance().glProgramUniformMatrix2d(GLProgram.this.programId, uLoc, false, buffer);
                     break;
                 case 9:
-                    GLTools.getDSAInstance().glProgramUniformMatrix3d(GLProgram.this.programId, uLoc, false, TEMPD);
+                    GLTools.getDSAInstance().glProgramUniformMatrix3d(GLProgram.this.programId, uLoc, false, buffer);
                     break;
                 case 16:
-                    GLTools.getDSAInstance().glProgramUniformMatrix4d(GLProgram.this.programId, uLoc, false, TEMPD);
+                    GLTools.getDSAInstance().glProgramUniformMatrix4d(GLProgram.this.programId, uLoc, false, buffer);
                     break;
             }
         }
@@ -507,21 +499,24 @@ public class GLProgram extends GLObject {
             }
 
             final int uLoc = GLProgram.this.getUniformLoc(this.uName);
-            TEMPF.put(values);
-            TEMPF.flip();
+            final FloatBuffer buffer = NativeTools.getInstance()
+                    .nextQVWord()
+                    .order(ByteOrder.nativeOrder())
+                    .asFloatBuffer();      
+            
+            buffer.put(this.values).flip();
 
             switch (this.count) {
                 case 4:
-                    GLTools.getDSAInstance().glProgramUniformMatrix2f(GLProgram.this.programId, uLoc, false, TEMPF);
+                    GLTools.getDSAInstance().glProgramUniformMatrix2f(GLProgram.this.programId, uLoc, false, buffer);
                     break;
                 case 9:
-                    GLTools.getDSAInstance().glProgramUniformMatrix3f(GLProgram.this.programId, uLoc, false, TEMPF);
+                    GLTools.getDSAInstance().glProgramUniformMatrix3f(GLProgram.this.programId, uLoc, false, buffer);
                     break;
                 case 16:
-                    GLTools.getDSAInstance().glProgramUniformMatrix4f(GLProgram.this.programId, uLoc, false, TEMPF);
+                    GLTools.getDSAInstance().glProgramUniformMatrix4f(GLProgram.this.programId, uLoc, false, buffer);
                     break;
-            }
-            TEMPF.clear();
+            }            
         }
     }
 

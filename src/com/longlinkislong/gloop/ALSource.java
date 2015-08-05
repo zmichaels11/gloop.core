@@ -6,8 +6,6 @@
 package com.longlinkislong.gloop;
 
 import java.nio.ByteBuffer;
-import java.nio.ByteOrder;
-import java.nio.FloatBuffer;
 import org.lwjgl.openal.AL10;
 
 /**
@@ -22,6 +20,7 @@ public class ALSource extends ALObject {
     public ALSource() {
         super();
         this.init();
+        
     }
 
     public ALSource(final ALThread thread) {
@@ -318,13 +317,13 @@ public class ALSource extends ALObject {
                 throw new ALException("Invalid OpenAL source!");
             }
 
-            final FloatBuffer x = ByteBuffer.allocateDirect(Float.BYTES).order(ByteOrder.nativeOrder()).asFloatBuffer();
-            final FloatBuffer y = ByteBuffer.allocateDirect(Float.BYTES).order(ByteOrder.nativeOrder()).asFloatBuffer();
-            final FloatBuffer z = ByteBuffer.allocateDirect(Float.BYTES).order(ByteOrder.nativeOrder()).asFloatBuffer();
-
+            final ByteBuffer x = NativeTools.getInstance().nextWord();
+            final ByteBuffer y = NativeTools.getInstance().nextWord();
+            final ByteBuffer z = NativeTools.getInstance().nextWord();
+            
             AL10.alGetSource3f(ALSource.this.sourceId, AL10.AL_VELOCITY, x, y, z);
 
-            return GLVec3F.create(x.get(), y.get(), z.get());
+            return GLVec3F.create(x.getFloat(), y.getFloat(), z.getFloat());
         }
 
     }
@@ -369,13 +368,13 @@ public class ALSource extends ALObject {
                 throw new ALException("ALSource is not valid!");
             }
 
-            final FloatBuffer x = ByteBuffer.allocateDirect(Float.BYTES).order(ByteOrder.nativeOrder()).asFloatBuffer();
-            final FloatBuffer y = ByteBuffer.allocateDirect(Float.BYTES).order(ByteOrder.nativeOrder()).asFloatBuffer();
-            final FloatBuffer z = ByteBuffer.allocateDirect(Float.BYTES).order(ByteOrder.nativeOrder()).asFloatBuffer();
+            final ByteBuffer x = NativeTools.getInstance().nextWord();
+            final ByteBuffer y = NativeTools.getInstance().nextWord();
+            final ByteBuffer z = NativeTools.getInstance().nextWord();            
 
             AL10.alGetSource3f(ALSource.this.sourceId, AL10.AL_POSITION, x, y, z);
 
-            return GLVec3F.create(x.get(), y.get(), z.get());
+            return GLVec3F.create(x.getFloat(), y.getFloat(), z.getFloat());
         }
 
     }
@@ -420,13 +419,13 @@ public class ALSource extends ALObject {
                 throw new ALException("Invalid OpenAL source!");
             }
 
-            final FloatBuffer x = ByteBuffer.allocateDirect(Float.BYTES).order(ByteOrder.nativeOrder()).asFloatBuffer();
-            final FloatBuffer y = ByteBuffer.allocateDirect(Float.BYTES).order(ByteOrder.nativeOrder()).asFloatBuffer();
-            final FloatBuffer z = ByteBuffer.allocateDirect(Float.BYTES).order(ByteOrder.nativeOrder()).asFloatBuffer();
+            final ByteBuffer x = NativeTools.getInstance().nextWord();
+            final ByteBuffer y = NativeTools.getInstance().nextWord();
+            final ByteBuffer z = NativeTools.getInstance().nextWord();
 
             AL10.alGetSource3f(ALSource.this.sourceId, AL10.AL_DIRECTION, x, y, z);
 
-            return GLVec3F.create(x.get(), y.get(), z.get());
+            return GLVec3F.create(x.getFloat(), y.getFloat(), z.getFloat());
         }
 
     }

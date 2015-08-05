@@ -6,7 +6,6 @@
 package com.longlinkislong.gloop;
 
 import java.nio.ByteBuffer;
-import java.nio.ByteOrder;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -429,11 +428,8 @@ public class GLWindow {
 
             final long mHandle = GLFW.glfwGetWindowMonitor(GLWindow.this.monitor);
 
-            final ByteBuffer mode = GLFW.glfwGetVideoMode(mHandle);
-
-            final ByteBuffer widthMM = ByteBuffer
-                    .allocateDirect(Integer.BYTES)
-                    .order(ByteOrder.nativeOrder());
+            final ByteBuffer mode = GLFW.glfwGetVideoMode(mHandle);            
+            final ByteBuffer widthMM = NativeTools.getInstance().nextWord();
 
             GLFW.glfwGetMonitorPhysicalSize(mHandle, widthMM, null);
 
@@ -479,12 +475,8 @@ public class GLWindow {
             GLFW.glfwSwapInterval(OPENGL_SWAP_INTERVAL);
             GLContext.createFromCurrent();
 
-            final ByteBuffer fbWidth = ByteBuffer
-                    .allocateDirect(Integer.BYTES)
-                    .order(ByteOrder.nativeOrder());
-            final ByteBuffer fbHeight = ByteBuffer
-                    .allocateDirect(Integer.BYTES)
-                    .order(ByteOrder.nativeOrder());
+            final ByteBuffer fbWidth = NativeTools.getInstance().nextWord();
+            final ByteBuffer fbHeight = NativeTools.getInstance().nextWord();
 
             GLFW.glfwGetFramebufferSize(GLWindow.this.window, fbWidth, fbHeight);
             GLWindow.this.thread.currentViewport = new GLViewport(0, 0, fbWidth.getInt(), fbHeight.getInt());
@@ -612,12 +604,8 @@ public class GLWindow {
                 throw new GLException("GLWindow is not valid!");
             }
 
-            final ByteBuffer width = ByteBuffer
-                    .allocateDirect(Integer.BYTES)
-                    .order(ByteOrder.nativeOrder());
-            final ByteBuffer height = ByteBuffer
-                    .allocateDirect(Integer.BYTES)
-                    .order(ByteOrder.nativeOrder());
+            final ByteBuffer width = NativeTools.getInstance().nextWord();
+            final ByteBuffer height = NativeTools.getInstance().nextWord();
 
             GLFW.glfwGetFramebufferSize(GLWindow.this.window, width, height);
 
@@ -665,12 +653,8 @@ public class GLWindow {
                 throw new GLException("GLWindow is not valid!");
             }
 
-            final ByteBuffer x = ByteBuffer
-                    .allocateDirect(Integer.BYTES)
-                    .order(ByteOrder.nativeOrder());
-            final ByteBuffer y = ByteBuffer
-                    .allocateDirect(Integer.BYTES)
-                    .order(ByteOrder.nativeOrder());
+            final ByteBuffer x = NativeTools.getInstance().nextWord();
+            final ByteBuffer y = NativeTools.getInstance().nextWord();
 
             GLFW.glfwGetWindowPos(GLWindow.this.window, x, y);
 
@@ -718,12 +702,8 @@ public class GLWindow {
                 throw new GLException("GLWindow is not valid!");
             }
 
-            final ByteBuffer width = ByteBuffer
-                    .allocateDirect(Integer.BYTES)
-                    .order(ByteOrder.nativeOrder());
-            final ByteBuffer height = ByteBuffer
-                    .allocateDirect(Integer.BYTES)
-                    .order(ByteOrder.nativeOrder());
+            final ByteBuffer width = NativeTools.getInstance().nextWord();
+            final ByteBuffer height = NativeTools.getInstance().nextWord();
 
             GLFW.glfwGetWindowSize(GLWindow.this.window, width, height);
 

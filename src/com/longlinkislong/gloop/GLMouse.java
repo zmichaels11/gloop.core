@@ -6,7 +6,6 @@
 package com.longlinkislong.gloop;
 
 import java.nio.ByteBuffer;
-import java.nio.ByteOrder;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
@@ -63,14 +62,7 @@ public class GLMouse implements GLMouseEnteredListener, GLMousePositionListener,
                                 button,
                                 action,
                                 modifiers));
-    }
-
-    private final ByteBuffer tmpXPos = ByteBuffer
-            .allocateDirect(Double.BYTES)
-            .order(ByteOrder.nativeOrder());
-    private final ByteBuffer tmpYPos = ByteBuffer
-            .allocateDirect(Double.BYTES)
-            .order(ByteOrder.nativeOrder());
+    }    
 
     /**
      * Retrieves the current cursor position
@@ -84,14 +76,12 @@ public class GLMouse implements GLMouseEnteredListener, GLMousePositionListener,
             throw new GLException("Invalid GLWindow!");
         }
 
-        this.tmpXPos.clear();
-        this.tmpYPos.clear();
+        final ByteBuffer xPos = NativeTools.getInstance().nextDWord();
+        final ByteBuffer yPos = NativeTools.getInstance().nextDWord();
 
-        GLFW.glfwGetCursorPos(this.window.window, this.tmpXPos, this.tmpYPos);
+        GLFW.glfwGetCursorPos(this.window.window, xPos, yPos);
 
-        return GLVec2D.create(
-                this.tmpXPos.getDouble(),
-                this.tmpYPos.getDouble());
+        return GLVec2D.create(xPos.getDouble(), yPos.getDouble());
 
     }
 

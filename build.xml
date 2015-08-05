@@ -122,15 +122,26 @@
         
         <zip destfile="dist/${ant.project.name}-gl-only.jar">
             <zipfileset src="dist/${ant.project.name}.jar">
-                <include name="**/*.class"/>
-                <exclude name="**/AL*"/>                
+                <include name="**/GL*.class"/>                
             </zipfileset>
         </zip>
         
         <zip destfile="dist/${ant.project.name}-al-only.jar">
             <zipfileset src="dist/${ant.project.name}.jar">
-                <include name="**/*.class"/>
-                <exclude name="**/GL*"/>
+                <include name="**/AL*.class"/>                
+            </zipfileset>
+        </zip>
+        
+        <zip destfile="dist/${ant.project.name}-cl-only.jar">
+            <zipfileset src="dist/${ant.project.name}.jar">                
+                <include name="**/CL*.class"/>
+            </zipfileset>
+        </zip>
+        
+        <zip destfile="dist/${ant.project.name}-clgl.jar">
+            <zipfileset src="dist/${ant.project.name}.jar">
+                <include name="**/CL*.class"/>
+                <include name="**/GL*.class"/>
             </zipfileset>
         </zip>
         <!-- disabled GLFW-less build for now.
