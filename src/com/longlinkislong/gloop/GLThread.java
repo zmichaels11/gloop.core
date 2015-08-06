@@ -462,13 +462,13 @@ public class GLThread implements ExecutorService {
         public void run() {
             GLThread.this.internalThread = Thread.currentThread();
             final long id = THREAD_ID.getAndIncrement();
-            final String name = id == 0 ? "OpenGL Thread: Primary" : "OpenGL Thread: " + id;            
-            
+            final String name = id == 0 ? "OpenGL Thread: Primary" : "OpenGL Thread: " + id;
+
             GLThread.this.internalThread.setName(name);
             THREAD_MAP.put(GLThread.this.internalThread, GLThread.this);
         }
     }
-    
+
     private static final AtomicLong THREAD_ID = new AtomicLong();
 
     /**
@@ -590,15 +590,15 @@ public class GLThread implements ExecutorService {
 
         @Override
         public void run() {
-            final double now = GLFW.glfwGetTime();            
+            final double now = GLFW.glfwGetTime();
 
             this.timeStep = Math.max(now - this.lastTime, GLTools.ULTRAP);
             this.lastTime = now;
-            
-            if (warmup > 0) {                
+
+            if (warmup > 0) {
                 this.warmup--;
                 return;
-            }            
+            }
 
             if (timeStep > this.maxFrameTime) {
                 this.maxFrameTime = timeStep;

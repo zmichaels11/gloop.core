@@ -20,7 +20,7 @@ import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
-import java.util.concurrent.atomic.AtomicLong;
+import java.util.stream.Collectors;
 import org.lwjgl.glfw.GLFW;
 
 /**
@@ -30,7 +30,6 @@ import org.lwjgl.glfw.GLFW;
 public final class ALThread implements ExecutorService {
 
     private static final Map<Thread, ALThread> THREAD_MAP = new HashMap<>();
-    private static final AtomicLong THREAD_ID = new AtomicLong();
     private static final boolean DEBUG;
 
     static {
@@ -173,27 +172,31 @@ public final class ALThread implements ExecutorService {
 
     @Override
     public <T> Future<T> submit(Callable<T> task) {
-        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+        return this.submitALQuery(ALQuery.create(task));
     }
 
     @Override
     public <T> Future<T> submit(Runnable task, T result) {
-        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+        return this.submitALQuery(ALQuery.create(task, () -> {
+            return result;
+        }));
     }
 
     @Override
     public Future<?> submit(Runnable task) {
-        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+        return this.submitALQuery(ALQuery.create(task, () -> {
+            return Boolean.TRUE;
+        }));
     }
 
     @Override
     public <T> List<Future<T>> invokeAll(Collection<? extends Callable<T>> tasks) throws InterruptedException {
-        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+        return tasks.stream().map(this::submit).collect(Collectors.toList());
     }
 
     @Override
     public <T> List<Future<T>> invokeAll(Collection<? extends Callable<T>> tasks, long timeout, TimeUnit unit) throws InterruptedException {
-        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+        throw new UnsupportedOperationException("Not supported yet.");
     }
 
     @Override
@@ -225,10 +228,17 @@ public final class ALThread implements ExecutorService {
         public void run() {
             ALThread.this.internalThread = Thread.currentThread();
 
-            final long id = THREAD_ID.getAndIncrement();
-            final String name = id == 0 ? "OpenAL Thread: Primary" : "OpenAL Thread: " + id;
+            final String oldName = ALThread.this.internalThread.getName();
 
-            ALThread.this.internalThread.setName(name);
+            if (oldName.contains("OpenGL")) {
+                ALThread.this.internalThread.setName(oldName.replace("OpenGL", "OpenGL+OpenAL"));
+            } else if (oldName.contains("OpenCL")) {
+                ALThread.this.internalThread.setName(oldName.replace("OpenCL", "OpenCL+OpenAL"));
+            } else {
+                final String name = "OpenAL Thread: " + ALThread.this.internalThread.getId();
+
+                ALThread.this.internalThread.setName(name);
+            }
             THREAD_MAP.put(ALThread.this.internalThread, ALThread.this);
         }
     }
