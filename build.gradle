@@ -1,0 +1,28 @@
+plugins {
+    id 'com.jfrog.artifactory' version '3.1.1'
+}
+
+apply plugin: 'java'
+apply plugin: 'maven-publish'
+apply from: 'artifactory-template.gradle'
+
+sourceCompatibility = '1.8'
+[compileJava, compileTestJava]*.options*.encoding = 'UTF-8'
+
+repositories {
+    mavenCentral()
+    maven {
+        url 'http://longlinkislong.com:8080/artifactory/libs-snapshot-local/'
+    }
+}
+
+dependencies {
+    compile "com.longlinkislong:gloop-vectors:${gloopVersion}"
+    
+    compile "org.lwjgl:lwjgl:${lwjglVersion}"
+    compile "org.lwjgl:lwjgl-platform:${lwjglVersion}:natives-windows"
+    compile "org.lwjgl:lwjgl-platform:${lwjglVersion}:natives-linux"
+    compile "org.lwjgl:lwjgl-platform:${lwjglVersion}:natives-osx"      
+
+    testCompile group: 'junit', name: 'junit', version: '4.10'
+}
