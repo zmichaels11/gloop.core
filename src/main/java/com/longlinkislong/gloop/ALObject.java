@@ -12,6 +12,10 @@ import java.util.Objects;
  * @author zmichaels
  */
 public abstract class ALObject {
+    static {
+        NativeTools.getInstance().autoLoad();
+    }
+    
     private final ALThread thread;
     
     public ALObject() {

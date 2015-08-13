@@ -12,6 +12,10 @@ import java.util.Objects;
  * @author zmichaels
  */
 public abstract class CLObject {
+    static {
+        NativeTools.getInstance().autoLoad();
+    }
+    
     private final CLThread thread;
     
     public CLObject() {

@@ -16,6 +16,10 @@ import java.util.Objects;
  */
 public abstract class GLObject {
 
+    static {
+        NativeTools.getInstance().autoLoad();
+    }
+
     private final GLThread thread;
 
     /**

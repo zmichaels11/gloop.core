@@ -81,6 +81,7 @@ public class GLWindow {
     private static final List<GLGamepad> GAMEPADS;
 
     static {
+        NativeTools.getInstance().autoLoad();
         final String glVersion = System.getProperty("gloop.opengl.version", "3.2");
         OPENGL_VERSION_MAJOR = Integer.parseInt(glVersion.substring(0, glVersion.indexOf(".")));
         OPENGL_VERSION_MINOR = Integer.parseInt(glVersion.substring(glVersion.indexOf(".") + 1));        

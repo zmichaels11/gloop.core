@@ -46,6 +46,7 @@ public final class CLThread implements ExecutorService {
 
     static {
         DEBUG = Boolean.getBoolean("debug") && !System.getProperty("debug.exclude", "").contains("clthread");
+        NativeTools.getInstance().autoLoad();
     }
 
     private static final class Holder {

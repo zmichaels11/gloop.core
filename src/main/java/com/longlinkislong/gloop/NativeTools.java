@@ -5,8 +5,14 @@
  */
 package com.longlinkislong.gloop;
 
+import java.io.IOException;
+import java.io.InputStream;
+import java.net.URL;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 
 /**
  * NativeTools is a container for native data structures.
@@ -15,6 +21,41 @@ import java.nio.ByteOrder;
  * @since 15.08.05
  */
 public final class NativeTools {
+
+    private static final boolean DEBUG;
+    public static final OperatingSystem OPERATING_SYSTEM;
+    public static final Architecture ARCHITECTURE;
+
+    static {
+        DEBUG = Boolean.getBoolean("debug") && !System.getProperty("debug.exclude", "").contains("nativetools");
+        final String os = System.getProperty("os.name", "unknown").toLowerCase();
+
+        if (os.contains("windows")) {
+            OPERATING_SYSTEM = OperatingSystem.WINDOWS;
+        } else if (os.contains("linux")) {
+            OPERATING_SYSTEM = OperatingSystem.LINUX;
+        } else if (os.contains("mac")) {
+            OPERATING_SYSTEM = OperatingSystem.OSX;
+        } else {
+            OPERATING_SYSTEM = OperatingSystem.UNSUPPORTED;
+        }
+
+        final String arch = System.getProperty("os.arch", "unknown").toLowerCase();
+
+        switch (arch) {
+            case "amd64":
+            case "x86_64":
+                ARCHITECTURE = Architecture.X86_64;
+                break;
+            case "x86":
+            case "i386":
+                ARCHITECTURE = Architecture.X86;
+                break;
+            default:
+                ARCHITECTURE = Architecture.UNSUPPORTED;
+                break;
+        }
+    }
 
     private static final class Holder {
 
@@ -44,6 +85,21 @@ public final class NativeTools {
     private int owId;
     private int qvwId;
     private int ovwId;
+
+    public static enum OperatingSystem {
+
+        WINDOWS,
+        LINUX,
+        OSX,
+        UNSUPPORTED;
+    }
+
+    public static enum Architecture {
+
+        X86,
+        X86_64,
+        UNSUPPORTED;
+    }
 
     private NativeTools() {
         ByteBuffer data = ByteBuffer.allocateDirect(1024);
@@ -227,4 +283,92 @@ public final class NativeTools {
         return out;
     }
 
+    private String mapLibraryName(final String libraryName) {
+        switch (OPERATING_SYSTEM) {
+            case WINDOWS:
+                switch (ARCHITECTURE) {
+                    case X86:
+                        return libraryName + "32.dll";
+                    case X86_64:
+                        return libraryName + ".dll";
+                    default:
+                        throw new UnsupportedOperationException("Unsupported Windows Architecture: " + ARCHITECTURE);
+                }
+            case LINUX:
+                switch (ARCHITECTURE) {
+                    case X86:
+                        return libraryName + "32.so";
+                    case X86_64:
+                        return libraryName + ".so";
+                    default:
+                        throw new UnsupportedOperationException("Unsupported Linux Architecture: " + ARCHITECTURE);
+                }
+            case OSX:
+                switch (ARCHITECTURE) {
+                    case X86:
+                        return libraryName + "32.dylib";
+                    case X86_64:
+                        return libraryName + ".dylib";
+                    default:
+                        throw new UnsupportedOperationException("Unsupported Mac OSX Architecture: " + ARCHITECTURE);
+                }
+            default:
+                throw new UnsupportedOperationException("Unsupported Operating System: " + OPERATING_SYSTEM);
+        }
+    }
+
+    private volatile boolean isLoaded = false;
+
+    void autoLoad() {
+        if (System.getProperty("org.lwjgl.librarypath") == null) {
+            try {
+                this.loadNatives();
+            } catch (RuntimeException ex) {
+                System.err.println("Unable to autoload natives! " + ex.getMessage());
+            }
+        }
+    }
+
+    public synchronized void loadNatives() {
+        if (isLoaded) {
+            return;
+        }
+
+        final String libLWJGL = mapLibraryName(OPERATING_SYSTEM == OperatingSystem.WINDOWS ? "lwjgl" : "liblwjgl");
+        final String libOpenAL = mapLibraryName(OPERATING_SYSTEM == OperatingSystem.WINDOWS ? "OpenAL" : "libopenal");
+        final Path tempRoot;
+
+        if (DEBUG) {
+            System.out.printf("Loading natives: %s, %s\n", libLWJGL, libOpenAL);
+        }
+
+        try {
+            tempRoot = Files.createTempDirectory("com.longlinkislong.gloop.natives");
+        } catch (IOException ex) {
+            throw new RuntimeException("Unable to create temp directory!", ex);
+        }
+
+        try (final InputStream inLibLWJGL = NativeTools.class.getResourceAsStream("/" + libLWJGL)) {
+            final Path pLibLWJGL = tempRoot.resolve(Paths.get(libLWJGL));
+
+            Files.copy(inLibLWJGL, pLibLWJGL);
+        } catch (IOException ex) {
+            throw new RuntimeException(String.format("Unable to copy [%s] to temp directory!", libLWJGL), ex);
+        } catch (RuntimeException ex) {
+            URL res = NativeTools.class.getResource("/" + libLWJGL);
+            throw new RuntimeException("Could not find resource: " + res);
+        }
+
+        try (final InputStream inLibOpenAL = NativeTools.class.getResourceAsStream("/" + libOpenAL)) {
+            final Path pLibOpenAL = tempRoot.resolve(Paths.get(libOpenAL));
+
+            Files.copy(inLibOpenAL, pLibOpenAL);
+        } catch (IOException ex) {
+            throw new RuntimeException(String.format("Unable to copy [%s] to temp directory!", libOpenAL), ex);
+        }
+
+        System.setProperty("org.lwjgl.librarypath", tempRoot.toString());
+
+        this.isLoaded = true;
+    }
 }

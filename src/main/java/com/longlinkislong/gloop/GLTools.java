@@ -1624,6 +1624,7 @@ public class GLTools {
     private static final boolean DEBUG;
 
     static {
+        NativeTools.getInstance().autoLoad();
         DEBUG = Boolean.getBoolean("debug") && !System.getProperty("debug.exclude", "").contains("gltools");
 
         // check for driver override.

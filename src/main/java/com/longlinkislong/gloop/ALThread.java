@@ -34,7 +34,9 @@ public final class ALThread implements ExecutorService {
 
     static {
         DEBUG = Boolean.getBoolean("debug") && !System.getProperty("debug.exclude", "").contains("althread");
+        NativeTools.getInstance().autoLoad();
     }
+    
 
     private static final class Holder {
 

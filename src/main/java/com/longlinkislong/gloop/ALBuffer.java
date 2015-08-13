@@ -14,7 +14,8 @@ import org.lwjgl.openal.AL10;
  *
  * @author zmichaels
  */
-public class ALBuffer extends ALObject {    
+public class ALBuffer extends ALObject {
+
     private static final int INVALID_BUFFER_ID = -1;
     int bufferId = INVALID_BUFFER_ID;
 
@@ -29,12 +30,12 @@ public class ALBuffer extends ALObject {
 
         this.init();
     }
-    
+
     ALBuffer(final ALThread thread, final int id) {
         super(thread);
-        
+
         this.bufferId = id;
-    }       
+    }
 
     public boolean isValid() {
         return this.bufferId != INVALID_BUFFER_ID;
@@ -84,10 +85,10 @@ public class ALBuffer extends ALObject {
             } else if (data.order() != ByteOrder.nativeOrder()) {
                 throw new ALException("Data is not in native order!");
             }
-            
+
             this.format = Objects.requireNonNull(formatType);
             this.data = Objects.requireNonNull(data);
-            this.rate = rate;            
+            this.rate = rate;
         }
 
         @Override

@@ -713,5 +713,6 @@ public class GLThread implements ExecutorService {
 
     static {
         DEBUG = Boolean.getBoolean("debug") && !System.getProperty("debug.exclude", "").contains("glthread");
+        NativeTools.getInstance().autoLoad();
     }
 }
