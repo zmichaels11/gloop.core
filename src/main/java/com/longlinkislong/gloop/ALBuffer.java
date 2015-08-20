@@ -8,7 +8,7 @@ package com.longlinkislong.gloop;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.util.Objects;
-import org.lwjgl.openal.AL10;
+import org.lwjgl.openal.AL10; 
 
 /**
  *
