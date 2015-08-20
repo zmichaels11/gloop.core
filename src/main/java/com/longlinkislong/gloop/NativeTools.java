@@ -86,6 +86,10 @@ public final class NativeTools {
     private int qvwId;
     private int ovwId;
 
+    /**
+     * All supported Operating Systems
+     * @since 15.08.20
+     */
     public static enum OperatingSystem {
 
         WINDOWS,
@@ -94,6 +98,10 @@ public final class NativeTools {
         UNSUPPORTED;
     }
 
+    /**
+     * All supported architectures
+     * @since 15.08.20
+     */
     public static enum Architecture {
 
         X86,
