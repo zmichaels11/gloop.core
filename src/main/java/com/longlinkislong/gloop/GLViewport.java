@@ -44,6 +44,13 @@ public class GLViewport extends GLObject {
     public final int height;
 
     /**
+     * The aspect ratio of the viewport.
+     *
+     * @since 15.08.24
+     */
+    public final double aspect;
+
+    /**
      * Constructs a new GLViewport object on the default OpenGL thread.
      *
      * @param x the x-element of the lower-left viewport rectangle.
@@ -58,6 +65,7 @@ public class GLViewport extends GLObject {
         this.y = y;
         this.width = w;
         this.height = h;
+        this.aspect = (double) w / (double) h;
     }
 
     /**
@@ -79,14 +87,15 @@ public class GLViewport extends GLObject {
         this.y = y;
         this.width = w;
         this.height = h;
+        this.aspect = (double) w / (double) h;
     }
-    
+
     public GLViewport withGLThread(final GLThread thread) {
         return this.getThread() == thread
                 ? this
                 : new GLViewport(thread, this.x, this.y, this.width, this.height);
     }
-    
+
     public GLViewport withViewRect(final int x, final int y, final int width, final int height) {
         return this.x == x && this.y == y && this.width == width && this.height == height
                 ? this
@@ -114,13 +123,13 @@ public class GLViewport extends GLObject {
         @Override
         public void run() {
             final GLThread thread = GLThread.getCurrent().orElseThrow(GLException::new);
-            
+
             thread.currentViewport = GLViewport.this.withGLThread(thread);
             GL11.glViewport(
                     GLViewport.this.x, GLViewport.this.y,
                     GLViewport.this.width, GLViewport.this.height);
-            
-            assert(GL11.glGetError() == GL11.GL_NO_ERROR);
+
+            assert (GL11.glGetError() == GL11.GL_NO_ERROR);
         }
     }
 }
