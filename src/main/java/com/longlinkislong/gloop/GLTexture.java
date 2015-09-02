@@ -1347,7 +1347,7 @@ public class GLTexture extends GLObject {
         @Override
         protected GLTextureFormat handleInterruption() {
             // todo: this should probably return a simple safe  value.
-            return null;
+            throw new GLException("PreferredInternalFormatQuery was interrupted!");
         }
 
     }
