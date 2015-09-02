@@ -352,6 +352,7 @@ public final class NativeTools {
 
         try {
             tempRoot = Files.createTempDirectory("com.longlinkislong.gloop.natives");
+            tempRoot.toFile().deleteOnExit();
         } catch (IOException ex) {
             throw new RuntimeException("Unable to create temp directory!", ex);
         }
