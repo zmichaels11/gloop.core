@@ -114,9 +114,11 @@ public class GLFramebuffer extends GLObject {
      * @return true if the framebuffer is complete.
      * @since 15.07.20
      */
-    public boolean isComplete() {
+    public boolean isComplete() {        
         return new IsCompleteQuery().glCall(this.getThread());
     }
+    
+    
 
     /**
      * A GLQuery that checks if the framebuffer is complete.
@@ -855,5 +857,117 @@ public class GLFramebuffer extends GLObject {
                     dstX0, dstY0, dstX1, dstY1,
                     this.bitfield, this.filter.value);
         }
+    }
+    
+    public static ByteBuffer readPixels(final int x, final int y, final int width, final int height, final GLTextureFormat format, final GLType type) {
+        return new ReadPixelsQuery(x, y, width, height, format, type).glCall(GLThread.getAny());
+    }
+    
+    public static ByteBuffer readPixels(final int x, final int y, final int width, final int height, final GLTextureFormat format, final GLType type, final ByteBuffer pixels) {
+        return new ReadPixelsQuery(x, y, width, height, format, type, pixels).glCall(GLThread.getAny());
+    }
+    
+    static class ReadPixelsQuery extends GLQuery<ByteBuffer> {
+        final int x;
+        final int y;
+        final int width;
+        final int height;
+        final GLTextureFormat format;
+        final GLType type;
+        final ByteBuffer pixels;
+        
+        public ReadPixelsQuery(final int x, final int y, final int width, final int height, final GLTextureFormat format, final GLType type) {
+            this.x = x;
+            this.y = y;
+            this.width = width;
+            this.height = height;
+            this.format = Objects.requireNonNull(format);
+            this.type = Objects.requireNonNull(type);
+            
+            final int pixelSize;
+            
+            switch(format) {
+                case GL_DEPTH_COMPONENT:
+                case GL_STENCIL_INDEX:
+                case GL_RED:
+                case GL_GREEN:
+                case GL_BLUE:
+                    pixelSize = 2;
+                    break;
+                case GL_RGB:
+                case GL_BGR:
+                    pixelSize = 3;
+                    break;
+                case GL_RGBA:
+                case GL_BGRA:
+                    pixelSize = 4;
+                    break;
+                default:
+                    throw new GLException("Unable to infer pixel region size! Invalid format for operation: " + format);                
+            }
+
+            final int pixelCount = width * height;
+            final int imageSize;
+            switch(type) {
+                case GL_UNSIGNED_BYTE:
+                case GL_BYTE:
+                    imageSize = pixelSize * pixelCount;
+                    break;
+                case GL_SHORT:
+                case GL_UNSIGNED_SHORT:
+                    imageSize = pixelSize * pixelCount * 2;
+                    break;
+                case GL_INT:
+                case GL_UNSIGNED_INT:
+                case GL_FLOAT:
+                    imageSize = pixelSize * pixelCount * 4;
+                    break;
+                case GL_UNSIGNED_BYTE_3_3_2:
+                case GL_UNSIGNED_BYTE_2_3_3_REV:
+                    imageSize = pixelCount;
+                    break;
+                case GL_UNSIGNED_SHORT_5_6_5:
+                case GL_UNSIGNED_SHORT_5_6_5_REV:
+                case GL_UNSIGNED_SHORT_4_4_4_4:
+                case GL_UNSIGNED_SHORT_4_4_4_4_REV:
+                case GL_UNSIGNED_SHORT_5_5_5_1:
+                case GL_UNSIGNED_SHORT_1_5_5_5_REV:
+                    imageSize = pixelCount * 2;
+                    break;
+                case GL_UNSIGNED_INT_8_8_8_8:
+                case GL_UNSIGNED_INT_8_8_8_8_REV:
+                case GL_UNSIGNED_INT_10_10_10_2:
+                case GL_UNSIGNED_INT_2_10_10_10_REV:
+                    imageSize = pixelCount * 4;
+                    break;
+                default:
+                    throw new GLException("Unable to infer pixel region size! Invalid type for operation: " + type);
+            }
+            
+            this.pixels = ByteBuffer.allocateDirect(imageSize).order(ByteOrder.nativeOrder());
+        }
+        
+        public ReadPixelsQuery(final int x, final int y, final int width, final int height, final GLTextureFormat format, final GLType type, final ByteBuffer pixels) {
+            this.x = x;
+            this.y = y;
+            this.width = width;
+            this.height = height;
+            this.format = Objects.requireNonNull(format);
+            this.type = Objects.requireNonNull(type);
+            this.pixels = Objects.requireNonNull(pixels);
+        }
+        
+        @Override
+        public ByteBuffer call() throws Exception {
+            GL11.glReadPixels(
+                    this.x, this.y, 
+                    this.width, this.height, 
+                    this.format.value, 
+                    this.type.value, 
+                    this.pixels);
+            
+            return this.pixels;
+        }
+        
     }
 }

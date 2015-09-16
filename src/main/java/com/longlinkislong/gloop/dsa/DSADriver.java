@@ -17,6 +17,8 @@ import java.nio.FloatBuffer;
  */
 public interface DSADriver {
 
+    void glGetTextureImage(int texture, int level, int format, int type, int bufferSize, ByteBuffer pixels);
+    
     /**
      * Checks if the current context supports this driver.
      * @return true if all features of the driver are supported.

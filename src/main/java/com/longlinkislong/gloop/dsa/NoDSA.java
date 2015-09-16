@@ -347,6 +347,12 @@ public class NoDSA implements EXTDSADriver {
             GL30.glBindFramebuffer(GL30.GL_DRAW_FRAMEBUFFER, 0);
         }
     }
+    
+    @Override
+    public void glGetTextureImage(int texture, int target, int level, int format, int type, int bufferSize, ByteBuffer pixels) {        
+        GL11.glBindTexture(target, texture);
+        GL11.glGetTexImage(target, level, format, type, pixels);        
+    }
 
     public static DSADriver getInstance() {
         return Holder.INSTANCE;

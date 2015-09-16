@@ -305,6 +305,11 @@ public class GL45DSA implements DSADriver {
         GL45.glBlitNamedFramebuffer(readFramebuffer, drawFramebuffer, srcX0, srcY0, srcX1, srcY1, dstX0, dstX1, dstY0, dstY1, mask, filter);
     }
 
+    @Override
+    public void glGetTextureImage(int texture, int level, int format, int type, int bufferSize, ByteBuffer pixels) {
+        GL45.glGetTextureImage(texture, level, format, type, bufferSize, pixels);
+    }
+
     private static class Holder {
 
         private static final DSADriver INSTANCE = new GL45DSA();

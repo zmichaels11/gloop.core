@@ -1233,7 +1233,7 @@ public class GLTexture extends GLObject {
 
             return this.maxUnits;
         }
-        
+
         @Override
         protected Integer handleInterruption() {
             // return the minimum specification for OpenGL 3.0
@@ -1276,7 +1276,7 @@ public class GLTexture extends GLObject {
 
             return this.maxUnits;
         }
-        
+
         @Override
         protected Integer handleInterruption() {
             // return the minimum specification for OpenGL 3.0
@@ -1302,7 +1302,7 @@ public class GLTexture extends GLObject {
 
             MEM_PREFERRED_FORMATS.put(format, res);
             return res;
-        }                
+        }
     }
 
     /**
@@ -1333,21 +1333,143 @@ public class GLTexture extends GLObject {
             final int raw;
             if (cap.OpenGL43) {
                 raw = GL42.glGetInternalformati(GL11.GL_TEXTURE_2D, this.testFormat.value, GL43.GL_TEXTURE_IMAGE_FORMAT);
-            } else if(cap.GL_ARB_internalformat_query2) {
-                raw = ARBInternalformatQuery.glGetInternalformati(GL11.GL_TEXTURE_2D, this.testFormat.value, ARBInternalformatQuery2.GL_TEXTURE_IMAGE_FORMAT);                
+            } else if (cap.GL_ARB_internalformat_query2) {
+                raw = ARBInternalformatQuery.glGetInternalformati(GL11.GL_TEXTURE_2D, this.testFormat.value, ARBInternalformatQuery2.GL_TEXTURE_IMAGE_FORMAT);
             } else {
                 throw new UnsupportedOperationException("Querying preferred texture format requires either an OpenGL4.3 context or ARB_internal_format_query2 support.");
             }
-            
+
             final GLTextureFormat res = GLTextureFormat.valueOf(raw);
 
             return res;
         }
-        
+
         @Override
         protected GLTextureFormat handleInterruption() {
             // todo: this should probably return a simple safe  value.
             throw new GLException("PreferredInternalFormatQuery was interrupted!");
+        }
+    }
+    
+    public ByteBuffer downloadImage(final int level, final GLTextureFormat format, final GLType type) {
+        return new DownloadImageQuery(level, format, type).glCall(this.getThread());
+    }
+    
+    public ByteBuffer downloadImage(final int level, final GLTextureFormat format, final GLType type, final ByteBuffer buffer) {
+        return new DownloadImageQuery(level, format, type, buffer).glCall(this.getThread());
+    }       
+
+    public class DownloadImageQuery extends GLQuery<ByteBuffer> {
+
+        final int level;
+        final GLTextureFormat format;
+        final GLType type;
+        final int bufferSize;
+        final ByteBuffer buffer;
+
+        public DownloadImageQuery(final int level, final GLTextureFormat format, final GLType type) {
+            if ((this.level = level) < 0) {
+                throw new GLException("Level cannot be less than 0!");
+            }
+
+            this.format = Objects.requireNonNull(format);
+            this.type = Objects.requireNonNull(type);
+
+            final int pixelSize;
+
+            switch (format) {
+                case GL_RED:
+                case GL_GREEN:
+                case GL_BLUE:
+                case GL_ALPHA:                
+                case GL_DEPTH_COMPONENT:
+                case GL_STENCIL_INDEX:
+                    pixelSize = 1;
+                    break;                                                    
+                case GL_RGB:
+                case GL_BGR:
+                    pixelSize = 3;
+                    break;                
+                case GL_BGRA:
+                case GL_RGBA:
+                    pixelSize = 4;
+                    break;
+                default:
+                    throw new GLException("Unable to infer pixel width! Invalid pixel format for operation: " + format);
+            }
+            final int pixels = GLTexture.this.getDepth() * GLTexture.this.getHeight() * GLTexture.this.getWidth();
+
+            switch (type) {
+                case GL_UNSIGNED_BYTE:
+                case GL_BYTE:                
+                    this.bufferSize = pixels * pixelSize;
+                    break;
+                case GL_UNSIGNED_SHORT:
+                case GL_SHORT:                
+                    this.bufferSize = pixels * pixelSize * 2;
+                    break;
+                case GL_UNSIGNED_INT:
+                case GL_INT:
+                case GL_FLOAT:
+                    this.bufferSize = pixels * pixelSize * 4;
+                    break;
+                case GL_UNSIGNED_BYTE_3_3_2:
+                case GL_UNSIGNED_BYTE_2_3_3_REV:
+                    this.bufferSize = pixels;
+                    break;
+                case GL_UNSIGNED_SHORT_5_6_5:
+                case GL_UNSIGNED_SHORT_5_6_5_REV:
+                case GL_UNSIGNED_SHORT_4_4_4_4:
+                case GL_UNSIGNED_SHORT_4_4_4_4_REV:
+                case GL_UNSIGNED_SHORT_5_5_5_1:
+                case GL_UNSIGNED_SHORT_1_5_5_5_REV:
+                    this.bufferSize = pixels * 2;
+                    break;                
+                case GL_UNSIGNED_INT_8_8_8_8:
+                case GL_UNSIGNED_INT_8_8_8_8_REV:
+                case GL_UNSIGNED_INT_10_10_10_2:
+                case GL_UNSIGNED_INT_2_10_10_10_REV:
+                    this.bufferSize = pixels * 4;
+                    break;
+                default:
+                    throw new GLException("Unable to infer image size! Invalid type for operation: " + type);
+            }
+            
+            this.buffer = ByteBuffer.allocateDirect(this.bufferSize).order(ByteOrder.nativeOrder());
+        }        
+
+        public DownloadImageQuery(final int level, final GLTextureFormat format, final GLType type, final ByteBuffer buffer) {
+            if ((this.level = level) < 0) {
+                throw new GLException("Level cannot be less than 0!");
+            }
+
+            this.format = Objects.requireNonNull(format);
+            this.type = Objects.requireNonNull(type);
+            this.buffer = Objects.requireNonNull(buffer);
+            this.bufferSize = buffer.limit();
+        }
+
+        @Override
+        public ByteBuffer call() throws Exception {
+            DSADriver driver = GLTools.getDSAInstance();
+
+            if (driver instanceof EXTDSADriver) {
+                ((EXTDSADriver) driver).glGetTextureImage(
+                        GLTexture.this.textureId,
+                        GLTexture.this.target.value,
+                        this.level,
+                        this.format.value,
+                        this.type.value,
+                        this.bufferSize, this.buffer);
+            } else {
+                driver.glGetTextureImage(
+                        GLTexture.this.textureId,
+                        this.level,
+                        this.format.value, this.type.value,
+                        this.bufferSize, this.buffer);
+            }
+            
+            return this.buffer; // does this need flip?
         }
 
     }

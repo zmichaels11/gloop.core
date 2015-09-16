@@ -940,6 +940,15 @@ public class FakeDSA implements EXTDSADriver {
         GL11.glReadPixels(x, y, width, height, format, type, ptr);
         GL15.glBindBuffer(GL21.GL_PIXEL_PACK_BUFFER, prevPixBuffer);
     }
+    
+    @Override
+    public void glGetTextureImage(int texture, int target, int level, int format, int type, int bufferSize, ByteBuffer pixels) {        
+        this.saveTexture(target);
+        
+        GL11.glBindTexture(target, texture);
+        GL11.glGetTexImage(target, level, format, type, pixels);        
+        this.restoreTexture(target);
+    }
 
     private static class Holder {
 

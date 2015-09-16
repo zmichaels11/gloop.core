@@ -25,6 +25,11 @@ import org.lwjgl.opengl.GL41;
 public class EXTDSA implements EXTDSADriver {
 
     @Override
+    public void glGetTextureImage(int texture, int target, int level, int format, int type, int bufferSize, ByteBuffer pixels) {
+        EXTDirectStateAccess.glGetTextureImageEXT(texture, target, level, format, type, pixels);
+    }
+    
+    @Override
     public String toString() {
         return "EXTDSA";
     }

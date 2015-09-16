@@ -42,6 +42,8 @@ public interface EXTDSADriver extends DSADriver {
     void glTextureImage3d(int texture, int target, int level, int internalFormat, int width, int height, int depth, int border, int format, int type, ByteBuffer pixels);
 
     void glTextureImage3d(int texture, int target, int level, int internalFormat, int width, int height, int depth, int border, int format, int type, long ptr);
+    
+    void glGetTextureImage(int texture, int target, int level, int format, int type, int bufferSize, ByteBuffer data);
 
     @Override
     default void glTextureParameteri(int textureId, int pName, int val) {
@@ -61,6 +63,11 @@ public interface EXTDSADriver extends DSADriver {
     @Override
     default void glBindTextureUnit(int unit, int textureId) {
         throw new UnsupportedOperationException("glBindTextureUnit requires target in implementation: " + this.getClass().getName());
+    }
+    
+    @Override
+    default void glGetTextureImage(int texture, int level, int format, int type, int bufferSize, ByteBuffer pixels) {
+        throw new UnsupportedOperationException("glGetTextureImage requires target in implementation: " + this.getClass().getName());
     }
 
     @Override
@@ -98,7 +105,7 @@ public interface EXTDSADriver extends DSADriver {
             height = Math.max(1, (height / 2));
             depth = Math.max(1, (depth / 2));
         }
-    }     
+    }         
 
     /**
      * Retrieves an OpenGL texture format that is a version of the guessed

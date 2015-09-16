@@ -85,6 +85,11 @@ public class ARBDSA implements DSADriver {
         ARBDirectStateAccess.glBlitNamedFramebuffer(readFramebuffer, drawFramebuffer, srcX1, srcY1, srcX1, srcY1, dstX0, dstY0, dstX1, dstY1, mask, filter);
     }
 
+    @Override
+    public void glGetTextureImage(int texture, int level, int format, int type, int bufferSize, ByteBuffer pixels) {
+        ARBDirectStateAccess.glGetTextureImage(texture, level, format, type, bufferSize, pixels);
+    }
+
     private static class Holder {
 
         private static final DSADriver INSTANCE = new ARBDSA();

@@ -526,7 +526,7 @@ public class GLWindow {
 
             if (this.visibility) {
                 GLFW.glfwShowWindow(GLWindow.this.window);
-            } else {
+            } else {                
                 GLFW.glfwHideWindow(GLWindow.this.window);
             }
         }
