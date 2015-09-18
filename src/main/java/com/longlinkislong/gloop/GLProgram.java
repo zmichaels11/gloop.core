@@ -182,7 +182,7 @@ public class GLProgram extends GLObject {
 
     }
 
-    private int getUniformLoc(final String uName) {
+    private int getUniformLoc(final String uName) {        
         if (this.uniforms.containsKey(uName)) {
             return this.uniforms.get(uName);
         } else {

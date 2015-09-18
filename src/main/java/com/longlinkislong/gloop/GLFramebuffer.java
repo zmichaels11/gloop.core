@@ -19,7 +19,9 @@ import org.lwjgl.opengl.ContextCapabilities;
 import org.lwjgl.opengl.EXTFramebufferObject;
 import org.lwjgl.opengl.GL;
 import org.lwjgl.opengl.GL11;
+import org.lwjgl.opengl.GL15;
 import org.lwjgl.opengl.GL20;
+import org.lwjgl.opengl.GL21;
 import org.lwjgl.opengl.GL30;
 
 /**
@@ -114,11 +116,9 @@ public class GLFramebuffer extends GLObject {
      * @return true if the framebuffer is complete.
      * @since 15.07.20
      */
-    public boolean isComplete() {        
+    public boolean isComplete() {
         return new IsCompleteQuery().glCall(this.getThread());
     }
-    
-    
 
     /**
      * A GLQuery that checks if the framebuffer is complete.
@@ -832,14 +832,10 @@ public class GLFramebuffer extends GLObject {
             this.dstY0 = dstY0;
             this.dstX1 = dstX1;
             this.dstY1 = dstY1;
-
-            int bits = 0;
-
-            for (GLFramebufferMode clear : mask) {
-                bits |= clear.value;
-            }
-
-            this.bitfield = bits;
+            
+            this.bitfield = mask.stream()
+                    .map(m -> m.value)
+                    .reduce(0, (prev, current) -> prev | current);
             this.filter = Objects.requireNonNull(filter);
         }
 
@@ -858,16 +854,51 @@ public class GLFramebuffer extends GLObject {
                     this.bitfield, this.filter.value);
         }
     }
-    
-    public static ByteBuffer readPixels(final int x, final int y, final int width, final int height, final GLTextureFormat format, final GLType type) {
-        return new ReadPixelsQuery(x, y, width, height, format, type).glCall(GLThread.getAny());
+
+    /**
+     * Reads pixels from the framebuffer and writes them to a Pixel pack buffer.
+     *
+     * @param x the x to start the read
+     * @param y the y to start the read
+     * @param width the width of the read rectangle
+     * @param height the height of the read rectangle
+     * @param format the pixel type
+     * @param type the buffer to write the pixels to.
+     * @param pixelPackBuffer the pixel buffer to write pixel data to.
+     * @since 15.09.18
+     */
+    public void readPixels(
+            final int x, final int y,
+            final int width, final int height,
+            final GLTextureFormat format, final GLType type,
+            final GLBuffer pixelPackBuffer) {
+
+        new ReadPixelsTask(x, y, width, height, format, type, pixelPackBuffer).glRun(this.getThread());
     }
-    
-    public static ByteBuffer readPixels(final int x, final int y, final int width, final int height, final GLTextureFormat format, final GLType type, final ByteBuffer pixels) {
-        return new ReadPixelsQuery(x, y, width, height, format, type, pixels).glCall(GLThread.getAny());
+
+    /**
+     * Reads pixels from the framebuffer and writes them to a ByteBuffer object.
+     *
+     * @param x the x to start read.
+     * @param y the y to start read
+     * @param width the width of the read rectangle
+     * @param height the height of the read rectangle
+     * @param format the pixel format
+     * @param type the pixel type
+     * @param pixels the buffer to write the pixels to.
+     * @since 15.09.18
+     */
+    public void readPixels(final int x, final int y, final int width, final int height, final GLTextureFormat format, final GLType type, final ByteBuffer pixels) {
+        new ReadPixelsTask(x, y, width, height, format, type, pixels).glRun(this.getThread());
     }
-    
-    static class ReadPixelsQuery extends GLQuery<ByteBuffer> {
+
+    /**
+     * A GLTask that reads pixels from the framebuffer.
+     *
+     * @since 15.09.18
+     */
+    public class ReadPixelsTask extends GLTask {
+
         final int x;
         final int y;
         final int width;
@@ -875,79 +906,46 @@ public class GLFramebuffer extends GLObject {
         final GLTextureFormat format;
         final GLType type;
         final ByteBuffer pixels;
-        
-        public ReadPixelsQuery(final int x, final int y, final int width, final int height, final GLTextureFormat format, final GLType type) {
+        final GLBuffer pixelPackBuffer;
+
+        /**
+         * Constructs a new ReadPixelsTask for reading pixel data from the
+         * framebuffer object into a pixel pack buffer.
+         *
+         * @param x the x coordinate to start reading pixel data from
+         * @param y the y coordinate to start reading pixel data from
+         * @param width the width of the read pixel rectangle
+         * @param height the height of the read pixel rectangle
+         * @param format the format of the pixels
+         * @param type the type of the pixels
+         * @param pixelBuffer the pixel pack buffer to write the data to
+         * @since 15.09.18
+         */
+        public ReadPixelsTask(final int x, final int y, final int width, final int height, final GLTextureFormat format, final GLType type, final GLBuffer pixelBuffer) {
             this.x = x;
             this.y = y;
             this.width = width;
             this.height = height;
             this.format = Objects.requireNonNull(format);
             this.type = Objects.requireNonNull(type);
-            
-            final int pixelSize;
-            
-            switch(format) {
-                case GL_DEPTH_COMPONENT:
-                case GL_STENCIL_INDEX:
-                case GL_RED:
-                case GL_GREEN:
-                case GL_BLUE:
-                    pixelSize = 2;
-                    break;
-                case GL_RGB:
-                case GL_BGR:
-                    pixelSize = 3;
-                    break;
-                case GL_RGBA:
-                case GL_BGRA:
-                    pixelSize = 4;
-                    break;
-                default:
-                    throw new GLException("Unable to infer pixel region size! Invalid format for operation: " + format);                
-            }
-
-            final int pixelCount = width * height;
-            final int imageSize;
-            switch(type) {
-                case GL_UNSIGNED_BYTE:
-                case GL_BYTE:
-                    imageSize = pixelSize * pixelCount;
-                    break;
-                case GL_SHORT:
-                case GL_UNSIGNED_SHORT:
-                    imageSize = pixelSize * pixelCount * 2;
-                    break;
-                case GL_INT:
-                case GL_UNSIGNED_INT:
-                case GL_FLOAT:
-                    imageSize = pixelSize * pixelCount * 4;
-                    break;
-                case GL_UNSIGNED_BYTE_3_3_2:
-                case GL_UNSIGNED_BYTE_2_3_3_REV:
-                    imageSize = pixelCount;
-                    break;
-                case GL_UNSIGNED_SHORT_5_6_5:
-                case GL_UNSIGNED_SHORT_5_6_5_REV:
-                case GL_UNSIGNED_SHORT_4_4_4_4:
-                case GL_UNSIGNED_SHORT_4_4_4_4_REV:
-                case GL_UNSIGNED_SHORT_5_5_5_1:
-                case GL_UNSIGNED_SHORT_1_5_5_5_REV:
-                    imageSize = pixelCount * 2;
-                    break;
-                case GL_UNSIGNED_INT_8_8_8_8:
-                case GL_UNSIGNED_INT_8_8_8_8_REV:
-                case GL_UNSIGNED_INT_10_10_10_2:
-                case GL_UNSIGNED_INT_2_10_10_10_REV:
-                    imageSize = pixelCount * 4;
-                    break;
-                default:
-                    throw new GLException("Unable to infer pixel region size! Invalid type for operation: " + type);
-            }
-            
-            this.pixels = ByteBuffer.allocateDirect(imageSize).order(ByteOrder.nativeOrder());
+            this.pixels = null;
+            this.pixelPackBuffer = Objects.requireNonNull(pixelBuffer);
         }
-        
-        public ReadPixelsQuery(final int x, final int y, final int width, final int height, final GLTextureFormat format, final GLType type, final ByteBuffer pixels) {
+
+        /**
+         * Constructs a new ReadPixelsTask for reading pixel data from the
+         * framebuffer into a ByteBuffer object.
+         *
+         * @param x the x coordinate to start reading pixel data from.
+         * @param y the y coordinate to start reading pixel data from.
+         * @param width the width of the read pixel rectangle.
+         * @param height the height of the read pixel rectangle.
+         * @param format the format of the pixels.
+         * @param type the type of the pixels.
+         * @param pixels the ByteBuffer to write the pixel data to.
+         * @since 15.09.18
+         */
+        public ReadPixelsTask(final int x, final int y, final int width, final int height, final GLTextureFormat format, final GLType type, final ByteBuffer pixels) {
             this.x = x;
             this.y = y;
             this.width = width;
@@ -955,19 +953,50 @@ public class GLFramebuffer extends GLObject {
             this.format = Objects.requireNonNull(format);
             this.type = Objects.requireNonNull(type);
             this.pixels = Objects.requireNonNull(pixels);
+            this.pixelPackBuffer = null;
         }
-        
+
         @Override
-        public ByteBuffer call() throws Exception {
-            GL11.glReadPixels(
-                    this.x, this.y, 
-                    this.width, this.height, 
-                    this.format.value, 
-                    this.type.value, 
-                    this.pixels);
-            
-            return this.pixels;
+        public void run() {
+            final int currentFb = GL11.glGetInteger(GL30.GL_FRAMEBUFFER_BINDING);
+            boolean undoFBBind = false;
+
+            if (currentFb != GLFramebuffer.this.framebufferId) {
+                GL30.glBindFramebuffer(height, framebufferId);
+                undoFBBind = true;
+            }
+
+            if (this.pixels == null) {
+                final int currentPixelPackBuffer = GL11.glGetInteger(GL21.GL_PIXEL_PACK_BUFFER_BINDING);
+                boolean undoBufferBind = false;
+
+                if (this.pixelPackBuffer.bufferId != currentPixelPackBuffer) {
+                    GL15.glBindBuffer(GL21.GL_PIXEL_PACK_BUFFER, this.pixelPackBuffer.bufferId);
+                    undoBufferBind = true;
+                }
+
+                // read into pixel pack buffer                
+                GL11.glReadPixels(this.x, this.y,
+                        this.width, this.height,
+                        this.format.value,
+                        this.type.value, 0L);
+
+                if (undoBufferBind) {
+                    GL15.glBindBuffer(GL21.GL_PIXEL_PACK_BUFFER, this.pixelPackBuffer.bufferId);
+                }
+            } else {
+                // read into a ByteBuffer
+                GL11.glReadPixels(
+                        this.x, this.y,
+                        this.width, this.height,
+                        this.format.value,
+                        this.type.value,
+                        this.pixels);
+            }
+
+            if (undoFBBind) {
+                GL30.glBindFramebuffer(GL30.GL_FRAMEBUFFER, currentFb);
+            }
         }
-        
     }
 }
