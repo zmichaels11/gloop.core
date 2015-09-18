@@ -461,69 +461,7 @@ public class GLBuffer extends GLObject {
         protected ByteBuffer handleInterruption() {
             return ByteBuffer.allocate(0).asReadOnlyBuffer();
         }
-    }
-
-    /**
-     * Reads a chunk of the current framebuffer into a pixel buffer.
-     *
-     * @param x the starting x-location.
-     * @param y the starting y-location.
-     * @param width the number of pixels to read along the x-axis.
-     * @param height the number of pixels to read along the y-axis.
-     * @param format the format used to store elements inside the buffer.
-     * @param type the data type used.
-     * @since 15.07.13
-     */
-    public void readPixels(final int x, final int y, final int width, final int height, final GLTextureInternalFormat format, final GLType type) {
-        new ReadPixelsTask(x, y, width, height, format, type).glRun(this.getThread());
-    }
-
-    /**
-     * A GLTask that reads a chunk of pixel data from the current framebuffer
-     * object.
-     *
-     * @since 15.07.13
-     */
-    public class ReadPixelsTask extends GLTask {
-
-        public final int width;
-        public final int height;
-        public final int x;
-        public final int y;
-        public final GLTextureInternalFormat format;
-        public final GLType type;
-
-        /**
-         * Reads a chunk of the current framebuffer into a pixel buffer.
-         *
-         * @param x the starting x-location.
-         * @param y the starting y-location.
-         * @param width the number of pixels to read along the x-axis.
-         * @param height the number of pixels to read along the y-axis.
-         * @param format the format used for element order.
-         * @param type the data type used.
-         * @since 15.07.13
-         */
-        public ReadPixelsTask(final int x, final int y, final int width, final int height, final GLTextureInternalFormat format, final GLType type) {
-            if ((this.x = x) < 0) {
-                throw new GLException("x cannot be less than 0!");
-            } else if ((this.y = y) < 0) {
-                throw new GLException("y cannot be less than 0!");
-            } else if ((this.width = width) < 1) {
-                throw new GLException("width cannot be less than 1!");
-            } else if ((this.height = height) < 1) {
-                throw new GLException("height cannot be less than 1!");
-            }
-
-            this.format = Objects.requireNonNull(format);
-            this.type = Objects.requireNonNull(type);
-        }
-
-        @Override
-        public void run() {
-            GLTools.getDSAInstance().glNamedBufferReadPixels(bufferId, x, y, width, height, format.value, type.value, 0);
-        }
-    }
+    } 
 
     /**
      * Maps the GLBuffer to a ByteBuffer for read-write access. This function
@@ -834,29 +772,23 @@ public class GLBuffer extends GLObject {
 
             GLTools.getDSAInstance().glUnmapNamedBuffer(GLBuffer.this.bufferId);
         }
+    }    
 
-    }
-
-    private CopyTask lastCopyTask = null;
-
+    /**
+     * Copies data from one GLBuffer to another GLBuffer.
+     * @param src the buffer to copy data from.
+     * @param srcOffset the offset to start copying data.
+     * @param dest the buffer to copy data to.
+     * @param destOffset the offset to start copying data.
+     * @param size the number of bytes to copy.
+     * @since 15.09.18
+     */
     public static void copy(
             final GLBuffer src, final long srcOffset,
             final GLBuffer dest, final long destOffset,
-            final long size) {
-
-        if (src.getThread() != dest.getThread()) {
-            throw new GLException("Source GLBuffer and destination GLBuffer are on different GLThreads!");
-        }
-
-        if (src.lastCopyTask != null
-                && src.lastCopyTask.src == src
-                && src.lastCopyTask.srcOffset == srcOffset
-                && src.lastCopyTask.dest == dest
-                && src.lastCopyTask.destOffset == destOffset
-                && src.lastCopyTask.size == size) {
-
-            src.lastCopyTask.glRun(src.getThread());
-        }
+            final long size) {                
+        
+        new CopyTask(src, srcOffset, dest, destOffset, size).glRun(GLThread.getAny());
     }
 
     /**
