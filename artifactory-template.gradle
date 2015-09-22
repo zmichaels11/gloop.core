@@ -71,6 +71,8 @@ task incrementMajor << {
         versionProps['minor'] = '0'
         versionProps['revision'] = '0'
     } else {
+        versionProps.load(new FileInputStream(versionPropsFile))
+        
         versionProps['major'] = (versionProps['major'].toInteger() + 1).toString()
         versionProps['minor'] = '0'
         versionProps['revision'] = '0'
@@ -88,6 +90,8 @@ task incrementMinor << {
         versionProps['minor'] = '0'
         versionProps['revision'] = '0'
     } else {
+        versionProps.load(new FileInputStream(versionPropsFile))
+        
         versionProps['minor'] = (versionProps['minor'].toInteger() + 1).toString()
         versionProps['revision'] = '0'
     }
