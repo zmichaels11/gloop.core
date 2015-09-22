@@ -1623,7 +1623,7 @@ public class GLTools {
 
     private static final boolean DEBUG;
 
-    static {
+    static {        
         NativeTools.getInstance().autoLoad();
         DEBUG = Boolean.getBoolean("debug") && !System.getProperty("debug.exclude", "").contains("gltools");
 
@@ -1742,5 +1742,13 @@ public class GLTools {
         }).collect(Collectors.toList())
                 .toArray(new DSADriver[dsaDrivers.size()]);
                 
+        
+        try {
+            assert false;
+        } catch (Throwable ex) {
+            if(DEBUG) {
+                System.out.println("[GLTools]: Assertions are enabled! All OpenGL calls will be checked.");
+            }
+        }
     }
 }

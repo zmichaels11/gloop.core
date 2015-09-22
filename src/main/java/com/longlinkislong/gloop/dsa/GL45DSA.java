@@ -303,11 +303,13 @@ public class GL45DSA implements DSADriver {
     @Override
     public void glBlitNamedFramebuffer(int readFramebuffer, int drawFramebuffer, int srcX0, int srcY0, int srcX1, int srcY1, int dstX0, int dstY0, int dstX1, int dstY1, int mask, int filter) {
         GL45.glBlitNamedFramebuffer(readFramebuffer, drawFramebuffer, srcX0, srcY0, srcX1, srcY1, dstX0, dstX1, dstY0, dstY1, mask, filter);
+        assert GL11.glGetError() == GL11.GL_NO_ERROR : String.format("glBlitNamedFramebuffer(%d, %d, %d, %d, %d, %d, %d, %d, %d, %d, %d, %d) failed!", readFramebuffer, drawFramebuffer, srcX0, srcY0, srcX1, srcY1, dstX0, dstX1, dstY0, dstY1, mask, filter);
     }
 
     @Override
     public void glGetTextureImage(int texture, int level, int format, int type, int bufferSize, ByteBuffer pixels) {
         GL45.glGetTextureImage(texture, level, format, type, bufferSize, pixels);
+        assert GL11.glGetError() == GL11.GL_NO_ERROR : String.format("glGetTextureImage(%d, %d, %d, %d, %d, %d) failed!", texture, level, format, type, bufferSize, pixels);
     }
 
     private static class Holder {

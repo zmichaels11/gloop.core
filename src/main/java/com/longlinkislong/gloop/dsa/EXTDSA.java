@@ -5,7 +5,6 @@
  */
 package com.longlinkislong.gloop.dsa;
 
-import com.longlinkislong.gloop.GLErrorType;
 import java.nio.ByteBuffer;
 import java.nio.DoubleBuffer;
 import java.nio.FloatBuffer;
@@ -246,9 +245,7 @@ public class EXTDSA implements EXTDSADriver {
     @Override
     public void glTextureImage2d(int texture, int target, int level, int internalFormat, int width, int height, int border, int format, int type, long ptr) {
         EXTDirectStateAccess.glTextureImage2DEXT(texture, target, level, internalFormat, width, height, border, format, type, ptr);
-        GLErrorType.getGLError().ifPresent(err -> {
-            throw err.toGLException();
-        });
+        
         assert GL11.glGetError() == GL11.GL_NO_ERROR : String.format("glTextureImage2DEXT(%d, %d, %d, %d, %d, %d, %d, %d, %d, %d) failed!", texture, target, level, internalFormat, width, height, format, border, type, ptr);
     }
 

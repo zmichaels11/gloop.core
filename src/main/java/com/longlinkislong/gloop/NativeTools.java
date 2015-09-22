@@ -55,6 +55,12 @@ public final class NativeTools {
                 ARCHITECTURE = Architecture.UNSUPPORTED;
                 break;
         }
+        
+        if(DEBUG) {
+            final String jvm = System.getProperty("java.version");
+            
+            System.out.printf("[NativeTools]: OS=%s architecture=%s JVM=%s\n", OPERATING_SYSTEM, ARCHITECTURE, jvm);
+        }
     }
 
     private static final class Holder {
@@ -347,7 +353,7 @@ public final class NativeTools {
         final Path tempRoot;
 
         if (DEBUG) {
-            System.out.printf("Loading natives: %s, %s\n", libLWJGL, libOpenAL);
+            System.out.printf("[NativeTools]: Loading natives: %s, %s\n", libLWJGL, libOpenAL);
         }
 
         try {

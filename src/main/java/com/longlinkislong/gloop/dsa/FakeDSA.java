@@ -913,20 +913,32 @@ public class FakeDSA implements EXTDSADriver {
         
         if(cap.OpenGL30) {
             final int prevReadFB = GL11.glGetInteger(GL30.GL_READ_FRAMEBUFFER_BINDING);
+            assert GL11.glGetError() == GL11.GL_NO_ERROR : String.format("glGetInteger(GL_READ_FRAMEBUFFER_BINDING) = %d failed!", prevReadFB);
             final int prevDrawFB = GL11.glGetInteger(GL30.GL_DRAW_FRAMEBUFFER_BINDING);
             
             GL30.glBlitFramebuffer(srcX0, srcY0, srcX1, srcY1, dstX0, dstY0, dstX1, dstY1, mask, filter);
+            assert GL11.glGetError() == GL11.GL_NO_ERROR : String.format("glBlitFramebuffer(%d, %d, %d, %d, %d, %d, %d, %d, %d, %d) failed!", srcX0, srcY0, srcX1, srcY1, dstX0, dstY0, dstX1, dstY1, mask, filter);
             
             GL30.glBindFramebuffer(GL30.GL_DRAW_FRAMEBUFFER, prevDrawFB);
+            assert GL11.glGetError() == GL11.GL_NO_ERROR : String.format("glBindFramebuffer(GL_DRAW_FRAMEBUFFER, %d) failed!", prevDrawFB);
+            
             GL30.glBindFramebuffer(GL30.GL_READ_FRAMEBUFFER, prevReadFB);
+            assert GL11.glGetError() == GL11.GL_NO_ERROR : String.format("glBindFramebuffer(GL_READ_FRAMEBUFFER, %d) failed!", prevReadFB);
         } else if(cap.GL_ARB_framebuffer_object) {
             final int prevReadFB = GL11.glGetInteger(ARBFramebufferObject.GL_READ_FRAMEBUFFER_BINDING);
+            assert GL11.glGetError() == GL11.GL_NO_ERROR : String.format("glGetInteger(GL_READ_FRAMEBUFFER_BINDING) = %d failed!", prevReadFB);
+            
             final int prevDrawFB = GL11.glGetInteger(ARBFramebufferObject.GL_DRAW_FRAMEBUFFER_BINDING);
+            assert GL11.glGetError() == GL11.GL_NO_ERROR : String.format("glGetInteger(GL_DRAW_FRAMEBUFFER_BINDING) = %d failed!", prevDrawFB);
         
             ARBFramebufferObject.glBlitFramebuffer(srcX0, srcY0, srcX1, srcY1, dstX0, dstY0, dstX1, dstY1, mask, filter);
+            assert GL11.glGetError() == GL11.GL_NO_ERROR : String.format("glBlitFramebuffer(%d, %d, %d, %d, %d, %d, %d, %d, %d, %d) failed!", srcX0, srcY0, srcX1, srcY1, dstX0, dstY0, dstX1, dstY1, mask, filter);
             
             ARBFramebufferObject.glBindFramebuffer(ARBFramebufferObject.GL_DRAW_FRAMEBUFFER, prevDrawFB);
+            assert GL11.glGetError() == GL11.GL_NO_ERROR : String.format("glBindFramebuffer(GL_DRAW_FRAMEBUFFER, %d) failed!", prevDrawFB);
+            
             ARBFramebufferObject.glBindFramebuffer(ARBFramebufferObject.GL_READ_FRAMEBUFFER, prevReadFB);
+            assert GL11.glGetError() == GL11.GL_NO_ERROR : String.format("glBindFramebuffer(GL_READ_FRAMEBUFFER, %d) failed!", prevReadFB);
         } else {
             throw new UnsupportedOperationException("glBlitFramebuffer requires either an OpenGL3.0 context or ARB_framebuffer_object!");
         }
@@ -935,10 +947,16 @@ public class FakeDSA implements EXTDSADriver {
     @Override
     public void glNamedBufferReadPixels(int bufferId, int x, int y, int width, int height, int format, int type, long ptr) {
         final int prevPixBuffer = GL11.glGetInteger(GL21.GL_PIXEL_PACK_BUFFER_BINDING);
+        assert GL11.glGetError() == GL11.GL_NO_ERROR : String.format("glGetInteger(GL_PIXEL_PACK_BUFFER) = %d failed!", prevPixBuffer);
 
         GL15.glBindBuffer(GL21.GL_PIXEL_PACK_BUFFER, bufferId);
+        assert GL11.glGetError() == GL11.GL_NO_ERROR : String.format("glBindBuffer(GL_PIXEL_PACK_BUFFER, %d) failed!", bufferId);
+        
         GL11.glReadPixels(x, y, width, height, format, type, ptr);
+        assert GL11.glGetError() == GL11.GL_NO_ERROR : String.format("glReadPixels(%d, %d, %d, %d, %d, %d, %d) failed!", x, y, width, height, format, type, ptr);
+        
         GL15.glBindBuffer(GL21.GL_PIXEL_PACK_BUFFER, prevPixBuffer);
+        assert GL11.glGetError() == GL11.GL_NO_ERROR : String.format("glBindBuffer(GL_PIXEL_PACK_BUFFER, %d) failed!", prevPixBuffer);
     }
     
     @Override
@@ -946,7 +964,11 @@ public class FakeDSA implements EXTDSADriver {
         this.saveTexture(target);
         
         GL11.glBindTexture(target, texture);
+        assert GL11.glGetError() == GL11.GL_NO_ERROR : String.format("glBindTexture(%d, %d) failed!", target, texture);
+        
         GL11.glGetTexImage(target, level, format, type, pixels);        
+        assert GL11.glGetError() == GL11.GL_NO_ERROR : String.format("glGetTexImage(%d, %d, %d, %d, [data]) failed!", target, level, format, type);
+        
         this.restoreTexture(target);
     }
 
