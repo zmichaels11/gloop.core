@@ -5,7 +5,7 @@
  */
 package com.longlinkislong.gloop;
 
-import java.util.Arrays;
+import java.util.Optional;
 
 /**
  * The data type supported for index element buffer data.
@@ -49,12 +49,18 @@ public enum GLIndexElementType {
      * @return the GLIndexElementType or null.
      * @since 15.05.27
      */
+    @Deprecated
     public static GLIndexElementType valueOf(final int value) {
-        return Arrays.stream(values())
-                .filter(f -> f.value == value)
-                .findAny()
-                .orElseThrow(() -> {
-                    return new GLException.InvalidGLEnumException("Invalid GLenum: " + value);
-                });
+        return of(value).get();
+    }
+    
+    public static Optional<GLIndexElementType> of(final int glEnum) {
+        for(GLIndexElementType type : values()) {
+            if(type.value == glEnum) {
+                return Optional.of(type);
+            }
+        }
+        
+        return Optional.empty();
     }
 }

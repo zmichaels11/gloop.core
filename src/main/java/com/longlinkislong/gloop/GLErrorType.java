@@ -5,9 +5,7 @@
  */
 package com.longlinkislong.gloop;
 
-import java.util.Arrays;
 import java.util.Optional;
-import org.lwjgl.opengl.GL11;
 
 /**
  *
@@ -38,16 +36,18 @@ public enum GLErrorType {
         return new GLException(this.name() + ": " + this.msg, cause);
     }
     
+    @Deprecated
     public static GLErrorType valueOf(final int value) {
-        return Arrays.stream(values())
-                .filter(f->value == value)
-                .findAny()
-                .orElseThrow(()->{
-                    return new GLException.InvalidGLEnumException("Invalid GLenum: " + value);
-                });
+        return of(value).get();
     }
     
-    public static Optional<GLErrorType> getGLError() {
-        return Optional.ofNullable(valueOf(GL11.glGetError()));
+    public static Optional<GLErrorType> of(final int glError) {
+        for(GLErrorType type : values()) {
+            if(type.value == glError) {
+                return Optional.of(type);
+            }
+        }
+        
+        return Optional.empty();
     }
 }

@@ -5,6 +5,8 @@
  */
 package com.longlinkislong.gloop;
 
+import java.util.Optional;
+
 /**
  *
  * @author zmichaels
@@ -103,6 +105,7 @@ public enum GLTextureInternalFormat {
         this.value = value;        
     }
     
+    @Deprecated
     public static GLTextureInternalFormat valueOf(int glEnum) {
         for(GLTextureInternalFormat fmt : values()) {
             if(fmt.value == glEnum) {
@@ -110,5 +113,15 @@ public enum GLTextureInternalFormat {
             }
         }        
         return null;
+    }
+    
+    public static Optional<GLTextureInternalFormat> of(int glEnum) {
+        for(GLTextureInternalFormat fmt : values()) {
+            if(fmt.value == glEnum) {
+                return Optional.of(fmt);
+            }
+        }
+        
+        return Optional.empty();
     }
 }

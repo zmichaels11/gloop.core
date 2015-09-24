@@ -5,7 +5,7 @@
  */
 package com.longlinkislong.gloop;
 
-import java.util.Arrays;
+import java.util.Optional;
 
 /**
  * Different types of clear operations.
@@ -35,12 +35,18 @@ public enum GLFramebufferMode {
         this.value = value;
     }      
     
+    @Deprecated
     public static GLFramebufferMode valueOf(final int value) {
-        return Arrays.stream(values())
-                .filter(f -> f.value == value)
-                .findAny()
-                .orElseThrow(()->{
-                    return new GLException.InvalidGLEnumException("Invalid GLenum: " + value);
-                });
+        return of(value).get();
+    }
+    
+    public static Optional<GLFramebufferMode> of(final int glEnum) {
+        for(GLFramebufferMode mode : values()) {
+            if(mode.value == glEnum) {
+                return Optional.of(mode);
+            }
+        }
+        
+        return Optional.empty();
     }
 }

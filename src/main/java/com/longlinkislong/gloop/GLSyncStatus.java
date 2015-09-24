@@ -5,6 +5,8 @@
  */
 package com.longlinkislong.gloop;
 
+import java.util.Optional;
+
 /**
  * The result of a SyncStatus task.
  *
@@ -39,13 +41,18 @@ public enum GLSyncStatus {
      * @return the associated GLSyncStatus if applicable.
      * @since 15.07.06
      */
+    @Deprecated
     public static GLSyncStatus valueOf(final int glEnum) {
+        return of(glEnum).get();
+    }
+    
+    public static Optional<GLSyncStatus> of(final int glEnum) {
         for (GLSyncStatus status : values()) {
             if (status.value == glEnum) {
-                return status;
+                return Optional.of(status);
             }
         }
-
-        return null;
+        
+        return Optional.empty();
     }
 }

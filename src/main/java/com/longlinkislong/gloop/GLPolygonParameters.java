@@ -5,6 +5,8 @@
  */
 package com.longlinkislong.gloop;
 
+import static com.longlinkislong.gloop.GLAsserts.checkGLError;
+import static com.longlinkislong.gloop.GLAsserts.glErrorMsg;
 import java.util.Objects;
 import org.lwjgl.opengl.GL11;
 
@@ -160,42 +162,33 @@ public class GLPolygonParameters extends GLObject {
             thread.currentPolygonParameters = GLPolygonParameters.this.withGLThread(thread);
 
             GL11.glPointSize(GLPolygonParameters.this.pointSize);
-
-            assert GL11.glGetError() == GL11.GL_NO_ERROR : String.format("glPointSize(%f) failed!", GLPolygonParameters.this.pointSize);
-
+            assert checkGLError() : glErrorMsg("glPointSize(F)", GLPolygonParameters.this.pointSize);
+            
             GL11.glLineWidth(GLPolygonParameters.this.lineSize);
-
-            assert GL11.glGetError() == GL11.GL_NO_ERROR : String.format("glLineWidth(%f) failed!", GLPolygonParameters.this.lineSize);
+            assert checkGLError() : glErrorMsg("glLineWidth(F)", GLPolygonParameters.this.lineSize);
 
             GL11.glFrontFace(GLPolygonParameters.this.frontFace.value);
-
-            assert GL11.glGetError() == GL11.GL_NO_ERROR : String.format("glFrontFace(%s) failed!", GLPolygonParameters.this.frontFace);
+            assert checkGLError() : glErrorMsg("glFrontFace(I)", GLPolygonParameters.this.frontFace);
 
             switch (GLPolygonParameters.this.cullEnabled) {
                 case GL_ENABLED:
                     GL11.glEnable(GL11.GL_CULL_FACE);
-
-                    assert GL11.glGetError() == GL11.GL_NO_ERROR : "glEnable(GL_CULL_FACE) failed!";
+                    assert checkGLError() : glErrorMsg("glEnable(I)", "GL_CULL_FACE");
 
                     GL11.glCullFace(GLPolygonParameters.this.cullMode.value);
-
-                    assert GL11.glGetError() == GL11.GL_NO_ERROR : String.format("glCullFace(%s) failed!", GLPolygonParameters.this.cullMode);
+                    assert checkGLError() : glErrorMsg("glCullFace(I)", GLPolygonParameters.this.cullMode);
+                    
                     break;
                 case GL_DISABLED:
                     GL11.glDisable(GL11.GL_CULL_FACE);
-
-                    assert GL11.glGetError() == GL11.GL_NO_ERROR : "glDisable(GL_CULL_FACE) failed!";
+                    assert checkGLError() : glErrorMsg("glDisable(I)", "GL_CULL_FACE");
             }
 
             GL11.glPolygonMode(GL11.GL_FRONT_AND_BACK, GLPolygonParameters.this.mode.value);
+            assert checkGLError() : glErrorMsg("glPolygonMode(II)", "GL_FRONT_AND_BACK", GLPolygonParameters.this.mode);
 
-            assert GL11.glGetError() == GL11.GL_NO_ERROR : String.format("glPolygonMode(GL_FRONT_AND_BACK, %s) failed!", GLPolygonParameters.this.mode);            
-
-            GL11.glPolygonOffset(
-                    GLPolygonParameters.this.polygonOffsetFactor,
-                    GLPolygonParameters.this.polygonOffsetUnits);
-
-            assert GL11.glGetError() == GL11.GL_NO_ERROR : String.format("glPolygonOffset(%f, %f) failed!", GLPolygonParameters.this.polygonOffsetFactor, GLPolygonParameters.this.polygonOffsetUnits);
+            GL11.glPolygonOffset(GLPolygonParameters.this.polygonOffsetFactor, GLPolygonParameters.this.polygonOffsetUnits);
+            assert checkGLError() : glErrorMsg("glPolygonOffset(FF)", GLPolygonParameters.this.polygonOffsetFactor, GLPolygonParameters.this.polygonOffsetUnits);
         }
 
     }

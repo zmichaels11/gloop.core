@@ -492,7 +492,7 @@ public class GLThread implements ExecutorService {
             this.targetFrameTime = 1.0 / targetFPS;
 
             if (DEBUG) {
-                System.out.printf("Target thread time: %.2fs\n", this.targetFrameTime);
+                System.out.printf("[GLTools]: Target thread time: %.2fs\n", this.targetFrameTime);
             }
         }
 

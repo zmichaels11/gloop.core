@@ -5,6 +5,8 @@
  */
 package com.longlinkislong.gloop;
 
+import static com.longlinkislong.gloop.GLAsserts.checkGLError;
+import static com.longlinkislong.gloop.GLAsserts.glErrorMsg;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Objects;
@@ -128,73 +130,31 @@ public class GLSampler extends GLObject {
             }
 
             GLSampler.this.samplerId = GL33.glGenSamplers();
+            assert checkGLError() : glErrorMsg("glGenSamplers(void)");
 
-            assert GL11.glGetError() == GL11.GL_NO_ERROR : String.format("glGenSamplers() = %d failed!", GLSampler.this.samplerId);
-            assert GLSampler.this.samplerId != INVALID_SAMPLER_ID : "glGenSamplers returned an invalid value.";
+            GL33.glSamplerParameteri(GL11.GL_TEXTURE_WRAP_S, GLSampler.this.samplerId, GLSampler.this.parameters.wrapS.value);
+            assert checkGLError() : glErrorMsg("glSamplerParameteri(III)", "GL_TEXTURE_WRAP_S", GLSampler.this.samplerId, GLSampler.this.parameters.wrapS);
 
-            GL33.glSamplerParameteri(
-                    GL11.GL_TEXTURE_WRAP_S,
-                    GLSampler.this.samplerId,
-                    GLSampler.this.parameters.wrapS.value);
+            GL33.glSamplerParameteri(GL11.GL_TEXTURE_WRAP_T, GLSampler.this.samplerId, GLSampler.this.parameters.wrapT.value);
+            assert checkGLError() : glErrorMsg("glSamplerParameteri(III)", "GL_TEXTURE_WRAP_T", GLSampler.this.samplerId, GLSampler.this.parameters.wrapT);
 
-            assert GL11.glGetError() == GL11.GL_NO_ERROR : String.format("glSamplerParameteri(GL_TEXTURE_WRAP_S, %d, %s) failed!",
-                    GLSampler.this.samplerId, GLSampler.this.parameters.wrapS);
+            GL33.glSamplerParameteri(GL12.GL_TEXTURE_WRAP_R, GLSampler.this.samplerId, GLSampler.this.parameters.wrapR.value);
+            assert checkGLError() : glErrorMsg("glSamplerParameteri(III)", "GL_TEXTURE_WRAP_R", GLSampler.this.samplerId, GLSampler.this.parameters.wrapR);
 
-            GL33.glSamplerParameteri(
-                    GL11.GL_TEXTURE_WRAP_T,
-                    GLSampler.this.samplerId,
-                    GLSampler.this.parameters.wrapT.value);
+            GL33.glSamplerParameterf(GL12.GL_TEXTURE_MIN_LOD, GLSampler.this.samplerId, GLSampler.this.parameters.minLOD);
+            assert checkGLError() : glErrorMsg("glSamplerParameterf(IIF)", "GL_TEXTURE_MIN_LOD", GLSampler.this.samplerId, GLSampler.this.parameters.minLOD);
 
-            assert GL11.glGetError() == GL11.GL_NO_ERROR : String.format("glSamplerParameteri(GL_TEXTURE_WRAP_T, %d, %s) failed!",
-                    GLSampler.this.samplerId, GLSampler.this.parameters.wrapT);
+            GL33.glSamplerParameterf(GL12.GL_TEXTURE_MAX_LOD, GLSampler.this.samplerId, GLSampler.this.parameters.maxLOD);
+            assert checkGLError() : glErrorMsg("glSamplerParameterf(IIF)", "GL_TEXTURE_MAX_LOD", GLSampler.this.samplerId, GLSampler.this.parameters.maxLOD);
 
-            GL33.glSamplerParameteri(
-                    GL12.GL_TEXTURE_WRAP_R,
-                    GLSampler.this.samplerId,
-                    GLSampler.this.parameters.wrapR.value);
+            GL33.glSamplerParameteri(GL11.GL_TEXTURE_MIN_FILTER, GLSampler.this.samplerId, GLSampler.this.parameters.minFilter.value);
+            assert checkGLError() : glErrorMsg("glSamplerParameteri(III)", "GL_TEXTURE_MIN_FILTER", GLSampler.this.samplerId, GLSampler.this.parameters.minFilter);
 
-            assert GL11.glGetError() == GL11.GL_NO_ERROR : String.format("glSamplerParameteri(GL_TEXTURE_WRAP_R, %d, %s) failed!",
-                    GLSampler.this.samplerId, GLSampler.this.parameters.wrapR);
+            GL33.glSamplerParameteri(GL11.GL_TEXTURE_MAG_FILTER, GLSampler.this.samplerId, GLSampler.this.parameters.magFilter.value);
+            assert checkGLError() : glErrorMsg("glSamplerParameteri(III)", "GL_TEXTURE_MAG_FILTER", GLSampler.this.samplerId, GLSampler.this.parameters.magFilter);
 
-            GL33.glSamplerParameterf(
-                    GL12.GL_TEXTURE_MIN_LOD,
-                    GLSampler.this.samplerId,
-                    GLSampler.this.parameters.minLOD);
-
-            assert GL11.glGetError() == GL11.GL_NO_ERROR : String.format("glSamplerParameterf(GL_TEXTURE_MIN_LOD, %d, %f) failed!",
-                    GLSampler.this.samplerId, GLSampler.this.parameters.minLOD);
-
-            GL33.glSamplerParameterf(
-                    GL12.GL_TEXTURE_MAX_LOD,
-                    GLSampler.this.samplerId,
-                    GLSampler.this.parameters.maxLOD);
-
-            assert GL11.glGetError() == GL11.GL_NO_ERROR : String.format("glSamplerParamterf(GL_TEXTURE_MAX_LOD, %d, %f) failed!",
-                    GLSampler.this.samplerId, GLSampler.this.parameters.maxLOD);
-
-            GL33.glSamplerParameteri(
-                    GL11.GL_TEXTURE_MIN_FILTER,
-                    GLSampler.this.samplerId,
-                    GLSampler.this.parameters.minFilter.value);
-
-            assert GL11.glGetError() == GL11.GL_NO_ERROR : String.format("glSamplerParamteri(GL_TEXTURE_MIN_FILTER, %d, %s) failed!",
-                    GLSampler.this.samplerId, GLSampler.this.parameters.minFilter);
-
-            GL33.glSamplerParameteri(
-                    GL11.GL_TEXTURE_MAG_FILTER,
-                    GLSampler.this.samplerId,
-                    GLSampler.this.parameters.magFilter.value);
-
-            assert GL11.glGetError() == GL11.GL_NO_ERROR : String.format("glSamplerParameteri(GL_TEXTURE_MAG_FILTER, %d, %s) failed!",
-                    GLSampler.this.samplerId, GLSampler.this.parameters.magFilter);
-
-            GL33.glSamplerParameterf(
-                    EXTTextureFilterAnisotropic.GL_TEXTURE_MAX_ANISOTROPY_EXT,
-                    GLSampler.this.samplerId,
-                    GLSampler.this.parameters.anisotropicLevel);
-
-            assert GL11.glGetError() == GL11.GL_NO_ERROR : String.format("glSamplerParamterf(GL_TEXTURE_MAX_ANISOTROPY_EXT, %d, %f) failed!",
-                    GLSampler.this.samplerId, GLSampler.this.parameters.anisotropicLevel);
+            GL33.glSamplerParameterf(EXTTextureFilterAnisotropic.GL_TEXTURE_MAX_ANISOTROPY_EXT, GLSampler.this.samplerId, GLSampler.this.parameters.anisotropicLevel);
+            assert checkGLError() : glErrorMsg("glSamplerParameterf(IIF)", "GL_TEXTURE_MAX_ANISOTROPY_EXT", GLSampler.this.samplerId, GLSampler.this.parameters.anisotropicLevel);
         }
     }
 
@@ -245,8 +205,7 @@ public class GLSampler extends GLObject {
             }
 
             GL33.glBindSampler(unit, GLSampler.this.samplerId);
-
-            assert GL11.glGetError() == GL11.GL_NO_ERROR : String.format("glBindSampler(%d, %d) failed!", unit, GLSampler.this.samplerId);
+            assert checkGLError() : glErrorMsg("glBindSampler(II)", unit, GLSampler.this.samplerId);
         }
     }
 
@@ -276,8 +235,7 @@ public class GLSampler extends GLObject {
             }
 
             GL33.glDeleteSamplers(GLSampler.this.samplerId);
-
-            assert GL11.glGetError() == GL11.GL_NO_ERROR : String.format("glDeleteSamplers(%d) failed!", GLSampler.this.samplerId);
+            assert checkGLError() : glErrorMsg("glDeleteSamplers(I)", GLSampler.this.samplerId);
 
             GLSampler.this.samplerId = INVALID_SAMPLER_ID;
         }

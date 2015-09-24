@@ -5,7 +5,7 @@
  */
 package com.longlinkislong.gloop;
 
-import java.util.Arrays;
+import java.util.Optional;
 
 /**
  * The comparison function used for depth comparison.
@@ -71,12 +71,18 @@ public enum GLDepthFunc {
      * exists.
      * @since 15.06.18
      */
+    @Deprecated
     public static GLDepthFunc valueOf(final int value) {
-        return Arrays.stream(values())
-                .filter(f -> f.value == value)
-                .findAny()
-                .orElseThrow(()->{
-                    return new GLException.InvalidGLEnumException("Invalid GLenum: " + value);
-                });
+        return of(value).get();
+    }
+    
+    public static Optional<GLDepthFunc> of(final int glEnum) {
+        for(GLDepthFunc func : values()) {
+            if(func.value == glEnum) {
+                return Optional.of(func);
+            }
+        }
+        
+        return Optional.empty();
     }
 }

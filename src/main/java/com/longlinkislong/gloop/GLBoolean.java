@@ -5,6 +5,8 @@
  */
 package com.longlinkislong.gloop;
 
+import java.util.Optional;
+
 /**
  * The possible values of a GLenum that represents a boolean value.
  *
@@ -39,13 +41,18 @@ public enum GLBoolean {
      * @return GL_TRUE if the value is 1.
      * @since 15.05.27
      */
+    @Deprecated
     public static GLBoolean valueOf(final int value) {
-        if(value == GL_TRUE.value) {
-            return GL_TRUE;
-        } else if(value == GL_FALSE.value) {
-            return GL_FALSE;
+        return of(value).get();
+    }
+    
+    public static Optional<GLBoolean> of(final int glEnum) {
+        if(glEnum == GL_TRUE.value) {
+            return Optional.of(GL_TRUE);
+        } else if(glEnum == GL_FALSE.value) {
+            return Optional.of(GL_FALSE);
         } else {
-            throw new GLException.InvalidGLEnumException("Invalid GLenum: " + value);
+            return Optional.empty();
         }
     }
 }

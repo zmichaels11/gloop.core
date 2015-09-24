@@ -5,7 +5,7 @@
  */
 package com.longlinkislong.gloop;
 
-import java.util.Arrays;
+import java.util.Optional;
 
 /**
  * Access settings for a mapped GLBuffer.
@@ -94,12 +94,18 @@ public enum GLBufferAccess {
      * @return the GLBufferAccess constant or null.
      * @since 15.05.27
      */
+    @Deprecated
     public static GLBufferAccess valueOf(final int value) {
-        return Arrays.stream(values())
-                .filter(f -> f.value == value)
-                .findAny()
-                .orElseThrow(() -> {
-                    return new GLException.InvalidGLEnumException("Invalid GLenum: " + value);
-                });
+        return of(value).get();
+    }
+    
+    public static Optional<GLBufferAccess> of(final int glEnum) {
+        for(GLBufferAccess access : values()) {
+            if(access.value == glEnum) {
+                return Optional.of(access);
+            }
+        }
+        
+        return Optional.empty();
     }
 }

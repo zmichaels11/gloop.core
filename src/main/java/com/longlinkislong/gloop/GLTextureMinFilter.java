@@ -5,6 +5,8 @@
  */
 package com.longlinkislong.gloop;
 
+import java.util.Optional;
+
 /**
  *
  * @author zmichaels
@@ -23,6 +25,7 @@ public enum GLTextureMinFilter {
         this.value = value;
     }
     
+    @Deprecated
     public static GLTextureMinFilter valueOf(final int value) {
         for(GLTextureMinFilter filter : values()) {
             if(filter.value == value) {
@@ -31,5 +34,15 @@ public enum GLTextureMinFilter {
         }
         
         return null;
+    }
+    
+    public static Optional<GLTextureMinFilter> of(final int glEnum) {
+        for(GLTextureMinFilter filter : values()) {
+            if(filter.value == glEnum) {
+                return Optional.of(filter);
+            }                        
+        }
+        
+        return Optional.empty();
     }
 }

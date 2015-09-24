@@ -5,6 +5,8 @@
  */
 package com.longlinkislong.gloop;
 
+import java.util.Optional;
+
 /**
  * 
  * @author zmichaels
@@ -24,13 +26,18 @@ public enum GLShaderParameterName {
         this.value = value;
     }
     
+    @Deprecated
     public static GLShaderParameterName valueOf(final int value) {
+        return of(value).get();
+    }
+    
+    public static Optional<GLShaderParameterName> of(final int glEnum) {
         for(GLShaderParameterName pName : values()) {
-            if(pName.value == value) {
-                return pName;
+            if(pName.value == glEnum) {
+                return Optional.of(pName);
             }
         }
         
-        return null;
+        return Optional.empty();
     }
 }

@@ -759,7 +759,7 @@ public class GLWindow {
         public void run() {
             if (GLFW.glfwWindowShouldClose(GLWindow.this.window) == GL_TRUE) {
                 GLWindow.this.cleanup();
-            } else {
+            } else {                
                 GLFW.glfwSwapBuffers(GLWindow.this.window);
                 GLFW.glfwPollEvents();
             }

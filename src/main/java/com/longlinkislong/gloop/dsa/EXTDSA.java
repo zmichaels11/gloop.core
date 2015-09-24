@@ -6,6 +6,7 @@
 package com.longlinkislong.gloop.dsa;
 
 import java.nio.ByteBuffer;
+import java.nio.ByteOrder;
 import java.nio.DoubleBuffer;
 import java.nio.FloatBuffer;
 import org.lwjgl.opengl.ARBBufferStorage;
@@ -21,10 +22,15 @@ import org.lwjgl.opengl.GL41;
  *
  * @author zmichaels
  */
-public class EXTDSA implements EXTDSADriver {
-
+public class EXTDSA implements EXTDSADriver {        
     @Override
     public void glGetTextureImage(int texture, int target, int level, int format, int type, int bufferSize, ByteBuffer pixels) {
+        assert texture >= 1: String.format("Invalid textureId [%d]! Must be at least 1.", texture);
+        assert level >= 0 : String.format("Invalid mipmap level [%d]! Must be at least 0.", level);
+        assert bufferSize >= 0 : String.format("Invalid buffer size [%d]! Must be at least 0.", bufferSize);
+        assert pixels.order() == ByteOrder.nativeOrder() : "ByteBuffer is not in native order!";
+        assert pixels.isDirect() : "ByteBuffer is not direct!";
+        
         EXTDirectStateAccess.glGetTextureImageEXT(texture, target, level, format, type, pixels);
     }
     
@@ -42,18 +48,29 @@ public class EXTDSA implements EXTDSADriver {
 
     @Override
     public void glNamedBufferData(int bufferId, long size, int usage) {
+        assert bufferId >= 1 : String.format("Invalid bufferId [%d]! Must be at least 1.", bufferId);
+        assert size >= 0L : String.format("Invalid size [%d]! Must be at least 0.", size);
+        
         EXTDirectStateAccess.glNamedBufferDataEXT(bufferId, size, usage);
         assert GL11.glGetError() == GL11.GL_NO_ERROR : String.format("glNamedBufferDataEXT(%d, %d, %d) failed!", bufferId, size, usage);
     }
 
     @Override
     public void glNamedBufferData(int bufferId, ByteBuffer data, int usage) {
+        assert bufferId >= 1 : String.format("Invalid bufferId [%d]! Must be at least 1.", bufferId);
+        assert data.order() == ByteOrder.nativeOrder() : "ByteBuffer must be in native order!";
+        assert data.isDirect() : "ByteBuffer must be direct!";
+        
         EXTDirectStateAccess.glNamedBufferDataEXT(bufferId, data, usage);
         assert GL11.glGetError() == GL11.GL_NO_ERROR : String.format("glNamedBufferDataEXT(%d, [data], %d) failed!", bufferId, usage);
     }
 
     @Override
     public void glNamedBufferSubData(int buffer, long offset, ByteBuffer data) {
+        assert buffer >= 1 : String.format("Invalid bufferId [%d]! Must be at least 1.", buffer);
+        assert offset >= 0L : String.format("Invalid offset [%d]! Offset must be at least 0.", offset);
+        assert data.order() == ByteOrder.nativeOrder() : "ByteBuffer must be in native order!";
+        
         EXTDirectStateAccess.glNamedBufferSubDataEXT(buffer, offset, data);
         assert GL11.glGetError() == GL11.GL_NO_ERROR : String.format("glNamedBufferSubDataEXT(%d, %d, [data]) failed!", buffer, offset);
     }

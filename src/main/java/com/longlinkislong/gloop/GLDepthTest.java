@@ -5,6 +5,8 @@
  */
 package com.longlinkislong.gloop;
 
+import static com.longlinkislong.gloop.GLAsserts.checkGLError;
+import static com.longlinkislong.gloop.GLAsserts.glErrorMsg;
 import java.util.Objects;
 import org.lwjgl.opengl.GL11;
 
@@ -124,16 +126,14 @@ public class GLDepthTest extends GLObject {
             switch (GLDepthTest.this.depthTestEnabled) {
                 case GL_ENABLED:
                     GL11.glEnable(GL11.GL_DEPTH_TEST);
-                    
-                    assert GL11.glGetError() == GL11.GL_NO_ERROR : "glEnable(GL_DEPTH_TEST) failed!";
+                    assert checkGLError() : glErrorMsg("glEnable(I)", "GL_DEPTH_TEST");                                        
                     
                     GL11.glDepthFunc(GLDepthTest.this.depthFunc.value);
-                    
-                    assert GL11.glGetError() == GL11.GL_NO_ERROR : String.format("glDepthFunc(%s) failed!", GLDepthTest.this.depthFunc);
+                    assert checkGLError() : glErrorMsg("glDepthFunc(I)", GLDepthTest.this.depthFunc);
                     break;
                 case GL_DISABLED:
                     GL11.glDisable(GL11.GL_DEPTH_TEST);
-                    assert GL11.glGetError() == GL11.GL_NO_ERROR : "glDisable(GL_DEPTH_TEST) failed!";
+                    assert checkGLError() : glErrorMsg("glDisable(I)", "GL_DEPTH_TEST");
                     break;
             }
         }

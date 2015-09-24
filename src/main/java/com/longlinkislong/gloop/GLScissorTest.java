@@ -5,6 +5,8 @@
  */
 package com.longlinkislong.gloop;
 
+import static com.longlinkislong.gloop.GLAsserts.checkGLError;
+import static com.longlinkislong.gloop.GLAsserts.glErrorMsg;
 import org.lwjgl.opengl.GL11;
 
 /**
@@ -55,14 +57,10 @@ public class GLScissorTest extends GLObject {
         @Override
         public void run() {
             GL11.glEnable(GL11.GL_SCISSOR_TEST);
+            assert checkGLError() : glErrorMsg("glEnable(I)", "GL_SCISSOR_TEST");
             
-            assert GL11.glGetError() == GL11.GL_NO_ERROR : "glEnable(GL_SCISSOR_TEST) failed!";
-            
-            GL11.glScissor(GLScissorTest.this.left, GLScissorTest.this.bottom,
-                    GLScissorTest.this.width, GLScissorTest.this.height);
-            
-            assert GL11.glGetError() == GL11.GL_NO_ERROR : String.format("glScissor(%d, %d, %d, %d) failed!",
-                    GLScissorTest.this.left, GLScissorTest.this.bottom, GLScissorTest.this.width, GLScissorTest.this.height);
+            GL11.glScissor(GLScissorTest.this.left, GLScissorTest.this.bottom, GLScissorTest.this.width, GLScissorTest.this.height);
+            assert checkGLError() : glErrorMsg("glScissor(IIII)", GLScissorTest.this.left, GLScissorTest.this.bottom, GLScissorTest.this.width, GLScissorTest.this.height);                        
         }
     }
 
@@ -77,8 +75,7 @@ public class GLScissorTest extends GLObject {
         @Override
         public void run() {
             GL11.glDisable(GL11.GL_SCISSOR_TEST);
-            
-            assert GL11.glGetError() == GL11.GL_NO_ERROR : "glDisable(GL_SCISSOR_TEST)";
+            assert checkGLError() : glErrorMsg("glDisable(I)", "GL_SCISSOR_TEST");
         }
     }
 }

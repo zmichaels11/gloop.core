@@ -5,7 +5,7 @@
  */
 package com.longlinkislong.gloop;
 
-import java.util.Arrays;
+import java.util.Optional;
 
 /**
  * Types of pixel arithmetic scale operations to perform when blending. These
@@ -119,12 +119,18 @@ public enum GLBlendFunc {
         this.value = value;
     }
 
+    @Deprecated
     public static GLBlendFunc valueOf(final int value) {
-        return Arrays.stream(values())
-                .filter(f -> f.value == value)
-                .findAny()
-                .orElseThrow(() -> {
-                    return new GLException.InvalidGLEnumException("Invalid GLenum: " + value);
-                });
+        return of(value).get();
+    }
+    
+    public static Optional<GLBlendFunc> of(final int glEnum) {
+        for(GLBlendFunc func : values()) {
+            if(func.value == glEnum) {
+                return Optional.of(func);
+            }
+        }
+        
+        return Optional.empty();
     }
 }

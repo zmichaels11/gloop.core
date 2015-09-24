@@ -5,6 +5,8 @@
  */
 package com.longlinkislong.gloop;
 
+import static com.longlinkislong.gloop.GLAsserts.checkGLError;
+import static com.longlinkislong.gloop.GLAsserts.glErrorMsg;
 import org.lwjgl.opengl.GL11;
 
 /**
@@ -97,13 +99,14 @@ public class GLMask extends GLObject {
             
             thread.currentMask = GLMask.this.withGLThread(thread);
             
-            GL11.glColorMask(
-                    GLMask.this.red,
-                    GLMask.this.green,
-                    GLMask.this.blue,
-                    GLMask.this.alpha);
+            GL11.glColorMask(GLMask.this.red, GLMask.this.green, GLMask.this.blue, GLMask.this.alpha);
+            assert checkGLError() : glErrorMsg("glColorMask(BBBB)", GLMask.this.red, GLMask.this.green, GLMask.this.blue, GLMask.this.alpha);
+            
             GL11.glDepthMask(GLMask.this.depth);
+            assert checkGLError() : glErrorMsg("glDepthMask(D)", GLMask.this.depth);
+            
             GL11.glStencilMask(GLMask.this.stencil);
+            assert checkGLError() : glErrorMsg("glStencilMask(I)", GLMask.this.stencil);
         }
     }
 }

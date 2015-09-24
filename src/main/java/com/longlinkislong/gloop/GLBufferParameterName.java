@@ -5,7 +5,7 @@
  */
 package com.longlinkislong.gloop;
 
-import java.util.Arrays;
+import java.util.Optional;
 
 /**
  * Parameter queries that can be requested
@@ -64,12 +64,18 @@ public enum GLBufferParameterName {
      * @return the GLBufferParameterName constant or null.
      * @since 15.05.27
      */
+    @Deprecated
     public static final GLBufferParameterName valueOf(final int value) {
-        return Arrays.stream(values())
-                .filter(f -> f.value == value)
-                .findAny()
-                .orElseThrow(()->{
-                    return new GLException.InvalidGLEnumException("Invalid GLenum: " + value);
-                });
+        return of(value).get();
+    }
+    
+    public static Optional<GLBufferParameterName> of(final int glEnum) {
+        for(GLBufferParameterName pName : values()) {
+            if(pName.value == glEnum) {
+                return Optional.of(pName);
+            }
+        }
+        
+        return Optional.empty();
     }
 }

@@ -5,6 +5,8 @@
  */
 package com.longlinkislong.gloop;
 
+import java.util.Optional;
+
 /**
  * Types of shader programs.
  *
@@ -63,14 +65,19 @@ public enum GLShaderType {
      * @param value the value to convert.
      * @return the GLShaderType.
      * @since 15.05.27
-     */
+     */    
+    @Deprecated
     public static GLShaderType valueOf(final int value) {
-        for (GLShaderType sType : values()) {
-            if (sType.value == value) {
-                return sType;
+        return of(value).get();
+    }
+    
+    public static Optional<GLShaderType> of(final int glEnum) {
+        for(GLShaderType type : values()) {
+            if(type.value == glEnum) {
+                return Optional.of(type);
             }
         }
-
-        return null;
+        
+        return Optional.empty();
     }
 }

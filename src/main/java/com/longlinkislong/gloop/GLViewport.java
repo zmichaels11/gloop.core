@@ -5,6 +5,8 @@
  */
 package com.longlinkislong.gloop;
 
+import static com.longlinkislong.gloop.GLAsserts.checkGLError;
+import static com.longlinkislong.gloop.GLAsserts.glErrorMsg;
 import org.lwjgl.opengl.GL11;
 
 /**
@@ -125,11 +127,9 @@ public class GLViewport extends GLObject {
             final GLThread thread = GLThread.getCurrent().orElseThrow(GLException::new);
 
             thread.currentViewport = GLViewport.this.withGLThread(thread);
-            GL11.glViewport(
-                    GLViewport.this.x, GLViewport.this.y,
-                    GLViewport.this.width, GLViewport.this.height);
-
-            assert (GL11.glGetError() == GL11.GL_NO_ERROR);
+            
+            GL11.glViewport(GLViewport.this.x, GLViewport.this.y, GLViewport.this.width, GLViewport.this.height);
+            assert checkGLError() : glErrorMsg("glViewport(IIII)", GLViewport.this.x, GLViewport.this.y, GLViewport.this.width, GLViewport.this.height);
         }
     }
 }

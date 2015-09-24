@@ -148,6 +148,7 @@ public class GLTools {
 
     /**
      * Returns the value clamped to the range [min, max].
+     *
      * @param value the value to clamp.
      * @param min the minimum value.
      * @param max the maximum value.
@@ -157,9 +158,10 @@ public class GLTools {
     public static int clamp(int value, int min, int max) {
         return Math.min(Math.max(value, min), max);
     }
-    
+
     /**
      * Returns the value clamped to the range [min, max].
+     *
      * @param value the value to clamp.
      * @param min the minimum value.
      * @param max the maximum value.
@@ -169,9 +171,10 @@ public class GLTools {
     public static long clamp(long value, long min, long max) {
         return Math.min(Math.max(value, min), max);
     }
-    
+
     /**
      * Returns the value clamped to the range [min, max].
+     *
      * @param value the value to clamp.
      * @param min the minimum value.
      * @param max the maximum value.
@@ -181,9 +184,10 @@ public class GLTools {
     public static float clamp(float value, float min, float max) {
         return Math.min(Math.max(value, min), max);
     }
-    
+
     /**
      * Returns the value clamped to the range [min, max].
+     *
      * @param value the value to clamp.
      * @param min the minimum value.
      * @param max the maximum value.
@@ -193,7 +197,7 @@ public class GLTools {
     public static double clamp(double value, double min, double max) {
         return Math.min(Math.max(value, min), max);
     }
-    
+
     /**
      * Checks if the buffer can be used for OpenGL calls. OpenGL requires that
      * the buffer is direct and native order.
@@ -1583,9 +1587,9 @@ public class GLTools {
             return 1;
         }
     }
-    
+
     private static DSADriver DSA = null;
-    private static final DSADriver[] DSA_IMPLEMENTATIONS;    
+    private static final DSADriver[] DSA_IMPLEMENTATIONS;
 
     /**
      * Retrieves the current DSADriver.
@@ -1597,18 +1601,76 @@ public class GLTools {
         if (DSA == null) {
             for (DSADriver dsaImp : DSA_IMPLEMENTATIONS) {
                 if (dsaImp.isSupported()) {
-                    DSA = dsaImp;                    
+                    DSA = dsaImp;
                     break;
                 }
             }
-            
-            if(DEBUG) {
+
+            if (DEBUG) {
                 System.out.println("[GLTools]: Using DSADriver: " + GLTools.getDSAImplement());
             }
         }
-        
+
         return DSA;
-    }       
+    }
+
+    /**
+     * Calculates an estimate on how many bytes are needed for a volume of
+     * pixels.
+     *
+     * @param type the data type. Expects [UNSIGNED]_[BYTE | SHORT | INT] |
+     * FLOAT
+     * @param format the color format. Expects type that matches GLTextureFormat
+     * @param width the width of the pixel volume. Must be at least 1.
+     * @param height the height of the pixel volume. Must be at least 1.
+     * @param depth the depth of the pixel volume. Must be at least 1.
+     * @return the estimated size of the volume. -1 will be returned on
+     * calculation error.
+     * @since 15.09.23
+     */
+    public static int pixelSize(int width, int height, int depth, int format, int type) {
+        if (width < 1 || height < 1 || depth < 1) {
+            return -1;
+        }
+
+        final Optional<GLType> glType = GLType.of(type);
+        final int tSize;
+
+        if (glType.isPresent()) {
+            switch (glType.get()) {
+                case GL_UNSIGNED_BYTE_3_3_2:
+                case GL_UNSIGNED_BYTE_2_3_3_REV:
+                    return width * height * depth * Byte.BYTES;
+                case GL_UNSIGNED_SHORT_5_6_5:
+                case GL_UNSIGNED_SHORT_5_6_5_REV:
+                case GL_UNSIGNED_SHORT_4_4_4_4:
+                case GL_UNSIGNED_SHORT_4_4_4_4_REV:
+                case GL_UNSIGNED_SHORT_5_5_5_1:
+                case GL_UNSIGNED_SHORT_1_5_5_5_REV:
+                    return width * height * depth * Short.BYTES;
+                case GL_UNSIGNED_INT_8_8_8_8:
+                case GL_UNSIGNED_INT_8_8_8_8_REV:
+                case GL_UNSIGNED_INT_10_10_10_2:
+                case GL_UNSIGNED_INT_2_10_10_10_REV:
+                    return width * height * depth * Integer.BYTES;
+                default:
+                    tSize = glType.get().width;
+            }
+        } else {
+            return -1;
+        }
+
+        final Optional<GLTextureFormat> glFormat = GLTextureFormat.of(format);
+        final int fSize;
+
+        if (glFormat.isPresent()) {
+            fSize = glFormat.get().size;
+        } else {
+            return -1;
+        }
+
+        return (width * height * depth) * fSize * tSize;
+    }
 
     /**
      * Retrieves the name of the implementation for Direct State Access that is
@@ -1623,7 +1685,7 @@ public class GLTools {
 
     private static final boolean DEBUG;
 
-    static {        
+    static {
         NativeTools.getInstance().autoLoad();
         DEBUG = Boolean.getBoolean("debug") && !System.getProperty("debug.exclude", "").contains("gltools");
 
@@ -1691,10 +1753,10 @@ public class GLTools {
                 continue;
             }
 
-            if(DEBUG) {
+            if (DEBUG) {
                 System.out.println("[GLTools]: Adding DSADriver: " + plugin);
             }
-            
+
             try {
                 final Class<?> dsaPlugin = Class.forName(plugin);
 
@@ -1712,11 +1774,11 @@ public class GLTools {
             if (blacklistedDSA.trim().isEmpty()) {
                 continue;
             }
-            
-            if(DEBUG) {
+
+            if (DEBUG) {
                 System.out.println("[GLTools]: Blacklisting DSADriver: " + blacklistedDSA);
             }
-            
+
             Optional<Class<?>> blacklistedDSADriver = Optional.empty();
 
             for (Class<?> driver : dsaDrivers) {
@@ -1741,12 +1803,11 @@ public class GLTools {
             }
         }).collect(Collectors.toList())
                 .toArray(new DSADriver[dsaDrivers.size()]);
-                
-        
+
         try {
             assert false;
         } catch (Throwable ex) {
-            if(DEBUG) {
+            if (DEBUG) {
                 System.out.println("[GLTools]: Assertions are enabled! All OpenGL calls will be checked.");
             }
         }

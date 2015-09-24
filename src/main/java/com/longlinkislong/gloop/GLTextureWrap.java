@@ -5,6 +5,8 @@
  */
 package com.longlinkislong.gloop;
 
+import java.util.Optional;
+
 /**
  *
  * @author zmichaels
@@ -29,5 +31,15 @@ public enum GLTextureWrap {
         }
         
         return null;
+    }
+    
+    public static Optional<GLTextureWrap> of(final int glEnum) {
+        for(GLTextureWrap wrap : values()) {
+            if(wrap.value == glEnum) {
+                return Optional.of(wrap);
+            }
+        }
+        
+        return Optional.empty();
     }
 }

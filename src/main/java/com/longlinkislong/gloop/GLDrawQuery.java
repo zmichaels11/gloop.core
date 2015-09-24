@@ -5,6 +5,8 @@
  */
 package com.longlinkislong.gloop;
 
+import static com.longlinkislong.gloop.GLAsserts.checkGLError;
+import static com.longlinkislong.gloop.GLAsserts.glErrorMsg;
 import java.util.Objects;
 import org.lwjgl.opengl.GL15;
 import org.lwjgl.opengl.GL30;
@@ -114,8 +116,11 @@ public class GLDrawQuery extends GLObject {
             }
 
             GL15.glBeginQuery(this.condition.value, GLDrawQuery.this.queryId);
+            assert checkGLError() : glErrorMsg("glBeginQuery(II)", this.condition, GLDrawQuery.this.queryId);
+            
             this.testDraw.run();
             GL15.glEndQuery(this.condition.value);
+            assert checkGLError() : glErrorMsg("glEndQuery(I)", this.condition);
         }
     }
 
@@ -152,8 +157,11 @@ public class GLDrawQuery extends GLObject {
             }
 
             GL30.glBeginConditionalRender(GLDrawQuery.this.queryId, this.mode.value);
+            assert checkGLError() : glErrorMsg("glBeginConditionalRender(II)", GLDrawQuery.this.queryId, this.mode);
+            
             this.fullDraw.run();
             GL30.glEndConditionalRender();
+            assert checkGLError() : glErrorMsg("glEndConditionalRender(void)");
         }
     }
 
@@ -178,6 +186,7 @@ public class GLDrawQuery extends GLObject {
             }
 
             GL15.glDeleteQueries(GLDrawQuery.this.queryId);
+            assert checkGLError() : glErrorMsg("glDeleteQueries(I)", GLDrawQuery.this.queryId);
         }
     }
 }

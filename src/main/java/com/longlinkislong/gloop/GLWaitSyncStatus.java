@@ -5,6 +5,8 @@
  */
 package com.longlinkislong.gloop;
 
+import java.util.Optional;
+
 /**
  * Return statuses for a GPU sync block.
  *
@@ -50,13 +52,18 @@ public enum GLWaitSyncStatus {
         this.value = value;
     }
     
+    @Deprecated
     public static GLWaitSyncStatus valueOf(final int glEnum) {
+        return of(glEnum).get();
+    }
+    
+    public static Optional<GLWaitSyncStatus> of(final int glEnum) {
         for(GLWaitSyncStatus status : values()) {
             if(status.value == glEnum) {
-                return status;
+                return Optional.of(status);
             }
         }
         
-        return null;
+        return Optional.empty();
     }
 }

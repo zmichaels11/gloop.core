@@ -5,7 +5,7 @@
  */
 package com.longlinkislong.gloop;
 
-import java.util.Arrays;
+import java.util.Optional;
 
 /**
  * Settings for OpenGL polygon cull mode.
@@ -40,12 +40,18 @@ public enum GLCullMode {
      * @return the GLCullMode constant or null if no matching constant exists.
      * @since 15.06.18
      */
+    @Deprecated
     public static GLCullMode valueOf(final int value) {
-        return Arrays.stream(values())
-                .filter(f -> f.value == value)
-                .findAny()
-                .orElseThrow(() -> {
-                    return new GLException.InvalidGLEnumException("Invalid GLenum: " + value);
-                });
+        return of(value).get();
+    }
+    
+    public static Optional<GLCullMode> of(final int glEnum) {
+        for(GLCullMode mode : values()) {
+            if(mode.value == glEnum) {
+                return Optional.of(mode);
+            }
+        }
+        
+        return Optional.empty();
     }
 }

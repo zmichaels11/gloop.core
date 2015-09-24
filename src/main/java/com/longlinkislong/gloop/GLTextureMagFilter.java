@@ -5,6 +5,8 @@
  */
 package com.longlinkislong.gloop;
 
+import java.util.Optional;
+
 /**
  *
  * @author zmichaels
@@ -20,13 +22,18 @@ public enum GLTextureMagFilter {
         this.value = value;
     }
 
+    @Deprecated
     public static GLTextureMagFilter valueOf(final int value) {
+        return of(value).get();
+    }
+    
+    public static Optional<GLTextureMagFilter> of(final int glEnum) {
         for (GLTextureMagFilter filter : values()) {
-            if (filter.value == value) {
-                return filter;
+            if (filter.value == glEnum) {
+                return Optional.of(filter);
             }
         }
-
-        return null;
+        
+        return Optional.empty();
     }
 }

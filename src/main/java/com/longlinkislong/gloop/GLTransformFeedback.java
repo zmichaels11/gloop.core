@@ -5,6 +5,8 @@
  */
 package com.longlinkislong.gloop;
 
+import static com.longlinkislong.gloop.GLAsserts.checkGLError;
+import static com.longlinkislong.gloop.GLAsserts.glErrorMsg;
 import java.util.Objects;
 import org.lwjgl.opengl.GL11;
 import org.lwjgl.opengl.GL30;
@@ -64,6 +66,7 @@ public class GLTransformFeedback extends GLObject {
             }
 
             GL40.glDeleteTransformFeedbacks(GLTransformFeedback.this.tfbId);
+            assert checkGLError() : glErrorMsg("glDeleteTransformFeedbacks(I)", GLTransformFeedback.this.tfbId);
         }
     }    
     
@@ -80,14 +83,21 @@ public class GLTransformFeedback extends GLObject {
         
         @Override
         public void run() {
-            GL40.glBindTransformFeedback(
-                    GL40.GL_TRANSFORM_FEEDBACK,
-                    GLTransformFeedback.this.tfbId);
+            GL40.glBindTransformFeedback(GL40.GL_TRANSFORM_FEEDBACK, GLTransformFeedback.this.tfbId);
+            assert checkGLError() : glErrorMsg("glBindTransformFeedback(II)", "GL_TRANSFORM_FEEDBACK", GLTransformFeedback.this.tfbId);
+            
             GL11.glEnable(GL30.GL_RASTERIZER_DISCARD);
+            assert checkGLError() : glErrorMsg("glEnable(I)", "GL_RASTERIZER_DISCARD");
+            
             GL30.glBeginTransformFeedback(this.drawMode.value);            
+            assert checkGLError() : glErrorMsg("glBeginTransformFeedback(I)", this.drawMode);
+            
             drawTask.run();
             GL30.glEndTransformFeedback();
+            assert checkGLError() : glErrorMsg("glEndTransformFeedback(void)");
+            
             GL11.glDisable(GL30.GL_RASTERIZER_DISCARD);
+            assert checkGLError() : glErrorMsg("glDisable(I)", "GL_RASTERIZER_DISCARD");
         }
     }
 
@@ -107,16 +117,14 @@ public class GLTransformFeedback extends GLObject {
                 throw new GLException("Invalid GLFramebuffer!");
             }
 
-            GL40.glBindTransformFeedback(
-                    GL40.GL_TRANSFORM_FEEDBACK,
-                    GLTransformFeedback.this.tfbId);
-            GL30.glBindBufferBase(
-                    GL30.GL_TRANSFORM_FEEDBACK_BUFFER,
-                    this.index,
-                    this.buffer.bufferId);
-            GL40.glBindTransformFeedback(
-                    GL40.GL_TRANSFORM_FEEDBACK,
-                    0);
+            GL40.glBindTransformFeedback(GL40.GL_TRANSFORM_FEEDBACK, GLTransformFeedback.this.tfbId);
+            assert checkGLError() : glErrorMsg("glBindTransformFeedback(II)", "GL_TRANSFORM_FEEDBACK", GLTransformFeedback.this.tfbId);
+            
+            GL30.glBindBufferBase(GL30.GL_TRANSFORM_FEEDBACK_BUFFER, this.index, this.buffer.bufferId);
+            assert checkGLError() : glErrorMsg("glBindBufferBase(III)", "GL_TRANSFORM_FEEDBACK_BUFFER", this.index, this.buffer.bufferId);
+            
+            GL40.glBindTransformFeedback(GL40.GL_TRANSFORM_FEEDBACK, 0);
+            assert checkGLError() : glErrorMsg("glBindTransformFeedback(II)", "GL_TRANSFORM_FEEDBACK", 0);
         }
     }
 }

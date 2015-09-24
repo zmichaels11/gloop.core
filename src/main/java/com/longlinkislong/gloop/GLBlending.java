@@ -5,6 +5,8 @@
  */
 package com.longlinkislong.gloop;
 
+import static com.longlinkislong.gloop.GLAsserts.checkGLError;
+import static com.longlinkislong.gloop.GLAsserts.glErrorMsg;
 import java.util.Objects;
 import org.lwjgl.opengl.GL11;
 import org.lwjgl.opengl.GL14;
@@ -290,32 +292,18 @@ public class GLBlending extends GLObject {
             switch (GLBlending.this.enabled) {
                 case GL_ENABLED:
                     GL11.glEnable(GL11.GL_BLEND);
+                    assert checkGLError() : glErrorMsg("glEnable(I)", "GL_BLEND");
 
-                    assert GL11.glGetError() == GL11.GL_NO_ERROR : "glEnable(GL_BLEND) failed!";
+                    GL20.glBlendEquationSeparate(GLBlending.this.rgbBlend.value, GLBlending.this.alphaBlend.value);
+                    assert checkGLError() : glErrorMsg("glBlendEquationSeparate(II)", GLBlending.this.rgbBlend, GLBlending.this.alphaBlend);
 
-                    GL20.glBlendEquationSeparate(
-                            GLBlending.this.rgbBlend.value,
-                            GLBlending.this.alphaBlend.value);
+                    GL14.glBlendFuncSeparate(GLBlending.this.rgbFuncSrc.value, GLBlending.this.rgbFuncDst.value, GLBlending.this.alphaFuncSrc.value, GLBlending.this.alphaFuncDst.value);
+                    assert checkGLError() : glErrorMsg("glBlendFuncSeparate(IIII)", GLBlending.this.rgbFuncSrc, GLBlending.this.rgbFuncDst, GLBlending.this.alphaFuncSrc, GLBlending.this.alphaFuncDst);
 
-                    assert GL11.glGetError() == GL11.GL_NO_ERROR : String.format("glBlendEquationSeparate(%s, %s) failed!",
-                            GLBlending.this.rgbBlend, GLBlending.this.alphaBlend);
-
-                    GL14.glBlendFuncSeparate(
-                            GLBlending.this.rgbFuncSrc.value,
-                            GLBlending.this.rgbFuncDst.value,
-                            GLBlending.this.alphaFuncSrc.value,
-                            GLBlending.this.alphaFuncDst.value);
-                    
-                    assert GL11.glGetError() == GL11.GL_NO_ERROR : String.format("glBlendFuncSeparate(%s, %s, %s, %s) failed!",
-                            GLBlending.this.rgbFuncSrc.value,
-                            GLBlending.this.rgbFuncDst.value,
-                            GLBlending.this.alphaFuncSrc.value,
-                            GLBlending.this.alphaFuncDst.value);
                     break;
                 case GL_DISABLED:
                     GL11.glDisable(GL11.GL_BLEND);
-                    
-                    assert GL11.glGetError() == GL11.GL_NO_ERROR : "glDisable(GL_BLEND)";
+                    assert checkGLError() : glErrorMsg("glDisable(I)", "GL_BLEND");
             }
         }
     }

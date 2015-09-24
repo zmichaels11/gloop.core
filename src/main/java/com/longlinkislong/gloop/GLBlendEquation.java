@@ -5,7 +5,7 @@
  */
 package com.longlinkislong.gloop;
 
-import java.util.Arrays;
+import java.util.Optional;
 
 /**
  * Types of blend equations.
@@ -34,12 +34,18 @@ public enum GLBlendEquation {
         this.value = value;                  
     }
     
+    @Deprecated
     public static GLBlendEquation valueOf(final int val) {
-        return Arrays.stream(values())
-                .filter(f -> f.value == val)
-                .findAny()
-                .orElseThrow(() -> {
-                    return new GLException.InvalidGLEnumException("Invalid GLenum: " + val);
-                });
+        return of(val).get();
+    }
+    
+    public static Optional<GLBlendEquation> of(final int glEnum) {
+        for(GLBlendEquation eq : values()) {
+            if(eq.value == glEnum) {
+                return Optional.of(eq);
+            }
+        }
+        
+        return Optional.empty();
     }
 }

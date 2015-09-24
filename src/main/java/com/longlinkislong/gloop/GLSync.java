@@ -5,11 +5,12 @@
  */
 package com.longlinkislong.gloop;
 
+import static com.longlinkislong.gloop.GLAsserts.checkGLError;
+import static com.longlinkislong.gloop.GLAsserts.glErrorMsg;
 import java.nio.IntBuffer;
 import org.lwjgl.opengl.ARBSync;
 import org.lwjgl.opengl.ContextCapabilities;
 import org.lwjgl.opengl.GL;
-import org.lwjgl.opengl.GL11;
 import org.lwjgl.opengl.GL32;
 
 /**
@@ -25,7 +26,7 @@ public class GLSync extends GLObject {
      * The default timeout used by GLSync. By default, DEFAULT_TIMER has the
      * value of 1ms. This constant can be overwritten with the property
      * gloop.glsync.default_timeout.
-     * 
+     *
      * @since 15.07.06
      */
     public static final long DEFAULT_TIMEOUT;
@@ -39,38 +40,42 @@ public class GLSync extends GLObject {
 
     private static final long INVALID_SYNC = -1;
     private volatile long sync = INVALID_SYNC;
-    
+
     @FunctionalInterface
     private interface FenceSync {
+
         long get(int sync, int flags);
     }
-    
+
     private static final FenceSync NULL_FENCE_SYNC = (sync, flags) -> {
         throw new IllegalStateException("glFenceSync was called before it was fetched! glFenceSync requires an instance of GLSync.InitTask to run prior to being called.");
     };
     private FenceSync glFenceSync = NULL_FENCE_SYNC;
-    
+
     @FunctionalInterface
     private interface GetSynci {
+
         int get(long sync, int pName, IntBuffer buffer);
     }
-    
+
     private static final GetSynci NULL_GET_SYNCI = (sync, pName, buffer) -> {
         throw new IllegalStateException("glGetSynci was called before it was fetched! glGetSynci requires an instance of GLSync.InitTask to run prior to being called.");
     };
     private GetSynci glGetSynci = NULL_GET_SYNCI;
-    
+
     @FunctionalInterface
     private interface DeleteSync {
+
         void call(long sync);
     }
-    
+
     private static final DeleteSync NULL_DELETE_SYNC = (sync) -> {
         throw new IllegalStateException("glDeleteSync was called before it was fetched! glDeleteSync requires an instance of GLSync.InitTask to run prior to being called.");
     };
     private DeleteSync glDeleteSync = NULL_DELETE_SYNC;
-    
+
     private interface ClientWaitSync {
+
         int call(long sync, int waitbits, long timeout);
     }
     private static final ClientWaitSync NULL_CLIENT_WAIT_SYNC = (sync, bits, timeout) -> {
@@ -97,29 +102,31 @@ public class GLSync extends GLObject {
     public GLSync() {
         this(GLThread.getDefaultInstance());
     }
-    
+
     /**
      * Initializes the GLSync object.
      */
     public final void init() {
         new InitTask().glRun(this.getThread());
     }
-    
+
     /**
      * A GLTask that initializes the GLSync object.
+     *
      * @since 15.07.09
      */
     public class InitTask extends GLTask {
+
         @Override
         public void run() {
             final ContextCapabilities cap = GL.getCapabilities();
-            
-            if(cap.OpenGL32) {                
+
+            if (cap.OpenGL32) {
                 GLSync.this.glFenceSync = GL32::glFenceSync;
                 GLSync.this.glGetSynci = GL32::glGetSynci;
                 GLSync.this.glDeleteSync = GL32::glDeleteSync;
                 GLSync.this.glClientWaitSync = GL32::glClientWaitSync;
-            } else if(cap.GL_ARB_sync) {
+            } else if (cap.GL_ARB_sync) {
                 GLSync.this.glFenceSync = ARBSync::glFenceSync;
                 GLSync.this.glGetSynci = ARBSync::glGetSynci;
                 GLSync.this.glDeleteSync = ARBSync::glDeleteSync;
@@ -174,8 +181,7 @@ public class GLSync extends GLObject {
             }
 
             GLSync.this.sync = GLSync.this.glFenceSync.get(GL32.GL_SYNC_GPU_COMMANDS_COMPLETE, 0);
-
-            assert GL11.glGetError() == GL11.GL_NO_ERROR : String.format("glFenceSync(GL_SYNC_GPU_COMMANDS_COMPLETE, 0) = %d failed!", GLSync.this.sync);
+            assert checkGLError() : glErrorMsg("glFenceSync(II)", "GL_SYNC_GPU_COMMANDS_COMPLETE", 0);
         }
     }
 
@@ -202,12 +208,9 @@ public class GLSync extends GLObject {
                 throw new GLException("GLSync object needs to be fenced prior to requesting a sync status!");
             }
             final int val = GLSync.this.glGetSynci.get(GLSync.this.sync, GL32.GL_SYNC_STATUS, null);
-            final GLSyncStatus status = GLSyncStatus.valueOf(val);
+            assert checkGLError() : glErrorMsg("glGetSynci(II*)", GLSync.this.sync, "GL_SYNC_STATUS", 0);
 
-            assert status != null : "Unknown GLSyncStatus: " + val;
-            assert GL11.glGetError() == GL11.GL_NO_ERROR : String.format("glGetSynci(%d, GL_SYNC_STATUS, NULL) failed!", GLSync.this.sync);
-
-            return status;
+            return GLSyncStatus.of(val).orElseThrow(GLException::new);
         }
     }
 
@@ -233,9 +236,8 @@ public class GLSync extends GLObject {
                 throw new GLException("GLSync object needs to be fenced prior to sending a DeleteSynctask!");
             }
 
-            GLSync.this.glDeleteSync.call(GLSync.this.sync);            
-
-            assert GL11.glGetError() == GL11.GL_NO_ERROR : String.format("glDeleteSync(%d) failed!", GLSync.this.sync);
+            GLSync.this.glDeleteSync.call(GLSync.this.sync);
+            assert checkGLError() : glErrorMsg("glDeleteSync(I)", GLSync.this.sync);
 
             GLSync.this.sync = INVALID_SYNC;
             GLSync.this.glClientWaitSync = NULL_CLIENT_WAIT_SYNC;
@@ -301,12 +303,9 @@ public class GLSync extends GLObject {
         @Override
         public GLWaitSyncStatus call() throws Exception {
             final int rVal = GLSync.this.glClientWaitSync.call(GLSync.this.sync, GL32.GL_SYNC_FLUSH_COMMANDS_BIT, this.timeout);
-            final GLWaitSyncStatus status = GLWaitSyncStatus.valueOf(rVal);
-
-            assert status != null : "Unknown GLWaitSyncStatus: " + rVal;
-            assert GL11.glGetError() == GL11.GL_NO_ERROR : String.format("glClientWaitSync(%d, GL_SYNC_FLUSH_COMMANDS_BIT, %d) failed!", GLSync.this.sync, this.timeout);
-
-            return status;
+            assert checkGLError() : glErrorMsg("glClientWaitSync(IIL)", GLSync.this.sync, "GL_SYNC_FLUSH_COMMANDS_BIT", this.timeout);
+            
+            return GLWaitSyncStatus.of(rVal).orElseThrow(GLException::new);
         }
     }
 }

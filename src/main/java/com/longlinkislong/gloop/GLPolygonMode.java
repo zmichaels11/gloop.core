@@ -5,6 +5,8 @@
  */
 package com.longlinkislong.gloop;
 
+import java.util.Optional;
+
 /**
  * The settings for drawing polygons from vertices.
  *
@@ -32,13 +34,18 @@ public enum GLPolygonMode {
         this.value = value;
     }
 
+    @Deprecated
     public static GLPolygonMode valueOf(final int value) {
-        for (GLPolygonMode mode : values()) {
-            if (mode.value == value) {
-                return mode;
+        return of(value).get();
+    }
+    
+    public static Optional<GLPolygonMode> of(final int glEnum) {
+        for(GLPolygonMode mode : values()) {
+            if(mode.value == glEnum) {
+                return Optional.of(mode);
             }
         }
-
-        return null;
+        
+        return Optional.empty();
     }
 }

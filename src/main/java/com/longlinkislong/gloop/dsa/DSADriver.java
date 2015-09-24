@@ -16,11 +16,11 @@ import java.nio.FloatBuffer;
  * @since 15.07.10
  */
 public interface DSADriver {
-
     void glGetTextureImage(int texture, int level, int format, int type, int bufferSize, ByteBuffer pixels);
-    
+
     /**
      * Checks if the current context supports this driver.
+     *
      * @return true if all features of the driver are supported.
      * @since 15.07.10
      */
@@ -31,7 +31,7 @@ public interface DSADriver {
     int glCreateTextures(int target);
 
     int glCreateFramebuffers();
-    
+
     void glNamedBufferReadPixels(int bufferId, int x, int y, int width, int height, int format, int type, long ptr);
 
     void glNamedFramebufferTexture(int framebuffer, int attachment, int texture, int level);
@@ -88,7 +88,7 @@ public interface DSADriver {
 
     void glProgramUniformMatrix3d(int programId, int location, boolean needsTranspose, DoubleBuffer data);
 
-    void glProgramUniformMatrix4d(int programId, int location, boolean needsTranspose, DoubleBuffer data);        
+    void glProgramUniformMatrix4d(int programId, int location, boolean needsTranspose, DoubleBuffer data);
 
     void glTextureParameteri(int textureId, int pName, int val);
 
@@ -111,6 +111,6 @@ public interface DSADriver {
     void glBindTextureUnit(int unit, int textureId);
 
     int glGetNamedBufferParameteri(int bufferId, int pName);
-    
+
     void glBlitNamedFramebuffer(int readFramebuffer, int drawFramebuffer, int srcX, int srcY, int srcX1, int srcY1, int dstX0, int dstY0, int dstX1, int dstY1, int mask, int filter);
 }

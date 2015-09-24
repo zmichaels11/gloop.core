@@ -5,7 +5,7 @@
  */
 package com.longlinkislong.gloop;
 
-import java.util.Arrays;
+import java.util.Optional;
 
 /**
  * Buffer usage refers to how the buffer will be used when allocated in memory.
@@ -59,12 +59,18 @@ public enum GLBufferUsage {
      * @return the GLBufferUsage constant or null.
      * @since 15.05.27
      */
+    @Deprecated
     public static GLBufferUsage valueOf(final int value) {
-        return Arrays.stream(values())
-                .filter(f -> f.value == value)
-                .findAny()
-                .orElseThrow(()->{
-                    return new GLException.InvalidGLEnumException("Invalid GLenum: " + value);
-                });
+        return of(value).get();
+    }
+    
+    public static Optional<GLBufferUsage> of(final int glEnum) {
+        for(GLBufferUsage usage : values()) {
+            if(usage.value == glEnum) {
+                return Optional.of(usage);
+            }
+        }
+        
+        return Optional.empty();
     }
 }

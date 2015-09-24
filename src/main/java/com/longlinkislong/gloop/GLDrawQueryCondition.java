@@ -5,7 +5,7 @@
  */
 package com.longlinkislong.gloop;
 
-import java.util.Arrays;
+import java.util.Optional;
 
 /**
  *
@@ -24,12 +24,18 @@ public enum GLDrawQueryCondition {
         this.value = value;
     }
     
+    @Deprecated
     public static GLDrawQueryCondition valueOf(final int value) {
-        return Arrays.stream(values())
-                .filter(f -> f.value == value)
-                .findAny()
-                .orElseThrow(()->{
-                    return new GLException.InvalidGLEnumException("Invalid GLenum: " + value);
-                });
+        return of(value).get();
+    }
+    
+    public static Optional<GLDrawQueryCondition> of(final int glEnum) {
+        for(GLDrawQueryCondition condition : values()) {
+            if(condition.value == glEnum) {
+                return Optional.of(condition);
+            }
+        }
+        
+        return Optional.empty();
     }
 }

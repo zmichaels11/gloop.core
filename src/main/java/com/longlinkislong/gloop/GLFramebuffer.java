@@ -5,8 +5,11 @@
  */
 package com.longlinkislong.gloop;
 
+import static com.longlinkislong.gloop.GLAsserts.checkGLError;
+import static com.longlinkislong.gloop.GLAsserts.glErrorMsg;
 import com.longlinkislong.gloop.dsa.DSADriver;
 import com.longlinkislong.gloop.dsa.EXTDSADriver;
+import static java.lang.Long.toHexString;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.nio.IntBuffer;
@@ -23,6 +26,7 @@ import org.lwjgl.opengl.GL15;
 import org.lwjgl.opengl.GL20;
 import org.lwjgl.opengl.GL21;
 import org.lwjgl.opengl.GL30;
+import static org.lwjgl.system.MemoryUtil.memAddress;
 
 /**
  * An OpenGL object that represents a framebuffer.
@@ -125,72 +129,62 @@ public class GLFramebuffer extends GLObject {
      *
      * @since 15.07.20
      */
-    public class IsCompleteQuery extends GLQuery<Boolean> {
-
-        private GLThread thread;
-
+    public class IsCompleteQuery extends GLQuery<Boolean> {        
         @Override
-        public Boolean call() throws Exception {
-            this.thread = GLThread.getCurrent().orElseThrow(GLException::new);
-
+        public Boolean call() throws Exception {            
             final ContextCapabilities cap = GL.getCapabilities();
 
             if (cap.OpenGL30) {
                 final int currentFB = GL11.glGetInteger(GL30.GL_FRAMEBUFFER_BINDING);
+                assert checkGLError() : glErrorMsg("glGetInteger(I)", "GL_FRAMEBUFFER_BINDING");
 
                 GL30.glBindFramebuffer(GL30.GL_FRAMEBUFFER, GLFramebuffer.this.framebufferId);
+                assert checkGLError() : glErrorMsg("glBindFramebuffer(II)", "GL_FRAMEBUFFER", GLFramebuffer.this.framebufferId);
 
                 final int complete = GL30.glCheckFramebufferStatus(GL30.GL_FRAMEBUFFER);
+                assert checkGLError() : glErrorMsg("glCheckFramebufferStatus(I)", "GL_FRAMEBUFFER");
                 final boolean res = complete == GL30.GL_FRAMEBUFFER_COMPLETE;
 
                 GL30.glBindFramebuffer(GL30.GL_FRAMEBUFFER, currentFB);
-                this.thread = null;
+                assert checkGLError() : glErrorMsg("glBindFramebuffer(II)", "GL_FRAMEBUFFER", currentFB);
 
                 return res;
             } else if (cap.GL_ARB_framebuffer_object) {
                 final int currentFB = GL11.glGetInteger(ARBFramebufferObject.GL_FRAMEBUFFER_BINDING);
+                assert checkGLError() : glErrorMsg("glGetInteger(I)", "GL_FRAMEBUFFER_BINDING_ARB");
 
                 ARBFramebufferObject.glBindFramebuffer(ARBFramebufferObject.GL_FRAMEBUFFER, GLFramebuffer.this.framebufferId);
+                assert checkGLError() : glErrorMsg("glBindFramebufferARB(II)", "GL_FRAMEBUFFER", GLFramebuffer.this.framebufferId);
 
                 final int complete = ARBFramebufferObject.glCheckFramebufferStatus(ARBFramebufferObject.GL_FRAMEBUFFER);
+                assert checkGLError() : glErrorMsg("glCheckFramebufferStatusARB(I)", "GL_FRAMEBUFFER");
+                
                 final boolean res = complete == ARBFramebufferObject.GL_FRAMEBUFFER_COMPLETE;
 
                 ARBFramebufferObject.glBindFramebuffer(ARBFramebufferObject.GL_FRAMEBUFFER, currentFB);
-                this.thread = null;
+                assert checkGLError() : glErrorMsg("glBindFramebufferARB(II)", "GL_FRAMEBUFFER", currentFB);                
 
                 return res;
             } else if (cap.GL_EXT_framebuffer_object) {
                 final int currentFB = GL11.glGetInteger(EXTFramebufferObject.GL_FRAMEBUFFER_BINDING_EXT);
+                assert checkGLError() : glErrorMsg("glGetInteger(I)", "GL_FRAMEBUFFER_BINDING_EXT");
 
                 EXTFramebufferObject.glBindFramebufferEXT(EXTFramebufferObject.GL_FRAMEBUFFER_EXT, GLFramebuffer.this.framebufferId);
+                assert checkGLError() : glErrorMsg("glBindFramebufferEXT(II)", "GL_FRAMEBUFFER_EXT", GLFramebuffer.this.framebufferId);
 
                 final int complete = EXTFramebufferObject.glCheckFramebufferStatusEXT(EXTFramebufferObject.GL_FRAMEBUFFER_EXT);
+                assert checkGLError() : glErrorMsg("glCheckFramebufferStatusEXT(I)", "GL_FRAMEBUFFER_EXT");
+                
                 final boolean res = complete == EXTFramebufferObject.GL_FRAMEBUFFER_COMPLETE_EXT;
 
                 EXTFramebufferObject.glBindFramebufferEXT(EXTFramebufferObject.GL_FRAMEBUFFER_EXT, currentFB);
-                this.thread = null;
+                assert checkGLError() : glErrorMsg("glBindFramebufferEXT(II)", "GL_FRAMEBUFFER_EXT", currentFB);                
 
                 return res;
             } else {
                 throw new UnsupportedOperationException("GLFramebuffer requires either an OpenGL3.0 context, arb_framebuffer_object, or ext_framebuffer_object.");
             }
-        }
-
-        @Override
-        protected Boolean handleInterruption() {
-            if (this.thread == null) {
-                // dont do anything if the task is done.
-                return false;
-            } else if (GLThread.getCurrent().get() != this.thread) {
-                // dont do anything if the thread is wrong.
-                return false;
-            }
-
-            // attempt to reset the framebuffer state to the default.
-            GLFramebuffer.getDefaultFramebuffer().bind();
-
-            return false;
-        }
+        }        
     }
 
     /**
@@ -215,25 +209,31 @@ public class GLFramebuffer extends GLObject {
 
             if (cap.OpenGL30) {
                 final int currentFB = GL11.glGetInteger(GL30.GL_FRAMEBUFFER);
+                assert checkGLError() : glErrorMsg("glGetInteger(I)", "GL_FRAMEBUFFER");
 
                 this.bindTask.run();
                 this.taskToRun.run();
 
                 GL30.glBindFramebuffer(GL30.GL_FRAMEBUFFER, currentFB);
+                assert checkGLError() : glErrorMsg("glBindFramebuffer(II)", "GL_FRAMEBUFFER", currentFB);
             } else if (cap.GL_ARB_framebuffer_object) {
                 final int currentFB = GL11.glGetInteger(ARBFramebufferObject.GL_FRAMEBUFFER);
+                assert checkGLError() : glErrorMsg("glGetInteger(I)", "GL_FRAMEBUFFER_ARB");
 
                 this.bindTask.run();
                 this.taskToRun.run();
 
                 ARBFramebufferObject.glBindFramebuffer(ARBFramebufferObject.GL_FRAMEBUFFER, currentFB);
+                assert checkGLError() : glErrorMsg("glBindFramebufferARB(II)", "GL_FRAMEBUFFER_ARB", currentFB);
             } else if (cap.GL_EXT_framebuffer_object) {
                 final int currentFB = GL11.glGetInteger(EXTFramebufferObject.GL_FRAMEBUFFER_EXT);
+                assert checkGLError() : glErrorMsg("glGetIngeter(I)", "GL_FRAMEBUFFER_EXT");
 
                 this.bindTask.run();
                 this.taskToRun.run();
 
                 EXTFramebufferObject.glBindFramebufferEXT(EXTFramebufferObject.GL_FRAMEBUFFER_EXT, currentFB);
+                assert checkGLError() : glErrorMsg("GL_FRAMEBUFFER_EXT", currentFB);
             }
         }
 
@@ -413,12 +413,11 @@ public class GLFramebuffer extends GLObject {
             }
 
             GL30.glBindFramebuffer(GL30.GL_FRAMEBUFFER, GLFramebuffer.this.framebufferId);
-
-            assert GL11.glGetError() == GL11.GL_NO_ERROR : String.format("glBindFramebuffer(GL_FRAMEBUFFER, %d) failed!", GLFramebuffer.this.framebufferId);
+            assert checkGLError() : glErrorMsg("glBindFramebuffer(II)", "GL_FRAMEBUFFER", GLFramebuffer.this.framebufferId);
 
             if (this.attachments != null) {
                 GL20.glDrawBuffers(this.attachments);
-                assert GL11.glGetError() == GL11.GL_NO_ERROR : String.format("glDrawBuffers(%s) failed!", GLTools.IntBufferToString(attachments));
+                assert checkGLError() : glErrorMsg("glDrawBuffers(*)", toHexString(memAddress(this.attachments)));
             }
         }
     }
@@ -832,7 +831,7 @@ public class GLFramebuffer extends GLObject {
             this.dstY0 = dstY0;
             this.dstX1 = dstX1;
             this.dstY1 = dstY1;
-            
+
             this.bitfield = mask.stream()
                     .map(m -> m.value)
                     .reduce(0, (prev, current) -> prev | current);
@@ -959,43 +958,46 @@ public class GLFramebuffer extends GLObject {
         @Override
         public void run() {
             final int currentFb = GL11.glGetInteger(GL30.GL_FRAMEBUFFER_BINDING);
+            assert checkGLError() : glErrorMsg("glGetInteger(I)", "GL_FRAMEBUFFER_BINDING");
+            
             boolean undoFBBind = false;
 
             if (currentFb != GLFramebuffer.this.framebufferId) {
-                GL30.glBindFramebuffer(height, framebufferId);
+                GL30.glBindFramebuffer(GL30.GL_FRAMEBUFFER, framebufferId);
+                assert checkGLError() : glErrorMsg("glBindFramebuffer(II)", "GL_FRAMEBUFFER", GLFramebuffer.this.framebufferId);
                 undoFBBind = true;
             }
 
             if (this.pixels == null) {
                 final int currentPixelPackBuffer = GL11.glGetInteger(GL21.GL_PIXEL_PACK_BUFFER_BINDING);
+                assert checkGLError() : glErrorMsg("glGetInteger(I)", "GL_PIXEL_PACK_BUFFER_BINDING");
+                
                 boolean undoBufferBind = false;
 
                 if (this.pixelPackBuffer.bufferId != currentPixelPackBuffer) {
                     GL15.glBindBuffer(GL21.GL_PIXEL_PACK_BUFFER, this.pixelPackBuffer.bufferId);
+                    assert checkGLError() : glErrorMsg("glBindBuffer(II)", "GL_PIXEL_PACK_BUFFER", this.pixelPackBuffer.bufferId);
+                    
                     undoBufferBind = true;
                 }
 
                 // read into pixel pack buffer                
-                GL11.glReadPixels(this.x, this.y,
-                        this.width, this.height,
-                        this.format.value,
-                        this.type.value, 0L);
+                GL11.glReadPixels(this.x, this.y, this.width, this.height, this.format.value, this.type.value, 0L);
+                assert checkGLError() : glErrorMsg("glReadPixels(IIIIIIL)", this.x, this.y, this.width, this.height, this.format, this.type, 0L);
 
                 if (undoBufferBind) {
                     GL15.glBindBuffer(GL21.GL_PIXEL_PACK_BUFFER, this.pixelPackBuffer.bufferId);
+                    assert checkGLError() : glErrorMsg("glBindBuffer(II)", "GL_PIXEL_PACK_BUFFER", this.pixelPackBuffer.bufferId);
                 }
             } else {
                 // read into a ByteBuffer
-                GL11.glReadPixels(
-                        this.x, this.y,
-                        this.width, this.height,
-                        this.format.value,
-                        this.type.value,
-                        this.pixels);
+                GL11.glReadPixels(this.x, this.y, this.width, this.height, this.format.value, this.type.value, this.pixels);
+                assert checkGLError() : glErrorMsg("glReadPixels(IIIIII*)", this.x, this.y, this.width, this.height, this.format, this.type, toHexString(memAddress(this.pixels)));
             }
 
             if (undoFBBind) {
                 GL30.glBindFramebuffer(GL30.GL_FRAMEBUFFER, currentFb);
+                assert checkGLError() : glErrorMsg("glBindFramebuffer(II)", "GL_FRAMEBUFFER", currentFb);
             }
         }
     }

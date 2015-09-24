@@ -5,7 +5,7 @@
  */
 package com.longlinkislong.gloop;
 
-import java.util.Arrays;
+import java.util.Optional;
 
 /**
  * Draw mode specifies how the vertex data is converted into polygons.
@@ -75,12 +75,18 @@ public enum GLDrawMode {
      * @return the GLDrawMode constant or null.
      * @since 15.05.27
      */
+    @Deprecated
     public static GLDrawMode valueOf(final int value) {
-        return Arrays.stream(values())
-                .filter(f->f.value == value)
-                .findAny()
-                .orElseThrow(()->{
-                    return new GLException.InvalidGLEnumException("Invalid GLenum: " + value);
-                });
+        return of(value).get();
+    }
+    
+    public static Optional<GLDrawMode> of(final int glEnum) {
+        for(GLDrawMode mode : values()) {
+            if(mode.value == glEnum) {
+                return Optional.of(mode);
+            }
+        }
+        
+        return Optional.empty();
     }
 }

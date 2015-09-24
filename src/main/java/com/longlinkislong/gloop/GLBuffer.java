@@ -5,10 +5,11 @@
  */
 package com.longlinkislong.gloop;
 
+import static com.longlinkislong.gloop.GLAsserts.checkGLError;
+import static com.longlinkislong.gloop.GLAsserts.glErrorMsg;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.util.Objects;
-import org.lwjgl.opengl.GL11;
 import org.lwjgl.opengl.GL15;
 
 /**
@@ -167,8 +168,7 @@ public class GLBuffer extends GLObject {
         public void run() {
             if (GLBuffer.this.isValid()) {
                 GL15.glDeleteBuffers(GLBuffer.this.bufferId);
-
-                assert GL11.glGetError() == GL11.GL_NO_ERROR : String.format("glDeleteBuffers(%d) failed!", GLBuffer.this.bufferId);
+                assert checkGLError() : glErrorMsg("glDeleteBuffers(I)", GLBuffer.this.bufferId);
 
                 GLBuffer.this.bufferId = INVALID_BUFFER_ID;
             }
@@ -445,9 +445,7 @@ public class GLBuffer extends GLObject {
             if (this.writeBuffer == null) {
                 final int size = GLTools.getDSAInstance().glGetNamedBufferParameteri(GLBuffer.this.bufferId, GLBufferParameterName.GL_BUFFER_SIZE.value);
 
-                out = ByteBuffer.allocateDirect(size)
-                        .order(ByteOrder.nativeOrder());
-
+                out = ByteBuffer.allocateDirect(size).order(ByteOrder.nativeOrder());
             } else {
                 out = this.writeBuffer;
             }

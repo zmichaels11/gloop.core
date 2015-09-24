@@ -5,6 +5,8 @@
  */
 package com.longlinkislong.gloop;
 
+import static com.longlinkislong.gloop.GLAsserts.checkGLError;
+import static com.longlinkislong.gloop.GLAsserts.glErrorMsg;
 import com.longlinkislong.gloop.dsa.DSADriver;
 import com.longlinkislong.gloop.dsa.EXTDSADriver;
 import java.nio.ByteBuffer;
@@ -313,8 +315,7 @@ public class GLTexture extends GLObject {
         public void run() {
             if (GLTexture.this.isValid()) {
                 GL11.glDeleteTextures(GLTexture.this.textureId);
-
-                assert GL11.glGetError() == GL11.GL_NO_ERROR : String.format("glDeleteTextures(%d) failed!", GLTexture.this.textureId);
+                assert checkGLError() : glErrorMsg("glDeleteTextures(I)", GLTexture.this.textureId);
 
                 GLTexture.this.textureId = INVALID_TEXTURE_ID;
                 GLTexture.this.width = GLTexture.this.height = GLTexture.this.depth = 0;
@@ -1055,28 +1056,17 @@ public class GLTexture extends GLObject {
             }
 
             GL11.glBindTexture(GL11.GL_TEXTURE_2D, GLTexture.this.textureId);
-
-            assert GL11.glGetError() == GL11.GL_NO_ERROR : String.format("glBindTexture(GL_TEXTURE_2D, %d) failed!", GLTexture.this.textureId);
+            assert checkGLError() : glErrorMsg("glBindTexture(II)", "GL_TEXTURE_2D", GLTexture.this.textureId);
 
             GL15.glBindBuffer(GL21.GL_PIXEL_UNPACK_BUFFER, this.buffer.bufferId);
+            assert checkGLError() : glErrorMsg("glBindBuffer(II)", "GL_PIXEL_UNPACK_BUFFER", this.buffer.bufferId);
 
-            assert GL11.glGetError() == GL11.GL_NO_ERROR : String.format("glBindBuffer(GL_PIXEL_UNPACK_BUFFER, %d)",
-                    this.buffer.bufferId);
+            GL11.glTexSubImage2D(GL11.GL_TEXTURE_2D, this.level, this.xOffset, this.yOffset, this.width, this.height, this.format.value, this.type.value, 0);
+            assert checkGLError() : glErrorMsg("glTexSubImage2D(IIIIIIII*)", "GL_TEXTURE_2D", this.level, this.xOffset, this.yOffset, this.width, this.height, this.format, this.type, 0);
 
-            GL11.glTexSubImage2D(
-                    GL11.GL_TEXTURE_2D,
-                    this.level,
-                    this.xOffset, this.yOffset,
-                    this.width, this.height,
-                    this.format.value,
-                    this.type.value, 0);
-
-            assert GL11.glGetError() == GL11.GL_NO_ERROR : String.format("glTexSubImage2D(GL_TEXTURE_2D, %d, %d, %d, %d, %d, %s, %s, 0) failed!",
-                    this.level, this.xOffset, this.yOffset, this.width, this.height, this.format, this.type);
-
+            //TODO: this should instead restore the previous state.
             GL11.glBindTexture(GL11.GL_TEXTURE_2D, 0);
-
-            assert GL11.glGetError() == GL11.GL_NO_ERROR : "glBindTexture(GL_TEXTURE_2D, 0) failed!";
+            assert checkGLError() : glErrorMsg("glBindTexture(II)", "GL_TEXTURE_2D", 0);
         }
     }
 
@@ -1103,32 +1093,20 @@ public class GLTexture extends GLObject {
                 throw new GLException("GLBuffer is invalid!");
             }
 
-            GL11.glBindTexture(
-                    GLBufferTarget.GL_TEXTURE_BUFFER.value,
-                    GLTexture.this.textureId);
+            GL11.glBindTexture(GLBufferTarget.GL_TEXTURE_BUFFER.value, GLTexture.this.textureId);
+            assert checkGLError() : glErrorMsg("glBindTexture(II)", "GL_TEXTURE_BUFFER", GLTexture.this.textureId);
 
-            assert GL11.glGetError() == GL11.GL_NO_ERROR : String.format("glBindTexture(GL_TEXTURE_BUFFER, %d) failed!",
-                    GLTexture.this.textureId);
-
-            GL31.glTexBuffer(
-                    GLBufferTarget.GL_TEXTURE_BUFFER.value,
-                    this.internalFormat.value,
-                    this.buffer.bufferId);
-
-            assert GL11.glGetError() == GL11.GL_NO_ERROR : String.format("glTexBuffer(GL_TEXTURE_BUFFER, %s, %d) failed!",
-                    this.internalFormat, this.buffer.bufferId);
-
-            GLTexture.this.width = GL11.glGetTexLevelParameteri(
-                    GL11.GL_TEXTURE_1D, 0, GL11.GL_TEXTURE_WIDTH);
-
-            assert GL11.glGetError() == GL11.GL_NO_ERROR : String.format("glGetTexLevelParameteri(GL_TEXTURE_1D, GL_TEXTURE_NO_ERROR) = %d failed!", GLTexture.this.width);
+            GL31.glTexBuffer(GLBufferTarget.GL_TEXTURE_BUFFER.value, this.internalFormat.value, this.buffer.bufferId);
+            assert checkGLError() : glErrorMsg("glTexBuffer(III)", "GL_TEXTURE_BUFFER", this.internalFormat, this.buffer.bufferId);
+            
+            GLTexture.this.width = GL11.glGetTexLevelParameteri(GL11.GL_TEXTURE_1D, 0, GL11.GL_TEXTURE_WIDTH);
+            assert checkGLError() : glErrorMsg("glGetTexLevelParemetri(III)", "GL_TEXTURE_1D", 0, "GL_TEXTURE_WIDTH");
 
             GLTexture.this.height = GLTexture.this.depth = 1;
             GLTexture.this.target = GLTextureTarget.GL_TEXTURE_1D;
 
             GL11.glBindTexture(GLBufferTarget.GL_TEXTURE_BUFFER.value, 0);
-
-            assert GL11.glGetError() == GL11.GL_NO_ERROR : "glBindTexture(GL_TEXTURE_BUFFER, 0) failed!";
+            assert checkGLError() : glErrorMsg("glBindTexture(II)", "GL_TEXTURE_BUFFER", 0);
         }
     }
 
@@ -1270,9 +1248,7 @@ public class GLTexture extends GLObject {
             }
 
             this.maxUnits = GL11.glGetInteger(GL11.GL_MAX_TEXTURE_SIZE);
-
-            assert GL11.glGetError() == GL11.GL_NO_ERROR : String.format("glGetInteger(GL_MAX_TEXTURE_SIZE) = %d failed!", this.maxUnits);
-            assert this.maxUnits > 0;
+            assert checkGLError() : glErrorMsg("glGetInteger(I)", "GL_MAX_TEXTURE_SIZE");
 
             return this.maxUnits;
         }
@@ -1350,14 +1326,14 @@ public class GLTexture extends GLObject {
             throw new GLException("PreferredInternalFormatQuery was interrupted!");
         }
     }
-    
+
     public ByteBuffer downloadImage(final int level, final GLTextureFormat format, final GLType type) {
         return new DownloadImageQuery(level, format, type).glCall(this.getThread());
     }
-    
+
     public ByteBuffer downloadImage(final int level, final GLTextureFormat format, final GLType type, final ByteBuffer buffer) {
         return new DownloadImageQuery(level, format, type, buffer).glCall(this.getThread());
-    }       
+    }
 
     public class DownloadImageQuery extends GLQuery<ByteBuffer> {
 
@@ -1381,15 +1357,15 @@ public class GLTexture extends GLObject {
                 case GL_RED:
                 case GL_GREEN:
                 case GL_BLUE:
-                case GL_ALPHA:                
+                case GL_ALPHA:
                 case GL_DEPTH_COMPONENT:
                 case GL_STENCIL_INDEX:
                     pixelSize = 1;
-                    break;                                                    
+                    break;
                 case GL_RGB:
                 case GL_BGR:
                     pixelSize = 3;
-                    break;                
+                    break;
                 case GL_BGRA:
                 case GL_RGBA:
                     pixelSize = 4;
@@ -1401,11 +1377,11 @@ public class GLTexture extends GLObject {
 
             switch (type) {
                 case GL_UNSIGNED_BYTE:
-                case GL_BYTE:                
+                case GL_BYTE:
                     this.bufferSize = pixels * pixelSize;
                     break;
                 case GL_UNSIGNED_SHORT:
-                case GL_SHORT:                
+                case GL_SHORT:
                     this.bufferSize = pixels * pixelSize * 2;
                     break;
                 case GL_UNSIGNED_INT:
@@ -1424,7 +1400,7 @@ public class GLTexture extends GLObject {
                 case GL_UNSIGNED_SHORT_5_5_5_1:
                 case GL_UNSIGNED_SHORT_1_5_5_5_REV:
                     this.bufferSize = pixels * 2;
-                    break;                
+                    break;
                 case GL_UNSIGNED_INT_8_8_8_8:
                 case GL_UNSIGNED_INT_8_8_8_8_REV:
                 case GL_UNSIGNED_INT_10_10_10_2:
@@ -1434,9 +1410,9 @@ public class GLTexture extends GLObject {
                 default:
                     throw new GLException("Unable to infer image size! Invalid type for operation: " + type);
             }
-            
+
             this.buffer = ByteBuffer.allocateDirect(this.bufferSize).order(ByteOrder.nativeOrder());
-        }        
+        }
 
         public DownloadImageQuery(final int level, final GLTextureFormat format, final GLType type, final ByteBuffer buffer) {
             if ((this.level = level) < 0) {
@@ -1468,7 +1444,7 @@ public class GLTexture extends GLObject {
                         this.format.value, this.type.value,
                         this.bufferSize, this.buffer);
             }
-            
+
             return this.buffer; // does this need flip?
         }
 

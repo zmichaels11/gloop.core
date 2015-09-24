@@ -5,6 +5,8 @@
  */
 package com.longlinkislong.gloop;
 
+import static com.longlinkislong.gloop.GLAsserts.checkGLError;
+import static com.longlinkislong.gloop.GLAsserts.glErrorMsg;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashSet;
@@ -261,15 +263,13 @@ public class GLClear extends GLObject {
             
             thread.currentClear = GLClear.this.withGLThread(thread);            
             GL11.glClearColor(GLClear.this.red, GLClear.this.green, GLClear.this.blue, GLClear.this.alpha);
-            assert GL11.glGetError() == GL11.GL_NO_ERROR : String.format("glClear(%f, %f, %f, %f) failed!",
-                    GLClear.this.red, GLClear.this.green, GLClear.this.blue, GLClear.this.alpha);
+            assert checkGLError() : glErrorMsg("glClearColor(FFFF)", GLClear.this.red, GLClear.this.green, GLClear.this.blue, GLClear.this.alpha);            
                         
             GL11.glClearDepth(GLClear.this.depth);
-            
-            assert GL11.glGetError() == GL11.GL_NO_ERROR : String.format("glClear(%f) failed!", GLClear.this.depth);
+            assert checkGLError() : glErrorMsg("glClearDepth(D)", GLClear.this.depth);            
             
             GL11.glClear(GLClear.this.clearBitField);
-            assert GL11.glGetError() == GL11.GL_NO_ERROR : String.format("glClear(%s) failed!", GLClear.this.clearBits);
+            assert checkGLError() : glErrorMsg("glClear(I)", GLClear.this.clearBits);            
         }
 
     }

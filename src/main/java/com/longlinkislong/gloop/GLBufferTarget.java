@@ -6,7 +6,7 @@
 package com.longlinkislong.gloop;
 
 import static com.longlinkislong.gloop.GLTools.hasOpenGLVersion;
-import java.util.Arrays;
+import java.util.Optional;
 
 /**
  * Targets that a GLBuffer may be bound to. Most buffer functions do not
@@ -216,12 +216,18 @@ public enum GLBufferTarget {
      * @return the GLBufferTarget constant or null.
      * @since 15.05.27
      */
+    @Deprecated
     public static GLBufferTarget valueOf(final int value) {
-        return Arrays.stream(values())
-                .filter(f -> f.value == value)
-                .findAny()
-                .orElseThrow(()->{
-                    return new GLException.InvalidGLEnumException("Invalid GLenum: " + value);
-                });
+        return of(value).get();
+    }
+    
+    public static Optional<GLBufferTarget> of(final int glEnum) {
+        for(GLBufferTarget tgt : values()) {
+            if(tgt.value == glEnum) {
+                return Optional.of(tgt);
+            }
+        }
+        
+        return Optional.empty();
     }
 }
