@@ -5,6 +5,11 @@
  */
 package com.longlinkislong.gloop;
 
+import static com.longlinkislong.gloop.GLAsserts.NON_DIRECT_BUFFER_MSG;
+import static com.longlinkislong.gloop.GLAsserts.bufferIsNotNativeMsg;
+import static com.longlinkislong.gloop.GLAsserts.bufferTooSmallMsg;
+import static com.longlinkislong.gloop.GLAsserts.checkBufferIsNative;
+import static com.longlinkislong.gloop.GLAsserts.checkBufferSize;
 import static com.longlinkislong.gloop.GLAsserts.checkGLError;
 import static com.longlinkislong.gloop.GLAsserts.glErrorMsg;
 import com.longlinkislong.gloop.dsa.DSADriver;
@@ -129,9 +134,10 @@ public class GLFramebuffer extends GLObject {
      *
      * @since 15.07.20
      */
-    public class IsCompleteQuery extends GLQuery<Boolean> {        
+    public class IsCompleteQuery extends GLQuery<Boolean> {
+
         @Override
-        public Boolean call() throws Exception {            
+        public Boolean call() throws Exception {
             final ContextCapabilities cap = GL.getCapabilities();
 
             if (cap.OpenGL30) {
@@ -158,11 +164,11 @@ public class GLFramebuffer extends GLObject {
 
                 final int complete = ARBFramebufferObject.glCheckFramebufferStatus(ARBFramebufferObject.GL_FRAMEBUFFER);
                 assert checkGLError() : glErrorMsg("glCheckFramebufferStatusARB(I)", "GL_FRAMEBUFFER");
-                
+
                 final boolean res = complete == ARBFramebufferObject.GL_FRAMEBUFFER_COMPLETE;
 
                 ARBFramebufferObject.glBindFramebuffer(ARBFramebufferObject.GL_FRAMEBUFFER, currentFB);
-                assert checkGLError() : glErrorMsg("glBindFramebufferARB(II)", "GL_FRAMEBUFFER", currentFB);                
+                assert checkGLError() : glErrorMsg("glBindFramebufferARB(II)", "GL_FRAMEBUFFER", currentFB);
 
                 return res;
             } else if (cap.GL_EXT_framebuffer_object) {
@@ -174,17 +180,17 @@ public class GLFramebuffer extends GLObject {
 
                 final int complete = EXTFramebufferObject.glCheckFramebufferStatusEXT(EXTFramebufferObject.GL_FRAMEBUFFER_EXT);
                 assert checkGLError() : glErrorMsg("glCheckFramebufferStatusEXT(I)", "GL_FRAMEBUFFER_EXT");
-                
+
                 final boolean res = complete == EXTFramebufferObject.GL_FRAMEBUFFER_COMPLETE_EXT;
 
                 EXTFramebufferObject.glBindFramebufferEXT(EXTFramebufferObject.GL_FRAMEBUFFER_EXT, currentFB);
-                assert checkGLError() : glErrorMsg("glBindFramebufferEXT(II)", "GL_FRAMEBUFFER_EXT", currentFB);                
+                assert checkGLError() : glErrorMsg("glBindFramebufferEXT(II)", "GL_FRAMEBUFFER_EXT", currentFB);
 
                 return res;
             } else {
                 throw new UnsupportedOperationException("GLFramebuffer requires either an OpenGL3.0 context, arb_framebuffer_object, or ext_framebuffer_object.");
             }
-        }        
+        }
     }
 
     /**
@@ -945,6 +951,10 @@ public class GLFramebuffer extends GLObject {
          * @since 15.09.18
          */
         public ReadPixelsTask(final int x, final int y, final int width, final int height, final GLTextureFormat format, final GLType type, final ByteBuffer pixels) {
+            assert checkBufferIsNative(pixels) : bufferIsNotNativeMsg(pixels);
+            assert pixels.isDirect() : NON_DIRECT_BUFFER_MSG;
+            assert checkBufferSize(width, height, 1, format.value, type.value, pixels) : bufferTooSmallMsg(width, height, 1, format.value, type.value, pixels);
+
             this.x = x;
             this.y = y;
             this.width = width;
@@ -959,7 +969,7 @@ public class GLFramebuffer extends GLObject {
         public void run() {
             final int currentFb = GL11.glGetInteger(GL30.GL_FRAMEBUFFER_BINDING);
             assert checkGLError() : glErrorMsg("glGetInteger(I)", "GL_FRAMEBUFFER_BINDING");
-            
+
             boolean undoFBBind = false;
 
             if (currentFb != GLFramebuffer.this.framebufferId) {
@@ -971,13 +981,13 @@ public class GLFramebuffer extends GLObject {
             if (this.pixels == null) {
                 final int currentPixelPackBuffer = GL11.glGetInteger(GL21.GL_PIXEL_PACK_BUFFER_BINDING);
                 assert checkGLError() : glErrorMsg("glGetInteger(I)", "GL_PIXEL_PACK_BUFFER_BINDING");
-                
+
                 boolean undoBufferBind = false;
 
                 if (this.pixelPackBuffer.bufferId != currentPixelPackBuffer) {
                     GL15.glBindBuffer(GL21.GL_PIXEL_PACK_BUFFER, this.pixelPackBuffer.bufferId);
                     assert checkGLError() : glErrorMsg("glBindBuffer(II)", "GL_PIXEL_PACK_BUFFER", this.pixelPackBuffer.bufferId);
-                    
+
                     undoBufferBind = true;
                 }
 

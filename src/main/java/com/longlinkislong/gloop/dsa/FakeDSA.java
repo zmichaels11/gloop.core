@@ -5,6 +5,47 @@
  */
 package com.longlinkislong.gloop.dsa;
 
+import static com.longlinkislong.gloop.GLAsserts.NON_DIRECT_BUFFER_MSG;
+import static com.longlinkislong.gloop.GLAsserts.bufferIsNotNativeMsg;
+import static com.longlinkislong.gloop.GLAsserts.bufferTooSmallMsg;
+import static com.longlinkislong.gloop.GLAsserts.checkBufferIsNative;
+import static com.longlinkislong.gloop.GLAsserts.checkBufferSize;
+import static com.longlinkislong.gloop.GLAsserts.checkDimension;
+import static com.longlinkislong.gloop.GLAsserts.checkDouble;
+import static com.longlinkislong.gloop.GLAsserts.checkFloat;
+import static com.longlinkislong.gloop.GLAsserts.checkGLError;
+import static com.longlinkislong.gloop.GLAsserts.checkGLenum;
+import static com.longlinkislong.gloop.GLAsserts.checkId;
+import static com.longlinkislong.gloop.GLAsserts.checkMipmapLevel;
+import static com.longlinkislong.gloop.GLAsserts.checkNullableId;
+import static com.longlinkislong.gloop.GLAsserts.checkOffset;
+import static com.longlinkislong.gloop.GLAsserts.checkSize;
+import static com.longlinkislong.gloop.GLAsserts.glErrorMsg;
+import static com.longlinkislong.gloop.GLAsserts.invalidBufferIdMsg;
+import static com.longlinkislong.gloop.GLAsserts.invalidDepthMsg;
+import static com.longlinkislong.gloop.GLAsserts.invalidDoubleMsg;
+import static com.longlinkislong.gloop.GLAsserts.invalidFloatMsg;
+import static com.longlinkislong.gloop.GLAsserts.invalidFramebufferIdMsg;
+import static com.longlinkislong.gloop.GLAsserts.invalidGLenumMsg;
+import static com.longlinkislong.gloop.GLAsserts.invalidHeightMsg;
+import static com.longlinkislong.gloop.GLAsserts.invalidMipmapLevelMsg;
+import static com.longlinkislong.gloop.GLAsserts.invalidOffsetMsg;
+import static com.longlinkislong.gloop.GLAsserts.invalidProgramIdMsg;
+import static com.longlinkislong.gloop.GLAsserts.invalidSizeMsg;
+import static com.longlinkislong.gloop.GLAsserts.invalidTextureIdMsg;
+import static com.longlinkislong.gloop.GLAsserts.invalidTextureUnitMsg;
+import static com.longlinkislong.gloop.GLAsserts.invalidUniformLocationMsg;
+import static com.longlinkislong.gloop.GLAsserts.invalidWidthMsg;
+import static com.longlinkislong.gloop.GLAsserts.invalidXOffsetMsg;
+import static com.longlinkislong.gloop.GLAsserts.invalidYOffsetMsg;
+import static com.longlinkislong.gloop.GLAsserts.invalidZOffsetMsg;
+import com.longlinkislong.gloop.GLBufferParameterName;
+import com.longlinkislong.gloop.GLBufferUsage;
+import com.longlinkislong.gloop.GLTextureFormat;
+import com.longlinkislong.gloop.GLTextureInternalFormat;
+import com.longlinkislong.gloop.GLTextureTarget;
+import com.longlinkislong.gloop.GLType;
+import static java.lang.Long.toHexString;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.nio.DoubleBuffer;
@@ -25,6 +66,7 @@ import org.lwjgl.opengl.GL30;
 import org.lwjgl.opengl.GL31;
 import org.lwjgl.opengl.GL40;
 import org.lwjgl.opengl.GL44;
+import static org.lwjgl.system.MemoryUtil.memAddress;
 
 /**
  *
@@ -53,10 +95,13 @@ public class FakeDSA implements EXTDSADriver {
 
         if (cap.OpenGL30) {
             GL30.glBindFramebuffer(GL30.GL_FRAMEBUFFER, this.saveFramebuffer);
+            assert checkGLError() : glErrorMsg("glBindFramebuffer(II)", "GL_FRAMEBUFFER", this.saveFramebuffer);
         } else if (cap.GL_ARB_framebuffer_object) {
             ARBFramebufferObject.glBindFramebuffer(GL30.GL_FRAMEBUFFER, this.saveFramebuffer);
+            assert checkGLError() : glErrorMsg("glBindFramebufferARB(II)", "GL_FRAMEBUFFER", this.saveFramebuffer);
         } else if (cap.GL_EXT_framebuffer_object) {
             EXTFramebufferObject.glBindFramebufferEXT(GL30.GL_FRAMEBUFFER, this.saveFramebuffer);
+            assert checkGLError() : glErrorMsg("glBindFramebufferEXT(II)", "GL_FRAMEBUFFER", this.saveFramebuffer);
         } else {
             throw new UnsupportedOperationException("glBindFramebuffer is not supported! glBindFramebuffer requires either: an OpenGL 3.0 context, ARB_framebuffer_object, or EXT_framebuffer_object.");
         }
@@ -70,43 +115,43 @@ public class FakeDSA implements EXTDSADriver {
 
     private void restoreBuffer() {
         GL15.glBindBuffer(GL15.GL_ARRAY_BUFFER, this.saveBuffer);
-        assert GL11.glGetError() == GL11.GL_NO_ERROR : String.format("glBindBuffer(GL_ARRAY_BUFFER, %d) failed!", this.saveBuffer);
+        assert checkGLError() : glErrorMsg("glBindBuffer(II)", "GL_ARRAY_BUFFER", this.saveBuffer);
     }
 
     private int saveTex1d = 0;
 
     private void saveTexture1d() {
         this.saveTex1d = GL11.glGetInteger(GL11.GL_TEXTURE_BINDING_1D);
-        assert GL11.glGetError() == GL11.GL_NO_ERROR : String.format("glGetInteger(GL_TEXTURE_BINDING_1D) = %d failed!", this.saveTex1d);
+        assert checkGLError() : glErrorMsg("glGetInteger(I)", "GL_TEXTURE_BINDING_1D");
     }
 
     private void restoreTexture1d() {
         GL11.glBindTexture(GL11.GL_TEXTURE_1D, this.saveTex1d);
-        assert GL11.glGetError() == GL11.GL_NO_ERROR : String.format("glBindTexture(GL_TEXTURE_1D, %d) failed!", this.saveTex1d);
+        assert checkGLError() : glErrorMsg("glBindTexture(II)", "GL_TEXTURE_1D", this.saveTex1d);
     }
 
     private int saveTex2d = 0;
 
     private void saveTexture2d() {
         this.saveTex2d = GL11.glGetInteger(GL11.GL_TEXTURE_BINDING_2D);
-        assert GL11.glGetError() == GL11.GL_NO_ERROR : String.format("glGetInteger(GL_TEXTURE_BINDING_2D) = %d failed!", this.saveTex2d);
+        assert checkGLError() : glErrorMsg("glGetInteger(I)", "GL_TEXTURE_BINDING_2D");
     }
 
     private void restoreTexture2d() {
         GL11.glBindTexture(GL11.GL_TEXTURE_2D, this.saveTex2d);
-        assert GL11.glGetError() == GL11.GL_NO_ERROR : String.format("glBindTexture(GL_TEXTURE_2D, %d) failed!", this.saveTex2d);
+        assert checkGLError() : glErrorMsg("glBindTexture(II)", "GL_TEXTURE_2D", this.saveTex2d);
     }
 
     private int saveTex3d = 0;
 
     private void saveTexture3d() {
         this.saveTex3d = GL11.glGetInteger(GL12.GL_TEXTURE_BINDING_3D);
-        assert GL11.glGetError() == GL11.GL_NO_ERROR : String.format("glGetInteger(GL_TEXTURE_BINDING_3D) = %d failed!", this.saveTex3d);
+        assert checkGLError() : glErrorMsg("glGetInteger(I)", "GL_TEXTURE_BINDING_3D");
     }
 
     private void restoreTexture3d() {
         GL11.glBindTexture(GL12.GL_TEXTURE_3D, this.saveTex3d);
-        assert GL11.glGetError() == GL11.GL_NO_ERROR : String.format("glBindTexture(GL_TEXTURE_3D, %d) failed!", this.saveTex3d);
+        assert checkGLError() : glErrorMsg("glBindTexture(II)", "GL_TEXTURE_3D", this.saveTex3d);
     }
 
     private void saveTexture(int target) {
@@ -141,12 +186,12 @@ public class FakeDSA implements EXTDSADriver {
 
     private void saveProgram() {
         this.saveProgram = GL11.glGetInteger(GL20.GL_CURRENT_PROGRAM);
-        assert GL11.glGetError() == GL11.GL_NO_ERROR : String.format("glGetInteger(GL_CURRENT_PROGRAM) = %d failed!", this.saveProgram);
+        assert checkGLError() : glErrorMsg("glGetInteger(I)", "GL_CURRENT_PROGRAM");
     }
 
     private void restoreProgram() {
         GL20.glUseProgram(this.saveProgram);
-        assert GL11.glGetError() == GL11.GL_NO_ERROR : String.format("glUseProgram(%d) failed!", this.saveProgram);
+        assert checkGLError() : glErrorMsg("glUseProgram(I)", this.saveProgram);
     }
 
     @Override
@@ -161,24 +206,33 @@ public class FakeDSA implements EXTDSADriver {
 
         if (cap.OpenGL30) {
             id = GL30.glGenFramebuffers();
-            assert GL11.glGetError() == GL11.GL_NO_ERROR : String.format("glGenFramebuffers() = %d failed!", id);
+            assert checkGLError() : glErrorMsg("glGenFramebuffers(void)");
+
             this.saveFramebuffer();
+
             GL30.glBindFramebuffer(GL30.GL_FRAMEBUFFER, id);
-            assert GL11.glGetError() == GL11.GL_NO_ERROR : String.format("glBindFramebuffer(GL_FRAMEBUFFER, %d) failed!", id);
+            assert checkGLError() : glErrorMsg("glBindFramebuffer(II)", "GL_FRAMEBUFFER", id);
+
             this.restoreFramebuffer();
         } else if (cap.GL_ARB_framebuffer_object) {
             id = ARBFramebufferObject.glGenFramebuffers();
-            assert GL11.glGetError() == GL11.GL_NO_ERROR : String.format("glGenFramebuffersARB() = %d failed!", id);
+            assert checkGLError() : glErrorMsg("glGenFramebuffersARB(void)");
+
             this.saveFramebuffer();
+
             ARBFramebufferObject.glBindFramebuffer(GL30.GL_FRAMEBUFFER, id);
-            assert GL11.glGetError() == GL11.GL_NO_ERROR : String.format("glBindFramebufferARB(GL_FRAMEBUFFER, %d) failed!", id);
+            assert checkGLError() : glErrorMsg("glBindFramebufferARB(II)", "GL_FRAMEBUFFER", id);
+
             this.restoreFramebuffer();
         } else if (cap.GL_EXT_framebuffer_object) {
             id = EXTFramebufferObject.glGenFramebuffersEXT();
-            assert GL11.glGetError() == GL11.GL_NO_ERROR : String.format("glGenFramebuffersEXT() = %d failed!", id);
+            assert checkGLError() : glErrorMsg("glGenFramebuffersEXT(void)");
+
             this.saveFramebuffer();
+
             EXTFramebufferObject.glBindFramebufferEXT(GL30.GL_FRAMEBUFFER, id);
-            assert GL11.glGetError() == GL11.GL_NO_ERROR : String.format("glBindFramebufferEXT(GL_FRAMEBUFFER, %d) failed!", id);
+            assert checkGLError() : glErrorMsg("glBindFramebufferEXT(II)", "GL_FRAMEBUFFER", id);
+
             this.restoreFramebuffer();
         } else {
             throw new UnsupportedOperationException("glGenFramebuffers is not supported! glGenFramebuffers requires an OpenGL 3.0 context, ARB_framebuffer_object, or EXT_framebuffer_object.");
@@ -190,11 +244,12 @@ public class FakeDSA implements EXTDSADriver {
     @Override
     public int glCreateBuffers() {
         final int id = GL15.glGenBuffers();
-        assert GL11.glGetError() == GL11.GL_NO_ERROR : String.format("glGenBuffers() = %d failed!", id);
+        assert checkGLError() : glErrorMsg("glGenBuffers(void)");
 
         this.saveBuffer();
+
         GL15.glBindBuffer(GL15.GL_ARRAY_BUFFER, id);
-        assert GL11.glGetError() == GL11.GL_NO_ERROR : String.format("glBindBuffer(GL_ARRAY_BUFFER, %d) failed!", id);
+        assert checkGLError() : glErrorMsg("glBindBuffer(II)", "GL_ARRAY_BUFFER", id);
 
         this.restoreBuffer();
 
@@ -203,12 +258,15 @@ public class FakeDSA implements EXTDSADriver {
 
     @Override
     public int glCreateTextures(int target) {
+        assert checkGLenum(target, GLTextureTarget::of) : invalidGLenumMsg(target);
+
         final int id = GL11.glGenTextures();
-        assert GL11.glGetError() == GL11.GL_NO_ERROR : String.format("glGenTextures() = %d failed!", id);
+        assert checkGLError() : glErrorMsg("glGenTextures(void)");
 
         this.saveTexture(target);
+
         GL11.glBindTexture(target, id);
-        assert GL11.glGetError() == GL11.GL_NO_ERROR : String.format("glBindTexture(%d, %d) failed!", target, id);
+        assert checkGLError() : glErrorMsg("glBindTexture(II)", GLTextureTarget.of(target).get(), id);
 
         this.restoreTexture(target);
 
@@ -228,24 +286,33 @@ public class FakeDSA implements EXTDSADriver {
 
     @Override
     public void glGetNamedBufferSubData(int bufferId, long offset, ByteBuffer data) {
+        assert checkId(bufferId) : invalidBufferIdMsg(bufferId);
+        assert checkOffset(offset) : invalidOffsetMsg(offset);
+        assert checkBufferIsNative(data) : bufferIsNotNativeMsg(data);
+        assert data.isDirect() : NON_DIRECT_BUFFER_MSG;
+
         this.saveBuffer();
         GL15.glBindBuffer(GL15.GL_ARRAY_BUFFER, bufferId);
-        assert GL11.glGetError() == GL11.GL_NO_ERROR : String.format("glBindBuffer(GL_ARRAY_BUFFER, %d) failed!", bufferId);
+        assert checkGLError() : glErrorMsg("glBindBuffer(II)", "GL_ARRAY_BUFFER", bufferId);
 
         GL15.glGetBufferSubData(GL15.GL_ARRAY_BUFFER, offset, data);
-        assert GL11.glGetError() == GL11.GL_NO_ERROR : String.format("glGetBufferSubData(GL_ARRAY_BUFFER, %d, [data]) failed!", offset);
+        assert checkGLError() : glErrorMsg("glGetBufferSubData(IL*)", "GL_ARRAY_BUFFER", offset, toHexString(memAddress(data)));
 
         this.restoreBuffer();
     }
 
     @Override
     public int glGetNamedBufferParameteri(int bufferId, int pName) {
+        assert checkId(bufferId) : invalidBufferIdMsg(bufferId);
+        assert checkGLenum(pName, GLBufferParameterName::of) : invalidGLenumMsg(pName);
+
         this.saveBuffer();
+
         GL15.glBindBuffer(GL15.GL_ARRAY_BUFFER, bufferId);
-        assert GL11.glGetError() == GL11.GL_NO_ERROR : String.format("glBindBuffer(GL_ARRAY_BUFFER, %d) failed!", bufferId);
+        assert checkGLError() : glErrorMsg("glBindBuffer(II)", "GL_ARRAY_BUFFER", bufferId);
 
         final int val = GL15.glGetBufferParameteri(GL15.GL_ARRAY_BUFFER, pName);
-        assert GL11.glGetError() == GL11.GL_NO_ERROR : String.format("glGetBufferParameteri(GL_ARRAY_BUFFER, %d) = %d failed!", pName, val);
+        assert checkGLError() : glErrorMsg("glGetBufferParameteri(II)", "GL_ARRAY_BUFFER", GLBufferParameterName.of(pName).get());
 
         this.restoreBuffer();
 
@@ -254,54 +321,75 @@ public class FakeDSA implements EXTDSADriver {
 
     @Override
     public void glNamedBufferData(int bufferId, long size, int usage) {
+        assert checkId(bufferId) : invalidBufferIdMsg(bufferId);
+        assert checkSize(size) : invalidSizeMsg(size);
+        assert checkGLenum(usage, GLBufferUsage::of) : invalidGLenumMsg(usage);
+
         this.saveBuffer();
+
         GL15.glBindBuffer(GL15.GL_ARRAY_BUFFER, bufferId);
-        assert GL11.glGetError() == GL11.GL_NO_ERROR : String.format("glBindBuffer(GL_ARRAY_BUFFER, %d) failed!", bufferId);
+        assert checkGLError() : glErrorMsg("glBindBuffer(II)", "GL_ARRAY_BUFFER", bufferId);
 
         GL15.glBufferData(GL15.GL_ARRAY_BUFFER, size, usage);
-        assert GL11.glGetError() == GL11.GL_NO_ERROR : String.format("glBufferData(GL_ARRAY_BUFFER, %d, %d) failed!", size, usage);
+        assert checkGLError() : glErrorMsg("glBufferData(ILI)", "GL_ARRAY_BUFFER", size, GLBufferUsage.of(usage).get());
 
         this.restoreBuffer();
     }
 
     @Override
     public void glNamedBufferData(int bufferId, ByteBuffer data, int usage) {
+        assert checkId(bufferId) : invalidBufferIdMsg(bufferId);
+        assert checkBufferIsNative(data) : bufferIsNotNativeMsg(data);
+        assert data.isDirect() : NON_DIRECT_BUFFER_MSG;
+        assert checkGLenum(usage, GLBufferUsage::of) : invalidGLenumMsg(usage);
+
         this.saveBuffer();
+
         GL15.glBindBuffer(GL15.GL_ARRAY_BUFFER, bufferId);
-        assert GL11.glGetError() == GL11.GL_NO_ERROR : String.format("glBindBuffer(GL_ARRAY_BUFFER, %d) failed!", bufferId);
+        assert checkGLError() : glErrorMsg("glBindBuffer(II)", "GL_ARRAY_BUFFER", bufferId);
 
         GL15.glBufferData(GL15.GL_ARRAY_BUFFER, data, usage);
-        assert GL11.glGetError() == GL11.GL_NO_ERROR : String.format("glBufferData(GL_ARRAY_BUFFER, [data], %d) failed!", usage);
+        assert checkGLError() : glErrorMsg("glBufferData(I*I)", bufferId, toHexString(memAddress(data)), GLBufferUsage.of(usage).get());
 
         this.restoreBuffer();
     }
 
     @Override
     public void glNamedBufferSubData(int bufferId, long offset, ByteBuffer data) {
+        assert checkId(bufferId) : invalidBufferIdMsg(bufferId);
+        assert checkOffset(offset) : invalidOffsetMsg(offset);
+        assert checkBufferIsNative(data) : bufferIsNotNativeMsg(data);
+        assert data.isDirect() : NON_DIRECT_BUFFER_MSG;
+
         this.saveBuffer();
+
         GL15.glBindBuffer(GL15.GL_ARRAY_BUFFER, bufferId);
-        assert GL11.glGetError() == GL11.GL_NO_ERROR : String.format("glBindBuffer(GL_ARRAY_BUFFER, %d) failed!", bufferId);
+        assert checkGLError() : glErrorMsg("glBindBuffer(II)", "GL_ARRAY_BUFFER", bufferId);
 
         GL15.glBufferSubData(GL15.GL_ARRAY_BUFFER, offset, data);
-        assert GL11.glGetError() == GL11.GL_NO_ERROR : String.format("glBufferSubData(GL_ARRAY_BUFFER, %d, [data]) failed!", offset);
+        assert checkGLError() : glErrorMsg("glBufferSubData(IL*)", "GL_ARRAY_BUFFER", offset, toHexString(memAddress(data)));
 
         this.restoreBuffer();
     }
 
     @Override
     public void glNamedBufferStorage(int bufferId, ByteBuffer data, int flags) {
+        assert checkId(bufferId) : invalidBufferIdMsg(bufferId);
+        assert checkBufferIsNative(data) : bufferIsNotNativeMsg(data);
+        assert data.isDirect() : NON_DIRECT_BUFFER_MSG;
+
         final ContextCapabilities cap = GL.getCapabilities();
 
         this.saveBuffer();
         GL15.glBindBuffer(GL15.GL_ARRAY_BUFFER, bufferId);
-        assert GL11.glGetError() == GL11.GL_NO_ERROR : String.format("glBindBuffer(GL_ARRAY_BUFFER, %d) failed!", bufferId);
+        assert checkGLError() : glErrorMsg("glBindBuffer(II)", "GL_ARRAY_BUFFER", bufferId);
 
         if (cap.OpenGL44) {
             GL44.glBufferStorage(GL15.GL_ARRAY_BUFFER, data, flags);
-            assert GL11.glGetError() == GL11.GL_NO_ERROR : String.format("glBufferStorage(GL_ARRAY_BUFFER, [data], %d) failed!", flags);
+            assert checkGLError() : glErrorMsg("glBufferStorage(I*I)", "GL_ARRAY_BUFFER", toHexString(memAddress(data)), flags);
         } else if (cap.GL_ARB_buffer_storage) {
-            ARBBufferStorage.glBufferStorage(flags, data, flags);
-            assert GL11.glGetError() == GL11.GL_NO_ERROR : String.format("glBufferStorageARB(GL_ARRAY_BUFFER, [data], %d) failed!", flags);
+            ARBBufferStorage.glBufferStorage(GL15.GL_ARRAY_BUFFER, data, flags);
+            assert checkGLError() : glErrorMsg("glBufferStorageARB(I*I)", "GL_ARRAY_BUFFER", toHexString(memAddress(data)), flags);
         } else {
             throw new UnsupportedOperationException("glBufferStorage(target, size, flags) is not supported!");
         }
@@ -311,18 +399,21 @@ public class FakeDSA implements EXTDSADriver {
 
     @Override
     public void glNamedBufferStorage(int bufferId, long size, int flags) {
+        assert checkId(bufferId) : invalidBufferIdMsg(bufferId);
+        assert checkSize(size) : invalidSizeMsg(size);
+
         final ContextCapabilities cap = GL.getCapabilities();
 
         this.saveBuffer();
         GL15.glBindBuffer(GL15.GL_ARRAY_BUFFER, bufferId);
-        assert GL11.glGetError() == GL11.GL_NO_ERROR : String.format("glBindBuffer(GL_ARRAY_BUFFER, %d) failed!", bufferId);
+        assert checkGLError() : glErrorMsg("glBindBuffer(II)", "GL_ARRAY_BUFFER", bufferId);
 
         if (cap.OpenGL44) {
             GL44.glBufferStorage(GL15.GL_ARRAY_BUFFER, size, flags);
-            assert GL11.glGetError() == GL11.GL_NO_ERROR : String.format("glBufferStorage(GL_ARRAY_BUFFER, %d, %d) failed!", size, flags);
+            assert checkGLError() : glErrorMsg("glBufferStorage(ILI)", "GL_ARRAY_BUFFER", size, flags);
         } else if (cap.GL_ARB_buffer_storage) {
             ARBBufferStorage.glBufferStorage(GL15.GL_ARRAY_BUFFER, size, flags);
-            assert GL11.glGetError() == GL11.GL_NO_ERROR : String.format("glBufferStorageARB(GL_ARRAY_BUFFER, %d, %d) failed!", size, flags);
+            assert checkGLError() : glErrorMsg("glBufferStorageARB(ILI)", "GL_ARRAY_BUFFER", size, flags);
         } else {
             throw new UnsupportedOperationException("glBufferStorage(target, size, flags) is not supported!");
         }
@@ -332,12 +423,16 @@ public class FakeDSA implements EXTDSADriver {
 
     @Override
     public ByteBuffer glMapNamedBufferRange(int bufferId, long offset, long length, int access, ByteBuffer recycled) {
+        assert checkId(bufferId) : invalidBufferIdMsg(bufferId);
+        assert checkOffset(offset) : invalidOffsetMsg(offset);
+        assert checkSize(length) : invalidSizeMsg(length);
+
         this.saveBuffer();
         GL15.glBindBuffer(GL15.GL_ARRAY_BUFFER, bufferId);
-        assert GL11.glGetError() == GL11.GL_NO_ERROR : String.format("glBindBuffer(GL_ARRAY_BUFFER, %d) failed!", bufferId);
+        assert checkGLError() : glErrorMsg("glBindBuffer(II)", "GL_ARRAY_BUFFER", bufferId);
 
         final ByteBuffer out = GL30.glMapBufferRange(GL15.GL_ARRAY_BUFFER, offset, length, access, recycled);
-        assert GL11.glGetError() == GL11.GL_NO_ERROR : String.format("glMapBufferRange(GL_ARRAY_BUFFER, %d, %d, %d, [recycled]) = [data] failed!", offset, length, access);
+        assert checkGLError() : glErrorMsg("glMapBufferRange(ILLI)", "GL_ARRAY_BUFFER", offset, length, access);
 
         this.restoreBuffer();
 
@@ -346,95 +441,134 @@ public class FakeDSA implements EXTDSADriver {
 
     @Override
     public void glUnmapNamedBuffer(int bufferId) {
+        assert checkId(bufferId);
+
         this.saveBuffer();
         GL15.glBindBuffer(GL15.GL_ARRAY_BUFFER, bufferId);
-        assert GL11.glGetError() == GL11.GL_NO_ERROR : String.format("glBindBuffer(GL_ARRAY_BUFFER, %d) failed!", bufferId);
+        assert checkGLError() : glErrorMsg("glBindBuffer(II)", "GL_ARRAY_BUFFER", bufferId);
 
         GL15.glUnmapBuffer(GL15.GL_ARRAY_BUFFER);
-        assert GL11.glGetError() == GL11.GL_NO_ERROR : "glUnmapBuffer(GL_ARRAY_BUFFER) failed!";
+        assert checkGLError() : glErrorMsg("glUnmapBuffer(I)", "GL_ARRAY_BUFFER");
+
         this.restoreBuffer();
     }
 
     @Override
     public void glCopyNamedBufferSubData(int readBufferId, int writeBufferId, long readOffset, long writeOffset, long size) {
+        assert checkId(readBufferId) : invalidBufferIdMsg(readBufferId);
+        assert checkId(writeBufferId) : invalidBufferIdMsg(writeBufferId);
+        assert checkOffset(readOffset) : invalidOffsetMsg(readOffset);
+        assert checkOffset(writeOffset) : invalidOffsetMsg(writeOffset);
+        assert checkSize(size) : invalidSizeMsg(size);
+
         GL15.glBindBuffer(GL31.GL_COPY_READ_BUFFER, readBufferId);
-        assert GL11.glGetError() == GL11.GL_NO_ERROR : String.format("glBindBuffer(GL_COPY_READ_BUFFER, %d) failed!", readBufferId);
+        assert checkGLError() : glErrorMsg("glBindBuffer(II)", "GL_COPY_READ_BUFFER", readBufferId);
 
         GL15.glBindBuffer(GL31.GL_COPY_WRITE_BUFFER, writeBufferId);
-        assert GL11.glGetError() == GL11.GL_NO_ERROR : String.format("glBindBuffer(GL_COPY_WRITE_BUFFER, %d) failed!", writeBufferId);
+        assert checkGLError() : glErrorMsg("glBindBuffer(II)", "GL_COPY_WRITE_BUFFER", writeBufferId);
 
         GL31.glCopyBufferSubData(GL31.GL_COPY_READ_BUFFER, GL31.GL_COPY_WRITE_BUFFER, readOffset, writeOffset, size);
-        assert GL11.glGetError() == GL11.GL_NO_ERROR : String.format("glCopyBufferSubData(GL_COPY_READ_BUFFER, GL_COPY_WRITE_BUFFER, %d, %d, %d) failed!", readOffset, writeOffset, size);
+        assert checkGLError() : glErrorMsg("glCopyBufferSubData(IILLL)", "GL_COPY_READ_BUFFER", "GL_COPY_WRITE_BUFFER", readOffset, writeOffset, size);
 
         GL15.glBindBuffer(GL31.GL_COPY_READ_BUFFER, 0);
-        assert GL11.glGetError() == GL11.GL_NO_ERROR : "glBindBuffer(GL_COPY_READ_BUFFER, 0) failed!";
+        assert checkGLError() : glErrorMsg("glBindBuffer(II)", "GL_COPY_READ_BUFFER", 0);
 
         GL15.glBindBuffer(GL31.GL_COPY_WRITE_BUFFER, 0);
-        assert GL11.glGetError() == GL11.GL_NO_ERROR : "glBindBuffer(GL_COPY_WRITE_BUFFER, 0) failed!";
+        assert checkGLError() : glErrorMsg("glBindBuffer(II)", "GL_COPY_WRITE_BUFFER", 0);
     }
 
     @Override
     public void glProgramUniform1f(int programId, int location, float value) {
+        assert checkId(programId) : invalidProgramIdMsg(programId);
+        assert checkOffset(location) : invalidUniformLocationMsg(location);
+        assert checkFloat(value) : invalidFloatMsg(value);
+
         this.saveProgram();
         GL20.glUseProgram(programId);
-        assert GL11.glGetError() == GL11.GL_NO_ERROR : String.format("glUseProgram(%d) failed!", programId);
+        assert checkGLError() : glErrorMsg("glUseProgram(I)", programId);
 
         GL20.glUniform1f(location, value);
-        assert GL11.glGetError() == GL11.GL_NO_ERROR : String.format("glUniform1f(%d, %f) failed!", location, value);
+        assert checkGLError() : glErrorMsg("glUniform1f(II)", location, value);
 
         this.restoreProgram();
     }
 
     @Override
     public void glProgramUniform2f(int programId, int location, float v0, float v1) {
+        assert checkId(programId) : invalidProgramIdMsg(programId);
+        assert checkOffset(location) : invalidUniformLocationMsg(location);
+        assert checkFloat(v0) : invalidFloatMsg(v0);
+        assert checkFloat(v1) : invalidFloatMsg(v1);
+
         this.saveProgram();
         GL20.glUseProgram(programId);
-        assert GL11.glGetError() == GL11.GL_NO_ERROR : String.format("glUseProgram(%d) failed!", programId);
+        assert checkGLError() : glErrorMsg("glUseProgram(I)", programId);
 
         GL20.glUniform2f(location, v0, v1);
-        assert GL11.glGetError() == GL11.GL_NO_ERROR : String.format("glUniform2f(%d, %f, %f) failed!", location, v0, v1);
+        assert checkGLError() : glErrorMsg("glUniform2f(IFF)", location, v0, v1);
 
         this.restoreProgram();
     }
 
     @Override
     public void glProgramUniform3f(int programId, int location, float v0, float v1, float v2) {
+        assert checkId(programId) : invalidProgramIdMsg(programId);
+        assert checkOffset(location) : invalidUniformLocationMsg(location);
+        assert checkFloat(v0) : invalidFloatMsg(v0);
+        assert checkFloat(v1) : invalidFloatMsg(v1);
+        assert checkFloat(v2) : invalidFloatMsg(v2);
+
         this.saveProgram();
         GL20.glUseProgram(programId);
-        assert GL11.glGetError() == GL11.GL_NO_ERROR : String.format("glUseProgram(%d) failed!", programId);
+        assert checkGLError() : glErrorMsg("glUseProgram(I)", programId);
 
         GL20.glUniform3f(location, v0, v1, v2);
-        assert GL11.glGetError() == GL11.GL_NO_ERROR : String.format("glUniform3f(%d, %f, %f) failed!", location, v0, v1, v2);
+        assert checkGLError() : glErrorMsg("glUniform3f(IFFF)", location, v0, v1, v2);
 
         this.restoreProgram();
     }
 
     @Override
     public void glProgramUniform4f(int programId, int location, float v0, float v1, float v2, float v3) {
+        assert checkId(programId) : invalidProgramIdMsg(programId);
+        assert checkOffset(location) : invalidUniformLocationMsg(location);
+        assert checkFloat(v0) : invalidFloatMsg(v0);
+        assert checkFloat(v1) : invalidFloatMsg(v1);
+        assert checkFloat(v2) : invalidFloatMsg(v2);
+        assert checkFloat(v3) : invalidFloatMsg(v3);
+
         this.saveProgram();
         GL20.glUseProgram(programId);
-        assert GL11.glGetError() == GL11.GL_NO_ERROR : String.format("glUseProgram(%d) failed!", programId);
+        assert checkGLError() : glErrorMsg("glUseProgram(I)", programId);
 
         GL20.glUniform4f(location, v0, v1, v2, v3);
-        assert GL11.glGetError() == GL11.GL_NO_ERROR : String.format("glUniform4f(%d, %f, %f, %f, %f) failed!", location, v0, v1, v2, v3);
+        assert checkGLError() : glErrorMsg("glUniform4f(IFFFF)", location, v0, v1, v2, v3);
 
         this.restoreProgram();
     }
 
     @Override
     public void glProgramUniform1d(int programId, int location, double value) {
+        assert checkId(programId) : invalidProgramIdMsg(programId);
+        assert checkOffset(location) : invalidUniformLocationMsg(location);
+        assert checkDouble(value) : invalidDoubleMsg(value);
+
         final ContextCapabilities cap = GL.getCapabilities();
 
         this.saveProgram();
+
         GL20.glUseProgram(programId);
-        assert GL11.glGetError() == GL11.GL_NO_ERROR : String.format("glUseProgram(%d) failed!", programId);
+        assert checkGLError() : glErrorMsg("glUseProgram(I)", programId);
 
         if (cap.OpenGL40) {
             GL40.glUniform1d(location, value);
+            assert checkGLError() : glErrorMsg("glUniform1d(ID)", location, value);
         } else if (cap.GL_ARB_gpu_shader_fp64) {
             ARBGPUShaderFP64.glUniform1d(location, value);
+            assert checkGLError() : glErrorMsg("glUniform1dARB(ID)", location, value);
         } else if (CAN_CAST_DOUBLE_TO_FLOAT) {
             GL20.glUniform1f(location, (float) value);
+            assert checkGLError() : glErrorMsg("glUniform1f(IF)", location, value);
         } else {
             throw new UnsupportedOperationException("glUniform1d(location, double) is not supported!");
         }
@@ -444,18 +578,26 @@ public class FakeDSA implements EXTDSADriver {
 
     @Override
     public void glProgramUniform2d(int programId, int location, double v0, double v1) {
+        assert checkId(programId) : invalidProgramIdMsg(programId);
+        assert checkOffset(location) : invalidUniformLocationMsg(location);
+        assert checkDouble(v0) : invalidDoubleMsg(v0);
+        assert checkDouble(v1) : invalidDoubleMsg(v1);
+
         final ContextCapabilities cap = GL.getCapabilities();
 
         this.saveProgram();
         GL20.glUseProgram(programId);
-        assert GL11.glGetError() == GL11.GL_NO_ERROR : String.format("glUseProgram(%d) failed!", programId);
+        assert checkGLError() : glErrorMsg("glUseProgram(I)", programId);
 
         if (cap.OpenGL40) {
             GL40.glUniform2d(location, v0, v1);
+            assert checkGLError() : glErrorMsg("glUniform2d(IDD)", location, v0, v1);
         } else if (cap.GL_ARB_gpu_shader_fp64) {
             ARBGPUShaderFP64.glUniform2d(location, v0, v1);
+            assert checkGLError() : glErrorMsg("glUniform2dARB(IDD)", location, v0, v1);
         } else if (CAN_CAST_DOUBLE_TO_FLOAT) {
             GL20.glUniform2f(location, (float) v0, (float) v1);
+            assert checkGLError() : glErrorMsg("glUniform2f(IFF)", location, v0, v1);
         } else {
             throw new UnsupportedOperationException("glUniform2d(location, double, double) is not supported!");
         }
@@ -465,18 +607,27 @@ public class FakeDSA implements EXTDSADriver {
 
     @Override
     public void glProgramUniform3d(int programId, int location, double v0, double v1, double v2) {
+        assert checkId(programId) : invalidProgramIdMsg(programId);
+        assert checkOffset(location) : invalidUniformLocationMsg(location);
+        assert checkDouble(v0) : invalidDoubleMsg(v0);
+        assert checkDouble(v1) : invalidDoubleMsg(v1);
+        assert checkDouble(v2) : invalidDoubleMsg(v2);
+
         final ContextCapabilities cap = GL.getCapabilities();
 
         this.saveProgram();
         GL20.glUseProgram(programId);
-        assert GL11.glGetError() == GL11.GL_NO_ERROR : String.format("glUseProgram(%d) failed!", programId);
+        assert checkGLError() : glErrorMsg("glUseProgram(I)", programId);
 
         if (cap.OpenGL40) {
             GL40.glUniform3d(location, v0, v1, v2);
+            assert checkGLError() : glErrorMsg("glUniform3d(IDDD)", location, v0, v1, v2);
         } else if (cap.GL_ARB_gpu_shader_fp64) {
             ARBGPUShaderFP64.glUniform3d(location, v0, v1, v2);
+            assert checkGLError() : glErrorMsg("glUniform3dARB(IDDD)", location, v0, v1, v2);
         } else if (CAN_CAST_DOUBLE_TO_FLOAT) {
             GL20.glUniform3f(location, (float) v0, (float) v1, (float) v2);
+            assert checkGLError() : glErrorMsg("glUniform3f(IFFF)", location, v0, v1, v2);
         } else {
             throw new UnsupportedOperationException("glUniform3d(location, double, double, double) is not supported!");
         }
@@ -485,68 +636,101 @@ public class FakeDSA implements EXTDSADriver {
 
     @Override
     public void glProgramUniform4d(int programId, int location, double v0, double v1, double v2, double v3) {
+        assert checkId(programId) : invalidProgramIdMsg(programId);
+        assert checkOffset(location) : invalidUniformLocationMsg(location);
+        assert checkDouble(v0) : invalidDoubleMsg(v0);
+        assert checkDouble(v1) : invalidDoubleMsg(v1);
+        assert checkDouble(v2) : invalidDoubleMsg(v2);
+        assert checkDouble(v3) : invalidDoubleMsg(v3);
+
         final ContextCapabilities cap = GL.getCapabilities();
 
         this.saveProgram();
         GL20.glUseProgram(programId);
-        assert GL11.glGetError() == GL11.GL_NO_ERROR : String.format("glUseProgram(%d) failed!", programId);
+        assert checkGLError() : glErrorMsg("glUseProgram(I)", programId);
 
         if (cap.OpenGL40) {
             GL40.glUniform4d(location, v0, v1, v2, v3);
+            assert checkGLError() : glErrorMsg("glUniform4d(IDDDD)", location, v0, v1, v2, v3);
         } else if (cap.GL_ARB_gpu_shader_fp64) {
             ARBGPUShaderFP64.glUniform4d(location, v0, v1, v2, v3);
+            assert checkGLError() : glErrorMsg("glUniform4dARB(IDDDD)", location, v0, v1, v2, v3);
         } else if (CAN_CAST_DOUBLE_TO_FLOAT) {
             GL20.glUniform4f(location, (float) v0, (float) v1, (float) v2, (float) v3);
+            assert checkGLError() : glErrorMsg("glUniform4f(IFFFF)", location, v0, v1, v2, v3);
         } else {
             throw new UnsupportedOperationException("glUniform4f(location, double, double, double, double) is not supported!");
         }
 
         GL40.glUniform4d(location, v0, v1, v2, v3);
+        assert checkGLError() : glErrorMsg("glUniform4d(IDDDD)", location, v0, v1, v2, v3);
         this.restoreProgram();
     }
 
     @Override
     public void glProgramUniformMatrix2f(int programId, int location, boolean needsTranspose, FloatBuffer data) {
+        assert checkId(programId) : invalidProgramIdMsg(programId);
+        assert checkOffset(location) : invalidUniformLocationMsg(location);
+        assert data.isDirect() : NON_DIRECT_BUFFER_MSG;
+
         this.saveProgram();
         GL20.glUseProgram(programId);
-        assert GL11.glGetError() == GL11.GL_NO_ERROR : String.format("glUseProgram(%d) failed!", programId);
+        assert checkGLError() : glErrorMsg("glUseProgram(I)", programId);
 
         GL20.glUniformMatrix2fv(location, needsTranspose, data);
+        assert checkGLError() : glErrorMsg("glUniformMatrix2fv(IB*)", location, needsTranspose, toHexString(memAddress(data)));
+
         this.restoreProgram();
     }
 
     @Override
     public void glProgramUniformMatrix3f(int programId, int location, boolean needsTranspose, FloatBuffer data) {
+        assert checkId(programId) : invalidProgramIdMsg(programId);
+        assert checkOffset(location) : invalidUniformLocationMsg(location);
+        assert data.isDirect() : NON_DIRECT_BUFFER_MSG;
+
         this.saveProgram();
         GL20.glUseProgram(programId);
-        assert GL11.glGetError() == GL11.GL_NO_ERROR : String.format("glUseProgram(%d) failed!", programId);
+        assert checkGLError() : glErrorMsg("glUseProgram(I)", programId);
 
         GL20.glUniformMatrix3fv(location, needsTranspose, data);
+        assert checkGLError() : glErrorMsg("glUniformMatrix3fv(IB*)", location, needsTranspose, toHexString(memAddress(data)));
         this.restoreProgram();
     }
 
     @Override
     public void glProgramUniformMatrix4f(int programId, int location, boolean needsTranspose, FloatBuffer data) {
+        assert checkId(programId) : invalidProgramIdMsg(programId);
+        assert checkOffset(location) : invalidUniformLocationMsg(location);
+        assert data.isDirect() : NON_DIRECT_BUFFER_MSG;
+
         this.saveProgram();
         GL20.glUseProgram(programId);
-        assert GL11.glGetError() == GL11.GL_NO_ERROR : String.format("glUseProgram(%d) failed!", programId);
+        assert checkGLError() : glErrorMsg("glUseProgram(I)", programId);
 
         GL20.glUniformMatrix4fv(location, needsTranspose, data);
+        assert checkGLError() : glErrorMsg("glUniformMatrix4fv(IB*)", location, needsTranspose, toHexString(memAddress(data)));
         this.restoreProgram();
     }
 
     @Override
     public void glProgramUniformMatrix2d(int programId, int location, boolean needsTranspose, DoubleBuffer data) {
+        assert checkId(programId) : invalidProgramIdMsg(programId);
+        assert checkOffset(location) : invalidUniformLocationMsg(location);
+        assert data.isDirect() : NON_DIRECT_BUFFER_MSG;
+
         final ContextCapabilities cap = GL.getCapabilities();
 
         this.saveProgram();
         GL20.glUseProgram(programId);
-        assert GL11.glGetError() == GL11.GL_NO_ERROR : String.format("glUseProgram(%d) failed!", programId);
+        assert checkGLError() : glErrorMsg("glUseProgram(I)", programId);
 
         if (cap.OpenGL40) {
             GL40.glUniformMatrix2dv(location, needsTranspose, data);
+            assert checkGLError() : glErrorMsg("glUniformMatrix2dv(IB*)", location, needsTranspose, toHexString(memAddress(data)));
         } else if (cap.GL_ARB_gpu_shader_fp64) {
             ARBGPUShaderFP64.glUniformMatrix2dv(location, needsTranspose, data);
+            assert checkGLError() : glErrorMsg("glUniformMatrix2dvARB(IB*)", location, needsTranspose, toHexString(memAddress(data)));
         } else if (CAN_CAST_DOUBLE_TO_FLOAT) {
             FloatBuffer casted = ByteBuffer
                     .allocateDirect(4 * Float.BYTES)
@@ -560,6 +744,7 @@ public class FakeDSA implements EXTDSADriver {
             casted.flip();
 
             GL20.glUniformMatrix2fv(location, needsTranspose, casted);
+            assert checkGLError() : glErrorMsg("glUniformMatrix2fv(IB*)", location, needsTranspose, toHexString(memAddress(casted)));
         } else {
             throw new UnsupportedOperationException("glUniformMatrix2dv(location, needsTranspose, data) is not supported!");
         }
@@ -569,16 +754,22 @@ public class FakeDSA implements EXTDSADriver {
 
     @Override
     public void glProgramUniformMatrix3d(int programId, int location, boolean needsTranspose, DoubleBuffer data) {
+        assert checkId(programId) : invalidProgramIdMsg(programId);
+        assert checkOffset(location) : invalidUniformLocationMsg(location);
+        assert data.isDirect() : NON_DIRECT_BUFFER_MSG;
+
         final ContextCapabilities cap = GL.getCapabilities();
 
         this.saveProgram();
         GL20.glUseProgram(programId);
-        assert GL11.glGetError() == GL11.GL_NO_ERROR : String.format("glUseProgram(%d) failed!", programId);
+        assert checkGLError() : glErrorMsg("glUseProgram(I)", programId);
 
         if (cap.OpenGL40) {
             GL40.glUniformMatrix3dv(location, needsTranspose, data);
+            assert checkGLError() : glErrorMsg("glUniformMatrix3dv(IB*)", location, needsTranspose, toHexString(memAddress(data)));
         } else if (cap.GL_ARB_gpu_shader_fp64) {
             ARBGPUShaderFP64.glUniformMatrix3dv(location, needsTranspose, data);
+            assert checkGLError() : glErrorMsg("glUniformMatrix3dvARB(IB*)", location, needsTranspose, toHexString(memAddress(data)));
         } else if (CAN_CAST_DOUBLE_TO_FLOAT) {
             final FloatBuffer casted = ByteBuffer
                     .allocateDirect(9 * Float.BYTES)
@@ -592,6 +783,7 @@ public class FakeDSA implements EXTDSADriver {
             casted.flip();
 
             GL20.glUniformMatrix3fv(location, needsTranspose, casted);
+            assert checkGLError() : glErrorMsg("glUniformMatrix3fv(IB*)", location, needsTranspose, toHexString(memAddress(casted)));
         } else {
             throw new UnsupportedOperationException("glUniformMatrix3dv(location, needsTranspose, data) is not supported!");
         }
@@ -601,16 +793,22 @@ public class FakeDSA implements EXTDSADriver {
 
     @Override
     public void glProgramUniformMatrix4d(int programId, int location, boolean needsTranspose, DoubleBuffer data) {
+        assert checkId(programId) : invalidProgramIdMsg(programId);
+        assert checkOffset(location) : invalidUniformLocationMsg(location);
+        assert data.isDirect() : NON_DIRECT_BUFFER_MSG;
+
         final ContextCapabilities cap = GL.getCapabilities();
 
         this.saveProgram();
         GL20.glUseProgram(programId);
-        assert GL11.glGetError() == GL11.GL_NO_ERROR : String.format("glUseProgram(%d) failed!", programId);
+        assert checkGLError() : glErrorMsg("glUseProgram(I)", programId);
 
         if (cap.OpenGL40) {
             GL40.glUniformMatrix4dv(location, needsTranspose, data);
+            assert checkGLError() : glErrorMsg("glUniformMatrix4dv(IB*)", location, needsTranspose, toHexString(memAddress(data)));
         } else if (cap.GL_ARB_gpu_shader_fp64) {
             ARBGPUShaderFP64.glUniformMatrix4dv(location, needsTranspose, data);
+            assert checkGLError() : glErrorMsg("glUniformMatrix4dvARB(IB*)", location, needsTranspose, toHexString(memAddress(data)));
         } else if (CAN_CAST_DOUBLE_TO_FLOAT) {
             final FloatBuffer casted = ByteBuffer
                     .allocateDirect(16 * Float.BYTES)
@@ -624,6 +822,7 @@ public class FakeDSA implements EXTDSADriver {
             casted.flip();
 
             GL20.glUniformMatrix4fv(location, needsTranspose, casted);
+            assert checkGLError() : glErrorMsg("glUniformMatrix4fv(IB*)", location, needsTranspose, toHexString(memAddress(casted)));
         } else {
             throw new UnsupportedOperationException("glUniformMatrix4dv(location, needsTranspose, data) is not supported!");
         }
@@ -633,42 +832,56 @@ public class FakeDSA implements EXTDSADriver {
 
     @Override
     public void glTextureParameteri(int textureId, int target, int pName, int val) {
+        assert checkId(textureId) : invalidTextureIdMsg(textureId);
+        assert checkGLenum(target, GLTextureTarget::of) : invalidGLenumMsg(target);
+
         this.saveTexture(target);
         GL11.glBindTexture(target, textureId);
-        assert GL11.glGetError() == GL11.GL_NO_ERROR : String.format("glBindTexture(%d, %d) failed!", target, textureId);
+        assert checkGLError() : glErrorMsg("glBindTexture(II)", GLTextureTarget.of(target).get(), textureId);
 
         GL11.glTexParameteri(target, pName, val);
+        assert checkGLError() : glErrorMsg("glTexParameteri(III)", GLTextureTarget.of(target).get(), pName, val);
+
         this.restoreTexture(target);
     }
 
     @Override
     public void glTextureParameterf(int textureId, int target, int pName, float val) {
+        assert checkId(textureId) : invalidTextureIdMsg(textureId);
+        assert checkGLenum(target, GLTextureTarget::of) : invalidGLenumMsg(target);
+        assert checkFloat(val) : invalidFloatMsg(val);
+
         this.saveTexture(target);
         GL11.glBindTexture(target, textureId);
-        assert GL11.glGetError() == GL11.GL_NO_ERROR : String.format("glBindTexture(%d, %d) failed!", target, textureId);
+        assert checkGLError() : glErrorMsg("glBindTexture(II)", GLTextureTarget.of(target).get(), textureId);
 
         GL11.glTexParameterf(target, pName, val);
+        assert checkGLError() : glErrorMsg("glTexParameterf(IIF)", GLTextureTarget.of(target).get(), pName, val);
+
         this.restoreTexture(target);
     }
 
     @Override
     public void glGenerateTextureMipmap(int textureId, int target) {
+        assert checkId(textureId) : invalidTextureIdMsg(textureId);
+        assert checkGLenum(target, GLTextureTarget::of) : invalidGLenumMsg(target);
+
         final ContextCapabilities cap = GL.getCapabilities();
 
         this.saveTexture(target);
 
         GL11.glBindTexture(target, textureId);
-        assert GL11.glGetError() == GL11.GL_NO_ERROR : String.format("glBindTexture(%d, %d) failed!", target, textureId);
+        assert checkGLError() : glErrorMsg("glBindTexture(II)", GLTextureTarget.of(target).get(), textureId);
 
         if (cap.OpenGL30) {
             GL30.glGenerateMipmap(target);
-            assert GL11.glGetError() == GL11.GL_NO_ERROR : String.format("glGenerateMipmap(%d) failed!", target);
+            assert checkGLError() : glErrorMsg("glGenerateMipmap(I)", GLTextureTarget.of(target).get());
         } else if (cap.GL_ARB_framebuffer_object) {
             ARBFramebufferObject.glGenerateMipmap(target);
-            assert GL11.glGetError() == GL11.GL_NO_ERROR : String.format("glGenerateMipmapARB(%d) failed!", target);
+            assert checkGLError() : glErrorMsg("glGenerateMipmapARB(I)", GLTextureTarget.of(target).get());
         } else if (cap.GL_EXT_framebuffer_object) {
             EXTFramebufferObject.glGenerateMipmapEXT(target);
-            assert GL11.glGetError() == GL11.GL_NO_ERROR : String.format("glGenerateMipmapEXT(%d) failed!", target);
+            assert checkGLError() : glErrorMsg("glGenerateMipmapEXT(I)", GLTextureTarget.of(target).get());
         } else {
             throw new UnsupportedOperationException("glGenerateMipmap(target) is not supported!");
         }
@@ -678,11 +891,14 @@ public class FakeDSA implements EXTDSADriver {
 
     @Override
     public void glBindTextureUnit(int unit, int target, int textureId) {
+        assert checkNullableId(unit) : invalidTextureUnitMsg(unit);
+        assert checkGLenum(target, GLTextureTarget::of) : invalidGLenumMsg(target);
+
         GL13.glActiveTexture(unit);
-        assert GL11.glGetError() == GL11.GL_NO_ERROR : String.format("glActiveTexture(%d) failed!", unit);
+        assert checkGLError() : glErrorMsg("glActiveTexture(I)", unit);
 
         GL11.glBindTexture(target, textureId);
-        assert GL11.glGetError() == GL11.GL_NO_ERROR : String.format("glBindTexture(%d, %d) failed!", target, textureId);
+        assert checkGLError() : glErrorMsg("glBindTexture(II)", GLTextureTarget.of(target).get(), textureId);
     }
 
     public static DSADriver getInstance() {
@@ -691,184 +907,310 @@ public class FakeDSA implements EXTDSADriver {
 
     @Override
     public void glProgramUniform1i(int programId, int location, int value) {
+        assert checkId(programId) : invalidProgramIdMsg(programId);
+        assert checkOffset(location) : invalidUniformLocationMsg(location);
+
         this.saveProgram();
         GL20.glUseProgram(programId);
-        assert GL11.glGetError() == GL11.GL_NO_ERROR : String.format("glUseProgram(%d) failed!", programId);
+        assert checkGLError() : glErrorMsg("glUseProgram(I)", programId);
 
         GL20.glUniform1i(location, value);
+        assert checkGLError() : glErrorMsg("glUniform1i(II)", location, value);
+
         this.restoreProgram();
     }
 
     @Override
     public void glProgramUniform2i(int programId, int location, int v0, int v1) {
+        assert checkId(programId) : invalidProgramIdMsg(programId);
+        assert checkOffset(location) : invalidUniformLocationMsg(location);
+
         this.saveProgram();
         GL20.glUseProgram(programId);
-        assert GL11.glGetError() == GL11.GL_NO_ERROR : String.format("glUseProgram(%d) failed!", programId);
+        assert checkGLError() : glErrorMsg("glUseProgram(I)", programId);
 
         GL20.glUniform2i(location, v0, v1);
+        assert checkGLError() : glErrorMsg("glUniform2i(III)", location, v0, v1);
         this.restoreProgram();
     }
 
     @Override
     public void glProgramUniform3i(int programId, int location, int v0, int v1, int v2) {
+        assert checkId(programId) : invalidProgramIdMsg(programId);
+        assert checkOffset(location) : invalidUniformLocationMsg(location);
+
         this.saveProgram();
         GL20.glUseProgram(programId);
-        assert GL11.glGetError() == GL11.GL_NO_ERROR : String.format("glUseProgram(%d) failed!", programId);
+        assert checkGLError() : glErrorMsg("glUseProgram(I)", programId);
 
         GL20.glUniform3i(location, v0, v1, v2);
+        assert checkGLError() : glErrorMsg("glUniform3i(IIII)", location, v0, v1, v2);
         this.restoreProgram();
     }
 
     @Override
     public void glProgramUniform4i(int programId, int location, int v0, int v1, int v2, int v3) {
+        assert checkId(programId) : invalidProgramIdMsg(programId);
+        assert checkOffset(location) : invalidUniformLocationMsg(location);
+
         this.saveProgram();
         GL20.glUseProgram(programId);
-        assert GL11.glGetError() == GL11.GL_NO_ERROR : String.format("glUseProgram(%d) failed!", programId);
+        assert checkGLError() : glErrorMsg("glUseProgram(I)", programId);
 
         GL20.glUniform4i(location, v0, v1, v2, v3);
+        assert checkGLError() : glErrorMsg("glUniform4i(IIIII)", location, v0, v1, v2, v3);
         this.restoreProgram();
     }
 
     @Override
     public void glTextureSubImage1d(int textureId, int level, int xOffset, int width, int format, int type, ByteBuffer pixels) {
+        assert checkId(textureId) : invalidTextureIdMsg(textureId);
+        assert checkMipmapLevel(level) : invalidMipmapLevelMsg(level);
+        assert checkOffset(xOffset) : invalidXOffsetMsg(xOffset);
+        assert checkDimension(width) : invalidWidthMsg(width);
+        assert checkGLenum(format, GLTextureFormat::of) : invalidGLenumMsg(format);
+        assert checkGLenum(type, GLType::of) : invalidGLenumMsg(type);
+        assert checkBufferIsNative(pixels) : bufferIsNotNativeMsg(pixels);
+        assert pixels.isDirect() : NON_DIRECT_BUFFER_MSG;
+        assert checkBufferSize(width, 1, 1, format, type, pixels) : bufferTooSmallMsg(width, 1, 1, format, type, pixels);
+
         this.saveTexture1d();
 
         GL11.glBindTexture(GL11.GL_TEXTURE_1D, textureId);
-        assert GL11.glGetError() == GL11.GL_NO_ERROR : String.format("glBindTexture(GL_TEXTURE_1D, %d) failed!", textureId);
+        assert checkGLError() : glErrorMsg("glBindTexture(II)", "GL_TEXTURE_1D", textureId);
 
         GL11.glTexSubImage1D(GL11.GL_TEXTURE_1D, level, xOffset, width, format, type, pixels);
-        assert GL11.glGetError() == GL11.GL_NO_ERROR : String.format("glTexSubImage1D(GL_TEXTURE_1D, %d, %d, %d, %d, %d, [data]) failed!", level, xOffset, width, format, type);
+        assert checkGLError() : glErrorMsg("glTexSubImage1D(IIIIII*)", "GL_TEXTURE_1D", level, xOffset, width, GLTextureFormat.of(format).get(), GLType.of(type).get(), toHexString(memAddress(pixels)));
 
         this.restoreTexture1d();
     }
 
     @Override
     public void glTextureSubImage2d(int textureId, int level, int xOffset, int yOffset, int width, int height, int format, int type, ByteBuffer pixels) {
+        assert checkId(textureId) : invalidTextureIdMsg(textureId);
+        assert checkMipmapLevel(level) : invalidMipmapLevelMsg(level);
+        assert checkOffset(xOffset) : invalidXOffsetMsg(xOffset);
+        assert checkOffset(yOffset) : invalidYOffsetMsg(yOffset);
+        assert checkDimension(width) :invalidWidthMsg(width);
+        assert checkDimension(height): invalidHeightMsg(height);
+        assert checkGLenum(format, GLTextureFormat::of) : invalidGLenumMsg(format);
+        assert checkGLenum(type, GLType::of) : invalidGLenumMsg(type);
+        assert checkBufferIsNative(pixels) : bufferIsNotNativeMsg(pixels);
+        assert pixels.isDirect() : NON_DIRECT_BUFFER_MSG;
+        assert checkBufferSize(width, height, 1, format, type, pixels) : bufferTooSmallMsg(width, height, 1, format, type, pixels);
+        
         this.saveTexture2d();
 
         GL11.glBindTexture(GL11.GL_TEXTURE_2D, textureId);
-        assert GL11.glGetError() == GL11.GL_NO_ERROR : "glBindTexture(GL_TEXTURE_2D) failed!";
+        assert checkGLError() : glErrorMsg("glBindTexture(II)", "GL_TEXTURE_2D", textureId);
 
         GL11.glTexSubImage2D(GL11.GL_TEXTURE_2D, level, xOffset, yOffset, width, height, format, type, pixels);
-        assert GL11.glGetError() == GL11.GL_NO_ERROR : String.format("glTexSubImage2D(GL_TEXTURE_2D, %d, %d, %d, %d, %d, %d, %d, [data]) failed!",
-                level, xOffset, yOffset, width, height, format, type);
+        assert checkGLError() : glErrorMsg("glTexSubImage2D(IIIIIIII*)", "GL_TEXTURE_2D", level, xOffset, yOffset, width, height, GLTextureFormat.of(format).get(), GLType.of(type).get(), toHexString(memAddress(pixels)));
 
         this.restoreTexture2d();
     }
 
     @Override
     public void glTextureSubImage3d(int textureId, int level, int xOffset, int yOffset, int zOffset, int width, int height, int depth, int format, int type, ByteBuffer pixels) {
+        assert checkId(textureId) : invalidTextureIdMsg(textureId);
+        assert checkMipmapLevel(level) : invalidMipmapLevelMsg(level);
+        assert checkOffset(xOffset) : invalidXOffsetMsg(xOffset);
+        assert checkOffset(yOffset) : invalidYOffsetMsg(yOffset);
+        assert checkOffset(zOffset) : invalidZOffsetMsg(zOffset);
+        assert checkDimension(width) : invalidWidthMsg(width);
+        assert checkDimension(height) : invalidHeightMsg(height);
+        assert checkDimension(depth) : invalidDepthMsg(depth);
+        assert checkGLenum(format, GLTextureFormat::of) : invalidGLenumMsg(format);
+        assert checkGLenum(type, GLType::of) : invalidGLenumMsg(type);
+        assert checkBufferIsNative(pixels) : bufferIsNotNativeMsg(pixels);
+        assert pixels.isDirect() : NON_DIRECT_BUFFER_MSG;
+        assert checkBufferSize(width, height, depth, format, type, pixels) : bufferTooSmallMsg(width, height, depth, format, type, pixels);
+        
         this.saveTexture3d();
         GL11.glBindTexture(GL12.GL_TEXTURE_3D, textureId);
-        assert GL11.glGetError() == GL11.GL_NO_ERROR : String.format("glBindTexture(GL_TEXTURE_3D, %d) failed!", textureId);
+        assert checkGLError() : glErrorMsg("glBindTexture(II)", "GL_TEXTURE_3D", textureId);
 
         GL12.glTexSubImage3D(GL12.GL_TEXTURE_3D, level, xOffset, yOffset, zOffset, width, height, depth, format, type, pixels);
-        assert GL11.glGetError() == GL11.GL_NO_ERROR : String.format("glTexSubImage3D(GL_TEXTURE_3D, %d, %d, %d, %d, %d, %d, %d, %d, %d, [data]) failed!",
-                level, xOffset, yOffset, zOffset, width, height, depth, format, type);
+        assert checkGLError() : glErrorMsg("glTexSubImage3D(IIIIIIIIII*)", "GL_TEXTURE_3D", level, xOffset, yOffset, zOffset, width, height, depth, GLTextureFormat.of(format).get(),GLType.of(type).get(), toHexString(memAddress(pixels)));
 
         this.restoreTexture3d();
     }
 
     @Override
     public void glTextureImage1d(int texture, int target, int level, int internalFormat, int width, int border, int format, int type, ByteBuffer pixels) {
+        assert checkId(texture) : invalidTextureIdMsg(texture);
+        assert checkGLenum(target, GLTextureTarget::of) : invalidGLenumMsg(target);
+        assert checkMipmapLevel(level) : invalidMipmapLevelMsg(level);
+        assert checkGLenum(internalFormat, GLTextureInternalFormat::of) : invalidGLenumMsg(internalFormat);
+        assert checkDimension(width) : invalidWidthMsg(width);
+        assert border == 0 : "Border must be 0.";
+        assert checkGLenum(format, GLTextureFormat::of) : invalidGLenumMsg(format);
+        assert checkGLenum(type, GLType::of) : invalidGLenumMsg(type);
+        assert checkBufferIsNative(pixels) : bufferIsNotNativeMsg(pixels);
+        assert pixels.isDirect() : NON_DIRECT_BUFFER_MSG;
+        assert checkBufferSize(width, 1, 1, format, type, pixels) : bufferTooSmallMsg(width, 1, 1, format, type, pixels);
+        
         this.saveTexture1d();
         GL11.glBindTexture(target, texture);
-        assert GL11.glGetError() == GL11.GL_NO_ERROR : String.format("glBindTexture(%d, %d) failed!", texture, target);
+        assert checkGLError() : glErrorMsg("glBindTexture(II)", GLTextureTarget.of(target).get(), texture);
 
         GL11.glTexImage1D(target, level, internalFormat, width, border, format, type, pixels);
-        assert GL11.glGetError() == GL11.GL_NO_ERROR : String.format("glTexImage1D(%d, %d, %d, %d, %d, %d, %d, [data]) failed!",
-                target, level, internalFormat, width, border, format, type);
+        assert checkGLError() : glErrorMsg("glTexImage1D(IIIIIII*)", GLTextureTarget.of(target).get(), level, GLTextureInternalFormat.of(internalFormat).get(), width, border, GLTextureFormat.of(format).get(), GLType.of(type).get(), toHexString(memAddress(pixels)));
 
         this.restoreTexture1d();
     }
 
     @Override
     public void glTextureImage1d(int texture, int target, int level, int internalFormat, int width, int border, int format, int type, long ptr) {
+        assert checkId(texture) : invalidTextureIdMsg(texture);
+        assert checkGLenum(target, GLTextureTarget::of) : invalidGLenumMsg(target);
+        assert checkMipmapLevel(level) : invalidMipmapLevelMsg(level);
+        assert checkGLenum(internalFormat, GLTextureInternalFormat::of) : invalidGLenumMsg(internalFormat);
+        assert checkDimension(width) : invalidWidthMsg(width);
+        assert border == 0 : "Border must be 0.";
+        assert checkGLenum(type, GLType::of) : invalidGLenumMsg(type);
+        
         this.saveTexture1d();
 
         GL11.glBindTexture(target, texture);
-        assert GL11.glGetError() == GL11.GL_NO_ERROR : String.format("glBindTexture(%d, %d) failed!", texture, target);
+        assert checkGLError() : glErrorMsg("glBindTexture(II)", GLTextureTarget.of(target).get(), texture);
 
         GL11.glTexImage1D(target, level, internalFormat, width, border, format, type, ptr);
-        assert GL11.glGetError() == GL11.GL_NO_ERROR : String.format("glTexImage2D(%d, %d, %d %d, %d, %d, %d, %d) failed!",
-                target, level, internalFormat, width, border, format, type, ptr);
+        assert checkGLError() : glErrorMsg("glTexImage1D(IIIIIIIL)", GLTextureTarget.of(target).get(), level, GLTextureInternalFormat.of(internalFormat).get(), width, border, GLTextureFormat.of(format).get(), GLType.of(type).get(), ptr);
 
         this.restoreTexture1d();
     }
 
     @Override
     public void glTextureImage2d(int texture, int target, int level, int internalFormat, int width, int height, int border, int format, int type, ByteBuffer pixels) {
+        assert checkId(texture) : invalidTextureIdMsg(texture);
+        assert checkGLenum(target, GLTextureTarget::of) : invalidGLenumMsg(target);
+        assert checkMipmapLevel(level) : invalidMipmapLevelMsg(level);
+        assert checkGLenum(internalFormat, GLTextureInternalFormat::of);
+        assert checkDimension(width) : invalidWidthMsg(width);
+        assert checkDimension(height) : invalidHeightMsg(height);
+        assert border == 0 : "Border must be 0.";
+        assert checkGLenum(format, GLTextureFormat::of) : invalidGLenumMsg(format);
+        assert checkGLenum(type, GLType::of) : invalidGLenumMsg(type);
+        assert checkBufferIsNative(pixels) : bufferIsNotNativeMsg(pixels);
+        assert pixels.isDirect() : NON_DIRECT_BUFFER_MSG;
+        assert checkBufferSize(width, height, 1, format, type, pixels) : bufferTooSmallMsg(width, height, 1, format, type, pixels);
+        
         this.saveTexture2d();
         GL11.glBindTexture(target, texture);
-        assert GL11.glGetError() == GL11.GL_NO_ERROR : String.format("glBindTexture(%d, %d) failed!", texture, target);
+        assert checkGLError() : glErrorMsg("glBindTexture(II)", GLTextureTarget.of(target).get(), texture);
 
         GL11.glTexImage2D(target, level, internalFormat, width, height, border, format, type, pixels);
-        assert GL11.glGetError() == GL11.GL_NO_ERROR : String.format("glTexImage2D(%d, %d, %d, %d, %d, %d, %d, %d, [data]) failed!",
-                target, level, internalFormat, width, height, border, format, type);
+        assert checkGLError() : glErrorMsg("glTexImage2D(IIIIIIII*)", GLTextureTarget.of(target).get(), level, GLTextureInternalFormat.of(internalFormat).get(), width, height, border, GLTextureFormat.of(format).get(), GLType.of(type).get(), toHexString(memAddress(pixels)));
 
         this.restoreTexture2d();
     }
 
     @Override
     public void glTextureImage2d(int texture, int target, int level, int internalFormat, int width, int height, int border, int format, int type, long ptr) {
+        assert checkId(texture) : invalidTextureIdMsg(texture);
+        assert checkGLenum(target, GLTextureTarget::of) : invalidGLenumMsg(target);
+        assert checkMipmapLevel(level) : invalidMipmapLevelMsg(level);
+        assert checkGLenum(internalFormat, GLTextureInternalFormat::of) : invalidGLenumMsg(internalFormat);
+        assert checkDimension(width) : invalidWidthMsg(width);
+        assert checkDimension(height) : invalidHeightMsg(height);     
+        assert border == 0 : "Border must be 0.";
+        assert checkGLenum(format, GLTextureFormat::of) : invalidGLenumMsg(format);
+        assert checkGLenum(type, GLType::of) : invalidGLenumMsg(type);
+        
         this.saveTexture2d();
         GL11.glBindTexture(target, texture);
-        assert GL11.glGetError() == GL11.GL_NO_ERROR : String.format("glBindTexture(%d, %d) failed!", texture, target);
+        assert checkGLError() : glErrorMsg("glBindTexture(II)", GLTextureTarget.of(target).get(), texture);
 
         GL11.glTexImage2D(target, level, internalFormat, width, height, border, format, type, ptr);
-        assert GL11.glGetError() == GL11.GL_NO_ERROR : String.format("glTexImage2D(%d, %d, %d, %d, %d, %d, %d, %d, %d) failed!",
-                target, level, internalFormat, width, height, border, format, type, ptr);
+        assert checkGLError() : glErrorMsg("glTexImage2D(IIIIIIIIL)", GLTextureTarget.of(target).get(), level, GLTextureInternalFormat.of(internalFormat).get(), width, height, border, GLTextureFormat.of(format).get(), GLType.of(type).get(), ptr);
 
         this.restoreTexture2d();
     }
 
     @Override
     public void glTextureImage3d(int texture, int target, int level, int internalFormat, int width, int height, int depth, int border, int format, int type, ByteBuffer pixels) {
+        assert checkId(texture) : invalidTextureIdMsg(texture);
+        assert checkGLenum(target, GLTextureTarget::of) : invalidGLenumMsg(target);
+        assert checkMipmapLevel(level) : invalidMipmapLevelMsg(level);
+        assert checkGLenum(internalFormat, GLTextureInternalFormat::of) : invalidGLenumMsg(internalFormat);
+        assert checkDimension(width) : invalidWidthMsg(width);
+        assert checkDimension(height) : invalidHeightMsg(height);
+        assert checkDimension(depth) : invalidDepthMsg(depth);
+        assert border == 0 : "Border must be 0.";
+        assert checkGLenum(format, GLTextureFormat::of) : invalidGLenumMsg(format);
+        assert checkGLenum(type, GLType::of) : invalidGLenumMsg(type);
+        assert checkBufferIsNative(pixels) : bufferIsNotNativeMsg(pixels);
+        assert pixels.isDirect() : NON_DIRECT_BUFFER_MSG;
+        assert checkBufferSize(width, height, depth, format, type, pixels) : bufferTooSmallMsg(width, height, depth, format, type, pixels);
+        
         this.saveTexture3d();
         GL11.glBindTexture(target, texture);
-        assert GL11.glGetError() == GL11.GL_NO_ERROR : String.format("glBindTexture(%d, %d) failed!", texture, target);
+        assert checkGLError() : glErrorMsg("glBindTexture(II)", GLTextureTarget.of(target).get(), texture);
 
         GL12.glTexImage3D(target, level, internalFormat, width, height, depth, border, format, type, pixels);
-        assert GL11.glGetError() == GL11.GL_NO_ERROR : String.format("glTexImage2D(%d, %d, %d, %d, %d, %d, %d, %d, %d, [data]) failed!",
-                target, level, internalFormat, width, height, depth, border, format, type);
+        assert checkGLError() : glErrorMsg("glTexImage3D(IIIIIIIII*)", GLTextureTarget.of(target).get(), level, GLTextureInternalFormat.of(internalFormat).get(), width, height, depth, border, GLTextureFormat.of(format).get(), GLType.of(type).get(), toHexString(memAddress(pixels)));
 
         this.restoreTexture3d();
     }
 
     @Override
     public void glTextureImage3d(int texture, int target, int level, int internalFormat, int width, int height, int depth, int border, int format, int type, long ptr) {
+        assert checkId(texture) : invalidTextureIdMsg(texture);
+        assert checkGLenum(target, GLTextureTarget::of) : invalidGLenumMsg(target);
+        assert checkMipmapLevel(level) : invalidMipmapLevelMsg(level);
+        assert checkGLenum(target, GLTextureInternalFormat::of) : invalidGLenumMsg(internalFormat);
+        assert checkDimension(width) : invalidWidthMsg(width);
+        assert checkDimension(height) : invalidHeightMsg(height);
+        assert checkDimension(depth) : invalidDepthMsg(depth);
+        assert border == 0 : "Border must be 0.";
+        assert checkGLenum(format, GLTextureFormat::of) : invalidGLenumMsg(format);
+        assert checkGLenum(type, GLType::of) : invalidGLenumMsg(type);
+        
         this.saveTexture3d();
-        GL11.glBindTexture(target, texture);
-        assert GL11.glGetError() == GL11.GL_NO_ERROR : String.format("glBindTexture(%d, %d) failed!", texture, target);
-
+        GL11.glBindTexture(target, texture);        
+        assert checkGLError() : glErrorMsg("glBindTexture(II)", GLTextureTarget.of(target).get(), texture);
+        
         GL12.glTexImage3D(target, level, internalFormat, width, height, depth, border, format, type, ptr);
-        assert GL11.glGetError() == GL11.GL_NO_ERROR : String.format("glTexImage2D(%d, %d, %d, %d, %d, %d, %d, %d, %d, %d) failed!",
-                target, level, internalFormat, width, height, depth, border, format, type, ptr);
+        assert checkGLError() : glErrorMsg("glTexImage3D(IIIIIIIIIL)", GLTextureTarget.of(target).get(), level, GLTextureInternalFormat.of(internalFormat).get(), width, height, depth, border, GLTextureFormat.of(format).get(), GLType.of(type).get(), ptr);
 
         this.restoreTexture3d();
     }
 
     @Override
     public void glNamedFramebufferTexture1D(int framebuffer, int attachment, int texTarget, int texture, int level) {
+        assert checkId(framebuffer) : invalidFramebufferIdMsg(framebuffer);
+        assert checkGLenum(texTarget, GLTextureTarget::of) : invalidGLenumMsg(texTarget);
+        assert checkId(texture) : invalidTextureIdMsg(texture);
+        assert checkMipmapLevel(level) : invalidMipmapLevelMsg(level);
+        
         final ContextCapabilities cap = GL.getCapabilities();
 
         if (cap.OpenGL30) {
             this.saveFramebuffer();
             GL30.glBindFramebuffer(GL30.GL_FRAMEBUFFER, framebuffer);
+            assert checkGLError() : glErrorMsg("glBindFramebuffer(II)", "GL_FRAMEBUFFER", framebuffer);
+            
             GL30.glFramebufferTexture1D(GL30.GL_FRAMEBUFFER, attachment, texTarget, texture, level);
-            assert GL11.glGetError() == GL11.GL_NO_ERROR : String.format("glFramebufferTexture1D(%d, %d, %d, %d, %d) failed!", framebuffer, attachment, texTarget, texture, level);
+            assert checkGLError() : glErrorMsg("glFramebufferTexture1D(IIIII)", "GL_FRAMEBUFFER", attachment, GLTextureTarget.of(texTarget).get(), texture, level);
+            
             this.restoreFramebuffer();
         } else if (cap.GL_ARB_framebuffer_object) {
             this.saveFramebuffer();
             ARBFramebufferObject.glBindFramebuffer(GL30.GL_FRAMEBUFFER, framebuffer);
+            assert checkGLError() : glErrorMsg("glBindFramebufferARB(II)", "GL_FRAMEBUFFER", framebuffer);
+            
             ARBFramebufferObject.glFramebufferTexture1D(GL30.GL_FRAMEBUFFER, attachment, texTarget, texture, level);
-            assert GL11.glGetError() == GL11.GL_NO_ERROR : String.format("glFramebufferTexture1DARB(%d, %d, %d, %d, %d) failed!", framebuffer, attachment, texTarget, texture, level);
+            assert checkGLError() : glErrorMsg("glFramebufferTexture1DARB(IIIII)", "GL_FRAMEBUFFER", attachment, GLTextureTarget.of(texTarget), texture, level);
+            
             this.restoreFramebuffer();
         } else if (cap.GL_EXT_framebuffer_object) {
             this.saveFramebuffer();
             EXTFramebufferObject.glBindFramebufferEXT(GL30.GL_FRAMEBUFFER, framebuffer);
+            assert checkGLError() : glErrorMsg("glBindFramebufferEXT(II)", "GL_FRAMEBUFFER", framebuffer);
+            
             EXTFramebufferObject.glFramebufferTexture1DEXT(GL30.GL_FRAMEBUFFER, attachment, texTarget, texture, level);
-            assert GL11.glGetError() == GL11.GL_NO_ERROR : String.format("glFramebufferTexture1DEXT(%d, %d, %d, %d, %d) failed!", framebuffer, attachment, texTarget, texture, level);
+            assert checkGLError() : glErrorMsg("glFramebufferTExture1DEXT(IIIII)", "GL_FRAMEBUFFER", attachment, GLTextureTarget.of(texTarget).get(), texture, level);
             this.restoreFramebuffer();
         } else {
             throw new UnsupportedOperationException("glFramebufferTexture1D is not supported. glFramebufferTexture1D requires either: an OpenGL 3.0 context, ARB_framebuffer_object, or EXT_framebuffer_object.");
@@ -879,66 +1221,79 @@ public class FakeDSA implements EXTDSADriver {
 
     @Override
     public void glNamedFramebufferTexture2D(int framebuffer, int attachment, int texTarget, int texture, int level) {
+        assert checkId(framebuffer) : invalidFramebufferIdMsg(framebuffer);
+        assert checkGLenum(texTarget, GLTextureTarget::of) : invalidGLenumMsg(texTarget);
+        assert checkId(texture) : invalidTextureIdMsg(texture);
+        assert checkMipmapLevel(level) : invalidMipmapLevelMsg(level);
+        
         final ContextCapabilities cap = GL.getCapabilities();
 
         if (cap.OpenGL30) {
             this.saveFramebuffer();
             GL30.glBindFramebuffer(GL30.GL_FRAMEBUFFER, framebuffer);
-            assert GL11.glGetError() == GL11.GL_NO_ERROR : String.format("glBindFramebuffer(GL_FRAMEBUFFER, %d) failed!", framebuffer);
+            assert checkGLError() : glErrorMsg("glBindFramebuffer(II)", "GL_FRAMEBUFFER", framebuffer);
+            
             GL30.glFramebufferTexture2D(GL30.GL_FRAMEBUFFER, attachment, texTarget, texture, level);
-            assert GL11.glGetError() == GL11.GL_NO_ERROR : String.format("glFramebufferTexture2D(%d, %d, %d, %d, %d) failed!", framebuffer, attachment, texTarget, texture, level);
+            assert checkGLError() : glErrorMsg("glFramebufferTexture2D(IIIII)", "GL_FRAMEBUFFER", attachment, GLTextureTarget.of(texTarget).get(), texture, level);
             this.restoreFramebuffer();
         } else if (cap.GL_ARB_framebuffer_object) {
             this.saveFramebuffer();
             ARBFramebufferObject.glBindFramebuffer(GL30.GL_FRAMEBUFFER, framebuffer);
-            assert GL11.glGetError() == GL11.GL_NO_ERROR : String.format("glBindFramebufferARB(GL_FRAMEBUFFER, %d) failed!", framebuffer);
+            assert checkGLError() : glErrorMsg("glBindFramebufferARB(II)", "GL_FRAMEBUFFER", framebuffer);
+            
             ARBFramebufferObject.glFramebufferTexture2D(GL30.GL_FRAMEBUFFER, attachment, texTarget, texture, level);
-            assert GL11.glGetError() == GL11.GL_NO_ERROR : String.format("glFramebufferTexture2DARB(%d, %d, %d, %d, %d) failed!", framebuffer, attachment, texTarget, texture, level);
+            assert checkGLError() : glErrorMsg("glBindFramebufferTexture2DABR(IIIII)", "GL_FRAMEBUFFER", attachment, GLTextureTarget.of(texTarget).get(), texture, level);
             this.restoreFramebuffer();
         } else if (cap.GL_EXT_framebuffer_object) {
             this.saveFramebuffer();
             EXTFramebufferObject.glBindFramebufferEXT(GL30.GL_FRAMEBUFFER, framebuffer);
-            assert GL11.glGetError() == GL11.GL_NO_ERROR : String.format("glBindFramebufferEXT(GL_FRAMEBUFFER, %d) failed!", framebuffer);
+            assert checkGLError() : glErrorMsg("glBindFramebufferEXT(II)", "GL_FRAMEBUFFER", framebuffer);
+            
             EXTFramebufferObject.glFramebufferTexture2DEXT(GL30.GL_FRAMEBUFFER, attachment, texTarget, texture, level);
-            assert GL11.glGetError() == GL11.GL_NO_ERROR : String.format("glFramebufferTexture2DEXT(%d, %d, %d, %d, %d) failed!", framebuffer, attachment, texTarget, texture, level);
+            assert checkGLError() : glErrorMsg("glFramebufferTexture2DEXT(IIIII)", "GL_FRAMEBUFFER", attachment, GLTextureTarget.of(texTarget).get(), texture, level);
             this.restoreFramebuffer();
         } else {
             throw new UnsupportedOperationException("glFramebufferTexture2D is not supported. glFramebufferTexture2D requires either: an OpenGL 3.0 context, ARB_framebuffer_object, or EXT_framebuffer_object.");
         }
     }
-    
+
     @Override
     public void glBlitNamedFramebuffer(int readFramebuffer, int drawFramebuffer, int srcX0, int srcY0, int srcX1, int srcY1, int dstX0, int dstY0, int dstX1, int dstY1, int mask, int filter) {
+        assert checkNullableId(readFramebuffer) : invalidFramebufferIdMsg(readFramebuffer);
+        assert checkNullableId(drawFramebuffer) : invalidFramebufferIdMsg(drawFramebuffer);
+        
         final ContextCapabilities cap = GL.getCapabilities();
-        
-        if(cap.OpenGL30) {
+
+        if (cap.OpenGL30) {
             final int prevReadFB = GL11.glGetInteger(GL30.GL_READ_FRAMEBUFFER_BINDING);
-            assert GL11.glGetError() == GL11.GL_NO_ERROR : String.format("glGetInteger(GL_READ_FRAMEBUFFER_BINDING) = %d failed!", prevReadFB);
+            assert checkGLError() : glErrorMsg("glGetInteger(I)", "GL_READ_FRAMEBUFFER_BINDING");
+            
             final int prevDrawFB = GL11.glGetInteger(GL30.GL_DRAW_FRAMEBUFFER_BINDING);
-            
+            assert checkGLError() : glErrorMsg("glGetInteger(I)", "GL_DRAW_FRAMEBUFFER_BINDING");
+
             GL30.glBlitFramebuffer(srcX0, srcY0, srcX1, srcY1, dstX0, dstY0, dstX1, dstY1, mask, filter);
-            assert GL11.glGetError() == GL11.GL_NO_ERROR : String.format("glBlitFramebuffer(%d, %d, %d, %d, %d, %d, %d, %d, %d, %d) failed!", srcX0, srcY0, srcX1, srcY1, dstX0, dstY0, dstX1, dstY1, mask, filter);
-            
+            assert checkGLError() : glErrorMsg("glBlitFramebuffer(IIIIIIIIII)", srcX0, srcY0, srcX1, srcY1, dstX0, dstY0, dstX1, dstY1, mask, filter);
+
             GL30.glBindFramebuffer(GL30.GL_DRAW_FRAMEBUFFER, prevDrawFB);
-            assert GL11.glGetError() == GL11.GL_NO_ERROR : String.format("glBindFramebuffer(GL_DRAW_FRAMEBUFFER, %d) failed!", prevDrawFB);
-            
+            assert checkGLError() : glErrorMsg("glBindFramebuffer(II)", "GL_DRAW_FRAMEBUFFER", prevDrawFB);
+
             GL30.glBindFramebuffer(GL30.GL_READ_FRAMEBUFFER, prevReadFB);
-            assert GL11.glGetError() == GL11.GL_NO_ERROR : String.format("glBindFramebuffer(GL_READ_FRAMEBUFFER, %d) failed!", prevReadFB);
-        } else if(cap.GL_ARB_framebuffer_object) {
+            assert checkGLError() : glErrorMsg("glBindFramebuffer(II)", "GL_READ_FRAMEBUFFER", prevReadFB);
+        } else if (cap.GL_ARB_framebuffer_object) {
             final int prevReadFB = GL11.glGetInteger(ARBFramebufferObject.GL_READ_FRAMEBUFFER_BINDING);
-            assert GL11.glGetError() == GL11.GL_NO_ERROR : String.format("glGetInteger(GL_READ_FRAMEBUFFER_BINDING) = %d failed!", prevReadFB);
-            
+            assert checkGLError() : glErrorMsg("glGetInteger(I)", "GL_READ_FRAMEBUFFER_BINDING");
+
             final int prevDrawFB = GL11.glGetInteger(ARBFramebufferObject.GL_DRAW_FRAMEBUFFER_BINDING);
-            assert GL11.glGetError() == GL11.GL_NO_ERROR : String.format("glGetInteger(GL_DRAW_FRAMEBUFFER_BINDING) = %d failed!", prevDrawFB);
-        
+            assert checkGLError() : glErrorMsg("glGetInteger(I)", "GL_DRAW_FRAMEBUFFER_BINDING");
+
             ARBFramebufferObject.glBlitFramebuffer(srcX0, srcY0, srcX1, srcY1, dstX0, dstY0, dstX1, dstY1, mask, filter);
-            assert GL11.glGetError() == GL11.GL_NO_ERROR : String.format("glBlitFramebuffer(%d, %d, %d, %d, %d, %d, %d, %d, %d, %d) failed!", srcX0, srcY0, srcX1, srcY1, dstX0, dstY0, dstX1, dstY1, mask, filter);
-            
+            assert checkGLError() : glErrorMsg("glBlitFramebufferARB(IIIIIIIIII)", srcX0, srcY0, srcX1, srcY1, dstX0, dstY0, dstX1, dstY1, mask, filter);
+
             ARBFramebufferObject.glBindFramebuffer(ARBFramebufferObject.GL_DRAW_FRAMEBUFFER, prevDrawFB);
-            assert GL11.glGetError() == GL11.GL_NO_ERROR : String.format("glBindFramebuffer(GL_DRAW_FRAMEBUFFER, %d) failed!", prevDrawFB);
-            
+            assert checkGLError() : glErrorMsg("glBindFramebuffer(II)", "GL_DRAW_FRAMEBUFFER", prevDrawFB);
+
             ARBFramebufferObject.glBindFramebuffer(ARBFramebufferObject.GL_READ_FRAMEBUFFER, prevReadFB);
-            assert GL11.glGetError() == GL11.GL_NO_ERROR : String.format("glBindFramebuffer(GL_READ_FRAMEBUFFER, %d) failed!", prevReadFB);
+            assert checkGLError() : glErrorMsg("glBindFramebuffer(II)", "GL_READ_FRAMEBUFFER", prevReadFB);
         } else {
             throw new UnsupportedOperationException("glBlitFramebuffer requires either an OpenGL3.0 context or ARB_framebuffer_object!");
         }
@@ -946,29 +1301,43 @@ public class FakeDSA implements EXTDSADriver {
 
     @Override
     public void glNamedBufferReadPixels(int bufferId, int x, int y, int width, int height, int format, int type, long ptr) {
+        assert checkId(bufferId) : invalidBufferIdMsg(bufferId);
+        assert checkGLenum(format, GLTextureFormat::of) : invalidGLenumMsg(format);
+        assert checkGLenum(type, GLType::of) : invalidGLenumMsg(type);
+        
         final int prevPixBuffer = GL11.glGetInteger(GL21.GL_PIXEL_PACK_BUFFER_BINDING);
-        assert GL11.glGetError() == GL11.GL_NO_ERROR : String.format("glGetInteger(GL_PIXEL_PACK_BUFFER) = %d failed!", prevPixBuffer);
+        assert checkGLError() : glErrorMsg("glGetInteger(I)", "GL_PIXEL_PACK_BUFFER_BINDING");
 
         GL15.glBindBuffer(GL21.GL_PIXEL_PACK_BUFFER, bufferId);
-        assert GL11.glGetError() == GL11.GL_NO_ERROR : String.format("glBindBuffer(GL_PIXEL_PACK_BUFFER, %d) failed!", bufferId);
-        
+        assert checkGLError() : glErrorMsg("glBindBuffer(II)", "GL_PIXEL_PACK_BUFFER", bufferId);
+
         GL11.glReadPixels(x, y, width, height, format, type, ptr);
-        assert GL11.glGetError() == GL11.GL_NO_ERROR : String.format("glReadPixels(%d, %d, %d, %d, %d, %d, %d) failed!", x, y, width, height, format, type, ptr);
-        
+        assert checkGLError() : glErrorMsg("glReadPixels(IIIIIIL)", x, y, width, height, GLTextureFormat.of(format).get(), GLType.of(type).get(), ptr);
+
         GL15.glBindBuffer(GL21.GL_PIXEL_PACK_BUFFER, prevPixBuffer);
-        assert GL11.glGetError() == GL11.GL_NO_ERROR : String.format("glBindBuffer(GL_PIXEL_PACK_BUFFER, %d) failed!", prevPixBuffer);
+        assert checkGLError() : glErrorMsg("glBindBuffer(II)", "GL_PIXEL_PACK_BUFFER", prevPixBuffer);
     }
-    
+
     @Override
-    public void glGetTextureImage(int texture, int target, int level, int format, int type, int bufferSize, ByteBuffer pixels) {        
+    public void glGetTextureImage(int texture, int target, int level, int format, int type, int bufferSize, ByteBuffer pixels) {
+        assert checkId(texture) : invalidTextureIdMsg(texture);
+        assert checkGLenum(target, GLTextureTarget::of) : invalidGLenumMsg(target);
+        assert checkMipmapLevel(level) : invalidMipmapLevelMsg(level);
+        assert checkGLenum(format, GLTextureFormat::of) : invalidGLenumMsg(format);
+        assert checkGLenum(type, GLType::of) : invalidGLenumMsg(type);
+        assert checkSize(bufferSize) : invalidSizeMsg(bufferSize);
+        assert checkBufferIsNative(pixels) : bufferIsNotNativeMsg(pixels);
+        assert pixels.isDirect() : NON_DIRECT_BUFFER_MSG;
+        assert checkBufferSize(bufferSize, 1, 1, format, type, pixels) : bufferTooSmallMsg(bufferSize, 1, 1, format, type, pixels);
+        
         this.saveTexture(target);
-        
+
         GL11.glBindTexture(target, texture);
-        assert GL11.glGetError() == GL11.GL_NO_ERROR : String.format("glBindTexture(%d, %d) failed!", target, texture);
-        
-        GL11.glGetTexImage(target, level, format, type, pixels);        
-        assert GL11.glGetError() == GL11.GL_NO_ERROR : String.format("glGetTexImage(%d, %d, %d, %d, [data]) failed!", target, level, format, type);
-        
+        assert checkGLError() : glErrorMsg("glBindTexture(II)", GLTextureTarget.of(target).get(), texture);
+
+        GL11.glGetTexImage(target, level, format, type, pixels);
+        assert checkGLError() : glErrorMsg("glGetTexImage(IIIII)", GLTextureTarget.of(target).get(), level, GLTextureFormat.of(format).get(), GLType.of(type).get(), toHexString(memAddress(pixels)));
+
         this.restoreTexture(target);
     }
 

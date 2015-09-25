@@ -7,7 +7,9 @@ package com.longlinkislong.gloop.dsa;
 
 import static com.longlinkislong.gloop.GLAsserts.NON_DIRECT_BUFFER_MSG;
 import static com.longlinkislong.gloop.GLAsserts.bufferIsNotNativeMsg;
+import static com.longlinkislong.gloop.GLAsserts.bufferTooSmallMsg;
 import static com.longlinkislong.gloop.GLAsserts.checkBufferIsNative;
+import static com.longlinkislong.gloop.GLAsserts.checkBufferSize;
 import static com.longlinkislong.gloop.GLAsserts.checkDimension;
 import static com.longlinkislong.gloop.GLAsserts.checkDouble;
 import static com.longlinkislong.gloop.GLAsserts.checkFloat;
@@ -44,7 +46,6 @@ import com.longlinkislong.gloop.GLBufferUsage;
 import com.longlinkislong.gloop.GLTextureFormat;
 import com.longlinkislong.gloop.GLTextureInternalFormat;
 import com.longlinkislong.gloop.GLTextureTarget;
-import static com.longlinkislong.gloop.GLTools.pixelSize;
 import com.longlinkislong.gloop.GLType;
 import static java.lang.Long.toHexString;
 import java.nio.ByteBuffer;
@@ -170,6 +171,7 @@ public class ARBDSA implements DSADriver {
         assert checkGLenum(type, GLType::of) : invalidGLenumMsg(type);
         assert checkBufferIsNative(pixels) : bufferIsNotNativeMsg(pixels);
         assert pixels.isDirect() : NON_DIRECT_BUFFER_MSG;
+        assert checkBufferSize(bufferSize, 1, 1, format, type, pixels) : bufferTooSmallMsg(bufferSize, 1, 1, format, type, pixels);
 
         ARBDirectStateAccess.glGetTextureImage(texture, level, format, type, bufferSize, pixels);
         assert checkGLError() : glErrorMsg("glGetTextureImageARB(IIIII*)", texture, level, GLTextureFormat.of(format).get(), GLType.of(type).get(), bufferSize, toHexString(memAddress(pixels)));
@@ -193,7 +195,7 @@ public class ARBDSA implements DSADriver {
     }
 
     @Override
-    public int glCreateBuffers() {                
+    public int glCreateBuffers() {
         final int out = ARBDirectStateAccess.glCreateBuffers();
         assert checkGLError() : glErrorMsg("glCreateBuffersARB(void)");
 
@@ -619,7 +621,7 @@ public class ARBDSA implements DSADriver {
     public void glProgramUniformMatrix3d(int programId, int location, boolean needsTranspose, DoubleBuffer data) {
         assert checkId(programId) : invalidProgramIdMsg(programId);
         assert checkOffset(location) : invalidUniformLocationMsg(location);
-        assert data.isDirect() : NON_DIRECT_BUFFER_MSG;   
+        assert data.isDirect() : NON_DIRECT_BUFFER_MSG;
 
         final ContextCapabilities cap = GL.getCapabilities();
 
@@ -638,7 +640,7 @@ public class ARBDSA implements DSADriver {
     public void glProgramUniformMatrix4d(int programId, int location, boolean needsTranspose, DoubleBuffer data) {
         assert checkId(programId) : invalidProgramIdMsg(programId);
         assert checkOffset(location) : invalidUniformLocationMsg(location);
-        assert data.isDirect() : NON_DIRECT_BUFFER_MSG;   
+        assert data.isDirect() : NON_DIRECT_BUFFER_MSG;
 
         final ContextCapabilities cap = GL.getCapabilities();
 
@@ -663,7 +665,7 @@ public class ARBDSA implements DSADriver {
         assert checkGLenum(type, GLType::of) : invalidGLenumMsg(type);
         assert checkBufferIsNative(pixels) : bufferIsNotNativeMsg(pixels);
         assert pixels.isDirect() : NON_DIRECT_BUFFER_MSG;
-        assert pixelSize(width, 1, 1, format, type) <= pixels.limit() : String.format("glTextureSubImage1d requires %d bytes for [width=%d, format=%s, type=%s] but ByteBuffer has %d bytes!", pixelSize(width, 1, 1, format, type), width, GLTextureFormat.of(format).get(), GLType.of(type).get(), pixels.limit());
+        assert checkBufferSize(width, 1, 1, format, type, pixels) : bufferTooSmallMsg(width, 1, 1, format, type, pixels);
 
         ARBDirectStateAccess.glTextureSubImage1D(textureId, level, xOffset, width, format, type, pixels);
         assert checkGLError() : glErrorMsg("glTextureSubImage1DARB(IIIIII*)", textureId, level, xOffset, width, GLTextureFormat.of(format).get(), GLType.of(type).get(), toHexString(memAddress(pixels)));
@@ -681,7 +683,7 @@ public class ARBDSA implements DSADriver {
         assert checkGLenum(type, GLType::of) : invalidGLenumMsg(type);
         assert checkBufferIsNative(pixels) : bufferIsNotNativeMsg(pixels);
         assert pixels.isDirect() : NON_DIRECT_BUFFER_MSG;
-        assert pixelSize(width, height, 1, format, type) <= pixels.limit() : String.format("glTextureSubImage2d requires %d bytes for [width=%d, height=%d, format=%s, type=%s]; ByteBuffer has %d bytes!", pixelSize(width, height, 1, format, type), width, height, GLTextureFormat.of(format).get(), GLType.of(type).get(), pixels.limit());
+        assert checkBufferSize(width, height, 1, format, type, pixels) : bufferTooSmallMsg(width, height, 1, format, type, pixels);        
 
         ARBDirectStateAccess.glTextureSubImage2D(textureId, level, xOffset, yOffset, width, height, format, type, pixels);
         assert checkGLError() : glErrorMsg("glTextureSubImage2dARB(IIIIIIII*)", textureId, level, xOffset, yOffset, width, height, GLTextureFormat.of(format).get(), GLType.of(type).get(), toHexString(memAddress(pixels)));
@@ -700,7 +702,7 @@ public class ARBDSA implements DSADriver {
         assert checkGLenum(format, GLTextureFormat::of) : invalidGLenumMsg(format);
         assert checkGLenum(type, GLType::of) : invalidGLenumMsg(type);
         assert checkBufferIsNative(pixels) : bufferIsNotNativeMsg(pixels);
-        assert pixelSize(width, height, depth, format, type) <= pixels.limit() : String.format("glTextureSubImage3d requires %d bytes for [width=%d, height=%d, depth=%d, format=%d, type=%d]; ByteBuffer has %d bytes!", pixelSize(width, height, depth, format, type), width, height, depth, GLTextureFormat.of(format).get(), GLType.of(type).get(), pixels.limit());
+        assert checkBufferSize(width, height, depth, format, type, pixels) : bufferTooSmallMsg(width, height, depth, format, type, pixels);
 
         ARBDirectStateAccess.glTextureSubImage3D(textureId, level, xOffset, yOffset, zOffset, width, height, depth, format, type, pixels);
         assert checkGLError() : glErrorMsg("glTextureSubImage3dARB(IIIIIIIIIII*)", textureId, level, xOffset, yOffset, zOffset, width, height, depth, GLTextureFormat.of(format).get(), GLType.of(type).get(), toHexString(memAddress(pixels)));
