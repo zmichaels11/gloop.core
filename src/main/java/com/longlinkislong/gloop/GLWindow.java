@@ -624,6 +624,24 @@ public class GLWindow {
         }
 
     }
+    
+    public final void setCursor(final long cursorId) {
+        new SetCursorTask(cursorId).glRun(this.getGLThread());
+    }
+    
+    public class SetCursorTask extends GLTask {
+        final long cursorId;
+        
+        public SetCursorTask(final long cursorId) {
+            this.cursorId = cursorId;
+        }
+        
+        @Override
+        public void run() {            
+            GLFW.glfwSetCursor(GLWindow.this.window, this.cursorId);
+        }
+        
+    }
 
     /**
      * Retrieves the x-position of the top-left of the window.
