@@ -1270,6 +1270,12 @@ public class FakeDSA implements EXTDSADriver {
             
             final int prevDrawFB = GL11.glGetInteger(GL30.GL_DRAW_FRAMEBUFFER_BINDING);
             assert checkGLError() : glErrorMsg("glGetInteger(I)", "GL_DRAW_FRAMEBUFFER_BINDING");
+            
+            GL30.glBindFramebuffer(GL30.GL_READ_FRAMEBUFFER, readFramebuffer);
+            assert checkGLError() : glErrorMsg("glBindFramebuffer(II)", "GL_READ_FRAMEBUFFER", readFramebuffer);
+            
+            GL30.glBindFramebuffer(GL30.GL_DRAW_FRAMEBUFFER, drawFramebuffer);
+            assert checkGLError() : glErrorMsg("glBindFramebuffer(II)", "GL_DRAW_FRAMEBUFFER", drawFramebuffer);
 
             GL30.glBlitFramebuffer(srcX0, srcY0, srcX1, srcY1, dstX0, dstY0, dstX1, dstY1, mask, filter);
             assert checkGLError() : glErrorMsg("glBlitFramebuffer(IIIIIIIIII)", srcX0, srcY0, srcX1, srcY1, dstX0, dstY0, dstX1, dstY1, mask, filter);
@@ -1285,6 +1291,12 @@ public class FakeDSA implements EXTDSADriver {
 
             final int prevDrawFB = GL11.glGetInteger(ARBFramebufferObject.GL_DRAW_FRAMEBUFFER_BINDING);
             assert checkGLError() : glErrorMsg("glGetInteger(I)", "GL_DRAW_FRAMEBUFFER_BINDING");
+            
+            ARBFramebufferObject.glBindFramebuffer(ARBFramebufferObject.GL_DRAW_FRAMEBUFFER, drawFramebuffer);
+            assert checkGLError() : glErrorMsg("glBindFramebufferARB(II)", "GL_DRAW_FRAMEBUFFER", drawFramebuffer);
+            
+            ARBFramebufferObject.glBindFramebuffer(ARBFramebufferObject.GL_READ_FRAMEBUFFER, readFramebuffer);
+            assert checkGLError() : glErrorMsg("glBindFramebufferARB(II)", "GL_READ_FRAMEBUFFER", readFramebuffer);
 
             ARBFramebufferObject.glBlitFramebuffer(srcX0, srcY0, srcX1, srcY1, dstX0, dstY0, dstX1, dstY1, mask, filter);
             assert checkGLError() : glErrorMsg("glBlitFramebufferARB(IIIIIIIIII)", srcX0, srcY0, srcX1, srcY1, dstX0, dstY0, dstX1, dstY1, mask, filter);
@@ -1294,7 +1306,7 @@ public class FakeDSA implements EXTDSADriver {
 
             ARBFramebufferObject.glBindFramebuffer(ARBFramebufferObject.GL_READ_FRAMEBUFFER, prevReadFB);
             assert checkGLError() : glErrorMsg("glBindFramebuffer(II)", "GL_READ_FRAMEBUFFER", prevReadFB);
-        } else {
+        } else {            
             throw new UnsupportedOperationException("glBlitFramebuffer requires either an OpenGL3.0 context or ARB_framebuffer_object!");
         }
     }
