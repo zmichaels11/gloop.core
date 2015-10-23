@@ -37,6 +37,9 @@ public final class NativeTools {
         } else if (os.contains("mac")) {
             OPERATING_SYSTEM = OperatingSystem.OSX;
         } else {
+            if (DEBUG) {
+                System.out.println("[NativeTools] Unknown OS: " + os);
+            }
             OPERATING_SYSTEM = OperatingSystem.UNSUPPORTED;
         }
 
@@ -55,10 +58,10 @@ public final class NativeTools {
                 ARCHITECTURE = Architecture.UNSUPPORTED;
                 break;
         }
-        
-        if(DEBUG) {
+
+        if (DEBUG) {
             final String jvm = System.getProperty("java.version");
-            
+
             System.out.printf("[NativeTools]: OS=%s architecture=%s JVM=%s\n", OPERATING_SYSTEM, ARCHITECTURE, jvm);
         }
     }
@@ -94,6 +97,7 @@ public final class NativeTools {
 
     /**
      * All supported Operating Systems
+     *
      * @since 15.08.20
      */
     public static enum OperatingSystem {
@@ -106,6 +110,7 @@ public final class NativeTools {
 
     /**
      * All supported architectures
+     *
      * @since 15.08.20
      */
     public static enum Architecture {
