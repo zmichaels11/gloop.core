@@ -21,6 +21,7 @@ import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.stream.Collectors;
 import org.lwjgl.glfw.GLFW;
@@ -295,6 +296,8 @@ public class GLThread implements ExecutorService {
         this.internalExecutor.execute(task);
     }
 
+    private final AtomicBoolean hasUpdateTask = new AtomicBoolean(false);
+    
     /**
      * Schedules an OpenGL task to run at every iteration of the main loop.
      *
@@ -302,6 +305,14 @@ public class GLThread implements ExecutorService {
      * @since 15.07.16
      */
     public void scheduleGLTask(final GLTask task) {
+        if(task instanceof GLWindow.UpdateTask) {
+            if(this.hasUpdateTask.get()) {
+                throw new IllegalStateException("GLThread already has an implementation of GLWindow.UpdateTask!");
+            } else {
+                this.hasUpdateTask.set(true);
+            }
+        }
+        
         this.internalExecutor.execute(new GLTask() {
 
             @Override
