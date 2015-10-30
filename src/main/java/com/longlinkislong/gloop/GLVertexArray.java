@@ -219,6 +219,8 @@ public class GLVertexArray extends GLObject {
 
         @Override
         public void run() {
+            checkThread();
+            
             if (GLVertexArray.this.isValid()) {
                 throw new GLException("GLVertexArray is already initialized!");
             }
@@ -424,6 +426,8 @@ public class GLVertexArray extends GLObject {
 
         @Override
         public void run() {
+            checkThread();
+            
             if (!GLVertexArray.this.isValid()) {
                 throw new GLException("Invalid GLVertexArray!");
             } else if (!this.indirectCommandBuffer.isValid()) {
@@ -502,6 +506,8 @@ public class GLVertexArray extends GLObject {
 
         @Override
         public void run() {
+            checkThread();
+            
             if (!GLVertexArray.this.isValid()) {
                 throw new GLException("Invalid GLVertexArray!");
             } else if (!this.indirectCommandBuffer.isValid()) {
@@ -576,6 +582,8 @@ public class GLVertexArray extends GLObject {
 
         @Override
         public void run() {
+            checkThread();
+            
             if (!GLVertexArray.this.isValid()) {
                 throw new GLException("Invalid GLVertexArray!");
             }
@@ -664,6 +672,8 @@ public class GLVertexArray extends GLObject {
 
         @Override
         public void run() {
+            checkThread();
+            
             if (!GLVertexArray.this.isValid()) {
                 throw new GLException("Invalid GLVertexArray!");
             }
@@ -750,6 +760,8 @@ public class GLVertexArray extends GLObject {
 
         @Override
         public void run() {
+            checkThread();
+            
             if (!GLVertexArray.this.isValid()) {
                 throw new GLException("GLVertexArray is not valid!");
             }
@@ -832,6 +844,8 @@ public class GLVertexArray extends GLObject {
 
         @Override
         public void run() {
+            checkThread();
+            
             if (!GLVertexArray.this.isValid()) {
                 throw new GLException("Invalid GLVertex!");
             }
@@ -885,6 +899,8 @@ public class GLVertexArray extends GLObject {
 
         @Override
         public void run() {
+            checkThread();
+            
             if (!GLVertexArray.this.isValid()) {
                 throw new GLException("Invalid GLVertexArray!");
             }
@@ -916,6 +932,8 @@ public class GLVertexArray extends GLObject {
 
         @Override
         public void run() {
+            checkThread();
+            
             if (!GLVertexArray.this.isValid()) {
                 throw new GLException("GLVertexArray is not valid!");
             }
@@ -938,6 +956,8 @@ public class GLVertexArray extends GLObject {
 
         @Override
         public void run() {
+            checkThread();
+            
             if (GLVertexArray.this.isValid()) {
                 GLVertexArray.this.glDeleteVertexArrays.call(GLVertexArray.this.vaoId);
                 assert checkGLError() : glErrorMsg("glDeleteVertexArrays(I)", GLVertexArray.this.vaoId);
@@ -1092,6 +1112,8 @@ public class GLVertexArray extends GLObject {
 
         @Override
         public void run() {
+            checkThread();
+            
             if (!GLVertexArray.this.isValid()) {
                 throw new GLException("Invalid GLVertexArray!");
             }
@@ -1122,5 +1144,10 @@ public class GLVertexArray extends GLObject {
                 assert checkGLError() : glErrorMsg("glVertexAttribDivisor(II)", this.index, this.divisor);
             }
         }
+    }
+    
+    @Override
+    public final boolean isShareable() {
+        return false;
     }
 }

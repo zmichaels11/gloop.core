@@ -138,6 +138,8 @@ public class GLFramebuffer extends GLObject {
 
         @Override
         public Boolean call() throws Exception {
+            checkThread();
+            
             final ContextCapabilities cap = GL.getCapabilities();
 
             if (cap.OpenGL30) {
@@ -211,6 +213,8 @@ public class GLFramebuffer extends GLObject {
 
         @Override
         public void run() {
+            checkThread();
+            
             final ContextCapabilities cap = GL.getCapabilities();
 
             if (cap.OpenGL30) {
@@ -263,6 +267,8 @@ public class GLFramebuffer extends GLObject {
 
         @Override
         public void run() {
+            checkThread();
+            
             if (GLFramebuffer.this.isLocked) {
                 throw new GLException("Cannot initialize null instance of GLFramebuffer!");
             } else if (GLFramebuffer.this.isValid()) {
@@ -292,6 +298,8 @@ public class GLFramebuffer extends GLObject {
 
         @Override
         public void run() {
+            checkThread();
+            
             if (GLFramebuffer.this.isLocked) {
                 throw new GLException("Cannot delete null instance of GLFramebuffer!");
             } else if (!GLFramebuffer.this.isValid()) {
@@ -414,6 +422,8 @@ public class GLFramebuffer extends GLObject {
 
         @Override
         public void run() {
+            checkThread();
+            
             if (!GLFramebuffer.this.isValid()) {
                 throw new GLException("Invalid GLFramebuffer!");
             }
@@ -496,6 +506,8 @@ public class GLFramebuffer extends GLObject {
 
         @Override
         public void run() {
+            checkThread();
+            
             if (!GLFramebuffer.this.isValid()) {
                 throw new GLException("Invalid GLFramebuffer!");
             }
@@ -599,6 +611,8 @@ public class GLFramebuffer extends GLObject {
 
         @Override
         public void run() {
+            checkThread();
+            
             if (GLFramebuffer.this.isLocked) {
                 throw new GLException("Cannot add attachments to null instance of GLFramebuffer!");
             } else if (!GLFramebuffer.this.isValid()) {
@@ -671,7 +685,7 @@ public class GLFramebuffer extends GLObject {
 
         new AddColorAttachmentTask(name, attachment, level).glRun(this.getThread());
         return this;
-    }
+    }        
 
     /**
      * A GLTask that adds a color attachment to a GLFramebuffer.
@@ -721,6 +735,8 @@ public class GLFramebuffer extends GLObject {
 
         @Override
         public void run() {
+            checkThread();         
+            
             if (GLFramebuffer.this.isLocked) {
                 throw new GLException("Cannot add color attachment to null instance of GLFramebuffer!");
             } else if (!GLFramebuffer.this.isValid()) {
@@ -846,6 +862,9 @@ public class GLFramebuffer extends GLObject {
 
         @Override
         public void run() {
+            this.readFB.checkThread();
+            this.writeFB.checkThread();
+            
             if (!this.readFB.isValid()) {
                 throw new GLException("Read framebuffer is not valid!");
             } else if (!this.writeFB.isValid()) {
@@ -967,6 +986,8 @@ public class GLFramebuffer extends GLObject {
 
         @Override
         public void run() {
+            checkThread();
+            
             final int currentFb = GL11.glGetInteger(GL30.GL_FRAMEBUFFER_BINDING);
             assert checkGLError() : glErrorMsg("glGetInteger(I)", "GL_FRAMEBUFFER_BINDING");
 
@@ -1010,5 +1031,10 @@ public class GLFramebuffer extends GLObject {
                 assert checkGLError() : glErrorMsg("glBindFramebuffer(II)", "GL_FRAMEBUFFER", currentFb);
             }
         }
+    }
+    
+    @Override
+    public final boolean isShareable() {
+        return false;
     }
 }

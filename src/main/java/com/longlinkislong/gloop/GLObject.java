@@ -51,4 +51,27 @@ public abstract class GLObject {
     public GLThread getThread() {
         return this.thread;
     }
+
+    /**
+     * Checks if the OpenGL object can run in the current thread.
+     *
+     * @throws GLException if the OpenGL object cannot run in the current
+     * thread.
+     * @since 15.10.30
+     */
+    protected final void checkThread() {
+        if (!this.isShareable() && !getThread().isCurrent()) {
+            throw new GLException(String.format("%s is not a shareable OpenGL object!", this.getClass().getSimpleName()));
+        }
+    }
+
+    /**
+     * Checks if the GLObject is shareable.
+     *
+     * @return true if the OpenGL object can be accessed in shared contexts.
+     * @since 15.10.30
+     */
+    public boolean isShareable() {
+        return true; // most objects are shareable.
+    }
 }

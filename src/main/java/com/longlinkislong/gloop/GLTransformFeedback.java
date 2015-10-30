@@ -45,6 +45,8 @@ public class GLTransformFeedback extends GLObject {
 
         @Override
         public void run() {
+            checkThread();
+            
             if (GLTransformFeedback.this.isValid()) {
                 throw new GLException("GLTransformFeedback already exists!");
             }
@@ -61,6 +63,8 @@ public class GLTransformFeedback extends GLObject {
 
         @Override
         public void run() {
+            checkThread();
+            
             if (!GLTransformFeedback.this.isValid()) {
                 throw new GLException("GLTransformFeedback is invalid!");
             }
@@ -113,6 +117,8 @@ public class GLTransformFeedback extends GLObject {
 
         @Override
         public void run() {
+            checkThread();
+            
             if (!GLTransformFeedback.this.isValid()) {
                 throw new GLException("Invalid GLFramebuffer!");
             }
@@ -126,5 +132,10 @@ public class GLTransformFeedback extends GLObject {
             GL40.glBindTransformFeedback(GL40.GL_TRANSFORM_FEEDBACK, 0);
             assert checkGLError() : glErrorMsg("glBindTransformFeedback(II)", "GL_TRANSFORM_FEEDBACK", 0);
         }
+    }
+    
+    @Override
+    public final boolean isShareable() {
+        return false;
     }
 }
