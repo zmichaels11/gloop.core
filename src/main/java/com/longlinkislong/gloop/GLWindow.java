@@ -75,15 +75,15 @@ public class GLWindow {
     protected final List<GLMouseEnteredListener> mouseEnteredListeners = new ArrayList<>();
     protected final List<GLMouseScrollListener> mouseScrollListeners = new ArrayList<>();
     protected final List<GLKeyCharListener> charListeners = new ArrayList<>();
-    
+
     private final Lazy<GLFWCharCallback> charCallback = new Lazy<>(() -> {
         final GLFWCharCallback callback = GLFW.GLFWCharCallback((hwnd, charCode) -> {
             this.charListeners.forEach(listener -> listener.glfwCharCallback(hwnd, charCode));
         });
-        
+
         return callback;
     });
-    
+
     private final Lazy<GLFWKeyCallback> keyCallback = new Lazy<>(() -> {
         final GLFWKeyCallback callback = GLFW.GLFWKeyCallback((hwnd, key, scancode, action, mods) -> {
             keyListeners.forEach(listener -> listener.glfwCallback(hwnd, key, scancode, action, mods));
@@ -96,34 +96,34 @@ public class GLWindow {
         final GLFWMouseButtonCallback callback = GLFW.GLFWMouseButtonCallback((hwnd, button, action, mods) -> {
             this.mouseButtonListeners.forEach(listener -> listener.glfwMouseButtonCallback(hwnd, button, action, mods));
         });
-        
+
         return callback;
     });
 
-    private final Lazy<GLFWCursorPosCallback> cursorPosCallback = new Lazy<>(()->{
+    private final Lazy<GLFWCursorPosCallback> cursorPosCallback = new Lazy<>(() -> {
         final GLFWCursorPosCallback callback = GLFW.GLFWCursorPosCallback((hwnd, x, y) -> {
             this.mousePositionListeners.forEach(listener -> listener.glfwCursorPosCallback(hwnd, x, y));
         });
-        
+
         return callback;
-    });    
-    
-    private final Lazy<GLFWScrollCallback> scrollCallback = new Lazy<>(()-> {
+    });
+
+    private final Lazy<GLFWScrollCallback> scrollCallback = new Lazy<>(() -> {
         final GLFWScrollCallback callback = GLFW.GLFWScrollCallback((hwnd, x, y) -> {
             this.mouseScrollListeners.forEach(listener -> listener.glfwScrollCallback(hwnd, x, y));
         });
-        
+
         return callback;
     });
-    
-    private final Lazy<GLFWCursorEnterCallback> cursorEnterCallback = new Lazy<>(()->{
-        final GLFWCursorEnterCallback callback = GLFW.GLFWCursorEnterCallback((hwnd, status)->{
+
+    private final Lazy<GLFWCursorEnterCallback> cursorEnterCallback = new Lazy<>(() -> {
+        final GLFWCursorEnterCallback callback = GLFW.GLFWCursorEnterCallback((hwnd, status) -> {
             this.mouseEnteredListeners.forEach(listener -> listener.glfwCursorEnteredCallback(hwnd, status));
         });
-        
+
         return callback;
     });
-        
+
     private Optional<GLFWFramebufferSizeCallback> resizeCallback = Optional.empty();
     private Optional<Runnable> onClose = Optional.empty();
     private final long monitor;
@@ -272,16 +272,16 @@ public class GLWindow {
         return (this.hasInitialized && this.window != INVALID_WINDOW_ID);
     }
 
-    private final Lazy<GLMouse> mouse = new Lazy<>(()->{
+    private final Lazy<GLMouse> mouse = new Lazy<>(() -> {
         final GLMouse ms = new GLMouse(this);
-        
+
         this.mouseButtonListeners.add(ms);
         this.mouseScrollListeners.add(ms);
         this.mousePositionListeners.add(ms);
         this.mouseEnteredListeners.add(ms);
-        
+
         return ms;
-    });        
+    });
 
     /**
      * Retrieves the mouse object associated with the window. A GLWindow object
@@ -321,7 +321,7 @@ public class GLWindow {
 
         this.keyListeners.add(kb);
         this.charListeners.add(kb);
-        
+
         return kb;
     });
 
@@ -400,7 +400,7 @@ public class GLWindow {
      */
     public static double getTime() {
         return GLFW.glfwGetTime();
-    }   
+    }
 
     private void setFramebufferResizeCallback(final GLFramebufferResizeListener listener) {
         final GLFWFramebufferSizeCallback callback
@@ -409,7 +409,7 @@ public class GLWindow {
         GLFW.glfwSetFramebufferSizeCallback(this.window, callback);
 
         this.resizeCallback = Optional.of(callback);
-    }    
+    }
 
     /**
      * Retrieves the DPI of the monitor displaying the window.
@@ -497,6 +497,74 @@ public class GLWindow {
             GLFW.glfwSetScrollCallback(GLWindow.this.window, GLWindow.this.scrollCallback.get());
             GLFW.glfwSetCharCallback(GLWindow.this.window, GLWindow.this.charCallback.get());
         }
+    }
+
+    /**
+     * Toggles fullscreen for the window. Note: this will destroy the current
+     * OpenGL context and create a new one. Some objects such as Vertex Array
+     * Objects will be lost.
+     *
+     * @param fullscreen the fullscreen setting.
+     * @since 15.10.30
+     */
+    public void setFullscreen(final boolean fullscreen) {
+        new SetFullscreenTask(fullscreen).glRun();
+    }
+    
+    private final List<Runnable> onContextLost = new ArrayList<>();
+    
+    public void addContextLostListener(final Runnable callback) {
+        this.onContextLost.add(callback);
+    }
+    
+    public void removeContextLostListener(final Runnable callback) {
+        this.onContextLost.remove(callback);
+    }
+
+    private class SetFullscreenTask extends GLTask {
+
+        private final boolean isFullscreen;
+
+        SetFullscreenTask(boolean useFS) {
+            this.isFullscreen = useFS;
+        }
+
+        @Override
+        public void run() {            
+            final long monitor = isFullscreen ? GLFW.glfwGetPrimaryMonitor() : NULL;
+            final long newWindow = GLFW.glfwCreateWindow(width, height, title, monitor, GLWindow.this.window);
+
+            if (newWindow == NULL) {
+                throw new GLException("Failed to create the GLFW window!");
+            }
+
+            GLFW.glfwDestroyWindow(GLWindow.this.window);
+            
+            onContextLost.forEach(Runnable::run);
+
+            WINDOWS.remove(GLWindow.this.window);
+            WINDOWS.put(newWindow, GLWindow.this);
+
+            GLWindow.this.window = newWindow;
+            GLFW.glfwMakeContextCurrent(GLWindow.this.window);
+
+            GLFW.glfwSwapInterval(OPENGL_SWAP_INTERVAL);
+
+            final ByteBuffer fbWidth = NativeTools.getInstance().nextWord();
+            final ByteBuffer fbHeight = NativeTools.getInstance().nextWord();
+
+            GLFW.glfwGetFramebufferSize(GLWindow.this.window, fbWidth, fbHeight);
+            GLWindow.this.thread.currentViewport = new GLViewport(0, 0, fbWidth.getInt(), fbHeight.getInt());
+
+            GLWindow.this.handler.register();
+            GLFW.glfwSetKeyCallback(GLWindow.this.window, GLWindow.this.keyCallback.get());
+            GLFW.glfwSetMouseButtonCallback(GLWindow.this.window, GLWindow.this.mouseButtonCallback.get());
+            GLFW.glfwSetCursorEnterCallback(GLWindow.this.window, GLWindow.this.cursorEnterCallback.get());
+            GLFW.glfwSetCursorPosCallback(GLWindow.this.window, GLWindow.this.cursorPosCallback.get());
+            GLFW.glfwSetScrollCallback(GLWindow.this.window, GLWindow.this.scrollCallback.get());
+            GLFW.glfwSetCharCallback(GLWindow.this.window, GLWindow.this.charCallback.get());
+        }
+
     }
 
     /**
@@ -624,23 +692,24 @@ public class GLWindow {
         }
 
     }
-    
+
     public final void setCursor(final long cursorId) {
         new SetCursorTask(cursorId).glRun(this.getGLThread());
     }
-    
+
     public class SetCursorTask extends GLTask {
+
         final long cursorId;
-        
+
         public SetCursorTask(final long cursorId) {
             this.cursorId = cursorId;
         }
-        
+
         @Override
-        public void run() {            
+        public void run() {
             GLFW.glfwSetCursor(GLWindow.this.window, this.cursorId);
         }
-        
+
     }
 
     /**
@@ -777,7 +846,7 @@ public class GLWindow {
         public void run() {
             if (GLFW.glfwWindowShouldClose(GLWindow.this.window) == GL_TRUE) {
                 GLWindow.this.cleanup();
-            } else {                
+            } else {
                 GLFW.glfwSwapBuffers(GLWindow.this.window);
                 GLFW.glfwPollEvents();
             }
@@ -814,7 +883,7 @@ public class GLWindow {
         this.cleanupTasks.forEach(Runnable::run);
         this.cleanupTasks.clear();
         this.workerThreads.forEach(GLWindow::stop);
-        
+
         this.cursorEnterCallback.ifPresent(GLFWCursorEnterCallback::release);
         this.cursorPosCallback.ifPresent(GLFWCursorPosCallback::release);
         this.keyCallback.ifPresent(GLFWKeyCallback::release);
