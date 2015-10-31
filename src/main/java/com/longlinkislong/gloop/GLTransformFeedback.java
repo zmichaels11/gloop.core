@@ -137,5 +137,5 @@ public class GLTransformFeedback extends GLObject {
     @Override
     public final boolean isShareable() {
         return false;
-    }
+    }        
 }

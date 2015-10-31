@@ -15,7 +15,7 @@ import java.util.Set;
  * @since 15.06.24
  */
 public class GLVertexAttributes {
-
+    public static final int INVALID_VARYING_LOCATION = -1;
     public static final int INVALID_ATTRIBUTE_LOCATION = -1;
     protected final Map<String, Integer> nameMap = new HashMap<>();
     protected final Set<String> feedbackVaryings = new HashSet<>();
@@ -97,5 +97,25 @@ public class GLVertexAttributes {
      */
     public Set<String> getVaryings() {
         return Collections.unmodifiableSet(this.feedbackVaryings);
+    }
+    
+    /**
+     * Retrieves the index of the feedback varying.
+     * @param varyingName the name of the feedback varying.
+     * @return the index of the feedback varying
+     */
+    public int getVaryingLocation(final CharSequence varyingName) {
+        final String key = varyingName.toString();
+        
+        int i = 0;
+        for(String varying : this.feedbackVaryings) {
+            if(varying.equals(key)) {
+                return i;
+            } else {
+                i++;
+            }            
+        }
+        
+        return INVALID_VARYING_LOCATION;
     }
 }

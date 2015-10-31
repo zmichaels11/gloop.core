@@ -250,7 +250,7 @@ public class GLProgram extends GLObject {
                         varyings[i] = it.next();
                     }
 
-                    GLProgram.this.glTransformFeedbackVaryings.call(GLProgram.this.programId,varyings, GL30.GL_SEPARATE_ATTRIBS);
+                    GLProgram.this.glTransformFeedbackVaryings.call(GLProgram.this.programId, varyings, GL30.GL_SEPARATE_ATTRIBS);
                     assert checkGLError() : glErrorMsg("glTransformFeedbackVaryings(ISI)", GLProgram.this.programId, Arrays.toString(varyings), "GL_SEPARATE_ATTRIBS");
                 }
             }
@@ -1402,5 +1402,56 @@ public class GLProgram extends GLObject {
             GLProgram.this.glDispatchCompute.call(this.numX, this.numY, this.numZ);
             assert checkGLError() : glErrorMsg("glDispatchCompute(III)", this.numX, this.numY, this.numZ);
         }
+    }
+
+    /**
+     * Binds a GLBuffer to a vertex varying location.
+     *
+     * @param varyingLoc the location of the feedback varying.
+     * @param fbBuffer the buffer to bind.
+     * @since 15.10.30
+     */
+    public void setFeedbackBuffer(final int varyingLoc, final GLBuffer fbBuffer) {
+        new SetFeedbackBufferTask(varyingLoc, fbBuffer).glRun(this.getThread());
+    }
+
+    /**
+     * A GLTask that binds a GLBuffer to a vertex varying location.
+     *
+     * @since 15.10.30
+     */
+    public class SetFeedbackBufferTask extends GLTask {
+
+        final GLBuffer fbBuffer;
+        final int varyingLoc;
+
+        /**
+         * Constructs a new SetFeedbackBufferTask.
+         *
+         * @param varyingLoc the location of the feedback varying.
+         * @param fbBuffer the buffer to bind.
+         * @since 15.10.30
+         */
+        public SetFeedbackBufferTask(final int varyingLoc, final GLBuffer fbBuffer) {
+            if ((this.varyingLoc = varyingLoc) == GLVertexAttributes.INVALID_VARYING_LOCATION) {
+                throw new GLException("Invalid varying location!");
+            }
+
+            this.fbBuffer = Objects.requireNonNull(fbBuffer);
+        }
+
+        @Override
+        public void run() {
+            if (!GLProgram.this.isValid()) {
+                throw new GLException("Invalid GLProgram!");
+            }
+
+            if (!fbBuffer.isValid()) {
+                throw new GLException("Invalid GLBuffer!");
+            }
+
+            GLProgram.this.glBindBufferBase.call(GL30.GL_TRANSFORM_FEEDBACK_BUFFER, this.varyingLoc, this.fbBuffer.bufferId);
+        }
+
     }
 }

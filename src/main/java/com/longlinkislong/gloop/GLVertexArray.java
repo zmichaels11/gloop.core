@@ -179,17 +179,6 @@ public class GLVertexArray extends GLObject {
     private DrawArraysInstanced glDrawArraysInstanced = NULL_DRAW_ARRAYS_INSTANCED;
 
     @FunctionalInterface
-    private interface DrawTransformFeedback {
-
-        void call(int mode, int id);
-    }
-
-    private static final DrawTransformFeedback NULL_DRAW_TRANSFORM_FEEDBACK = (mode, id) -> {
-        throw new IllegalStateException("glDrawTransformFeedback was called before being fetched! An instance of GLVertexArray.InitTask must run prior to calling glDrawTransformFeedback.");
-    };
-    private DrawTransformFeedback glDrawTransformFeedback = NULL_DRAW_TRANSFORM_FEEDBACK;
-
-    @FunctionalInterface
     private interface VertexAttribLPointer {
 
         void call(int index, int size, int type, int stride, long offset);
@@ -220,7 +209,7 @@ public class GLVertexArray extends GLObject {
         @Override
         public void run() {
             checkThread();
-            
+
             if (GLVertexArray.this.isValid()) {
                 throw new GLException("GLVertexArray is already initialized!");
             }
@@ -299,16 +288,6 @@ public class GLVertexArray extends GLObject {
                         GL11.glDrawArrays(drawMode, first, count);
                         assert GL11.glGetError() == GL11.GL_NO_ERROR : String.format("glDrawArrays(%d, %d, %d) failed!", drawMode, first, count);
                     }
-                };
-            }
-
-            if (cap.OpenGL40) {
-                GLVertexArray.this.glDrawTransformFeedback = GL40::glDrawTransformFeedback;
-            } else if (cap.GL_ARB_transform_feedback2) {
-                GLVertexArray.this.glDrawTransformFeedback = ARBTransformFeedback2::glDrawTransformFeedback;
-            } else {
-                GLVertexArray.this.glDrawTransformFeedback = (mode, id) -> {
-                    throw new UnsupportedOperationException("glDrawTransformFeedback is not supported! glDrawTransformFeedback requires either an OpenGL 4.0 context or ARB_transform_feedback2.");
                 };
             }
 
@@ -427,7 +406,7 @@ public class GLVertexArray extends GLObject {
         @Override
         public void run() {
             checkThread();
-            
+
             if (!GLVertexArray.this.isValid()) {
                 throw new GLException("Invalid GLVertexArray!");
             } else if (!this.indirectCommandBuffer.isValid()) {
@@ -507,7 +486,7 @@ public class GLVertexArray extends GLObject {
         @Override
         public void run() {
             checkThread();
-            
+
             if (!GLVertexArray.this.isValid()) {
                 throw new GLException("Invalid GLVertexArray!");
             } else if (!this.indirectCommandBuffer.isValid()) {
@@ -583,7 +562,7 @@ public class GLVertexArray extends GLObject {
         @Override
         public void run() {
             checkThread();
-            
+
             if (!GLVertexArray.this.isValid()) {
                 throw new GLException("Invalid GLVertexArray!");
             }
@@ -673,7 +652,7 @@ public class GLVertexArray extends GLObject {
         @Override
         public void run() {
             checkThread();
-            
+
             if (!GLVertexArray.this.isValid()) {
                 throw new GLException("Invalid GLVertexArray!");
             }
@@ -761,7 +740,7 @@ public class GLVertexArray extends GLObject {
         @Override
         public void run() {
             checkThread();
-            
+
             if (!GLVertexArray.this.isValid()) {
                 throw new GLException("GLVertexArray is not valid!");
             }
@@ -845,7 +824,7 @@ public class GLVertexArray extends GLObject {
         @Override
         public void run() {
             checkThread();
-            
+
             if (!GLVertexArray.this.isValid()) {
                 throw new GLException("Invalid GLVertex!");
             }
@@ -884,30 +863,62 @@ public class GLVertexArray extends GLObject {
         }
     }
 
-    public class DrawTransformFeedbackTask extends GLTask {
+    /**
+     * Draws a transform feedback. The rasterizer is discarded.
+     *
+     * @param mode the polygon mode for drawing the feedback.
+     * @param start the index of the first element to draw.
+     * @param count the number of elements to draw.
+     * @since 15.10.30
+     */
+    public void drawTransformFeedback(final GLDrawMode mode, final int start, final int count) {
+        new DrawTransformFeedbackTask(mode, start, count).glRun(this.getThread());
+    }
 
-        final GLTransformFeedback tfb;
-        final GLDrawMode mode;
+    /**
+     * A GLTask that draws a transform feedback.
+     *
+     * @since 15.10.30
+     */
+    public class DrawTransformFeedbackTask extends GLTask implements GLDrawTask {
 
-        public DrawTransformFeedbackTask(
-                final GLDrawMode mode,
-                final GLTransformFeedback tfb) {
+        private final GLDrawMode mode;
+        private final int start;
+        private final int count;
 
-            Objects.requireNonNull(this.mode = mode);
-            Objects.requireNonNull(this.tfb = tfb);
+        /**
+         * Constructs a new DrawTransformFeedbackTask
+         *
+         * @param mode the type of feedback primitive.
+         * @param start the index of the first element to draw.
+         * @param count the number of elements to draw.
+         * @since 15.10.30
+         */
+        public DrawTransformFeedbackTask(GLDrawMode mode, int start, int count) {
+
+            this.mode = Objects.requireNonNull(mode);
+            this.count = count;
+
+            if ((this.start = start) < 0) {
+                throw new GLException("Start value cannot be less than 0!");
+            }
         }
 
         @Override
         public void run() {
             checkThread();
-            
+
             if (!GLVertexArray.this.isValid()) {
-                throw new GLException("Invalid GLVertexArray!");
+                throw new GLException("GLVertexArray is not valid!");
             }
 
             GLVertexArray.this.bind();
-            GLVertexArray.this.glDrawTransformFeedback.call(this.mode.value, this.tfb.tfbId);
-            assert checkGLError() : glErrorMsg("glDrawTransformFeedback(II)", this.mode, this.tfb.tfbId);
+
+            GL11.glEnable(GL30.GL_RASTERIZER_DISCARD);
+            GL30.glBeginTransformFeedback(this.mode.value);
+            GL11.glDrawArrays(this.mode.value, this.start, this.count);
+            GL30.glEndTransformFeedback();
+            GL11.glDisable(GL30.GL_RASTERIZER_DISCARD);
         }
     }
 
@@ -933,7 +944,7 @@ public class GLVertexArray extends GLObject {
         @Override
         public void run() {
             checkThread();
-            
+
             if (!GLVertexArray.this.isValid()) {
                 throw new GLException("GLVertexArray is not valid!");
             }
@@ -957,7 +968,7 @@ public class GLVertexArray extends GLObject {
         @Override
         public void run() {
             checkThread();
-            
+
             if (GLVertexArray.this.isValid()) {
                 GLVertexArray.this.glDeleteVertexArrays.call(GLVertexArray.this.vaoId);
                 assert checkGLError() : glErrorMsg("glDeleteVertexArrays(I)", GLVertexArray.this.vaoId);
@@ -969,7 +980,6 @@ public class GLVertexArray extends GLObject {
                 GLVertexArray.this.glDrawArraysInstanced = NULL_DRAW_ARRAYS_INSTANCED;
                 GLVertexArray.this.glDrawElementsIndirect = NULL_DRAW_ELEMENTS_INDIRECT;
                 GLVertexArray.this.glDrawElementsInstanced = NULL_DRAW_ELEMENTS_INSTANCED;
-                GLVertexArray.this.glDrawTransformFeedback = NULL_DRAW_TRANSFORM_FEEDBACK;
                 GLVertexArray.this.glGenVertexArrays = NULL_GEN_VERTEX_ARRAYS;
                 GLVertexArray.this.glVertexAttribLPointer = NULL_VERTEX_ATTRIBL_POINTER;
             }
@@ -1113,7 +1123,7 @@ public class GLVertexArray extends GLObject {
         @Override
         public void run() {
             checkThread();
-            
+
             if (!GLVertexArray.this.isValid()) {
                 throw new GLException("Invalid GLVertexArray!");
             }
@@ -1145,7 +1155,7 @@ public class GLVertexArray extends GLObject {
             }
         }
     }
-    
+
     @Override
     public final boolean isShareable() {
         return false;
