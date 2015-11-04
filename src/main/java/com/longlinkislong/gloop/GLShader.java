@@ -22,7 +22,72 @@ public class GLShader extends GLObject {
     private static final int INVALID_SHADER_ID = -1;
     private final String src;
     private final GLShaderType type;
-    protected int shaderId = INVALID_SHADER_ID;
+    int shaderId = INVALID_SHADER_ID;
+
+    /**
+     * Compiles the source as a vertex shader.
+     * @param src the source to compile.
+     * @return the shader object.
+     * @since 15.11.04
+     */
+    public static GLShader newVertexShader(final CharSequence src) {
+        return new GLShader(GLShaderType.GL_VERTEX_SHADER, src);
+    }
+
+    /**
+     * Compiles the source as a fragment shader.
+     *
+     * @param src the source to compile.
+     * @return the shader object.
+     * @since 15.11.04
+     */
+    public static GLShader newFragmentShader(final CharSequence src) {
+        return new GLShader(GLShaderType.GL_FRAGMENT_SHADER, src);
+    }
+
+    /**
+     * Compiles the source as a geometry shader.
+     *
+     * @param src the source to compile.
+     * @return the shader object.
+     * @since 15.11.04
+     */
+    public static GLShader newGeometryShader(final CharSequence src) {
+        return new GLShader(GLShaderType.GL_GEOMETRY_SHADER, src);
+    }
+
+    /**
+     * Compiles the source as a compute shader.
+     *
+     * @param src the source to compile.
+     * @return the shader object.
+     * @since 15.11.04
+     */
+    public static GLShader newComputeShader(final CharSequence src) {
+        return new GLShader(GLShaderType.GL_COMPUTE_SHADER, src);
+    }
+
+    /**
+     * Compiles the source as a tessellation control shader.
+     *
+     * @param src the source to compile.
+     * @return the shader object.
+     * @since 15.11.04
+     */
+    public static GLShader newTessControlShader(final CharSequence src) {
+        return new GLShader(GLShaderType.GL_TESS_CONTROL_SHADER, src);
+    }
+
+    /**
+     * Compiles the source as a tessellation evaluation shader.
+     *
+     * @param src the source to compile.
+     * @return the shader object.
+     * @since 15.11.04
+     */
+    public static GLShader newTessEvaluationShader(final CharSequence src) {
+        return new GLShader(GLShaderType.GL_TESS_EVALUATION_SHADER, src);
+    }
 
     /**
      * Constructs a new GLShader on the default GLThread of the specified shader

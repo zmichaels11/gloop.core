@@ -337,9 +337,7 @@ public class GLTexture extends GLObject {
         this.width = width;
         this.height = height;
         this.depth = depth;
-    }
-
-    private UpdateImage3DTask lastUpdateImage3D = null;
+    }    
 
     /**
      * Updates a 3D segment of the specified mipmap level.
@@ -364,28 +362,7 @@ public class GLTexture extends GLObject {
             final GLTextureFormat format,
             final GLType type, final ByteBuffer data) {
 
-        if (this.lastUpdateImage3D != null
-                && this.lastUpdateImage3D.level == level
-                && this.lastUpdateImage3D.xOffset == xOffset
-                && this.lastUpdateImage3D.yOffset == yOffset
-                && this.lastUpdateImage3D.zOffset == zOffset
-                && this.lastUpdateImage3D.width == width
-                && this.lastUpdateImage3D.height == height
-                && this.lastUpdateImage3D.depth == depth
-                && this.lastUpdateImage3D.format == format
-                && this.lastUpdateImage3D.data == data) {
-
-            this.lastUpdateImage3D.glRun(this.getThread());
-        } else {
-            this.lastUpdateImage3D = new UpdateImage3DTask(
-                    level,
-                    xOffset, yOffset, zOffset,
-                    width, height, depth,
-                    format,
-                    type, data);
-
-            this.lastUpdateImage3D.glRun(this.getThread());
-        }
+        new UpdateImage3DTask(level, xOffset, yOffset, zOffset, width, height, depth, format, type, data).glRun(this.getThread());        
 
         return this;
     }
@@ -478,9 +455,7 @@ public class GLTexture extends GLObject {
                     this.width, this.height, this.depth, this.format.value,
                     this.type.value, this.data);
         }
-    }
-
-    private UpdateImage2DTask lastSetSubImage2D = null;
+    }    
 
     /**
      * Updates a 2D segment of the specified mipmap level.
@@ -503,27 +478,7 @@ public class GLTexture extends GLObject {
             final GLTextureFormat format,
             final GLType type, final ByteBuffer data) {
 
-        if (this.lastSetSubImage2D != null
-                && this.lastSetSubImage2D.level == level
-                && this.lastSetSubImage2D.xOffset == xOffset
-                && this.lastSetSubImage2D.yOffset == yOffset
-                && this.lastSetSubImage2D.width == width
-                && this.lastSetSubImage2D.height == height
-                && this.lastSetSubImage2D.format == format
-                && this.lastSetSubImage2D.type == type
-                && this.lastSetSubImage2D.data == data) {
-
-            this.lastSetSubImage2D.glRun(this.getThread());
-        } else {
-            this.lastSetSubImage2D = new UpdateImage2DTask(
-                    level,
-                    xOffset, yOffset,
-                    width, height,
-                    format,
-                    type, data);
-
-            this.lastSetSubImage2D.glRun(this.getThread());
-        }
+        new UpdateImage2DTask(level, xOffset, yOffset, width, height, format, type, data).glRun(this.getThread());        
 
         return this;
     }
@@ -609,9 +564,7 @@ public class GLTexture extends GLObject {
                     this.type.value, this.data);
         }
 
-    }
-
-    private Update1DTask lastSetSubImage1D = null;
+    }    
 
     /**
      * Updates a 1D segment of the specified mipmap level.
@@ -631,24 +584,8 @@ public class GLTexture extends GLObject {
             final GLTextureFormat format,
             final GLType type, final ByteBuffer data) {
 
-        if (lastSetSubImage1D != null
-                && this.lastSetSubImage1D.level == level
-                && this.lastSetSubImage1D.xOffset == xOffset
-                && this.lastSetSubImage1D.width == width
-                && this.lastSetSubImage1D.format == format
-                && this.lastSetSubImage1D.type == type
-                && this.lastSetSubImage1D.data == data) {
-
-            this.lastSetSubImage1D.glRun(this.getThread());
-        } else {
-            this.lastSetSubImage1D = new Update1DTask(
-                    level,
-                    xOffset, width,
-                    format,
-                    type, data);
-
-            this.lastSetSubImage1D.glRun(this.getThread());
-        }
+        
+        new UpdateImage1DTask(level, xOffset, width, format, type, data).glRun(this.getThread());
 
         return this;
     }
@@ -658,7 +595,7 @@ public class GLTexture extends GLObject {
      *
      * @since 15.07.08
      */
-    public class Update1DTask extends GLTask {
+    public class UpdateImage1DTask extends GLTask {
 
         public final int level;
         public final int xOffset;
@@ -686,7 +623,7 @@ public class GLTexture extends GLObject {
          * @throws NullPointerException if data is null.
          * @since 15.07.08
          */
-        public Update1DTask(
+        public UpdateImage1DTask(
                 final int level,
                 final int xOffset, final int width,
                 final GLTextureFormat format,
@@ -990,25 +927,13 @@ public class GLTexture extends GLObject {
             }
         }
 
-    }
-
-    private SetTextureBufferTask lastSetTexBufferTask = null;
+    }    
 
     public void setTextureBuffer(
             final GLTextureInternalFormat internalFormat,
             final GLBuffer buffer) {
 
-        if (this.lastSetTexBufferTask != null
-                && this.lastSetTexBufferTask.internalFormat == internalFormat
-                && this.lastSetTexBufferTask.buffer == buffer) {
-
-            this.lastSetTexBufferTask.glRun(this.getThread());
-        } else {
-            this.lastSetTexBufferTask = new SetTextureBufferTask(
-                    internalFormat,
-                    buffer);
-            this.lastSetTexBufferTask.glRun(this.getThread());
-        }
+        new SetTextureBufferTask(internalFormat, buffer).glRun(this.getThread());        
     }
 
     public class SetPixelBuffer2DTask extends GLTask {
@@ -1098,7 +1023,7 @@ public class GLTexture extends GLObject {
 
             GL31.glTexBuffer(GLBufferTarget.GL_TEXTURE_BUFFER.value, this.internalFormat.value, this.buffer.bufferId);
             assert checkGLError() : glErrorMsg("glTexBuffer(III)", "GL_TEXTURE_BUFFER", this.internalFormat, this.buffer.bufferId);
-            
+
             GLTexture.this.width = GL11.glGetTexLevelParameteri(GL11.GL_TEXTURE_1D, 0, GL11.GL_TEXTURE_WIDTH);
             assert checkGLError() : glErrorMsg("glGetTexLevelParemetri(III)", "GL_TEXTURE_1D", 0, "GL_TEXTURE_WIDTH");
 
@@ -1315,9 +1240,7 @@ public class GLTexture extends GLObject {
                 throw new UnsupportedOperationException("Querying preferred texture format requires either an OpenGL4.3 context or ARB_internal_format_query2 support.");
             }
 
-            final GLTextureFormat res = GLTextureFormat.valueOf(raw);
-
-            return res;
+            return GLTextureFormat.of(raw).orElseThrow(() -> new GLException("Unknown texture format: " + raw));
         }
 
         @Override

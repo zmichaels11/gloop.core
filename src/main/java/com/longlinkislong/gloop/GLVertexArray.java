@@ -15,7 +15,6 @@ import java.util.Objects;
 import org.lwjgl.opengl.ARBDrawIndirect;
 import org.lwjgl.opengl.ARBDrawInstanced;
 import org.lwjgl.opengl.ARBInstancedArrays;
-import org.lwjgl.opengl.ARBTransformFeedback2;
 import org.lwjgl.opengl.ARBVertexArrayObject;
 import org.lwjgl.opengl.ARBVertexAttrib64Bit;
 import org.lwjgl.opengl.ContextCapabilities;
@@ -313,9 +312,7 @@ public class GLVertexArray extends GLObject {
 
             GLVertexArray.this.vaoId = GLVertexArray.this.glGenVertexArrays.get();
         }
-    }
-
-    private DrawElementsIndirectTask lastDrawElementsIndirect = null;
+    }    
 
     /**
      * Runs a draw elements indirect call on the object's default thread.
@@ -334,22 +331,7 @@ public class GLVertexArray extends GLObject {
             final GLBuffer indirectCommandBuffer,
             final long offset) throws GLException {
 
-        if (this.lastDrawElementsIndirect != null
-                && this.lastDrawElementsIndirect.indirectCommandBuffer == indirectCommandBuffer
-                && this.lastDrawElementsIndirect.drawMode == drawMode
-                && this.lastDrawElementsIndirect.indexType == indexType
-                && this.lastDrawElementsIndirect.offset == offset) {
-
-            this.lastDrawElementsIndirect.glRun(this.getThread());
-        } else {
-            this.lastDrawElementsIndirect = new DrawElementsIndirectTask(
-                    drawMode,
-                    indexType,
-                    indirectCommandBuffer,
-                    offset);
-
-            this.lastDrawElementsIndirect.glRun(this.getThread());
-        }
+        new DrawElementsIndirectTask(drawMode, indexType, indirectCommandBuffer, offset).glRun(this.getThread());        
     }
 
     /**
@@ -421,9 +403,7 @@ public class GLVertexArray extends GLObject {
             GLVertexArray.this.glDrawElementsIndirect.call(this.drawMode.value, this.indexType.value, this.offset);
             assert checkGLError() : glErrorMsg("glDrawElementsIndirect(IIL)", this.drawMode, this.indexType, this.offset);
         }
-    }
-
-    private DrawArraysIndirectTask lastDrawArraysIndirect = null;
+    }    
 
     /**
      * Runs an indirect draw arrays task on the object's default GLThread.
@@ -441,13 +421,7 @@ public class GLVertexArray extends GLObject {
             final GLBuffer indirectCommandBuffer,
             final long offset) throws GLException {
 
-        if (this.lastDrawArraysIndirect != null
-                && this.lastDrawArraysIndirect.indirectCommandBuffer == indirectCommandBuffer
-                && this.lastDrawArraysIndirect.drawMode == drawMode
-                && this.lastDrawArraysIndirect.offset == offset) {
-
-            this.lastDrawArraysIndirect.glRun(this.getThread());
-        }
+        new DrawArraysIndirectTask(drawMode, indirectCommandBuffer, offset).glRun(this.getThread());        
     }
 
     /**
@@ -503,8 +477,6 @@ public class GLVertexArray extends GLObject {
         }
     }
 
-    private MultiDrawArraysTask lastMultiDrawArrays = null;
-
     /**
      * Performs a multidraw arrays task on the default OpenGL thread.
      *
@@ -517,18 +489,7 @@ public class GLVertexArray extends GLObject {
             final GLDrawMode drawMode,
             final IntBuffer first, final IntBuffer count) {
 
-        if (this.lastMultiDrawArrays != null
-                && this.lastMultiDrawArrays.first == first
-                && this.lastMultiDrawArrays.count == count
-                && this.lastMultiDrawArrays.drawMode == drawMode) {
-
-            this.lastMultiDrawArrays.glRun(this.getThread());
-        } else {
-            this.lastMultiDrawArrays = new MultiDrawArraysTask(
-                    drawMode, first, count);
-
-            this.lastMultiDrawArrays.glRun(this.getThread());
-        }
+        new MultiDrawArraysTask(drawMode, first, count).glRun(this.getThread());        
     }
 
     /**
@@ -571,9 +532,7 @@ public class GLVertexArray extends GLObject {
             GL14.glMultiDrawArrays(this.drawMode.value, this.first, this.count);
             assert checkGLError() : glErrorMsg("glMultiDrawArrays(I*I)", this.drawMode, toHexString(memAddress(this.first)), this.count);
         }
-    }
-
-    private DrawElementsInstancedTask lastDrawElementsInstanced = null;
+    }    
 
     /**
      * Performs a draw elements instanced task on the default OpenGL thread.
@@ -590,20 +549,7 @@ public class GLVertexArray extends GLObject {
             final int count, final GLIndexElementType indexType,
             final long offset, final int instanceCount) {
 
-        if (this.lastDrawElementsInstanced != null
-                && this.lastDrawElementsInstanced.drawMode == drawMode
-                && this.lastDrawElementsInstanced.count == count
-                && this.lastDrawElementsInstanced.type == indexType
-                && this.lastDrawElementsInstanced.offset == offset
-                && this.lastDrawElementsInstanced.instanceCount == instanceCount) {
-
-            this.lastDrawElementsInstanced.glRun(this.getThread());
-        } else {
-            this.lastDrawElementsInstanced = new DrawElementsInstancedTask(
-                    drawMode, count, indexType, offset, instanceCount);
-
-            this.lastDrawElementsInstanced.glRun(this.getThread());
-        }
+        new DrawElementsInstancedTask(drawMode, count, indexType, offset, instanceCount).glRun(this.getThread());        
     }
 
     /**
@@ -663,9 +609,7 @@ public class GLVertexArray extends GLObject {
             assert checkGLError() : glErrorMsg("glDrawElementsInstanced(IIILI)", this.drawMode, this.count, this.type, this.offset, this.instanceCount);
         }
 
-    }
-
-    private DrawArraysInstancedTask lastDrawArraysInstanced = null;
+    }    
 
     /**
      * Performs a draw arrays instanced task on the OpenGL thread associated
@@ -681,20 +625,7 @@ public class GLVertexArray extends GLObject {
             final GLDrawMode mode,
             final int first, final int count, final int instanceCount) {
 
-        if (this.lastDrawArraysInstanced != null
-                && this.lastDrawArraysInstanced.mode == mode
-                && this.lastDrawArraysInstanced.first == first
-                && this.lastDrawArraysInstanced.count == count
-                && this.lastDrawArraysInstanced.instanceCount == instanceCount) {
-
-            this.lastDrawArraysInstanced.glRun(this.getThread());
-        } else {
-            this.lastDrawArraysInstanced = new DrawArraysInstancedTask(
-                    mode,
-                    first, count, instanceCount);
-
-            this.lastDrawArraysInstanced.glRun(this.getThread());
-        }
+        new DrawArraysInstancedTask(mode, first, count, instanceCount).glRun(this.getThread());        
     }
 
     /**
@@ -750,9 +681,7 @@ public class GLVertexArray extends GLObject {
             GLVertexArray.this.glDrawArraysInstanced.call(this.mode.value, this.first, this.count, this.instanceCount);
             assert checkGLError() : glErrorMsg("glDrawArraysInstanced(IIII)", this.mode, this.first, this.count, this.instanceCount);
         }
-    }
-
-    private DrawElementsTask lastDrawElements = null;
+    }    
 
     /**
      * Performs a draw elements task on the OpenGL thread associated with this
@@ -768,20 +697,7 @@ public class GLVertexArray extends GLObject {
             final GLDrawMode mode,
             final int count, final GLIndexElementType type, final long offset) {
 
-        if (this.lastDrawElements != null
-                && this.lastDrawElements.mode == mode
-                && this.lastDrawElements.count == count
-                && this.lastDrawElements.type == type
-                && this.lastDrawElements.offset == offset) {
-
-            this.lastDrawElements.glRun(this.getThread());
-        } else {
-            this.lastDrawElements = new DrawElementsTask(
-                    mode,
-                    count, type, offset);
-
-            this.lastDrawElements.glRun(this.getThread());
-        }
+        new DrawElementsTask(mode, count, type, offset).glRun(this.getThread());        
     }
 
     /**
@@ -834,9 +750,7 @@ public class GLVertexArray extends GLObject {
             GL11.glDrawElements(this.mode.value, this.count, this.type.value, this.offset);
             assert checkGLError() : glErrorMsg("glDrawElements(IIIL)", this.mode, this.count, this.type, this.offset);
         }
-    }
-
-    private DrawArraysTask lastDrawArrays = null;
+    }    
 
     /**
      * Performs a draw arrays task on the OpenGL thread associated with this
@@ -851,16 +765,7 @@ public class GLVertexArray extends GLObject {
             final GLDrawMode mode,
             final int start, final int count) {
 
-        if (this.lastDrawArrays != null
-                && this.lastDrawArrays.mode == mode
-                && this.lastDrawArrays.start == start
-                && this.lastDrawArrays.count == count) {
-
-            this.lastDrawArrays.glRun(this.getThread());
-        } else {
-            this.lastDrawArrays = new DrawArraysTask(mode, start, count);
-            this.lastDrawArrays.glRun(this.getThread());
-        }
+        new DrawArraysTask(mode, start, count).glRun(this.getThread());
     }
 
     /**
@@ -955,12 +860,10 @@ public class GLVertexArray extends GLObject {
             assert checkGLError() : glErrorMsg("glDrawArrays(III)", this.mode, this.start, this.count);
         }
 
-    }
-
-    private final DeleteTask deleteTask = new DeleteTask();
+    }    
 
     public void delete() {
-        this.deleteTask.glRun(this.getThread());
+        new DeleteTask().glRun(this.getThread());
     }
 
     public class DeleteTask extends GLTask {

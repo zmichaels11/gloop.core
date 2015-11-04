@@ -37,7 +37,7 @@ public class GLProgram extends GLObject {
 
     private static final Map<Thread, GLProgram> CURRENT = new HashMap<>();
     private static final int INVALID_PROGRAM_ID = -1;
-    protected int programId = INVALID_PROGRAM_ID;
+    int programId = INVALID_PROGRAM_ID;
     private final Map<String, Integer> uniforms = new HashMap<>();
 
     @FunctionalInterface
@@ -163,11 +163,9 @@ public class GLProgram extends GLObject {
      * Binds the current program to the current thread.
      *
      * @since 15.05.27
-     */
-    private final UseTask useTask = new UseTask();
-
+     */    
     public void use() {
-        this.useTask.glRun(this.getThread());
+        new UseTask().glRun(this.getThread());        
     }
 
     public class UseTask extends GLTask {
@@ -1351,21 +1349,10 @@ public class GLProgram extends GLObject {
             GLProgram.this.glUniformBlockBinding.call(GLProgram.this.programId, uBlock, this.bindingPoint);
             assert checkGLError() : glErrorMsg("glUniformBlockBinding(III)", GLProgram.this.programId, uBlock, this.bindingPoint);
         }
-    }
-
-    private ComputeTask lastComputeTask = null;
+    }    
 
     public void compute(final int groupsX, final int groupsY, final int groupsZ) {
-        if (this.lastComputeTask != null
-                && this.lastComputeTask.numX == groupsX
-                && this.lastComputeTask.numY == groupsY
-                && this.lastComputeTask.numZ == groupsZ) {
-
-            this.lastComputeTask.glRun(this.getThread());
-        } else {
-            this.lastComputeTask = new ComputeTask(groupsX, groupsY, groupsZ);
-            this.lastComputeTask.glRun(this.getThread());
-        }
+        new ComputeTask(groupsX, groupsY, groupsZ).glRun(this.getThread());
     }
 
     public class ComputeTask extends GLTask {

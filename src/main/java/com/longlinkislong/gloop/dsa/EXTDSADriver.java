@@ -116,8 +116,8 @@ public interface EXTDSADriver extends DSADriver {
      * @return the format.
      * @since 15.07.10
      */
-    default int guessFormat(int internalFormat) {
-        switch (GLTextureInternalFormat.valueOf(internalFormat)) {
+    default int guessFormat(int internalFormat) {                
+        switch (GLTextureInternalFormat.of(internalFormat).orElseThrow(NullPointerException::new)) {
             case GL_COMPRESSED_RGB_S3TC_DXT1:
             case GL_RGB:
             case GL_COMPRESSED_RGB:

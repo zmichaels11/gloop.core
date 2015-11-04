@@ -22,7 +22,7 @@ import org.lwjgl.opengl.GL15;
 public class GLBuffer extends GLObject {
 
     private static final int INVALID_BUFFER_ID = -1;
-    protected int bufferId = INVALID_BUFFER_ID;
+    int bufferId = INVALID_BUFFER_ID;
     private ByteBuffer mappedBuffer = null;
 
     /**
@@ -173,9 +173,7 @@ public class GLBuffer extends GLObject {
                 GLBuffer.this.bufferId = INVALID_BUFFER_ID;
             }
         }
-    }
-
-    private UploadTask lastUploadTask = null;
+    }    
 
     /**
      * Uploads the supplied data to the GLBuffer. GL_STATIC_DRAW is used for
@@ -198,16 +196,7 @@ public class GLBuffer extends GLObject {
      * @since 15.05.13
      */
     public void upload(final ByteBuffer data, final GLBufferUsage usage) {
-
-        if (lastUploadTask != null
-                && lastUploadTask.usage == usage
-                && lastUploadTask.data == data) {
-
-            this.lastUploadTask.glRun(this.getThread());
-        } else {
-            this.lastUploadTask = new UploadTask(data, usage);
-            this.lastUploadTask.glRun(this.getThread());
-        }
+        new UploadTask(data, usage).glRun(this.getThread());
     }
 
     /**
@@ -242,7 +231,6 @@ public class GLBuffer extends GLObject {
          * @since 15.05.13
          */
         public UploadTask(final ByteBuffer data, final GLBufferUsage usage) {
-
             if (!data.isDirect()) {
                 throw new GLException("Backing data buffer is not direct!");
             } else if (data.order() != ByteOrder.nativeOrder()) {
@@ -332,9 +320,7 @@ public class GLBuffer extends GLObject {
             GLTools.getDSAInstance().glNamedBufferData(GLBuffer.this.bufferId, this.size, this.usage.value);
         }
 
-    }
-
-    private DownloadQuery downloadQuery = null;
+    }    
 
     /**
      * Requests a copy of the data stored inside the GLBuffer. A new ByteBuffer
@@ -369,16 +355,12 @@ public class GLBuffer extends GLObject {
      * @since 15.05.13
      */
     public ByteBuffer download(final long offset, final ByteBuffer writeBuffer) {
-
-        if (this.downloadQuery != null
-                && this.downloadQuery.offset == offset
-                && this.downloadQuery.writeBuffer == writeBuffer) {
-
-            return this.downloadQuery.glCall(this.getThread());
+        if(writeBuffer == null) {
+            final int size = this.getParameter(GLBufferParameterName.GL_BUFFER_SIZE);
+            
+            return download(offset, ByteBuffer.allocateDirect(size).order(ByteOrder.nativeOrder()));
         } else {
-            this.downloadQuery = new DownloadQuery(offset, writeBuffer);
-
-            return this.downloadQuery.glCall(this.getThread());
+            return new DownloadQuery(offset, writeBuffer).glCall(this.getThread());
         }
     }
 
