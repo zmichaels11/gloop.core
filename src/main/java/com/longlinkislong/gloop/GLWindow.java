@@ -452,8 +452,12 @@ public class GLWindow {
 
             glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, OPENGL_VERSION_MAJOR);
             glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, OPENGL_VERSION_MINOR);
-            glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GL_TRUE);
-            glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
+            
+            if (OPENGL_VERSION_MAJOR >= 3) {
+                glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GL_TRUE);
+                glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
+            }            
+            
             glfwWindowHint(GLFW_SAMPLES, OPENGL_SAMPLES);
             glfwWindowHint(GLFW_RED_BITS, OPENGL_RED_BITS);
             glfwWindowHint(GLFW_BLUE_BITS, OPENGL_BLUE_BITS);
@@ -510,13 +514,13 @@ public class GLWindow {
     public void setFullscreen(final boolean fullscreen) {
         new SetFullscreenTask(fullscreen).glRun();
     }
-    
+
     private final List<Runnable> onContextLost = new ArrayList<>();
-    
+
     public void addContextLostListener(final Runnable callback) {
         this.onContextLost.add(callback);
     }
-    
+
     public void removeContextLostListener(final Runnable callback) {
         this.onContextLost.remove(callback);
     }
@@ -530,7 +534,7 @@ public class GLWindow {
         }
 
         @Override
-        public void run() {            
+        public void run() {
             final long monitor = isFullscreen ? GLFW.glfwGetPrimaryMonitor() : NULL;
             final long newWindow = GLFW.glfwCreateWindow(width, height, title, monitor, GLWindow.this.window);
 
@@ -539,7 +543,7 @@ public class GLWindow {
             }
 
             GLFW.glfwDestroyWindow(GLWindow.this.window);
-            
+
             onContextLost.forEach(Runnable::run);
 
             WINDOWS.remove(GLWindow.this.window);
