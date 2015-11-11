@@ -13,6 +13,10 @@ import java.nio.ByteOrder;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.slf4j.Marker;
+import org.slf4j.MarkerFactory;
 
 /**
  * NativeTools is a container for native data structures.
@@ -21,25 +25,25 @@ import java.nio.file.Paths;
  * @since 15.08.05
  */
 public final class NativeTools {
-
-    private static final boolean DEBUG;
+    private static final Marker SYSTEM_MARKER = MarkerFactory.getMarker("SYSTEM");
+    private static final Logger LOGGER = LoggerFactory.getLogger(NativeTools.class);
     public static final OperatingSystem OPERATING_SYSTEM;
     public static final Architecture ARCHITECTURE;
 
     static {
-        DEBUG = Boolean.getBoolean("debug") && !System.getProperty("debug.exclude", "").contains("nativetools");
         final String os = System.getProperty("os.name", "unknown").toLowerCase();
 
         if (os.contains("windows")) {
+            LOGGER.trace("Windows OS detected!");
             OPERATING_SYSTEM = OperatingSystem.WINDOWS;
         } else if (os.contains("linux")) {
+            LOGGER.trace("Linux OS detected!");
             OPERATING_SYSTEM = OperatingSystem.LINUX;
         } else if (os.contains("mac")) {
+            LOGGER.trace("Mac OSX detected!");
             OPERATING_SYSTEM = OperatingSystem.OSX;
         } else {
-            if (DEBUG) {
-                System.out.println("[NativeTools] Unknown OS: " + os);
-            }
+            LOGGER.warn("Unknown OS: {}! Natives will not be loaded.", os);
             OPERATING_SYSTEM = OperatingSystem.UNSUPPORTED;
         }
 
@@ -48,22 +52,23 @@ public final class NativeTools {
         switch (arch) {
             case "amd64":
             case "x86_64":
+                LOGGER.trace("64bit runtime detected!");
                 ARCHITECTURE = Architecture.X86_64;
                 break;
             case "x86":
             case "i386":
+                LOGGER.trace("32bit runtime detected!");
                 ARCHITECTURE = Architecture.X86;
                 break;
             default:
+                LOGGER.warn("Unknown architecture {}! Natives will not be loaded.", arch);
                 ARCHITECTURE = Architecture.UNSUPPORTED;
                 break;
         }
 
-        if (DEBUG) {
-            final String jvm = System.getProperty("java.version");
+        final String jvm = System.getProperty("java.version");
 
-            System.out.printf("[NativeTools]: OS=%s architecture=%s JVM=%s\n", OPERATING_SYSTEM, ARCHITECTURE, jvm);
-        }
+        LOGGER.debug(SYSTEM_MARKER, "JVM version: {}", jvm);        
     }
 
     private static final class Holder {
@@ -307,8 +312,10 @@ public final class NativeTools {
             case WINDOWS:
                 switch (ARCHITECTURE) {
                     case X86:
+                        LOGGER.trace(SYSTEM_MARKER, "Using library: {}32.dll", libraryName);
                         return libraryName + "32.dll";
                     case X86_64:
+                        LOGGER.trace(SYSTEM_MARKER, "Using library: {}.dll", libraryName);
                         return libraryName + ".dll";
                     default:
                         throw new UnsupportedOperationException("Unsupported Windows Architecture: " + ARCHITECTURE);
@@ -316,8 +323,10 @@ public final class NativeTools {
             case LINUX:
                 switch (ARCHITECTURE) {
                     case X86:
+                        LOGGER.trace(SYSTEM_MARKER, "Using library: {}32.so", libraryName);
                         return libraryName + "32.so";
                     case X86_64:
+                        LOGGER.trace(SYSTEM_MARKER, "Using library: {}.so", libraryName);
                         return libraryName + ".so";
                     default:
                         throw new UnsupportedOperationException("Unsupported Linux Architecture: " + ARCHITECTURE);
@@ -325,8 +334,10 @@ public final class NativeTools {
             case OSX:
                 switch (ARCHITECTURE) {
                     case X86:
+                        LOGGER.trace(SYSTEM_MARKER, "Using library: {}32.dylib", libraryName);
                         return libraryName + "32.dylib";
                     case X86_64:
+                        LOGGER.trace(SYSTEM_MARKER, "Using library: {}.dylib", libraryName);
                         return libraryName + ".dylib";
                     default:
                         throw new UnsupportedOperationException("Unsupported Mac OSX Architecture: " + ARCHITECTURE);
@@ -357,12 +368,11 @@ public final class NativeTools {
         final String libOpenAL = mapLibraryName(OPERATING_SYSTEM == OperatingSystem.WINDOWS ? "OpenAL" : "libopenal");
         final Path tempRoot;
 
-        if (DEBUG) {
-            System.out.printf("[NativeTools]: Loading natives: %s, %s\n", libLWJGL, libOpenAL);
-        }
+        LOGGER.debug(SYSTEM_MARKER, "Loading natives: {}, {}", libLWJGL, libOpenAL);        
 
-        try {
+        try {            
             tempRoot = Files.createTempDirectory("com.longlinkislong.gloop.natives");
+            LOGGER.trace(SYSTEM_MARKER, "Created temp folder: {}", tempRoot);
             tempRoot.toFile().deleteOnExit();
         } catch (IOException ex) {
             throw new RuntimeException("Unable to create temp directory!", ex);
@@ -371,23 +381,25 @@ public final class NativeTools {
         try (final InputStream inLibLWJGL = NativeTools.class.getResourceAsStream("/" + libLWJGL)) {
             final Path pLibLWJGL = tempRoot.resolve(Paths.get(libLWJGL));
 
+            LOGGER.trace(SYSTEM_MARKER, "Resolving {} as {}", libLWJGL, NativeTools.class.getResource("/" + libLWJGL));
             Files.copy(inLibLWJGL, pLibLWJGL);
+            pLibLWJGL.toFile().deleteOnExit();
         } catch (IOException ex) {
             throw new RuntimeException(String.format("Unable to copy [%s] to temp directory!", libLWJGL), ex);
-        } catch (RuntimeException ex) {
-            URL res = NativeTools.class.getResource("/" + libLWJGL);
-            throw new RuntimeException("Could not find resource: " + res);
         }
 
         try (final InputStream inLibOpenAL = NativeTools.class.getResourceAsStream("/" + libOpenAL)) {
-            final Path pLibOpenAL = tempRoot.resolve(Paths.get(libOpenAL));
+            final Path pLibOpenAL = tempRoot.resolve(Paths.get(libOpenAL));            
 
+            LOGGER.trace(SYSTEM_MARKER, "Resolving {} as {}", libOpenAL, NativeTools.class.getResource("/" + libOpenAL));
             Files.copy(inLibOpenAL, pLibOpenAL);
+            pLibOpenAL.toFile().deleteOnExit();
         } catch (IOException ex) {
             throw new RuntimeException(String.format("Unable to copy [%s] to temp directory!", libOpenAL), ex);
         }
 
         System.setProperty("org.lwjgl.librarypath", tempRoot.toString());
+        LOGGER.trace(SYSTEM_MARKER, "Set system property: org.lwjgl.librarypath={}", System.getProperty("org.lwjgl.librarypath"));
 
         this.isLoaded = true;
     }

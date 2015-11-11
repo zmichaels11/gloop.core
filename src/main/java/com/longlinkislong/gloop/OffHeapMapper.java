@@ -10,6 +10,8 @@ import java.lang.ref.WeakReference;
 import java.nio.ByteBuffer;
 import java.nio.LongBuffer;
 import org.lwjgl.system.MemoryUtil;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * Creates an OffHeapMapper object. This will move heap objects off heap.
@@ -18,13 +20,12 @@ import org.lwjgl.system.MemoryUtil;
  * @since 15.10.01
  */
 public final class OffHeapMapper implements ObjectMapper {
-
-    private static final int MAX_REFS;
-    private static final boolean DEBUG;
+    private static final Logger LOGGER = LoggerFactory.getLogger(OffHeapMapper.class);
+    private static final int MAX_REFS;    
     static {
         NativeTools.getInstance().loadNatives();
         MAX_REFS = Integer.getInteger("gloop.offheapmapper.max_refs", 20000);
-        DEBUG = Boolean.getBoolean("debug") && !System.getProperty("debug.exclude", "").contains("offheapmapper");
+        LOGGER.debug("Created reference pool of size: {}", MAX_REFS);
     }
 
     private final Reference<LongBuffer> sRefs;
@@ -50,9 +51,7 @@ public final class OffHeapMapper implements ObjectMapper {
         
         @Override
         public void run() {
-            if(DEBUG) {
-                System.out.println("[OffHeapMapper]: Deleting all references!");
-            }
+            LOGGER.debug("Deleting cached references...");            
             
             int refCount = 0;
             refs.flip();
@@ -61,9 +60,7 @@ public final class OffHeapMapper implements ObjectMapper {
                 refCount++;
             }
             
-            if(DEBUG) {
-                System.out.printf("[OffHeapMapper]: Cleared %d referenced.", refCount);
-            }
+            LOGGER.debug("Cleaned {} references.", refCount);            
         }
     }
 }

@@ -8,6 +8,8 @@ package com.longlinkislong.gloop;
 import java.util.Objects;
 import org.lwjgl.opengl.EXTTextureFilterAnisotropic;
 import org.lwjgl.opengl.GL11;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  *
@@ -15,6 +17,7 @@ import org.lwjgl.opengl.GL11;
  */
 public class GLTextureParameters {
 
+    private static final Logger LOGGER = LoggerFactory.getLogger(GLTextureParameters.class);
     public static final GLTextureMinFilter DEFAULT_MIN_FILTER = GLTextureMinFilter.GL_NEAREST_MIPMAP_LINEAR;
     public static final GLTextureMagFilter DEFAULT_MAG_FILTER = GLTextureMagFilter.GL_LINEAR;
     public static final float DEFAULT_MIN_LOD = -1000f;
@@ -115,6 +118,12 @@ public class GLTextureParameters {
         }
     }
 
+    /**
+     * GLQuery that checks the maximum anisotropy level supported. This query
+     * caches its result so future calls will not poll the device.
+     *
+     * @since 15.05.28
+     */
     public static class MaxAnisotropyQuery extends GLQuery<Float> {
 
         boolean checked = false;
@@ -130,6 +139,8 @@ public class GLTextureParameters {
                     EXTTextureFilterAnisotropic.GL_MAX_TEXTURE_MAX_ANISOTROPY_EXT);
 
             this.checked = true;
+
+            LOGGER.trace("max anisotropy: {}x", this.maxLevel);
             return this.maxLevel;
         }
 

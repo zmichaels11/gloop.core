@@ -17,8 +17,8 @@ import java.util.Set;
 public class GLVertexAttributes {
     public static final int INVALID_VARYING_LOCATION = -1;
     public static final int INVALID_ATTRIBUTE_LOCATION = -1;
-    protected final Map<String, Integer> nameMap = new HashMap<>();
-    protected final Set<String> feedbackVaryings = new HashSet<>();
+    final Map<String, Integer> nameMap = new HashMap<>();
+    final Set<String> feedbackVaryings = new HashSet<>();
 
     /**
      * Sets a vertex attribute position by name. This will overwrite any

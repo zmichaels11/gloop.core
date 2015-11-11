@@ -28,6 +28,8 @@ import org.lwjgl.opengl.GL21;
 import org.lwjgl.opengl.GL31;
 import org.lwjgl.opengl.GL42;
 import org.lwjgl.opengl.GL43;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * GLTexture represents an immutable OpenGL texture object. Currently only
@@ -37,7 +39,7 @@ import org.lwjgl.opengl.GL43;
  * @since 15.07.08
  */
 public class GLTexture extends GLObject {
-
+    private static final Logger LOGGER = LoggerFactory.getLogger(GLTexture.class);
     private static final int INVALID_TEXTURE_ID = -1;
     protected volatile int textureId = INVALID_TEXTURE_ID;
     private volatile int width = 0;
@@ -45,14 +47,27 @@ public class GLTexture extends GLObject {
     private volatile int depth = 0;
     private GLTextureTarget target;
     public static final int GENERATE_MIPMAP = -1;
-
+    private String name = "";
+    
+    public final void setName(final CharSequence name) {
+        GLTask.create(()->{
+            LOGGER.debug("Renamed GLTexture[{}] to GLTexture[{}]", this.name, name);
+            this.name = name.toString();
+        }).glRun(this.getThread());
+    }
+    
+    public final String getName() {
+        return this.name;
+    }
+    
+    
     /**
      * Constructs a new GLTexture on the default OpenGL thread.
      *
      * @since 15.07.08
      */
     public GLTexture() {
-        this(GLThread.getDefaultInstance());
+        this(GLThread.getAny());
     }
 
     /**
@@ -63,6 +78,8 @@ public class GLTexture extends GLObject {
      */
     public GLTexture(final GLThread thread) {
         super(thread);
+        
+        LOGGER.trace("Construct GLTexture object on thread: {}", thread);
     }
 
     /**
@@ -314,6 +331,7 @@ public class GLTexture extends GLObject {
         @Override
         public void run() {
             if (GLTexture.this.isValid()) {
+                LOGGER.trace("Deleting GLTexture[{}]", GLTexture.this.name);
                 GL11.glDeleteTextures(GLTexture.this.textureId);
                 assert checkGLError() : glErrorMsg("glDeleteTextures(I)", GLTexture.this.textureId);
 
@@ -745,8 +763,10 @@ public class GLTexture extends GLObject {
             final DSADriver dsa = GLTools.getDSAInstance();
 
             GLTexture.this.textureId = dsa.glCreateTextures(GL12.GL_TEXTURE_3D);
+            GLTexture.this.name = "id=" + GLTexture.this.textureId;
             dsa.glTextureStorage3d(textureId, mipmaps, this.internalFormat.value, width, height, depth);
             GLTexture.this.target = GLTextureTarget.GL_TEXTURE_3D;
+            LOGGER.trace("Initialized GLTexture[{}] with size: [{}, {}, {}]", GLTexture.this.name, this.width, this.height);
         }
     }
 
@@ -821,8 +841,11 @@ public class GLTexture extends GLObject {
             final DSADriver dsa = GLTools.getDSAInstance();
 
             GLTexture.this.textureId = dsa.glCreateTextures(GL11.GL_TEXTURE_2D);
+            GLTexture.this.name = "id=" + GLTexture.this.textureId;
             dsa.glTextureStorage2d(textureId, mipmaps, this.internalFormat.value, width, height);
             GLTexture.this.target = GLTextureTarget.GL_TEXTURE_2D;
+            
+            LOGGER.trace("Initialized GLTexture[{}] with size: [{}, {}, 1]", GLTexture.this.name, this.width, this.height);
         }
     }
 
@@ -889,8 +912,11 @@ public class GLTexture extends GLObject {
             final DSADriver dsa = GLTools.getDSAInstance();
 
             GLTexture.this.textureId = dsa.glCreateTextures(GL11.GL_TEXTURE_1D);
+            GLTexture.this.name = "id=" + GLTexture.this.textureId;
             dsa.glTextureStorage1d(textureId, mipmaps, this.internalFormat.value, width);
             GLTexture.this.target = GLTextureTarget.GL_TEXTURE_1D;
+            
+            LOGGER.trace("Initialized GLTexture[{}] with size: [{}, 1, 1]", GLTexture.this.name, this.width);
         }
     }
 

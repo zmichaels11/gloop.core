@@ -9,6 +9,8 @@ import static com.longlinkislong.gloop.GLAsserts.checkGLError;
 import static com.longlinkislong.gloop.GLAsserts.glErrorMsg;
 import java.util.Objects;
 import org.lwjgl.opengl.GL11;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * GLDepthTest is a GLObject that controls depth test parameters.
@@ -17,7 +19,7 @@ import org.lwjgl.opengl.GL11;
  * @since 15.06.18
  */
 public class GLDepthTest extends GLObject {
-
+    private static final Logger LOGGER = LoggerFactory.getLogger(GLDepthTest.class);
     public static final GLDepthFunc DEFAULT_DEPTH_FUNC = GLDepthFunc.GL_LESS;
     public final GLEnableStatus depthTestEnabled;
     public final GLDepthFunc depthFunc;
@@ -28,7 +30,7 @@ public class GLDepthTest extends GLObject {
      * @since 15.06.18
      */
     public GLDepthTest() {
-        this(GLThread.getDefaultInstance());
+        this(GLThread.getAny());
     }
 
     /**
@@ -56,6 +58,7 @@ public class GLDepthTest extends GLObject {
 
         super(thread);
 
+        LOGGER.trace("Constructed GLDepthTest on thread: {}", thread);
         this.depthTestEnabled = Objects.requireNonNull(enabled);
         this.depthFunc = depthFunc;
     }

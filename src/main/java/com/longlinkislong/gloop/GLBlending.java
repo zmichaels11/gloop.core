@@ -11,6 +11,8 @@ import java.util.Objects;
 import org.lwjgl.opengl.GL11;
 import org.lwjgl.opengl.GL14;
 import org.lwjgl.opengl.GL20;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * A representation of blend states to use.
@@ -19,7 +21,7 @@ import org.lwjgl.opengl.GL20;
  * @since 15.06.18
  */
 public class GLBlending extends GLObject {
-
+    private static final Logger LOGGER = LoggerFactory.getLogger(GLBlending.class);
     /**
      * Default RGB blend equation used by OpenGL.
      *
@@ -108,7 +110,7 @@ public class GLBlending extends GLObject {
      * @since 15.06.18
      */
     public GLBlending() {
-        this(GLThread.getDefaultInstance());
+        this(GLThread.getAny());
     }
 
     /**
@@ -151,6 +153,8 @@ public class GLBlending extends GLObject {
 
         super(thread);
 
+        LOGGER.trace("Constructed GLBlending object on thread: {}", thread);
+        
         Objects.requireNonNull(this.enabled = enabled);
         Objects.requireNonNull(this.rgbBlend = rgbBlend);
         Objects.requireNonNull(this.alphaBlend = alphaBlend);
@@ -287,10 +291,10 @@ public class GLBlending extends GLObject {
         public void run() {
             final GLThread thread = GLThread.getCurrent().orElseThrow(GLException::new);
 
-            thread.currentBlend = GLBlending.this.withGLThread(thread);
+            thread.currentBlend = GLBlending.this.withGLThread(thread);            
 
             switch (GLBlending.this.enabled) {
-                case GL_ENABLED:
+                case GL_ENABLED:                    
                     GL11.glEnable(GL11.GL_BLEND);
                     assert checkGLError() : glErrorMsg("glEnable(I)", "GL_BLEND");
 
@@ -301,7 +305,7 @@ public class GLBlending extends GLObject {
                     assert checkGLError() : glErrorMsg("glBlendFuncSeparate(IIII)", GLBlending.this.rgbFuncSrc, GLBlending.this.rgbFuncDst, GLBlending.this.alphaFuncSrc, GLBlending.this.alphaFuncDst);
 
                     break;
-                case GL_DISABLED:
+                case GL_DISABLED:                    
                     GL11.glDisable(GL11.GL_BLEND);
                     assert checkGLError() : glErrorMsg("glDisable(I)", "GL_BLEND");
             }
@@ -338,5 +342,13 @@ public class GLBlending extends GLObject {
         hash = 59 * hash + Objects.hashCode(this.alphaFuncSrc);
         hash = 59 * hash + Objects.hashCode(this.alphaFuncDst);
         return hash;
+    }
+    
+    @Override
+    public String toString() {
+        return String.format("GLBlending: blend=%s rgb=[src=%s dst=%s] alpha=[src=%s dst=%s]",
+                this.rgbBlend,
+                this.rgbFuncSrc, this.rgbFuncDst,
+                this.alphaFuncSrc, this.alphaFuncDst);
     }
 }

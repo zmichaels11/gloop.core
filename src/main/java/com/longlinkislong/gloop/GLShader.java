@@ -10,6 +10,8 @@ import static com.longlinkislong.gloop.GLAsserts.glErrorMsg;
 import java.util.Objects;
 import org.lwjgl.opengl.GL11;
 import org.lwjgl.opengl.GL20;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * An OpenGL object that represents shader code.
@@ -18,12 +20,24 @@ import org.lwjgl.opengl.GL20;
  * @since 15.05.27
  */
 public class GLShader extends GLObject {
-
+    private static final Logger LOGGER = LoggerFactory.getLogger(GLShader.class);
     private static final int INVALID_SHADER_ID = -1;
     private final String src;
     private final GLShaderType type;
+    private String name = "";
     int shaderId = INVALID_SHADER_ID;
 
+    public final void setName(final CharSequence name) {
+        GLTask.create(()->{
+            LOGGER.debug("Renamed GLShader[{}] to GLShader[{}]", this.name, name);
+            this.name = name.toString();
+        }).glRun(this.getThread());
+    }
+    
+    public final String getName() {
+        return this.name;
+    }
+    
     /**
      * Compiles the source as a vertex shader.
      * @param src the source to compile.
@@ -99,10 +113,7 @@ public class GLShader extends GLObject {
      * @since 15.05.27
      */
     public GLShader(final GLShaderType type, final CharSequence src) {
-        super();
-        this.src = src.toString();
-        Objects.requireNonNull(this.type = type);
-        this.compile();
+        this(GLThread.getAny(), type, src);        
     }
 
     /**
@@ -120,6 +131,9 @@ public class GLShader extends GLObject {
             final GLShaderType type, final CharSequence src) {
 
         super(thread);
+        
+        LOGGER.trace("Constructed GLShader object on thread: {}", thread);
+        
         this.src = src.toString();
         Objects.requireNonNull(this.type = type);
         this.compile();
@@ -170,7 +184,9 @@ public class GLShader extends GLObject {
         @Override
         public void run() {
             if (!GLShader.this.isValid()) {
-                GLShader.this.shaderId = GL20.glCreateShader(GLShader.this.type.value);
+                GLShader.this.shaderId = GL20.glCreateShader(GLShader.this.type.value);                
+                GLShader.this.name = "id=" + GLShader.this.shaderId;
+                
                 assert checkGLError() : glErrorMsg("glCreateShader(I)", GLShader.this.type);
 
                 GL20.glShaderSource(GLShader.this.shaderId, GLShader.this.src);
@@ -187,6 +203,8 @@ public class GLShader extends GLObject {
 
                     throw new GLException(info);
                 }
+                
+                LOGGER.trace("GLShader[{}] is initialized!", GLShader.this.name);
             }
         }
     }
@@ -212,6 +230,7 @@ public class GLShader extends GLObject {
         @Override
         public void run() {
             if (GLShader.this.isValid()) {
+                LOGGER.trace("Deleting GLShader[{}]", GLShader.this.name);
                 GL20.glDeleteShader(GLShader.this.shaderId);
                 assert checkGLError() : glErrorMsg("glDeleteShader(I)", GLShader.this.shaderId);
 
@@ -264,6 +283,8 @@ public class GLShader extends GLObject {
             final int rVal = GL20.glGetShaderi(GLShader.this.shaderId, pName.value);
             assert checkGLError() : glErrorMsg("glGetShaderi(II)", GLShader.this.shaderId, pName);
 
+            LOGGER.trace("GLShader[{}].{} = {}", GLShader.this.name, pName, rVal);
+            
             return rVal;
         }
     }
@@ -299,6 +320,8 @@ public class GLShader extends GLObject {
             final String log = GL20.glGetShaderInfoLog(GLShader.this.shaderId, length);
             assert checkGLError() : glErrorMsg("glGetShaderInfoLog(II)", GLShader.this.shaderId, length);
 
+            LOGGER.trace("GLShader[{}].infoLog = {}", GLShader.this.name, log);
+            
             return log;
         }
     }

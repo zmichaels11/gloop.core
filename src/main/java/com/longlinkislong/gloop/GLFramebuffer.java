@@ -32,6 +32,8 @@ import org.lwjgl.opengl.GL20;
 import org.lwjgl.opengl.GL21;
 import org.lwjgl.opengl.GL30;
 import static org.lwjgl.system.MemoryUtil.memAddress;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * An OpenGL object that represents a framebuffer.
@@ -41,11 +43,24 @@ import static org.lwjgl.system.MemoryUtil.memAddress;
  */
 public class GLFramebuffer extends GLObject {
 
+    private static final Logger LOGGER = LoggerFactory.getLogger(GLFramebuffer.class);
     private static final int INVALID_FRAMEBUFFER_ID = -1;
     private int framebufferId = INVALID_FRAMEBUFFER_ID;
     private int nextColorAttachment = GL30.GL_COLOR_ATTACHMENT0;
     private final Map<String, Integer> attachments = new HashMap<>();
     private final boolean isLocked;
+    private String name = "";
+
+    public final void setName(final CharSequence name) {
+        GLTask.create(() -> {
+            LOGGER.debug("Renamed GLFramebuffer[{}] to GLFramebuffer[{}]", this.name, name);
+            this.name = name.toString();
+        });
+    }
+
+    public final String getName() {
+        return this.name;
+    }
 
     /**
      * Constructs a new GLFramebuffer on the default OpenGL thread.
@@ -54,6 +69,8 @@ public class GLFramebuffer extends GLObject {
      */
     public GLFramebuffer() {
         this(GLThread.getDefaultInstance());
+        
+        LOGGER.warn("Constructing GLFramebuffer object on arbitrary GLThreads is discouraged.");
     }
 
     /**
@@ -65,13 +82,15 @@ public class GLFramebuffer extends GLObject {
     public GLFramebuffer(final GLThread thread) {
         super(thread);
 
+        LOGGER.trace("Constructed GLFramebuffer on thread: ", thread);
+
         this.isLocked = false;
         this.init();
     }
 
     private GLFramebuffer(final GLThread thread, final int fbId) {
         super(thread);
-
+        
         this.isLocked = true;
         this.framebufferId = fbId;
     }
@@ -139,7 +158,7 @@ public class GLFramebuffer extends GLObject {
         @Override
         public Boolean call() throws Exception {
             checkThread();
-            
+
             final ContextCapabilities cap = GL.getCapabilities();
 
             if (cap.OpenGL30) {
@@ -155,6 +174,8 @@ public class GLFramebuffer extends GLObject {
 
                 GL30.glBindFramebuffer(GL30.GL_FRAMEBUFFER, currentFB);
                 assert checkGLError() : glErrorMsg("glBindFramebuffer(II)", "GL_FRAMEBUFFER", currentFB);
+
+                LOGGER.trace("GLFramebuffer[{}].complete = {}", name, res);
 
                 return res;
             } else if (cap.GL_ARB_framebuffer_object) {
@@ -172,6 +193,8 @@ public class GLFramebuffer extends GLObject {
                 ARBFramebufferObject.glBindFramebuffer(ARBFramebufferObject.GL_FRAMEBUFFER, currentFB);
                 assert checkGLError() : glErrorMsg("glBindFramebufferARB(II)", "GL_FRAMEBUFFER", currentFB);
 
+                LOGGER.trace("GLFramebuffer[{}].complete = {}", name, res);
+
                 return res;
             } else if (cap.GL_EXT_framebuffer_object) {
                 final int currentFB = GL11.glGetInteger(EXTFramebufferObject.GL_FRAMEBUFFER_BINDING_EXT);
@@ -187,6 +210,8 @@ public class GLFramebuffer extends GLObject {
 
                 EXTFramebufferObject.glBindFramebufferEXT(EXTFramebufferObject.GL_FRAMEBUFFER_EXT, currentFB);
                 assert checkGLError() : glErrorMsg("glBindFramebufferEXT(II)", "GL_FRAMEBUFFER_EXT", currentFB);
+
+                LOGGER.trace("GLFramebuffer[{}].complete = {}", name, res);
 
                 return res;
             } else {
@@ -214,7 +239,7 @@ public class GLFramebuffer extends GLObject {
         @Override
         public void run() {
             checkThread();
-            
+
             final ContextCapabilities cap = GL.getCapabilities();
 
             if (cap.OpenGL30) {
@@ -268,7 +293,7 @@ public class GLFramebuffer extends GLObject {
         @Override
         public void run() {
             checkThread();
-            
+
             if (GLFramebuffer.this.isLocked) {
                 throw new GLException("Cannot initialize null instance of GLFramebuffer!");
             } else if (GLFramebuffer.this.isValid()) {
@@ -276,6 +301,8 @@ public class GLFramebuffer extends GLObject {
             }
 
             GLFramebuffer.this.framebufferId = GLTools.getDSAInstance().glCreateFramebuffers();
+            GLFramebuffer.this.name = "id=" + GLFramebuffer.this.framebufferId;
+            LOGGER.trace("GLFramebuffer[{}] is initialized!", GLFramebuffer.this.name);
         }
 
     }
@@ -299,7 +326,7 @@ public class GLFramebuffer extends GLObject {
         @Override
         public void run() {
             checkThread();
-            
+
             if (GLFramebuffer.this.isLocked) {
                 throw new GLException("Cannot delete null instance of GLFramebuffer!");
             } else if (!GLFramebuffer.this.isValid()) {
@@ -307,6 +334,8 @@ public class GLFramebuffer extends GLObject {
             }
 
             final ContextCapabilities cap = GL.getCapabilities();
+
+            LOGGER.trace("Deleting GLFramebuffer[{}]", GLFramebuffer.this.name);
 
             if (cap.OpenGL30) {
                 GL30.glDeleteFramebuffers(GLFramebuffer.this.framebufferId);
@@ -423,7 +452,7 @@ public class GLFramebuffer extends GLObject {
         @Override
         public void run() {
             checkThread();
-            
+
             if (!GLFramebuffer.this.isValid()) {
                 throw new GLException("Invalid GLFramebuffer!");
             }
@@ -507,10 +536,12 @@ public class GLFramebuffer extends GLObject {
         @Override
         public void run() {
             checkThread();
-            
+
             if (!GLFramebuffer.this.isValid()) {
                 throw new GLException("Invalid GLFramebuffer!");
             }
+
+            LOGGER.trace("GLFramebuffer[{}]: Adding depth stencil attachment: {}", GLFramebuffer.this.name, this.depthStencilAttachment.getName());
 
             final DSADriver dsa = GLTools.getDSAInstance();
 
@@ -612,12 +643,14 @@ public class GLFramebuffer extends GLObject {
         @Override
         public void run() {
             checkThread();
-            
+
             if (GLFramebuffer.this.isLocked) {
                 throw new GLException("Cannot add attachments to null instance of GLFramebuffer!");
             } else if (!GLFramebuffer.this.isValid()) {
                 throw new GLException("Invalid GLFramebuffer!");
             }
+
+            LOGGER.trace("GLFramebuffer[{}]: Adding depth attachment: {}", GLFramebuffer.this.getName(), this.depthAttachment.getName());
 
             final DSADriver dsa = GLTools.getDSAInstance();
 
@@ -685,7 +718,7 @@ public class GLFramebuffer extends GLObject {
 
         new AddColorAttachmentTask(name, attachment, level).glRun(this.getThread());
         return this;
-    }        
+    }
 
     /**
      * A GLTask that adds a color attachment to a GLFramebuffer.
@@ -735,14 +768,16 @@ public class GLFramebuffer extends GLObject {
 
         @Override
         public void run() {
-            checkThread();         
-            
+            checkThread();
+
             if (GLFramebuffer.this.isLocked) {
                 throw new GLException("Cannot add color attachment to null instance of GLFramebuffer!");
             } else if (!GLFramebuffer.this.isValid()) {
                 throw new GLException("Invalid GLFramebuffer!");
             }
 
+            LOGGER.trace("GLFramebuffer[{}]: Adding color attachment: {}", GLFramebuffer.this.getName(), this.colorAttachment.getName());
+            
             final DSADriver dsa = GLTools.getDSAInstance();
 
             if (dsa instanceof EXTDSADriver) {
@@ -864,7 +899,7 @@ public class GLFramebuffer extends GLObject {
         public void run() {
             this.readFB.checkThread();
             this.writeFB.checkThread();
-            
+
             if (!this.readFB.isValid()) {
                 throw new GLException("Read framebuffer is not valid!");
             } else if (!this.writeFB.isValid()) {
@@ -987,7 +1022,7 @@ public class GLFramebuffer extends GLObject {
         @Override
         public void run() {
             checkThread();
-            
+
             final int currentFb = GL11.glGetInteger(GL30.GL_FRAMEBUFFER_BINDING);
             assert checkGLError() : glErrorMsg("glGetInteger(I)", "GL_FRAMEBUFFER_BINDING");
 
@@ -1032,7 +1067,7 @@ public class GLFramebuffer extends GLObject {
             }
         }
     }
-    
+
     @Override
     public final boolean isShareable() {
         return false;

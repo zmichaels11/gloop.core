@@ -12,6 +12,8 @@ import java.util.Collections;
 import java.util.HashSet;
 import java.util.Set;
 import org.lwjgl.opengl.GL11;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * GLClear is a aGLObject that represents the parameters used for clearing the
@@ -21,7 +23,8 @@ import org.lwjgl.opengl.GL11;
  * @since 15.06.18
  */
 public class GLClear extends GLObject {
-
+    private static final Logger LOGGER = LoggerFactory.getLogger(GLClear.class);
+    
     /**
      * The default value the red channel is set to on clear. By default it is
      * 0.0.
@@ -113,7 +116,7 @@ public class GLClear extends GLObject {
      * @since 15.06.18
      */
     public GLClear() {
-        this(GLThread.getDefaultInstance());
+        this(GLThread.getAny());
     }
 
     /**
@@ -150,6 +153,8 @@ public class GLClear extends GLObject {
             final Set<GLFramebufferMode> clearBits) {
 
         super(thread);
+        
+        LOGGER.trace("Constructed GLClear object on thread: {}", thread);
 
         this.red = r;
         this.green = g;
@@ -260,7 +265,7 @@ public class GLClear extends GLObject {
         @Override
         public void run() {
             final GLThread thread = GLThread.getCurrent().orElseThrow(GLException::new);
-            
+                        
             thread.currentClear = GLClear.this.withGLThread(thread);            
             GL11.glClearColor(GLClear.this.red, GLClear.this.green, GLClear.this.blue, GLClear.this.alpha);
             assert checkGLError() : glErrorMsg("glClearColor(FFFF)", GLClear.this.red, GLClear.this.green, GLClear.this.blue, GLClear.this.alpha);            

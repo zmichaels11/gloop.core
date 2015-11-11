@@ -8,6 +8,8 @@ package com.longlinkislong.gloop;
 import static com.longlinkislong.gloop.GLAsserts.checkGLError;
 import static com.longlinkislong.gloop.GLAsserts.glErrorMsg;
 import org.lwjgl.opengl.GL11;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * A GLObject that represents the state of viewport settings.
@@ -21,7 +23,7 @@ import org.lwjgl.opengl.GL11;
  * @since 15.06.24
  */
 public class GLViewport extends GLObject {
-
+    private static final Logger LOGGER = LoggerFactory.getLogger(GLViewport.class);
     /**
      * The lower-left corner of the viewport rectangle, in pixels.
      *
@@ -62,12 +64,7 @@ public class GLViewport extends GLObject {
      * @since 15.06.24
      */
     public GLViewport(final int x, final int y, final int w, final int h) {
-        super();
-        this.x = x;
-        this.y = y;
-        this.width = w;
-        this.height = h;
-        this.aspect = (double) w / (double) h;
+        this(GLThread.getAny(), x, y, w, h);        
     }
 
     /**
@@ -85,6 +82,9 @@ public class GLViewport extends GLObject {
             final int x, final int y, final int w, final int h) {
 
         super(thread);
+        
+        LOGGER.trace("Constructed GLViewport on thread: {}", thread);
+        
         this.x = x;
         this.y = y;
         this.width = w;

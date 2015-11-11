@@ -11,6 +11,9 @@ import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.util.Objects;
 import org.lwjgl.opengl.GL15;
+import org.lwjgl.system.MemoryUtil;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * GLBuffer represents an OpenGL Buffer object.
@@ -21,9 +24,22 @@ import org.lwjgl.opengl.GL15;
  */
 public class GLBuffer extends GLObject {
 
+    private String name = "";
+    private static final Logger LOGGER = LoggerFactory.getLogger(GLBuffer.class);
     private static final int INVALID_BUFFER_ID = -1;
     int bufferId = INVALID_BUFFER_ID;
     private ByteBuffer mappedBuffer = null;
+
+    public final void setName(final CharSequence name) {        
+        GLTask.create(() -> {
+            LOGGER.debug("Renamed GLBuffer[{}] to GLBuffer[{}]", this.name, name);
+            this.name = name.toString();
+        }).glRun(this.getThread());
+    }
+    
+    public final String getName() {
+        return this.name;
+    }
 
     /**
      * Constructs a new GLBuffer when possible on the default GLThread.
@@ -31,8 +47,7 @@ public class GLBuffer extends GLObject {
      * @since 15.05.15
      */
     public GLBuffer() {
-        super();
-        this.init();
+        this(GLThread.getAny());        
     }
 
     /**
@@ -42,12 +57,15 @@ public class GLBuffer extends GLObject {
      */
     public GLBuffer(final GLThread thread) {
         super(thread);
+
+        LOGGER.trace("Constructed GLBuffer object on thread: {}", thread);
+
         this.init();
     }
 
     @Override
     public String toString() {
-        return "GLBuffer: " + this.bufferId;
+        return "GLBuffer[" + this.name + "]";
     }
 
     /**
@@ -83,6 +101,8 @@ public class GLBuffer extends GLObject {
         public void run() {
             if (!GLBuffer.this.isValid()) {
                 GLBuffer.this.bufferId = GLTools.getDSAInstance().glCreateBuffers();
+                GLBuffer.this.name = "id=" + GLBuffer.this.bufferId;
+                LOGGER.trace("GLBuffer[{}] is initialized!", GLBuffer.this.name);
             } else {
                 throw new GLException("GLBuffer is already initialized!");
             }
@@ -136,15 +156,19 @@ public class GLBuffer extends GLObject {
                 throw new GLException("Invalid GLBuffer!");
             }
 
-            return GLTools.getDSAInstance().glGetNamedBufferParameteri(GLBuffer.this.bufferId, this.pName.value);
+            final int result = GLTools.getDSAInstance().glGetNamedBufferParameteri(GLBuffer.this.bufferId, this.pName.value);
+
+            LOGGER.trace("GLBuffer[{}].{} = {}", GLBuffer.this.name, this.pName, result);
+
+            return result;
         }
-        
+
         @Override
         protected Integer handleInterruption() {
             return 0;
         }
 
-    }    
+    }
 
     /**
      * Deletes the GLBuffer. This call will fail if the GLBuffer has already
@@ -167,13 +191,15 @@ public class GLBuffer extends GLObject {
         @Override
         public void run() {
             if (GLBuffer.this.isValid()) {
+                LOGGER.trace("Deleting GLBuffer[{}]", GLBuffer.this.name);
+
                 GL15.glDeleteBuffers(GLBuffer.this.bufferId);
                 assert checkGLError() : glErrorMsg("glDeleteBuffers(I)", GLBuffer.this.bufferId);
 
                 GLBuffer.this.bufferId = INVALID_BUFFER_ID;
             }
         }
-    }    
+    }
 
     /**
      * Uploads the supplied data to the GLBuffer. GL_STATIC_DRAW is used for
@@ -247,6 +273,8 @@ public class GLBuffer extends GLObject {
                 throw new GLException("GLBuffer is invalid!");
             }
 
+            LOGGER.trace("GLBuffer[{}]: Uploading {} bytes.", GLBuffer.this.name, this.data.remaining());
+
             GLTools.getDSAInstance().glNamedBufferData(GLBuffer.this.bufferId, this.data, this.usage.value);
         }
     }
@@ -317,10 +345,12 @@ public class GLBuffer extends GLObject {
                 throw new GLException("Invalid GLBuffer!");
             }
 
+            LOGGER.trace("GLBuffer[{}]: Allocating {} bytes.", GLBuffer.this.name, this.size);
+
             GLTools.getDSAInstance().glNamedBufferData(GLBuffer.this.bufferId, this.size, this.usage.value);
         }
 
-    }    
+    }
 
     /**
      * Requests a copy of the data stored inside the GLBuffer. A new ByteBuffer
@@ -355,9 +385,9 @@ public class GLBuffer extends GLObject {
      * @since 15.05.13
      */
     public ByteBuffer download(final long offset, final ByteBuffer writeBuffer) {
-        if(writeBuffer == null) {
+        if (writeBuffer == null) {
             final int size = this.getParameter(GLBufferParameterName.GL_BUFFER_SIZE);
-            
+
             return download(offset, ByteBuffer.allocateDirect(size).order(ByteOrder.nativeOrder()));
         } else {
             return new DownloadQuery(offset, writeBuffer).glCall(this.getThread());
@@ -432,21 +462,22 @@ public class GLBuffer extends GLObject {
                 out = this.writeBuffer;
             }
 
+            LOGGER.trace("GLBuffer[{}]: download {} bytes", GLBuffer.this.name, out.capacity());
             GLTools.getDSAInstance().glGetNamedBufferSubData(GLBuffer.this.bufferId, this.offset, out);
 
             return out;
         }
-        
+
         @Override
         protected ByteBuffer handleInterruption() {
             return ByteBuffer.allocate(0).asReadOnlyBuffer();
         }
-    } 
+    }
 
     /**
      * Maps the GLBuffer to a ByteBuffer for read-write access. This function
      * can force a thread sync.
-     *     
+     *
      * @param offset the offset in bytes to begin the map.
      * @param length the number of bytes to map.
      * @return the mapped ByteBuffer.
@@ -460,7 +491,7 @@ public class GLBuffer extends GLObject {
 
     /**
      * Maps a GLBuffer to a ByteBuffer. This function can force a thread sync.
-     *     
+     *
      * @param offset the offset in bytes to begin the map.
      * @param length the number of bytes to map.
      * @param accessBits the flags indicating access rights to the data.
@@ -477,7 +508,7 @@ public class GLBuffer extends GLObject {
 
     /**
      * Maps a GLBuffer to a ByteBuffer. This function can force a thread sync.
-     *     
+     *
      * @param offset the offset in bytes to begin the map.
      * @param length the number of bytes to map.
      * @param accessBits the flags indicating access rights to the data.
@@ -503,13 +534,14 @@ public class GLBuffer extends GLObject {
      * @since 15.05.13
      */
     public class MapQuery extends GLQuery<ByteBuffer> {
+
         final int access;
         final long offset;
         final long length;
 
         /**
          * Constructs a new MapQuery using a sequence of accessbits.
-         *         
+         *
          * @param offset the starting offset within the buffer range to be
          * mapped.
          * @param length the length of the range to be mapped.
@@ -523,7 +555,7 @@ public class GLBuffer extends GLObject {
 
         /**
          * Constructs a new MapQuery.
-         *         
+         *
          * @param offset the starting offset within the buffer range to be
          * mapped.
          * @param length the length of the range to be mapped.
@@ -534,10 +566,10 @@ public class GLBuffer extends GLObject {
          * @param accessLength the number of access flags to read.
          * @since 15.05.13
          */
-        public MapQuery(                
+        public MapQuery(
                 final long offset, final long length,
                 final GLBufferAccess[] accessBits, final int accessOffset, final int accessLength) {
-            
+
             this.offset = offset;
             this.length = length;
 
@@ -564,9 +596,11 @@ public class GLBuffer extends GLObject {
 
             GLBuffer.this.mappedBuffer = newBuffer;
 
+            LOGGER.trace("GLBuffer[{}]: Mapped buffer address: {}", GLBuffer.this.name, MemoryUtil.memAddress(newBuffer));
+
             return newBuffer;
         }
-        
+
         @Override
         protected ByteBuffer handleInterruption() {
             return ByteBuffer.allocate(0).asReadOnlyBuffer();
@@ -714,11 +748,13 @@ public class GLBuffer extends GLObject {
                             0, this.length,
                             this.access, oldBuffer);
 
+            LOGGER.trace("GLBuffer[{}]: Mapped persistent buffer address: {}", GLBuffer.this.name, MemoryUtil.memAddress(newBuffer));
+
             GLBuffer.this.mappedBuffer = newBuffer;
 
             return newBuffer;
         }
-        
+
         @Override
         protected ByteBuffer handleInterruption() {
             return ByteBuffer.allocate(0).asReadOnlyBuffer();
@@ -743,19 +779,22 @@ public class GLBuffer extends GLObject {
      *
      * @since 15.05.13
      */
-    public class UnmapTask extends GLTask {       
+    public class UnmapTask extends GLTask {
+
         @Override
         public void run() {
             if (!GLBuffer.this.isValid()) {
                 throw new GLException("Invalid GLBuffer!");
             }
 
+            LOGGER.trace("GLBuffer[{}]: Unmapped buffer", GLBuffer.this.bufferId);
             GLTools.getDSAInstance().glUnmapNamedBuffer(GLBuffer.this.bufferId);
         }
-    }    
+    }
 
     /**
      * Copies data from one GLBuffer to another GLBuffer.
+     *
      * @param src the buffer to copy data from.
      * @param srcOffset the offset to start copying data.
      * @param dest the buffer to copy data to.
@@ -766,8 +805,8 @@ public class GLBuffer extends GLObject {
     public static void copy(
             final GLBuffer src, final long srcOffset,
             final GLBuffer dest, final long destOffset,
-            final long size) {                
-        
+            final long size) {
+
         new CopyTask(src, srcOffset, dest, destOffset, size).glRun(GLThread.getAny());
     }
 
@@ -812,6 +851,8 @@ public class GLBuffer extends GLObject {
             if (!src.isValid() || !dest.isValid()) {
                 throw new GLException("Invalid GLBuffer!");
             }
+
+            LOGGER.trace("Copying {} bytes from GLBuffer[{}]+{} to GLBuffer[{}]+{}", size, src.name, srcOffset, dest.name, destOffset);
 
             GLTools.getDSAInstance().glCopyNamedBufferSubData(
                     src.bufferId, dest.bufferId,

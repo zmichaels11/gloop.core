@@ -16,6 +16,7 @@ repositories {
 }
 
 dependencies {
+    compile 'org.slf4j:slf4j-api:1.7.+'
     compile "com.longlinkislong:gloop-vectors:${gloop_vectors_version}"
     
     compile "org.lwjgl:lwjgl:${lwjgl_version}"

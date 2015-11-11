@@ -9,13 +9,15 @@ import static com.longlinkislong.gloop.GLAsserts.checkGLError;
 import static com.longlinkislong.gloop.GLAsserts.glErrorMsg;
 import java.util.Objects;
 import org.lwjgl.opengl.GL11;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  *
  * @author zmichaels
  */
 public class GLPolygonParameters extends GLObject {
-
+    private static final Logger LOGGER = LoggerFactory.getLogger(GLPolygonParameters.class);
     public static final float DEFAULT_POINT_SIZE = 1f;
     public static final float DEFAULT_LINE_SIZE = 1f;
     public static final GLFrontFaceMode DEFAULT_FRONT_FACE = GLFrontFaceMode.GL_CCW;
@@ -32,7 +34,7 @@ public class GLPolygonParameters extends GLObject {
     public final float polygonOffsetFactor, polygonOffsetUnits;
 
     public GLPolygonParameters() {
-        this(GLThread.getDefaultInstance());
+        this(GLThread.getAny());
     }
 
     public GLPolygonParameters(final GLThread thread) {
@@ -54,6 +56,9 @@ public class GLPolygonParameters extends GLObject {
             final GLEnableStatus cullEnabled, final GLCullMode cullMode) {
 
         super(thread);
+        
+        LOGGER.trace("Constructed GLPolygonParameters object on thread: {}", thread);
+        
         this.pointSize = pointSize;
         this.lineSize = lineSize;
         this.frontFace = Objects.requireNonNull(frontFace);

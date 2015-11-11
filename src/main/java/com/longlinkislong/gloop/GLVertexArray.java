@@ -29,6 +29,8 @@ import org.lwjgl.opengl.GL33;
 import org.lwjgl.opengl.GL40;
 import org.lwjgl.opengl.GL41;
 import static org.lwjgl.system.MemoryUtil.memAddress;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * A GLVertexArray is an OpenGL object that contains information relevant to
@@ -38,10 +40,22 @@ import static org.lwjgl.system.MemoryUtil.memAddress;
  * @since 15.06.05
  */
 public class GLVertexArray extends GLObject {
-
+    private static final Logger LOGGER = LoggerFactory.getLogger(GLVertexArray.class);
     private static final Map<Thread, GLVertexArray> CURRENT = new HashMap<>();
     private static final int INVALID_VERTEX_ARRAY_ID = -1;
     private int vaoId = INVALID_VERTEX_ARRAY_ID;
+    private String name = "";
+    
+    public final void setName(final CharSequence name) {
+        GLTask.create(()->{
+            LOGGER.debug("Renamed GLVertexArray[{}] to GLVertexArray[{}]", this.name, name);
+            this.name = name.toString();
+        }).glRun(this.getThread());
+    }
+    
+    public final String getName() {
+        return this.name;
+    }
 
     /**
      * Constructs a new GLVertexArray object on the default OpenGL thread.
@@ -49,8 +63,8 @@ public class GLVertexArray extends GLObject {
      * @since 15.06.05
      */
     public GLVertexArray() {
-        super();
-        this.init();
+        this(GLThread.getDefaultInstance());
+        LOGGER.warn("Constructing GLVertexArray object on arbitrary GLThreads is discouraged.");
     }
 
     /**
@@ -311,6 +325,7 @@ public class GLVertexArray extends GLObject {
             }
 
             GLVertexArray.this.vaoId = GLVertexArray.this.glGenVertexArrays.get();
+            GLVertexArray.this.name = "id=" + GLVertexArray.this.vaoId;
         }
     }    
 
@@ -873,6 +888,7 @@ public class GLVertexArray extends GLObject {
             checkThread();
 
             if (GLVertexArray.this.isValid()) {
+                LOGGER.trace("Deleting GLVertexArray[{}]", GLVertexArray.this.vaoId);
                 GLVertexArray.this.glDeleteVertexArrays.call(GLVertexArray.this.vaoId);
                 assert checkGLError() : glErrorMsg("glDeleteVertexArrays(I)", GLVertexArray.this.vaoId);
 
@@ -1034,6 +1050,8 @@ public class GLVertexArray extends GLObject {
             if (!buffer.isValid()) {
                 throw new GLException("Invalid GLBuffer!");
             }
+            
+            LOGGER.trace("GLVertexArray[{}]: Attaching GLBuffer[{}] on attribute {}", GLVertexArray.this.name, this.buffer.getName(), this.index);
 
             // bind the VAO if it isn't bound already.
             GLVertexArray.this.bind();

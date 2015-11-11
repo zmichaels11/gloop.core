@@ -25,6 +25,8 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.stream.Collectors;
 import org.lwjgl.glfw.GLFW;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * GLThread is a representation of an OpenGL thread.
@@ -33,7 +35,7 @@ import org.lwjgl.glfw.GLFW;
  * @since 15.07.01
  */
 public class GLThread implements ExecutorService {
-
+    private static final Logger LOGGER = LoggerFactory.getLogger(GLThread.class);
     private static final Map<Thread, GLThread> THREAD_MAP = new HashMap<>();
     final Deque<GLBlending> blendStack = new LinkedList<>();
     final Deque<GLClear> clearStack = new LinkedList<>();
@@ -239,7 +241,7 @@ public class GLThread implements ExecutorService {
             1, 1, 0L, TimeUnit.MILLISECONDS, new LinkedBlockingQueue<>()) {
 
                 @Override
-                protected void afterExecute(final Runnable task, Throwable ex) {
+                protected void afterExecute(final Runnable task, final Throwable ex) {
                     super.afterExecute(task, ex);
 
                     if (task != null && task instanceof Future<?>) {
@@ -249,17 +251,18 @@ public class GLThread implements ExecutorService {
                             if (future.isDone()) {
                                 future.get();
                             }
-                        } catch (CancellationException ce) {
-                            ex = ce;
+                        } catch (CancellationException ce) {                            
+                            LOGGER.error("GLTask was canceled.", ce);
                         } catch (ExecutionException ee) {
-                            ex = ee.getCause();
+                            LOGGER.error("Error executing GLTask", ee);                            
                         } catch (InterruptedException ie) {
+                            LOGGER.error("GLThread was interrupted! Resetting interrupt state.", ie);
                             Thread.currentThread().interrupt();
                         }
                     }
 
                     if (ex != null) {
-                        ex.printStackTrace();
+                        LOGGER.error("Error executing GLTask!", ex);                        
                     }
                 }
             };
@@ -272,6 +275,7 @@ public class GLThread implements ExecutorService {
 
     @Override
     public void shutdown() {
+        LOGGER.info("Shutting down thread: GLThread[{}]", this);
         this.shouldHaltScheduledTasks = true;
         this.internalExecutor.shutdown();
     }
@@ -475,7 +479,8 @@ public class GLThread implements ExecutorService {
             final long id = THREAD_ID.getAndIncrement();
             final String name = id == 0 ? "OpenGL Thread: Primary" : "OpenGL Thread: " + id;
 
-            GLThread.this.internalThread.setName(name);
+            LOGGER.debug("Renamed GLThread[{}] to GLThread[{}]", GLThread.this.internalThread.getName(), name);
+            GLThread.this.internalThread.setName(name);            
             THREAD_MAP.put(GLThread.this.internalThread, GLThread.this);
         }
     }
@@ -725,5 +730,14 @@ public class GLThread implements ExecutorService {
     static {
         DEBUG = Boolean.getBoolean("debug") && !System.getProperty("debug.exclude", "").contains("glthread");
         NativeTools.getInstance().autoLoad();
+    }
+    
+    @Override
+    public String toString() {
+        if(this.getThread() == null) {
+            return "OpenGL Thread: [initializing]";
+        } else {
+            return this.getThread().getName();
+        }
     }
 }

@@ -26,6 +26,8 @@ import org.lwjgl.opengl.GL20;
 import org.lwjgl.opengl.GL30;
 import org.lwjgl.opengl.GL31;
 import org.lwjgl.opengl.GL43;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * A GLObject that represents an OpenGL shader program.
@@ -34,11 +36,24 @@ import org.lwjgl.opengl.GL43;
  * @since 15.05.27
  */
 public class GLProgram extends GLObject {
-
+    private static final Logger LOGGER = LoggerFactory.getLogger(GLProgram.class);
     private static final Map<Thread, GLProgram> CURRENT = new HashMap<>();
     private static final int INVALID_PROGRAM_ID = -1;
     int programId = INVALID_PROGRAM_ID;
     private final Map<String, Integer> uniforms = new HashMap<>();
+    
+    private String name = "";
+    
+    public final void setName(final CharSequence name) {
+        GLTask.create(()->{
+            LOGGER.debug("Renamed GLProgram[{}] to GLProgram[{}]", this.name, name);
+            this.name = name.toString();
+        }).glRun(this.getThread());
+    }
+    
+    public final String getName() {
+        return this.name;
+    }
 
     @FunctionalInterface
     private interface TransformFeedbackVaryings {
@@ -122,8 +137,7 @@ public class GLProgram extends GLObject {
      * @since 15.05.27
      */
     public GLProgram() {
-        super();
-        this.init();
+        this(GLThread.getAny());
     }
 
     /**
@@ -135,6 +149,7 @@ public class GLProgram extends GLObject {
      */
     public GLProgram(final GLThread thread) {
         super(thread);
+        LOGGER.trace("Constructed GLProgram object on thread: {}", thread);
         this.init();
     }
 
@@ -234,6 +249,8 @@ public class GLProgram extends GLObject {
                 throw new GLException("Invalid GLProgram!");
             } else {
                 this.attribs.nameMap.forEach((name, index) -> {
+                    LOGGER.trace("GLProgram[{}].attrib[{}] = {}", GLProgram.this.name, index, name);
+                    
                     GL20.glBindAttribLocation(GLProgram.this.programId, index, name);
                     assert checkGLError() : glErrorMsg("glBindAttribLocation(IIS)", GLProgram.this.programId, index, name);
                 });
@@ -244,8 +261,9 @@ public class GLProgram extends GLObject {
                     final CharSequence[] varyings = new CharSequence[varyingSet.size()];
                     final Iterator<String> it = varyingSet.iterator();
 
-                    for (int i = 0; i < varyingSet.size(); i++) {
+                    for (int i = 0; i < varyingSet.size(); i++) {                                                
                         varyings[i] = it.next();
+                        LOGGER.trace("GLProgram[{}].varying[{}] = {}", GLProgram.this.name, i, varyings[i]);
                     }
 
                     GLProgram.this.glTransformFeedbackVaryings.call(GLProgram.this.programId, varyings, GL30.GL_SEPARATE_ATTRIBS);
@@ -1154,9 +1172,11 @@ public class GLProgram extends GLObject {
                 GLProgram.this.glTransformFeedbackVaryings = (programId, varyings, bufferMode) -> {
                     throw new UnsupportedOperationException("glTransformFeedbackVaryings is not supported! glTransformFeedbackVaryings requires an OpenGL 3.0 context.");
                 };
-            }
-
+            }            
+            
             GLProgram.this.programId = GL20.glCreateProgram();
+            GLProgram.this.name = "id=" + GLProgram.this.programId;
+            LOGGER.trace("GLProgram[{}] is initialized!", GLProgram.this.name);
             assert checkGLError() : glErrorMsg("glCreateProgram(void)");
         }
     }
