@@ -15,11 +15,13 @@ repositories {
     maven { url 'http://jartifacts.longlinkislong.com/libs-release' }
 }
 
-dependencies {
-    def gloopVersion = "${versionUrl}?name=gloop".toURL().text.trim()
-    
+def getProjectVersion(projId) {
+    return "${versionUrl}?name=${projId}".toURL().text.trim()
+}
+
+dependencies {        
     compile 'org.slf4j:slf4j-api:1.7.+'
-    compile "com.longlinkislong:gloop-vectors:${gloopVersion}"
+    compile "com.longlinkislong:gloop-vectors:${getProjectVersion('gloop-vectors')}"
     
     compile "org.lwjgl:lwjgl:3.0.0+"
     compile "org.lwjgl:lwjgl-platform:3.0.0+:natives-windows"
