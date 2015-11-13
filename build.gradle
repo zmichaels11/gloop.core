@@ -16,13 +16,15 @@ repositories {
 }
 
 dependencies {
-    compile 'org.slf4j:slf4j-api:1.7.+'
-    compile "com.longlinkislong:gloop-vectors:${gloop_vectors_version}"
+    def gloopVersion = "${versionUrl}?name=gloop".toURL().text.trim()
     
-    compile "org.lwjgl:lwjgl:${lwjgl_version}"
-    compile "org.lwjgl:lwjgl-platform:${lwjgl_version}:natives-windows"
-    compile "org.lwjgl:lwjgl-platform:${lwjgl_version}:natives-linux"
-    compile "org.lwjgl:lwjgl-platform:${lwjgl_version}:natives-osx"      
+    compile 'org.slf4j:slf4j-api:1.7.+'
+    compile "com.longlinkislong:gloop-vectors:${gloopVersion}"
+    
+    compile "org.lwjgl:lwjgl:3.0.0+"
+    compile "org.lwjgl:lwjgl-platform:3.0.0+:natives-windows"
+    compile "org.lwjgl:lwjgl-platform:3.0.0+:natives-linux"
+    compile "org.lwjgl:lwjgl-platform:3.0.0+:natives-osx"      
 
     testCompile group: 'junit', name: 'junit', version: '4.10'
 }
