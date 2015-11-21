@@ -23,7 +23,7 @@ dependencies {
     compile 'org.slf4j:slf4j-api:1.7.+'
     compile "com.longlinkislong:gloop-vectors:${getProjectVersion('gloop-vectors')}"
     
-    compile "org.lwjgl:lwjgl:3.0.0+"
+    compile "org.lwjgl:lwjgl:3.0.0a"
     compile "org.lwjgl:lwjgl-platform:3.0.0+:natives-windows"
     compile "org.lwjgl:lwjgl-platform:3.0.0+:natives-linux"
     compile "org.lwjgl:lwjgl-platform:3.0.0+:natives-osx"      

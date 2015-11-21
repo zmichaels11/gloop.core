@@ -39,6 +39,7 @@ import org.slf4j.LoggerFactory;
  * @since 15.07.08
  */
 public class GLTexture extends GLObject {
+
     private static final Logger LOGGER = LoggerFactory.getLogger(GLTexture.class);
     private static final int INVALID_TEXTURE_ID = -1;
     protected volatile int textureId = INVALID_TEXTURE_ID;
@@ -48,19 +49,18 @@ public class GLTexture extends GLObject {
     private GLTextureTarget target;
     public static final int GENERATE_MIPMAP = -1;
     private String name = "";
-    
+
     public final void setName(final CharSequence name) {
-        GLTask.create(()->{
+        GLTask.create(() -> {
             LOGGER.debug("Renamed GLTexture[{}] to GLTexture[{}]", this.name, name);
             this.name = name.toString();
         }).glRun(this.getThread());
     }
-    
+
     public final String getName() {
         return this.name;
     }
-    
-    
+
     /**
      * Constructs a new GLTexture on the default OpenGL thread.
      *
@@ -78,7 +78,7 @@ public class GLTexture extends GLObject {
      */
     public GLTexture(final GLThread thread) {
         super(thread);
-        
+
         LOGGER.trace("Construct GLTexture object on thread: {}", thread);
     }
 
@@ -335,6 +335,7 @@ public class GLTexture extends GLObject {
                 GL11.glDeleteTextures(GLTexture.this.textureId);
                 assert checkGLError() : glErrorMsg("glDeleteTextures(I)", GLTexture.this.textureId);
 
+                GLTexture.this.target = null;
                 GLTexture.this.textureId = INVALID_TEXTURE_ID;
                 GLTexture.this.width = GLTexture.this.height = GLTexture.this.depth = 0;
             } else {
@@ -355,7 +356,7 @@ public class GLTexture extends GLObject {
         this.width = width;
         this.height = height;
         this.depth = depth;
-    }    
+    }
 
     /**
      * Updates a 3D segment of the specified mipmap level.
@@ -380,7 +381,7 @@ public class GLTexture extends GLObject {
             final GLTextureFormat format,
             final GLType type, final ByteBuffer data) {
 
-        new UpdateImage3DTask(level, xOffset, yOffset, zOffset, width, height, depth, format, type, data).glRun(this.getThread());        
+        new UpdateImage3DTask(level, xOffset, yOffset, zOffset, width, height, depth, format, type, data).glRun(this.getThread());
 
         return this;
     }
@@ -454,10 +455,17 @@ public class GLTexture extends GLObject {
             this.data = GLTools.checkBuffer(
                     data.asReadOnlyBuffer().order(ByteOrder.nativeOrder()));
 
-            GLTexture.this.setSize(
-                    this.width = width,
-                    this.height = height,
-                    this.depth = depth);
+            if((this.width = width) < 0) {
+                throw new GLException("Width cannot be less than 0!");
+            }
+            
+            if((this.height = height) < 0) {
+                throw new GLException("Height cannot be less than 0!");
+            }
+            
+            if((this.depth = depth) < 0) {
+                throw new GLException("Depth cannot be less than 0!");
+            }
         }
 
         @Override
@@ -473,7 +481,7 @@ public class GLTexture extends GLObject {
                     this.width, this.height, this.depth, this.format.value,
                     this.type.value, this.data);
         }
-    }    
+    }
 
     /**
      * Updates a 2D segment of the specified mipmap level.
@@ -496,7 +504,7 @@ public class GLTexture extends GLObject {
             final GLTextureFormat format,
             final GLType type, final ByteBuffer data) {
 
-        new UpdateImage2DTask(level, xOffset, yOffset, width, height, format, type, data).glRun(this.getThread());        
+        new UpdateImage2DTask(level, xOffset, yOffset, width, height, format, type, data).glRun(this.getThread());
 
         return this;
     }
@@ -563,10 +571,13 @@ public class GLTexture extends GLObject {
 
             this.data = GLTools.checkBuffer(data.asReadOnlyBuffer().order(ByteOrder.nativeOrder()));
 
-            GLTexture.this.setSize(
-                    this.width = width,
-                    this.height = height,
-                    1);
+            if((this.width = width) < 0) {
+                throw new GLException("Width cannot be less than 0!");
+            }
+            
+            if((this.height = height) < 0) {
+                throw new GLException("Height cannot be less than 0!");
+            }
         }
 
         @Override
@@ -582,7 +593,7 @@ public class GLTexture extends GLObject {
                     this.type.value, this.data);
         }
 
-    }    
+    }
 
     /**
      * Updates a 1D segment of the specified mipmap level.
@@ -602,7 +613,6 @@ public class GLTexture extends GLObject {
             final GLTextureFormat format,
             final GLType type, final ByteBuffer data) {
 
-        
         new UpdateImage1DTask(level, xOffset, width, format, type, data).glRun(this.getThread());
 
         return this;
@@ -844,7 +854,7 @@ public class GLTexture extends GLObject {
             GLTexture.this.name = "id=" + GLTexture.this.textureId;
             dsa.glTextureStorage2d(textureId, mipmaps, this.internalFormat.value, width, height);
             GLTexture.this.target = GLTextureTarget.GL_TEXTURE_2D;
-            
+
             LOGGER.trace("Initialized GLTexture[{}] with size: [{}, {}, 1]", GLTexture.this.name, this.width, this.height);
         }
     }
@@ -915,7 +925,7 @@ public class GLTexture extends GLObject {
             GLTexture.this.name = "id=" + GLTexture.this.textureId;
             dsa.glTextureStorage1d(textureId, mipmaps, this.internalFormat.value, width);
             GLTexture.this.target = GLTextureTarget.GL_TEXTURE_1D;
-            
+
             LOGGER.trace("Initialized GLTexture[{}] with size: [{}, 1, 1]", GLTexture.this.name, this.width);
         }
     }
@@ -953,13 +963,13 @@ public class GLTexture extends GLObject {
             }
         }
 
-    }    
+    }
 
     public void setTextureBuffer(
             final GLTextureInternalFormat internalFormat,
             final GLBuffer buffer) {
 
-        new SetTextureBufferTask(internalFormat, buffer).glRun(this.getThread());        
+        new SetTextureBufferTask(internalFormat, buffer).glRun(this.getThread());
     }
 
     public class SetPixelBuffer2DTask extends GLTask {
@@ -1376,6 +1386,10 @@ public class GLTexture extends GLObject {
 
         @Override
         public ByteBuffer call() throws Exception {
+            if(!GLTexture.this.isValid()) {
+                throw new GLException("Invalid GLTexture!");
+            }
+            
             DSADriver driver = GLTools.getDSAInstance();
 
             if (driver instanceof EXTDSADriver) {
