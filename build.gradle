@@ -24,9 +24,9 @@ dependencies {
     compile "com.longlinkislong:gloop-vectors:${getProjectVersion('gloop-vectors')}"
     
     compile "org.lwjgl:lwjgl:3.0.0a"
-    compile "org.lwjgl:lwjgl-platform:3.0.0+:natives-windows"
-    compile "org.lwjgl:lwjgl-platform:3.0.0+:natives-linux"
-    compile "org.lwjgl:lwjgl-platform:3.0.0+:natives-osx"      
+    compile "org.lwjgl:lwjgl-platform:3.0.0a:natives-windows"
+    compile "org.lwjgl:lwjgl-platform:3.0.0a:natives-linux"
+    compile "org.lwjgl:lwjgl-platform:3.0.0a:natives-osx"      
 
     testCompile group: 'junit', name: 'junit', version: '4.10'
 }
