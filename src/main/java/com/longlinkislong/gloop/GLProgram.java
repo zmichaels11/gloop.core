@@ -1215,8 +1215,8 @@ public class GLProgram extends GLObject {
             GLProgram.this.glTransformFeedbackVaryings = NULL_TRANSFORM_FEEDBACK_VARYINGS;
             GLProgram.this.glUniformBlockBinding = NULL_UNIFORM_BLOCK_BINDING;
         }
-    }
-
+    }    
+    
     /**
      * A GLTask that sets a uniform sampler.
      *

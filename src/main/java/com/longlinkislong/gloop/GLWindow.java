@@ -841,8 +841,10 @@ public class GLWindow {
 
             final ByteBuffer x = NativeTools.getInstance().nextWord();
             final ByteBuffer y = NativeTools.getInstance().nextWord();
+            final ByteBuffer w = NativeTools.getInstance().nextWord();
+            final ByteBuffer h = NativeTools.getInstance().nextWord();
 
-            GLFW.glfwGetWindowPos(GLWindow.this.window, x, y);
+            GLFW.glfwGetWindowFrameSize(GLWindow.this.window, x, y, w, h);
 
             return new int[]{x.getInt(), y.getInt()};
         }
@@ -887,13 +889,14 @@ public class GLWindow {
             if (!GLWindow.this.isValid()) {
                 throw new GLException("GLWindow is not valid!");
             }
+            final ByteBuffer x = NativeTools.getInstance().nextWord();
+            final ByteBuffer y = NativeTools.getInstance().nextWord();
+            final ByteBuffer w = NativeTools.getInstance().nextWord();
+            final ByteBuffer h = NativeTools.getInstance().nextWord();
 
-            final ByteBuffer width = NativeTools.getInstance().nextWord();
-            final ByteBuffer height = NativeTools.getInstance().nextWord();
+            GLFW.glfwGetWindowFrameSize(GLWindow.this.window, x, y, w, h);
 
-            GLFW.glfwGetWindowSize(GLWindow.this.window, width, height);
-
-            return new int[]{width.getInt(), height.getInt()};
+            return new int[]{w.getInt(), h.getInt()};
         }
 
     }
