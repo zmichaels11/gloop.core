@@ -468,8 +468,9 @@ public class GLWindow {
 
             final ByteBuffer mode = GLFW.glfwGetVideoMode(mHandle);
             final ByteBuffer widthMM = NativeTools.getInstance().nextWord();
+            final ByteBuffer heightMM = NativeTools.getInstance().nextWord();
 
-            GLFW.glfwGetMonitorPhysicalSize(mHandle, widthMM, null);
+            GLFW.glfwGetMonitorPhysicalSize(mHandle, widthMM, heightMM);            
 
             final int vWidth = GLFWvidmode.width(mode);
 
