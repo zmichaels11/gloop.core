@@ -807,10 +807,8 @@ public class GLWindow {
      * @throws GLException if the the window is not initialized.
      * @since 15.06.07
      */
-    public int getX() throws GLException {
-        final GLQuery<int[]> posQuery = this.new WindowPositionQuery();
-
-        return posQuery.glCall(this.getGLThread())[GLTools.X];
+    public int getX() throws GLException {        
+        return new WindowPositionQuery().glCall(this.getGLThread())[GLTools.X];
     }
 
     /**
@@ -820,10 +818,8 @@ public class GLWindow {
      * @throws GLException if the window has not been initialized.
      * @since 15.06.07
      */
-    public int getY() throws GLException {
-        final GLQuery<int[]> posQuery = this.new WindowPositionQuery();
-
-        return posQuery.glCall(this.getGLThread())[GLTools.Y];
+    public int getY() throws GLException {        
+        return new WindowPositionQuery().glCall(this.getGLThread())[GLTools.Y];
     }
 
     /**
@@ -841,14 +837,29 @@ public class GLWindow {
 
             final ByteBuffer x = NativeTools.getInstance().nextWord();
             final ByteBuffer y = NativeTools.getInstance().nextWord();
-            final ByteBuffer w = NativeTools.getInstance().nextWord();
-            final ByteBuffer h = NativeTools.getInstance().nextWord();
-
-            GLFW.glfwGetWindowFrameSize(GLWindow.this.window, x, y, w, h);
+            GLFW.glfwGetWindowPos(GLWindow.this.window, x, y);
 
             return new int[]{x.getInt(), y.getInt()};
         }
+    }
 
+    public class WindowFrameSizeQuery extends GLQuery<int[]> {
+
+        @Override
+        public int[] call() throws Exception {
+            if (!GLWindow.this.isValid()) {
+                throw new GLException("GLWindow is not valid!");
+            }
+
+            final ByteBuffer l = NativeTools.getInstance().nextWord();
+            final ByteBuffer t = NativeTools.getInstance().nextWord();
+            final ByteBuffer r = NativeTools.getInstance().nextWord();
+            final ByteBuffer b = NativeTools.getInstance().nextWord();
+
+            GLFW.glfwGetWindowFrameSize(GLWindow.this.window, l, t, r, b);
+
+            return new int[]{l.getInt(), t.getInt(), r.getInt(), b.getInt()};
+        }
     }
 
     /**
@@ -858,10 +869,24 @@ public class GLWindow {
      * @throws GLException if the window has not been initialized.
      * @since 15.06.05
      */
-    public int getWidth() {
-        final GLQuery<int[]> sizeQuery = this.new WindowSizeQuery();
-
-        return sizeQuery.glCall(this.getGLThread())[GLTools.WIDTH];
+    public int getWidth() {        
+        return new WindowSizeQuery().glCall(this.getGLThread())[GLTools.WIDTH];
+    }
+    
+    public int getWindowFrameLeft() {
+        return new WindowFrameSizeQuery().glCall(this.getGLThread())[0];
+    }
+    
+    public int getWindowFrameTop() {
+        return new WindowFrameSizeQuery().glCall(this.getGLThread())[1];
+    }
+    
+    public int getWindowFrameRight() {
+        return new WindowFrameSizeQuery().glCall(this.getGLThread())[2];
+    }
+    
+    public int getWindowFrameBottom() {
+        return new WindowFrameSizeQuery().glCall(this.getGLThread())[3];
     }
 
     /**
@@ -889,12 +914,10 @@ public class GLWindow {
             if (!GLWindow.this.isValid()) {
                 throw new GLException("GLWindow is not valid!");
             }
-            final ByteBuffer x = NativeTools.getInstance().nextWord();
-            final ByteBuffer y = NativeTools.getInstance().nextWord();
             final ByteBuffer w = NativeTools.getInstance().nextWord();
-            final ByteBuffer h = NativeTools.getInstance().nextWord();
-
-            GLFW.glfwGetWindowFrameSize(GLWindow.this.window, x, y, w, h);
+            final ByteBuffer h = NativeTools.getInstance().nextWord();            
+            
+            GLFW.glfwGetWindowSize(GLWindow.this.window, w, h);
 
             return new int[]{w.getInt(), h.getInt()};
         }
