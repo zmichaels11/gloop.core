@@ -29,14 +29,15 @@ public class GLBuffer extends GLObject {
     private static final int INVALID_BUFFER_ID = -1;
     int bufferId = INVALID_BUFFER_ID;
     private ByteBuffer mappedBuffer = null;
+    private int accessFlags = GLBufferAccess.GL_MAP_WRITE.value | GLBufferAccess.GL_MAP_READ.value;
 
-    public final void setName(final CharSequence name) {        
+    public final void setName(final CharSequence name) {
         GLTask.create(() -> {
             LOGGER.debug("Renamed GLBuffer[{}] to GLBuffer[{}]", this.name, name);
             this.name = name.toString();
         }).glRun(this.getThread());
     }
-    
+
     public final String getName() {
         return this.name;
     }
@@ -47,7 +48,7 @@ public class GLBuffer extends GLObject {
      * @since 15.05.15
      */
     public GLBuffer() {
-        this(GLThread.getAny());        
+        this(GLThread.getAny());
     }
 
     /**
@@ -283,10 +284,11 @@ public class GLBuffer extends GLObject {
      * Allocates the specified number of bytes for the GLBuffer
      *
      * @param size the number of bytes to allocate
+     * @return self reference
      * @since 15.05.13
      */
-    public void allocate(final long size) {
-        this.allocate(size, GLBufferUsage.GL_DYNAMIC_DRAW);
+    public GLBuffer allocate(final long size) {
+        return this.allocate(size, GLBufferUsage.GL_DYNAMIC_DRAW);
     }
 
     /**
@@ -295,10 +297,89 @@ public class GLBuffer extends GLObject {
      *
      * @param size the number of bytes to allocate.
      * @param usage the usage hint.
+     * @return self reference
      * @since 15.07.06
      */
-    public void allocate(final long size, final GLBufferUsage usage) {
+    public GLBuffer allocate(final long size, final GLBufferUsage usage) {
         new AllocateTask(size, usage).glRun(this.getThread());
+        return this;
+    }
+
+    /**
+     * Allocates immutable buffer storage with read and write flags.
+     *
+     * @param size the number of bytes to allocate
+     * @return self reference.
+     * @since 15.12.14
+     */
+    public GLBuffer allocateImmutable(final long size) {
+        return this.allocateImmutable(size, GLBufferAccess.GL_MAP_READ, GLBufferAccess.GL_MAP_WRITE);
+    }
+
+    /**
+     * Allocates immutable buffer storage with the specified flags.
+     *
+     * @param size the number of bytes to allocate.
+     * @param accessFlags the access flags
+     * @return self reference.
+     * @since 15.12.14
+     */
+    public GLBuffer allocateImmutable(final long size, final GLBufferAccess... accessFlags) {
+        new AllocateImmutableTask(size, accessFlags, 0, accessFlags.length).glRun(this.getThread());
+        return this;
+    }    
+    
+    /**
+     * A GLTask that allocates buffer storage for the GLBuffer and sets the
+     * access flags.
+     *
+     * @since 15.12.14
+     */
+    public class AllocateImmutableTask extends GLTask {
+
+        private final long size;
+        private final int flags;
+
+        /**
+         * Constructs a new AllocateImmutableTask with the specified size and
+         * flags.
+         *
+         * @param size the number of bytes to allocate for the storage.
+         * @param accessFlags the array containing the access flags.
+         * @param accessOffset the offset to begin reading the flags.
+         * @param flagCount the number of flags to read.
+         * @since 15.12.14
+         */
+        public AllocateImmutableTask(final long size, final GLBufferAccess[] accessFlags, final int accessOffset, final int flagCount) {
+            if ((this.size = size) < 0) {
+                throw new GLException("Size cannot be less than 0!");
+            }
+
+            int access = 0;
+
+            for (int i = 0; i < flagCount; i++) {
+                access |= accessFlags[i + accessOffset].value;
+            }
+
+            this.flags = access;
+        }
+
+        @Override
+        public void run() {
+            if (!GLBuffer.this.isValid()) {
+                throw new GLException("Invalid GLBuffer!");
+            }
+
+            LOGGER.trace("GLBuffer[{}]: Allocating {} bytes [IMMUTABLE]", GLBuffer.this.name, this.size);
+
+            GLTools.getDSAInstance().glNamedBufferStorage(
+                    GLBuffer.this.bufferId,
+                    this.size,
+                    this.flags);
+
+            GLBuffer.this.accessFlags = this.flags;
+        }
+
     }
 
     /**
@@ -475,54 +556,18 @@ public class GLBuffer extends GLObject {
     }
 
     /**
-     * Maps the GLBuffer to a ByteBuffer for read-write access. This function
-     * can force a thread sync.
+     * Maps a GLBuffer to a ByteBuffer. This function can force a thread sync.
      *
      * @param offset the offset in bytes to begin the map.
      * @param length the number of bytes to map.
-     * @return the mapped ByteBuffer.
+     * @return the mapped ByteBuffer
      * @see
      * <a href="https://www.opengl.org/wiki/GLAPI/glMapBufferRange#Function_Definition">glMapBufferRange</a>
-     * @since 15.05.13
+     * @since 15.06.23
      */
     public ByteBuffer map(final long offset, final long length) {
-        return this.map(offset, length, GLBufferAccess.GL_MAP_READ, GLBufferAccess.GL_MAP_WRITE);
-    }
 
-    /**
-     * Maps a GLBuffer to a ByteBuffer. This function can force a thread sync.
-     *
-     * @param offset the offset in bytes to begin the map.
-     * @param length the number of bytes to map.
-     * @param accessBits the flags indicating access rights to the data.
-     * @return the mapped ByteBuffer
-     * @see
-     * <a href="https://www.opengl.org/wiki/GLAPI/glMapBufferRange#Function_Definition">glMapBufferRange</a>
-     * @since 15.06.23
-     */
-    public ByteBuffer map(final long offset, final long length,
-            final GLBufferAccess... accessBits) {
-
-        return this.map(offset, length, accessBits, 0, accessBits.length);
-    }
-
-    /**
-     * Maps a GLBuffer to a ByteBuffer. This function can force a thread sync.
-     *
-     * @param offset the offset in bytes to begin the map.
-     * @param length the number of bytes to map.
-     * @param accessBits the flags indicating access rights to the data.
-     * @param accessOffset the offset to start reading the flags.
-     * @param accessLength the number of accessFlags to read.
-     * @return the mapped ByteBuffer
-     * @see
-     * <a href="https://www.opengl.org/wiki/GLAPI/glMapBufferRange#Function_Definition">glMapBufferRange</a>
-     * @since 15.06.23
-     */
-    public ByteBuffer map(final long offset, final long length,
-            final GLBufferAccess[] accessBits, final int accessOffset, final int accessLength) {
-
-        return new MapQuery(offset, length, accessBits, accessOffset, accessLength).glCall(this.getThread());
+        return new MapQuery(offset, length).glCall(this.getThread());
     }
 
     /**
@@ -535,23 +580,8 @@ public class GLBuffer extends GLObject {
      */
     public class MapQuery extends GLQuery<ByteBuffer> {
 
-        final int access;
         final long offset;
         final long length;
-
-        /**
-         * Constructs a new MapQuery using a sequence of accessbits.
-         *
-         * @param offset the starting offset within the buffer range to be
-         * mapped.
-         * @param length the length of the range to be mapped.
-         * @param accessBits the flags indicating the desired access.
-         * @since 15.06.23
-         */
-        public MapQuery(final long offset, final long length, final GLBufferAccess... accessBits) {
-
-            this(offset, length, accessBits, 0, accessBits.length);
-        }
 
         /**
          * Constructs a new MapQuery.
@@ -559,26 +589,12 @@ public class GLBuffer extends GLObject {
          * @param offset the starting offset within the buffer range to be
          * mapped.
          * @param length the length of the range to be mapped.
-         * @param accessBits the flags indicating the desired access to the
-         * range.
-         * @param accessOffset the offset to start reading from the access
-         * flags.
-         * @param accessLength the number of access flags to read.
          * @since 15.05.13
          */
-        public MapQuery(
-                final long offset, final long length,
-                final GLBufferAccess[] accessBits, final int accessOffset, final int accessLength) {
+        public MapQuery(final long offset, final long length) {
 
             this.offset = offset;
             this.length = length;
-
-            int bitVal = 0;
-            for (int i = accessOffset; i < accessOffset + accessLength; i++) {
-                bitVal |= accessBits[i].value;
-            }
-
-            this.access = bitVal;
         }
 
         @Override
@@ -592,7 +608,7 @@ public class GLBuffer extends GLObject {
                     .glMapNamedBufferRange(
                             GLBuffer.this.bufferId,
                             this.offset, this.length,
-                            this.access, oldBuffer);
+                            GLBuffer.this.accessFlags, oldBuffer);
 
             GLBuffer.this.mappedBuffer = newBuffer;
 
@@ -605,161 +621,7 @@ public class GLBuffer extends GLObject {
         protected ByteBuffer handleInterruption() {
             return ByteBuffer.allocate(0).asReadOnlyBuffer();
         }
-    }
-
-    /**
-     * Maps the GLBuffer to a ByteBuffer for read-write access. This function
-     * uses OpenGL 4.4 persist hints GL_MAP_PERSISTENT and GL_MAP_COHERENT as
-     * well as allocated memory with GLBufferStorage. The returned ByteBuffer
-     * will be a persistent mapping of memory between the GPU and the CPU. In
-     * order to achieve thread safety, you should use glFenceSync to ensure you
-     * are not writing data to the buffer as it is being read by the CPU as this
-     * has undefined results. Calling this function can force a thread sync.
-     *
-     * @see
-     * <a href="https://www.opengl.org/wiki/GLAPI/glMapBufferRange#Function_Definition">glMapBufferRange</a>
-     *
-     * @param length the number of bytes to map.
-     * @return the mapped ByteBuffer.
-     * @see
-     * <a href="https://www.opengl.org/wiki/GLAPI/glMapBufferRange#Function_Definition">glMapBufferRange</a>
-     * @since 15.05.13
-     */
-    public ByteBuffer mapPersist(final long length) {
-        return this.mapPersist(length, GLBufferAccess.GL_MAP_READ, GLBufferAccess.GL_MAP_WRITE);
-    }
-
-    /**
-     * Maps the GLBuffer to a ByteBuffer for read-write access. This function
-     * uses OpenGL 4.4 persist hints GL_MAP_PERSISTENT and GL_MAP_COHERENT as
-     * well as allocated memory with GLBufferStorage. The returned ByteBuffer
-     * will be a persistent mapping of memory between the GPU and the CPU. In
-     * order to achieve thread safety, you should use glFenceSync to ensure you
-     * are not writing data to the buffer as it is being read by the CPU as this
-     * has undefined results. Calling this function can force a thread sync.
-     *
-     * @see
-     * <a href="https://www.opengl.org/wiki/GLAPI/glMapBufferRange#Function_Definition">glMapBufferRange</a>
-     *
-     * @param length the number of bytes to map.
-     * @param accessBits the flags indicating the desired access.
-     * @return the ByteBuffer containing the data.
-     */
-    public ByteBuffer mapPersist(final long length, final GLBufferAccess... accessBits) {
-
-        return this.mapPersist(length, accessBits, 0, accessBits.length);
-    }
-
-    /**
-     * Maps the GLBuffer to a ByteBuffer for read-write access. This function
-     * uses OpenGL 4.4 persist hints GL_MAP_PERSISTENT and GL_MAP_COHERENT as
-     * well as allocated memory with GLBufferStorage. The returned ByteBuffer
-     * will be a persistent mapping of memory between the GPU and the CPU. In
-     * order to achieve thread safety, you should use glFenceSync to ensure you
-     * are not writing data to the buffer as it is being read by the CPU as this
-     * has undefined results. Calling this function can force a thread sync.
-     *
-     * @see
-     * <a href="https://www.opengl.org/wiki/GLAPI/glMapBufferRange#Function_Definition">glMapBufferRange</a>
-     *
-     * @param length the number of bytes to map.
-     * @param accessBits the flags indicating the desired access.
-     * @param accessOffset the offset to start reading from the access flags.
-     * @param accessLength the number of access flags to read.
-     * @return the ByteBuffer containing the data.
-     * @since 15.07.08
-     */
-    public ByteBuffer mapPersist(final long length,
-            final GLBufferAccess[] accessBits, final int accessOffset, final int accessLength) {
-
-        return new MapPersistQuery(length, accessBits, accessOffset, accessLength).glCall(this.getThread());
-    }
-
-    /**
-     * Maps the GLBuffer to a ByteBuffer for read-write access. This function
-     * uses OpenGL 4.4 persist hints GL_MAP_PERSISTENT and GL_MAP_COHERENT as
-     * well as allocated memory with GLBufferStorage. The returned ByteBuffer
-     * will be a persistent mapping of memory between the GPU and the CPU. In
-     * order to achieve thread safety, you should use glFenceSync to ensure you
-     * are not writing data to the buffer as it is being read by the CPU as this
-     * has undefined results. Calling this function can force a thread sync.
-     *
-     * @see
-     * <a href="https://www.opengl.org/wiki/GLAPI/glMapBufferRange#Function_Definition">glMapBufferRange</a>
-     *
-     */
-    public class MapPersistQuery extends GLQuery<ByteBuffer> {
-
-        final int access;
-        final long length;
-
-        /**
-         * Constructs a new MapQuery using a sequence of accessbits.
-         *
-         * @param length the length of the range to be mapped.
-         * @param accessBits the flags indicating the desired access.
-         * @since 15.06.23
-         */
-        public MapPersistQuery(final long length, final GLBufferAccess... accessBits) {
-
-            this(length, accessBits, 0, accessBits.length);
-        }
-
-        /**
-         * Constructs a new MapQuery.
-         *
-         * @param length the length of the range to be mapped.
-         * @param accessBits the flags indicating the desired access to the
-         * range.
-         * @param accessOffset the offset to start reading from the access
-         * flags.
-         * @param accessLength the number of access flags to read.
-         * @since 15.05.13
-         */
-        public MapPersistQuery(final long length,
-                final GLBufferAccess[] accessBits, final int accessOffset, final int accessLength) {
-
-            this.length = length;
-
-            int bitVal = 0;
-            for (int i = accessOffset; i < accessOffset + accessLength; i++) {
-                bitVal |= accessBits[i].value;
-            }
-
-            bitVal |= GLBufferAccess.GL_MAP_PERSISTENT.value;
-            bitVal |= GLBufferAccess.GL_MAP_COHERENT.value;
-
-            this.access = bitVal;
-        }
-
-        @Override
-        public ByteBuffer call() throws Exception {
-            if (!GLBuffer.this.isValid()) {
-                throw new GLException("Invalid GLBuffer!");
-            }
-
-            final ByteBuffer oldBuffer = GLBuffer.this.mappedBuffer;
-
-            GLTools.getDSAInstance().glNamedBufferStorage(GLBuffer.this.bufferId, this.length, this.access);
-
-            final ByteBuffer newBuffer = GLTools.getDSAInstance()
-                    .glMapNamedBufferRange(
-                            GLBuffer.this.bufferId,
-                            0, this.length,
-                            this.access, oldBuffer);
-
-            LOGGER.trace("GLBuffer[{}]: Mapped persistent buffer address: {}", GLBuffer.this.name, MemoryUtil.memAddress(newBuffer));
-
-            GLBuffer.this.mappedBuffer = newBuffer;
-
-            return newBuffer;
-        }
-
-        @Override
-        protected ByteBuffer handleInterruption() {
-            return ByteBuffer.allocate(0).asReadOnlyBuffer();
-        }
-    }
+    }    
 
     private final GLTask unmapTask = new UnmapTask();
 
