@@ -10,6 +10,8 @@ import static com.longlinkislong.gloop.GLAsserts.glErrorMsg;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.util.Objects;
+import org.lwjgl.opengl.ContextCapabilities;
+import org.lwjgl.opengl.GL;
 import org.lwjgl.opengl.GL15;
 import org.lwjgl.system.MemoryUtil;
 import org.slf4j.Logger;
@@ -327,8 +329,8 @@ public class GLBuffer extends GLObject {
     public GLBuffer allocateImmutable(final long size, final GLBufferAccess... accessFlags) {
         new AllocateImmutableTask(size, accessFlags, 0, accessFlags.length).glRun(this.getThread());
         return this;
-    }    
-    
+    }
+
     /**
      * A GLTask that allocates buffer storage for the GLBuffer and sets the
      * access flags.
@@ -621,9 +623,7 @@ public class GLBuffer extends GLObject {
         protected ByteBuffer handleInterruption() {
             return ByteBuffer.allocate(0).asReadOnlyBuffer();
         }
-    }    
-
-    private final GLTask unmapTask = new UnmapTask();
+    }
 
     /**
      * Requests that the GLBuffer is unmapped. This function should be called
@@ -633,7 +633,7 @@ public class GLBuffer extends GLObject {
      * @since 15.05.13
      */
     public void unmap() {
-        this.unmapTask.glRun(this.getThread());
+        new UnmapTask().glRun(this.getThread());
     }
 
     /**
@@ -720,5 +720,31 @@ public class GLBuffer extends GLObject {
                     src.bufferId, dest.bufferId,
                     srcOffset, destOffset, size);
         }
+    }
+
+    /**
+     * Checks if immutable storage is supported.
+     *
+     * @return true if context supports OpenGL 4.4 or ARB_buffer_storage.
+     * @since 15.12.14
+     */
+    public static boolean isImmutableStorageSupported() {
+        return new ImmutableStorageSupportedQuery().glCall();
+    }
+
+    /**
+     * OpenGL query that checks if immutable storage is supported.
+     *
+     * @since 15.12.14
+     */
+    public static final class ImmutableStorageSupportedQuery extends GLQuery<Boolean> {
+
+        @Override
+        public Boolean call() throws Exception {
+            final ContextCapabilities cap = GL.getCapabilities();
+
+            return cap.OpenGL44 || cap.GL_ARB_buffer_storage;
+        }
+
     }
 }
