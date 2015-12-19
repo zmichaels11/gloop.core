@@ -1,7 +1,27 @@
-/*
- * To change this license header, choose License Headers in Project Properties.
- * To change this template file, choose Tools | Templates
- * and open the template in the editor.
+/* 
+ * Copyright (c) 2015, longlinkislong.com
+ * All rights reserved.
+ *
+ * Redistribution and use in source and binary forms, with or without
+ * modification, are permitted provided that the following conditions are met:
+ *
+ * * Redistributions of source code must retain the above copyright notice, this
+ *   list of conditions and the following disclaimer.
+ * * Redistributions in binary form must reproduce the above copyright notice,
+ *   this list of conditions and the following disclaimer in the documentation
+ *   and/or other materials provided with the distribution.
+ *
+ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+ * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+ * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+ * ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE
+ * LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
+ * CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
+ * SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
+ * INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
+ * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
+ * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
+ * POSSIBILITY OF SUCH DAMAGE.
  */
 package com.longlinkislong.gloop;
 
@@ -28,11 +48,10 @@ import java.util.ListIterator;
 import java.util.Optional;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
-import org.lwjgl.opengl.ContextCapabilities;
-import org.lwjgl.opengl.GL;
-import org.lwjgl.opengl.GL11;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.slf4j.Marker;
+import org.slf4j.MarkerFactory;
 
 /**
  * A collection of functions that can aid in OpenGL programs.
@@ -40,7 +59,12 @@ import org.slf4j.LoggerFactory;
  * @author zmichaels
  * @since 15.05.27
  */
-public class GLTools {    
+public class GLTools {
+
+    private static final Logger LOGGER = LoggerFactory.getLogger("GLTools");
+    private static final Marker GLOOP_MARKER = MarkerFactory.getMarker("GLOOP");
+    private static final Marker SYS_MARKER = MarkerFactory.getMarker("SYSTEM");
+
     /**
      * Red component offset for vectors
      *
@@ -146,6 +170,10 @@ public class GLTools {
      * @since 15.06.13
      */
     public static final double DEGREES_TO_RADIANS = Math.PI / 180.0;
+
+    public static double getTime() {
+        return GLTools.getTime();
+    }
 
     /**
      * Returns the value clamped to the range [min, max].
@@ -1435,46 +1463,7 @@ public class GLTools {
     }
 
     private static boolean _hasOpenGLVersion(final int version) {
-        ContextCapabilities cap = GL.getCapabilities();
-
-        switch (version) {
-            case 11:
-                return cap.OpenGL11;
-            case 12:
-                return cap.OpenGL12;
-            case 13:
-                return cap.OpenGL13;
-            case 14:
-                return cap.OpenGL14;
-            case 15:
-                return cap.OpenGL15;
-            case 20:
-                return cap.OpenGL20;
-            case 21:
-                return cap.OpenGL21;
-            case 30:
-                return cap.OpenGL30;
-            case 31:
-                return cap.OpenGL31;
-            case 32:
-                return cap.OpenGL32;
-            case 33:
-                return cap.OpenGL33;
-            case 40:
-                return cap.OpenGL40;
-            case 41:
-                return cap.OpenGL41;
-            case 42:
-                return cap.OpenGL42;
-            case 43:
-                return cap.OpenGL43;
-            case 44:
-                return cap.OpenGL44;
-            case 45:
-                return cap.OpenGL45;
-            default:
-                throw new GLException("Unknown OpenGL version: " + version);
-        }
+        return GLTools.getDSAInstance().getOpenGLVersion() == version;
     }
 
     /**
@@ -1536,8 +1525,12 @@ public class GLTools {
 
         @Override
         public String call() throws Exception {
+            LOGGER.trace(GLOOP_MARKER, "Querying OpenGL vendor...");
+
             if (isSet()) {
-                final String rawVendor = GL11.glGetString(GL11.GL_VENDOR).toLowerCase();
+                final String rawVendor = GLTools.getDSAInstance()
+                        .glGetString(7936 /* GL11.GL_VENDOR */)
+                        .toLowerCase();
 
                 if (rawVendor.contains("amd")) {
                     VENDOR = GPU_AMD;
@@ -1600,6 +1593,7 @@ public class GLTools {
      */
     public static DSADriver getDSAInstance() {
         if (DSA == null) {
+            LOGGER.trace(SYS_MARKER, "Scanning for DSA implementations...");
             for (DSADriver dsaImp : DSA_IMPLEMENTATIONS) {
                 if (dsaImp.isSupported()) {
                     DSA = dsaImp;
@@ -1607,7 +1601,7 @@ public class GLTools {
                 }
             }
 
-            LOGGER.debug("Using DSADriver: {}", getDSAImplement());            
+            LOGGER.debug(SYS_MARKER, "Using DSADriver: {}", getDSAImplement());
         }
 
         return DSA;
@@ -1680,47 +1674,47 @@ public class GLTools {
      */
     public static String getDSAImplement() {
         return getDSAInstance().toString();
-    }    
+    }
 
-    private static final Logger LOGGER = LoggerFactory.getLogger(GLTools.class);
-    
     static {
-        NativeTools.getInstance().autoLoad();        
+        NativeTools.getInstance().autoLoad();
 
+        LOGGER.trace(SYS_MARKER, "Checking for DSA override...");
         // check for driver override.
         final String dsa = System.getProperty("gloop.gltools.dsa", "");
         switch (dsa.toLowerCase()) {
             case "fakedsa":
             case "fake":
-                LOGGER.info("Forcing DSA driver: FakeDSA");                
+                LOGGER.info(SYS_MARKER, "Forcing DSA driver: FakeDSA");
                 DSA = FakeDSA.getInstance();
                 break;
             case "extdsa":
-            case "ext":                
-                LOGGER.info("Forcing DSA driver: EXTDSA");
+            case "ext":
+                LOGGER.info(SYS_MARKER, "Forcing DSA driver: EXTDSA");
                 DSA = EXTDSA.getInstance();
                 break;
             case "gl45dsa":
             case "gl45":
-                LOGGER.info("Forcing DSA driver: GL45DSA");
+                LOGGER.info(SYS_MARKER, "Forcing DSA driver: GL45DSA");
                 DSA = GL45DSA.getInstance();
                 break;
             case "arbdsa":
             case "arb":
-                LOGGER.info("Forcing DSA driver: ARBDSA");
+                LOGGER.info(SYS_MARKER, "Forcing DSA driver: ARBDSA");
                 DSA = ARBDSA.getInstance();
                 break;
             case "nodsa":
             case "no":
-                LOGGER.info("Forcing DSA driver: NoDSA");
+                LOGGER.info(SYS_MARKER, "Forcing DSA driver: NoDSA");
                 DSA = NoDSA.getInstance();
                 break;
             case "":
                 break;
             default:
-                LOGGER.warn("Unknown DSA driver: {}", dsa);
+                LOGGER.warn(SYS_MARKER, "Unknown DSA driver: {}!", dsa);
         }
 
+        LOGGER.trace(SYS_MARKER, "Scanning for DSA driver plugins...");
         // check for all plugins
         final List<Class<? extends DSADriver>> dsaDrivers = new ArrayList<>();
         final String dsaPlugins = System.getProperty("gloop.gltools.dsa.plugins", "");
@@ -1745,8 +1739,8 @@ public class GLTools {
                 continue;
             }
 
-            LOGGER.trace("Adding DSADriver: {}", plugin);
-            
+            LOGGER.trace(SYS_MARKER, "Adding DSADriver: {}", plugin);
+
             try {
                 final Class<?> dsaPlugin = Class.forName(plugin);
 
@@ -1756,6 +1750,7 @@ public class GLTools {
             }
         }
 
+        LOGGER.trace(SYS_MARKER, "Removing blacklisted DSA drivers...");
         // remove all plugins that are blacklisted.
         final String dsaBlacklist = System.getProperty("gloop.gltools.dsa.blacklist", "");
         final String[] blacklisted = dsaBlacklist.split(",");
@@ -1765,13 +1760,13 @@ public class GLTools {
                 continue;
             }
 
-            LOGGER.trace("Removing DSADriver: {}", blacklistedDSA);            
+            LOGGER.trace(SYS_MARKER, "Removing DSADriver: {}", blacklistedDSA);
 
             Optional<Class<?>> blacklistedDSADriver = Optional.empty();
 
             for (Class<?> driver : dsaDrivers) {
                 if (driver.getName().toLowerCase().endsWith(blacklistedDSA.toLowerCase())) {
-                    blacklistedDSADriver = Optional.of(driver);                    
+                    blacklistedDSADriver = Optional.of(driver);
                     break;
                 }
             }
@@ -1782,20 +1777,21 @@ public class GLTools {
         // construct the array of available DSADrivers from the list of known plugins
         DSA_IMPLEMENTATIONS = dsaDrivers.stream().map(def -> {
             try {
+                LOGGER.trace(SYS_MARKER, "Loading driver: {}", def.getName());
+
                 final Method singletonGetter = def.getMethod("getInstance");
 
                 return singletonGetter.invoke(null);
             } catch (IllegalAccessException | IllegalArgumentException | InvocationTargetException | NoSuchMethodException ex) {
                 throw new RuntimeException("Unable to initialize DSA Driver: " + def.getName(), ex);
             }
-        }).collect(Collectors.toList())
-                .toArray(new DSADriver[dsaDrivers.size()]);
+        }).collect(Collectors.toList()).toArray(new DSADriver[dsaDrivers.size()]);
 
         try {
             assert false;
-            LOGGER.debug("OpenGL assertions are disabled.");
+            LOGGER.debug(SYS_MARKER, "OpenGL assertions are disabled.");
         } catch (Throwable ex) {
-            LOGGER.info("OpenGL assertions are enabled!");
+            LOGGER.info(SYS_MARKER, "OpenGL assertions are enabled!");
         }
     }
 }

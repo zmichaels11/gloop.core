@@ -1,16 +1,36 @@
-/*
- * To change this license header, choose License Headers in Project Properties.
- * To change this template file, choose Tools | Templates
- * and open the template in the editor.
+/* 
+ * Copyright (c) 2015, longlinkislong.com
+ * All rights reserved.
+ *
+ * Redistribution and use in source and binary forms, with or without
+ * modification, are permitted provided that the following conditions are met:
+ *
+ * * Redistributions of source code must retain the above copyright notice, this
+ *   list of conditions and the following disclaimer.
+ * * Redistributions in binary form must reproduce the above copyright notice,
+ *   this list of conditions and the following disclaimer in the documentation
+ *   and/or other materials provided with the distribution.
+ *
+ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+ * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+ * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+ * ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE
+ * LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
+ * CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
+ * SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
+ * INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
+ * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
+ * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
+ * POSSIBILITY OF SUCH DAMAGE.
  */
 package com.longlinkislong.gloop;
 
-import static com.longlinkislong.gloop.GLAsserts.checkGLError;
-import static com.longlinkislong.gloop.GLAsserts.glErrorMsg;
+import com.longlinkislong.gloop.dsa.DSADriver;
 import java.util.Objects;
-import org.lwjgl.opengl.GL11;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.slf4j.Marker;
+import org.slf4j.MarkerFactory;
 
 /**
  * GLDepthTest is a GLObject that controls depth test parameters.
@@ -19,10 +39,42 @@ import org.slf4j.LoggerFactory;
  * @since 15.06.18
  */
 public class GLDepthTest extends GLObject {
-    private static final Logger LOGGER = LoggerFactory.getLogger(GLDepthTest.class);
+
+    private static final Marker GLOOP_MARKER = MarkerFactory.getMarker("GLOOP");
+    private static final Logger LOGGER = LoggerFactory.getLogger("GLDepthTest");
+
     public static final GLDepthFunc DEFAULT_DEPTH_FUNC = GLDepthFunc.GL_LESS;
     public final GLEnableStatus depthTestEnabled;
     public final GLDepthFunc depthFunc;
+
+    private volatile String name = "id=" + System.currentTimeMillis();
+
+    /**
+     * Assigns a human-readable name to the GLDepthTest.
+     *
+     * @param newName the new name.
+     * @since 15.12.18
+     */
+    public final void setName(final CharSequence newName) {
+        GLTask.create(() -> {
+            LOGGER.trace(GLOOP_MARKER,
+                    "Renamed GLDepthTest[{}] to GLDepthTest[{}]!",
+                    this.name,
+                    newName);
+
+            this.name = newName.toString();
+        }).glRun(this.getThread());
+    }
+
+    /**
+     * Retrieves the name of the GLDepthTest.
+     *
+     * @return the name.
+     * @since 15.12.18
+     */
+    public final String getName() {
+        return this.name;
+    }
 
     /**
      * Constructs a new GLDepthTest object on the default OpenGL thread.
@@ -58,7 +110,11 @@ public class GLDepthTest extends GLObject {
 
         super(thread);
 
-        LOGGER.trace("Constructed GLDepthTest on thread: {}", thread);
+        LOGGER.trace(
+                GLOOP_MARKER,
+                "Constructed GLDepthTest on thread: {}",
+                thread);
+
         this.depthTestEnabled = Objects.requireNonNull(enabled);
         this.depthFunc = depthFunc;
     }
@@ -71,9 +127,7 @@ public class GLDepthTest extends GLObject {
      * @since 15.07.01
      */
     public GLDepthTest withGLThread(final GLThread thread) {
-        return thread == this.getThread()
-                ? this
-                : new GLDepthTest(thread, this.depthTestEnabled, this.depthFunc);
+        return new GLDepthTest(thread, this.depthTestEnabled, this.depthFunc);
     }
 
     /**
@@ -84,9 +138,7 @@ public class GLDepthTest extends GLObject {
      * @since 15.06.18
      */
     public GLDepthTest withEnabled(final GLEnableStatus isEnabled) {
-        return this.depthTestEnabled == isEnabled
-                ? this
-                : new GLDepthTest(this.getThread(), isEnabled, this.depthFunc);
+        return new GLDepthTest(this.getThread(), isEnabled, this.depthFunc);
     }
 
     /**
@@ -97,12 +149,8 @@ public class GLDepthTest extends GLObject {
      * @since 15.06.18
      */
     public GLDepthTest withDepthFunc(final GLDepthFunc func) {
-        return this.depthFunc == func
-                ? this
-                : new GLDepthTest(this.getThread(), this.depthTestEnabled, func);
+        return new GLDepthTest(this.getThread(), this.depthTestEnabled, func);
     }
-
-    private final GLTask applyTask = new ApplyDepthFuncTask();
 
     /**
      * Applies the depth function to the associated OpenGL thread.
@@ -110,7 +158,7 @@ public class GLDepthTest extends GLObject {
      * @since 15.06.18
      */
     public void applyDepthFunc() {
-        this.applyTask.glRun(this.getThread());
+        new ApplyDepthFuncTask().glRun(this.getThread());
     }
 
     /**
@@ -122,23 +170,26 @@ public class GLDepthTest extends GLObject {
 
         @Override
         public void run() {
+            LOGGER.trace(GLOOP_MARKER, "############### Start GLDepthTest Apply Depth Func Task ###############");
+            LOGGER.trace(GLOOP_MARKER, "\tApplying GLDepthTest[{}]", GLDepthTest.this.getName());
+            LOGGER.trace(GLOOP_MARKER, "\tEnabled: {} Function: {}", GLDepthTest.this.depthTestEnabled, GLDepthTest.this.depthFunc);                        
+
             final GLThread thread = GLThread.getCurrent().orElseThrow(GLException::new);
-            
+            final DSADriver dsa = GLTools.getDSAInstance();
+
             thread.currentDepthTest = GLDepthTest.this.withGLThread(thread);
-            
+
             switch (GLDepthTest.this.depthTestEnabled) {
                 case GL_ENABLED:
-                    GL11.glEnable(GL11.GL_DEPTH_TEST);
-                    assert checkGLError() : glErrorMsg("glEnable(I)", "GL_DEPTH_TEST");                                        
-                    
-                    GL11.glDepthFunc(GLDepthTest.this.depthFunc.value);
-                    assert checkGLError() : glErrorMsg("glDepthFunc(I)", GLDepthTest.this.depthFunc);
+                    dsa.glEnable(2929 /* GL_DEPTH_TEST */);
+                    dsa.glDepthFunc(GLDepthTest.this.depthFunc.value);
                     break;
                 case GL_DISABLED:
-                    GL11.glDisable(GL11.GL_DEPTH_TEST);
-                    assert checkGLError() : glErrorMsg("glDisable(I)", "GL_DEPTH_TEST");
+                    dsa.glDisable(2929 /* GL_DEPTH_TEST */);
                     break;
             }
+
+            LOGGER.trace(GLOOP_MARKER, "############### End GLDepthTest Apply Depth Func Task ###############");
         }
     }
 }

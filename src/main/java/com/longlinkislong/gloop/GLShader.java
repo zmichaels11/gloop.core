@@ -1,17 +1,36 @@
-/*
- * To change this license header, choose License Headers in Project Properties.
- * To change this template file, choose Tools | Templates
- * and open the template in the editor.
+/* 
+ * Copyright (c) 2015, longlinkislong.com
+ * All rights reserved.
+ *
+ * Redistribution and use in source and binary forms, with or without
+ * modification, are permitted provided that the following conditions are met:
+ *
+ * * Redistributions of source code must retain the above copyright notice, this
+ *   list of conditions and the following disclaimer.
+ * * Redistributions in binary form must reproduce the above copyright notice,
+ *   this list of conditions and the following disclaimer in the documentation
+ *   and/or other materials provided with the distribution.
+ *
+ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+ * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+ * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+ * ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE
+ * LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
+ * CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
+ * SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
+ * INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
+ * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
+ * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
+ * POSSIBILITY OF SUCH DAMAGE.
  */
 package com.longlinkislong.gloop;
 
-import static com.longlinkislong.gloop.GLAsserts.checkGLError;
-import static com.longlinkislong.gloop.GLAsserts.glErrorMsg;
+import com.longlinkislong.gloop.dsa.DSADriver;
 import java.util.Objects;
-import org.lwjgl.opengl.GL11;
-import org.lwjgl.opengl.GL20;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.slf4j.Marker;
+import org.slf4j.MarkerFactory;
 
 /**
  * An OpenGL object that represents shader code.
@@ -20,26 +39,48 @@ import org.slf4j.LoggerFactory;
  * @since 15.05.27
  */
 public class GLShader extends GLObject {
-    private static final Logger LOGGER = LoggerFactory.getLogger(GLShader.class);
+
+    private static final Marker GLOOP_MARKER = MarkerFactory.getMarker("GLOOP");
+    private static final Logger LOGGER = LoggerFactory.getLogger("GLShader");
+
     private static final int INVALID_SHADER_ID = -1;
     private final String src;
     private final GLShaderType type;
     private String name = "";
-    int shaderId = INVALID_SHADER_ID;
 
+    volatile transient int shaderId = INVALID_SHADER_ID;
+
+    /**
+     * Sets the name of the GLShader.
+     *
+     * @param name the name of the shader.
+     * @since 15.12.18
+     */
     public final void setName(final CharSequence name) {
-        GLTask.create(()->{
-            LOGGER.debug("Renamed GLShader[{}] to GLShader[{}]", this.name, name);
+        GLTask.create(() -> {
+            LOGGER.trace(
+                    GLOOP_MARKER,
+                    "Renamed GLShader[{}] to GLShader[{}]",
+                    this.name,
+                    name);
+
             this.name = name.toString();
         }).glRun(this.getThread());
     }
-    
+
+    /**
+     * Retrieves the name of the GLShader.
+     *
+     * @return the name.
+     * @since 15.12.18
+     */
     public final String getName() {
         return this.name;
     }
-    
+
     /**
      * Compiles the source as a vertex shader.
+     *
      * @param src the source to compile.
      * @return the shader object.
      * @since 15.11.04
@@ -113,7 +154,7 @@ public class GLShader extends GLObject {
      * @since 15.05.27
      */
     public GLShader(final GLShaderType type, final CharSequence src) {
-        this(GLThread.getAny(), type, src);        
+        this(GLThread.getAny(), type, src);
     }
 
     /**
@@ -131,11 +172,15 @@ public class GLShader extends GLObject {
             final GLShaderType type, final CharSequence src) {
 
         super(thread);
-        
-        LOGGER.trace("Constructed GLShader object on thread: {}", thread);
-        
+
+        LOGGER.trace(
+                GLOOP_MARKER,
+                "Constructed GLShader object on thread: {}",
+                thread);
+
         this.src = src.toString();
-        Objects.requireNonNull(this.type = type);
+        this.type = Objects.requireNonNull(type);
+
         this.compile();
     }
 
@@ -152,7 +197,7 @@ public class GLShader extends GLObject {
 
     @Override
     public String toString() {
-        return "GLShader [" + this.type + "]: " + this.shaderId;
+        return "GLShader [" + this.type + "]: " + this.name;
     }
 
     /**
@@ -183,33 +228,36 @@ public class GLShader extends GLObject {
 
         @Override
         public void run() {
+            LOGGER.trace(GLOOP_MARKER, "############### Start GLShader Compile Task ###############");
+            LOGGER.trace(GLOOP_MARKER, "\tShader Type: {}", GLShader.this.type);
+
             if (!GLShader.this.isValid()) {
-                GLShader.this.shaderId = GL20.glCreateShader(GLShader.this.type.value);                
+                final DSADriver dsa = GLTools.getDSAInstance();
+
+                GLShader.this.shaderId = dsa.glCreateShader(GLShader.this.type.value);
                 GLShader.this.name = "id=" + GLShader.this.shaderId;
-                
-                assert checkGLError() : glErrorMsg("glCreateShader(I)", GLShader.this.type);
+                LOGGER.trace(
+                        GLOOP_MARKER,
+                        "Initialized GLShader[{}]!",
+                        GLShader.this.name);
 
-                GL20.glShaderSource(GLShader.this.shaderId, GLShader.this.src);
-                assert checkGLError() : glErrorMsg("glShaderSource(IS)", GLShader.this.shaderId, GLShader.this.src);
+                dsa.glShaderSource(GLShader.this.shaderId, GLShader.this.src);
+                dsa.glCompileShader(GLShader.this.shaderId);
 
-                GL20.glCompileShader(GLShader.this.shaderId);
-                assert checkGLError() : glErrorMsg("glCompileShader(I)", GLShader.this.shaderId);
+                final int status = dsa.glGetShaderi(GLShader.this.shaderId, GLShaderParameterName.GL_COMPILE_STATUS.value);
 
-                final int status = GL20.glGetShaderi(GLShader.this.shaderId, GLShaderParameterName.GL_COMPILE_STATUS.value);
-                assert checkGLError() : glErrorMsg("glGetShaderi(II)", GLShader.this.shaderId, GLShaderParameterName.GL_COMPILE_STATUS);
-
-                if (status == GL11.GL_FALSE) {
+                if (status == 0) {
                     final String info = GLShader.this.getInfoLog();
 
                     throw new GLException(info);
                 }
-                
-                LOGGER.trace("GLShader[{}] is initialized!", GLShader.this.name);
+
+                LOGGER.trace(
+                        GLOOP_MARKER,
+                        "############### End GLShader Compile Task ###############");
             }
         }
     }
-
-    private final DeleteTask deleteTask = new DeleteTask();
 
     /**
      * Deletes the GLShader.
@@ -217,7 +265,7 @@ public class GLShader extends GLObject {
      * @since 15.05.27
      */
     public final void delete() {
-        this.deleteTask.glRun(this.getThread());
+        new DeleteTask().glRun(this.getThread());
     }
 
     /**
@@ -229,17 +277,20 @@ public class GLShader extends GLObject {
 
         @Override
         public void run() {
+            LOGGER.trace(GLOOP_MARKER, "############### Start GLShader Delete Task ###############");
+            LOGGER.trace(GLOOP_MARKER, "\tDeleting GLShader[{}]", GLShader.this.getName());
+
             if (GLShader.this.isValid()) {
-                LOGGER.trace("Deleting GLShader[{}]", GLShader.this.name);
-                GL20.glDeleteShader(GLShader.this.shaderId);
-                assert checkGLError() : glErrorMsg("glDeleteShader(I)", GLShader.this.shaderId);
+                GLTools.getDSAInstance().glDeleteShader(GLShader.this.shaderId);
 
                 GLShader.this.shaderId = INVALID_SHADER_ID;
             }
+
+            LOGGER.trace(
+                    GLOOP_MARKER,
+                    "############### End GLShader Delete Task ###############");
         }
     }
-
-    private ParameterQuery lastParameterQuery = null;
 
     /**
      * Runs a GLQuery on the GLShader.
@@ -249,15 +300,7 @@ public class GLShader extends GLObject {
      * @since 15.05.27
      */
     public int getParameter(final GLShaderParameterName pName) {
-        if (this.lastParameterQuery != null
-                && this.lastParameterQuery.pName == pName) {
-
-            return this.lastParameterQuery.glCall(this.getThread());
-        } else {
-            this.lastParameterQuery = new ParameterQuery(pName);
-
-            return this.lastParameterQuery.glCall(this.getThread());
-        }
+        return new ParameterQuery(pName).glCall(this.getThread());
     }
 
     /**
@@ -266,30 +309,42 @@ public class GLShader extends GLObject {
      *
      * @since 15.05.27
      */
-    public class ParameterQuery extends GLQuery<Integer> {
+    public final class ParameterQuery extends GLQuery<Integer> {
 
-        final GLShaderParameterName pName;
+        private final GLShaderParameterName pName;
 
         public ParameterQuery(final GLShaderParameterName pName) {
-            this.pName = pName;
+            this.pName = Objects.requireNonNull(pName);
         }
 
         @Override
         public Integer call() throws Exception {
+            LOGGER.trace(GLOOP_MARKER, "############### Start GLShader Parameter Query ###############");
+            LOGGER.trace(GLOOP_MARKER, "\tQuerying GLShader[{}]", getName());
+            LOGGER.trace(GLOOP_MARKER, "\tParameter: {}", this.pName);
+
             if (!GLShader.this.isValid()) {
                 throw new GLException("Invalid GLShader!");
             }
 
-            final int rVal = GL20.glGetShaderi(GLShader.this.shaderId, pName.value);
-            assert checkGLError() : glErrorMsg("glGetShaderi(II)", GLShader.this.shaderId, pName);
+            final int res = GLTools.getDSAInstance().glGetShaderi(
+                    GLShader.this.shaderId,
+                    pName.value);
 
-            LOGGER.trace("GLShader[{}].{} = {}", GLShader.this.name, pName, rVal);
-            
-            return rVal;
+            LOGGER.trace(
+                    GLOOP_MARKER,
+                    "GLShader[{}].{} = {}",
+                    GLShader.this.getName(),
+                    this.pName,
+                    res);
+
+            LOGGER.trace(
+                    GLOOP_MARKER,
+                    "############### End GLShader Parameter Query ###############");
+
+            return res;
         }
     }
-
-    private final InfoLogQuery infoLogQuery = new InfoLogQuery();
 
     /**
      * Runs an InfoLogQuery on the GLShader.
@@ -298,7 +353,7 @@ public class GLShader extends GLObject {
      * @since 15.05.27
      */
     public String getInfoLog() {
-        return this.infoLogQuery.glCall(this.getThread());
+        return new InfoLogQuery().glCall(this.getThread());
     }
 
     /**
@@ -310,19 +365,28 @@ public class GLShader extends GLObject {
 
         @Override
         public String call() throws Exception {
+            LOGGER.trace(GLOOP_MARKER, "############### Start GLShader Info Log Query ###############");
+            LOGGER.trace(GLOOP_MARKER, "\tQuerying GLShader[{}]", GLShader.this.getName());
+
             if (!GLShader.this.isValid()) {
                 throw new GLException("Invalid GLShader!");
             }
 
-            final int length = GL20.glGetShaderi(GLShader.this.shaderId, GLShaderParameterName.GL_INFO_LOG_LENGTH.value);
-            assert checkGLError() : glErrorMsg("glGetShaderi(II)", GLShader.this.shaderId, GLShaderParameterName.GL_INFO_LOG_LENGTH);
+            final DSADriver dsa = GLTools.getDSAInstance();
+            final int length = dsa.glGetShaderi(GLShader.this.shaderId, GLShaderParameterName.GL_INFO_LOG_LENGTH.value);
 
-            final String log = GL20.glGetShaderInfoLog(GLShader.this.shaderId, length);
-            assert checkGLError() : glErrorMsg("glGetShaderInfoLog(II)", GLShader.this.shaderId, length);
+            final String infoLog = dsa.glGetShaderInfoLog(GLShader.this.shaderId, length);
 
-            LOGGER.trace("GLShader[{}].infoLog = {}", GLShader.this.name, log);
-            
-            return log;
+            LOGGER.trace(
+                    GLOOP_MARKER,
+                    "GLShader[{}].infoLog = {}",
+                    GLShader.this.getName(),
+                    infoLog);
+
+            LOGGER.trace(
+                    GLOOP_MARKER,
+                    "############### End GLShader Info Log Query ###############");
+            return infoLog;
         }
     }
 }

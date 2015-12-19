@@ -1,36 +1,39 @@
-/*
- * To change this license header, choose License Headers in Project Properties.
- * To change this template file, choose Tools | Templates
- * and open the template in the editor.
+/* 
+ * Copyright (c) 2015, longlinkislong.com
+ * All rights reserved.
+ *
+ * Redistribution and use in source and binary forms, with or without
+ * modification, are permitted provided that the following conditions are met:
+ *
+ * * Redistributions of source code must retain the above copyright notice, this
+ *   list of conditions and the following disclaimer.
+ * * Redistributions in binary form must reproduce the above copyright notice,
+ *   this list of conditions and the following disclaimer in the documentation
+ *   and/or other materials provided with the distribution.
+ *
+ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+ * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+ * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+ * ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE
+ * LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
+ * CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
+ * SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
+ * INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
+ * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
+ * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
+ * POSSIBILITY OF SUCH DAMAGE.
  */
 package com.longlinkislong.gloop;
 
-import static com.longlinkislong.gloop.GLAsserts.checkGLError;
-import static com.longlinkislong.gloop.GLAsserts.glErrorMsg;
-import static java.lang.Long.toHexString;
+import com.longlinkislong.gloop.dsa.DSADriver;
 import java.nio.IntBuffer;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Objects;
-import org.lwjgl.opengl.ARBDrawIndirect;
-import org.lwjgl.opengl.ARBDrawInstanced;
-import org.lwjgl.opengl.ARBInstancedArrays;
-import org.lwjgl.opengl.ARBVertexArrayObject;
-import org.lwjgl.opengl.ARBVertexAttrib64Bit;
-import org.lwjgl.opengl.ContextCapabilities;
-import org.lwjgl.opengl.GL;
-import org.lwjgl.opengl.GL11;
-import org.lwjgl.opengl.GL14;
-import org.lwjgl.opengl.GL15;
-import org.lwjgl.opengl.GL20;
-import org.lwjgl.opengl.GL30;
-import org.lwjgl.opengl.GL31;
-import org.lwjgl.opengl.GL33;
-import org.lwjgl.opengl.GL40;
-import org.lwjgl.opengl.GL41;
-import static org.lwjgl.system.MemoryUtil.memAddress;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.slf4j.Marker;
+import org.slf4j.MarkerFactory;
 
 /**
  * A GLVertexArray is an OpenGL object that contains information relevant to
@@ -40,19 +43,40 @@ import org.slf4j.LoggerFactory;
  * @since 15.06.05
  */
 public class GLVertexArray extends GLObject {
-    private static final Logger LOGGER = LoggerFactory.getLogger(GLVertexArray.class);
+
+    private static final Marker GLOOP_MARKER = MarkerFactory.getMarker("GLOOP");
+    private static final Logger LOGGER = LoggerFactory.getLogger("GLVertexArray");
+
     private static final Map<Thread, GLVertexArray> CURRENT = new HashMap<>();
     private static final int INVALID_VERTEX_ARRAY_ID = -1;
-    private int vaoId = INVALID_VERTEX_ARRAY_ID;
-    private String name = "";
-    
+
+    private transient volatile int vaoId = INVALID_VERTEX_ARRAY_ID;
+    private volatile String name = "";
+
+    /**
+     * Assigns a human-readable name to the GLVertexArray object.
+     *
+     * @param name the human-readable name.
+     * @since 15.12.18
+     */
     public final void setName(final CharSequence name) {
-        GLTask.create(()->{
-            LOGGER.debug("Renamed GLVertexArray[{}] to GLVertexArray[{}]", this.name, name);
+        GLTask.create(() -> {
+            LOGGER.trace(
+                    GLOOP_MARKER,
+                    "Renamed GLVertexArray[{}] to GLVertexArray[{}]",
+                    this.name,
+                    name);
+
             this.name = name.toString();
         }).glRun(this.getThread());
     }
-    
+
+    /**
+     * Retrieves the name of the GLVertexArray object.
+     *
+     * @return the name.
+     * @since 15.12.18
+     */
     public final String getName() {
         return this.name;
     }
@@ -64,7 +88,9 @@ public class GLVertexArray extends GLObject {
      */
     public GLVertexArray() {
         this(GLThread.getDefaultInstance());
-        LOGGER.warn("Constructing GLVertexArray object on arbitrary GLThreads is discouraged.");
+        LOGGER.warn(
+                GLOOP_MARKER,
+                "Creating a GLVertexArray with an implicit OpenGL thread is discouraged.");
     }
 
     /**
@@ -75,6 +101,7 @@ public class GLVertexArray extends GLObject {
      */
     public GLVertexArray(final GLThread thread) {
         super(thread);
+
         this.init();
     }
 
@@ -95,9 +122,7 @@ public class GLVertexArray extends GLObject {
 
     private void bind() {
         if (!this.isCurrent()) {
-            GLVertexArray.this.glBindVertexArray.call(this.vaoId);
-            assert GL11.glGetError() == GL11.GL_NO_ERROR : String.format("glBindVertexArray(%d) failed!", this.vaoId);
-
+            GLTools.getDSAInstance().glBindVertexArray(vaoId);
             CURRENT.put(Thread.currentThread(), this);
         }
     }
@@ -114,104 +139,6 @@ public class GLVertexArray extends GLObject {
         new InitTask().glRun(this.getThread());
     }
 
-    @FunctionalInterface
-    private interface BindVertexArray {
-
-        void call(int vaobj);
-    }
-
-    private static final BindVertexArray NULL_BIND_VERTEX_ARRAY = (vaobj) -> {
-        throw new IllegalStateException("glBindVertexArray was called before being fetched! An instance of GLVertexArray.InitTask must run prior to calling glBindVertexArray.");
-    };
-    private BindVertexArray glBindVertexArray = NULL_BIND_VERTEX_ARRAY;
-
-    @FunctionalInterface
-    private interface GenVertexArrays {
-
-        int get();
-    }
-
-    @FunctionalInterface
-    private interface DeleteVertexArrays {
-
-        void call(int vaobj);
-    }
-
-    private static final DeleteVertexArrays NULL_DELETE_VERTEX_ARRAYS = (vaobj) -> {
-        throw new IllegalStateException("glDeleteVertexArrays was called before being fetched! An instance of GLVertexArray.InitTask must run prior to calling glDeleteVertexArrays.");
-    };
-    private DeleteVertexArrays glDeleteVertexArrays = NULL_DELETE_VERTEX_ARRAYS;
-
-    private static final GenVertexArrays NULL_GEN_VERTEX_ARRAYS = () -> {
-        throw new IllegalStateException("glGenVertexArrays was called before being fetched! An instance of GLVertexArray.InitTask must run prior to calling glGenVertexArrays.");
-    };
-    private GenVertexArrays glGenVertexArrays = NULL_GEN_VERTEX_ARRAYS;
-
-    @FunctionalInterface
-    private interface DrawArraysIndirect {
-
-        void call(int mode, long offset);
-    }
-
-    private static final DrawArraysIndirect NULL_DRAW_ARRAYS_INDIRECT = (mode, offset) -> {
-        throw new IllegalStateException("glDrawArraysIndirect was called before being fetched! An instance of GLVertexArray.InitTask must be run prior to calling glDrawArraysIndirect.");
-    };
-    private DrawArraysIndirect glDrawArraysIndirect = NULL_DRAW_ARRAYS_INDIRECT;
-
-    @FunctionalInterface
-    private interface DrawElementsIndirect {
-
-        void call(int mode, int type, long offset);
-    }
-
-    private static final DrawElementsIndirect NULL_DRAW_ELEMENTS_INDIRECT = (mode, type, offset) -> {
-        throw new IllegalStateException("glDrawElementsIndirect was called before being fetched! An instance of GLVertexArray.InitTask must run prior to calling glDrawElementsIndirect.");
-    };
-    private DrawElementsIndirect glDrawElementsIndirect = NULL_DRAW_ELEMENTS_INDIRECT;
-
-    @FunctionalInterface
-    private interface DrawElementsInstanced {
-
-        void call(int drawMode, int count, int type, long offset, int instanceCount);
-    }
-
-    private static final DrawElementsInstanced NULL_DRAW_ELEMENTS_INSTANCED = (drawMode, count, type, offset, instanceCount) -> {
-        throw new IllegalStateException("glDrawElementsInstanced was called before being feteched! An instance of GLVertexArray.InitTask must run prior to calling glDrawElementsInstanced.");
-    };
-    private DrawElementsInstanced glDrawElementsInstanced = NULL_DRAW_ELEMENTS_INSTANCED;
-
-    @FunctionalInterface
-    private interface DrawArraysInstanced {
-
-        void call(int drawMode, int first, int count, int instanceCount);
-    }
-
-    private static final DrawArraysInstanced NULL_DRAW_ARRAYS_INSTANCED = (drawMode, first, count, instanceCount) -> {
-        throw new IllegalStateException("glDrawArraysInstanced was called before being fetched! An instance of GLVertexArray.InitTask must run prior to calling glDrawArraysInstanced.");
-    };
-    private DrawArraysInstanced glDrawArraysInstanced = NULL_DRAW_ARRAYS_INSTANCED;
-
-    @FunctionalInterface
-    private interface VertexAttribLPointer {
-
-        void call(int index, int size, int type, int stride, long offset);
-    }
-    private static final VertexAttribLPointer NULL_VERTEX_ATTRIBL_POINTER = (index, size, type, stride, offset) -> {
-        throw new IllegalStateException("glVertexAttribLPointer was called before being fetched! An instance of GLVertexArray.InitTask must run prior to calling glVertexAttribLPointer.");
-    };
-    private VertexAttribLPointer glVertexAttribLPointer = NULL_VERTEX_ATTRIBL_POINTER;
-
-    @FunctionalInterface
-    private interface VertexAttribDivisor {
-
-        void call(int attribIndex, int divisor);
-    }
-
-    private static final VertexAttribDivisor NULL_VERTEX_ATTRIB_DIVISOR = (attribIndex, divisor) -> {
-        throw new IllegalStateException("glVertexAttribDivisor was called before being fetched! An instance of GLVertexArray.InitTask must run prior to calling glVertexAttribDivisor.");
-    };
-    private VertexAttribDivisor glVertexAttribDivisor = NULL_VERTEX_ATTRIB_DIVISOR;
-
     /**
      * A GLTask that initializes the parent GLVertexArray object.
      *
@@ -221,113 +148,27 @@ public class GLVertexArray extends GLObject {
 
         @Override
         public void run() {
+            LOGGER.trace(GLOOP_MARKER, "############### Start GLVertexArray Init Task ###############");
+
             checkThread();
 
             if (GLVertexArray.this.isValid()) {
                 throw new GLException("GLVertexArray is already initialized!");
             }
 
-            final ContextCapabilities cap = GL.getCapabilities();
-
-            if (cap.OpenGL30) {
-                GLVertexArray.this.glBindVertexArray = GL30::glBindVertexArray;
-                GLVertexArray.this.glGenVertexArrays = GL30::glGenVertexArrays;
-                GLVertexArray.this.glDeleteVertexArrays = GL30::glDeleteVertexArrays;
-            } else if (cap.GL_ARB_vertex_array_object) {
-                GLVertexArray.this.glBindVertexArray = ARBVertexArrayObject::glBindVertexArray;
-                GLVertexArray.this.glGenVertexArrays = ARBVertexArrayObject::glGenVertexArrays;
-                GLVertexArray.this.glDeleteVertexArrays = ARBVertexArrayObject::glDeleteVertexArrays;
-            } else {
-                GLVertexArray.this.glBindVertexArray = (vaobj) -> {
-                    throw new UnsupportedOperationException("glBindVertexArray is not supported! glBindVertexArray requires either an OpenGL 3.0 context or ARB_vertex_array_object.");
-                };
-                GLVertexArray.this.glGenVertexArrays = () -> {
-                    throw new UnsupportedOperationException("glGenVertexArrays is not supported! glGenVertexArrays requires either an OpenGL 3.0 context or ARB_vertex_array_object.");
-                };
-                GLVertexArray.this.glDeleteVertexArrays = (vaobj) -> {
-                    throw new UnsupportedOperationException("glDeleteVertexArrays is not supported! glDeleteVertexArrays requires either an OpenGL 3.0 context or ARB_vertex_array_object.");
-                };
-            }
-
-            if (cap.OpenGL40) {
-                GLVertexArray.this.glDrawArraysIndirect = GL40::glDrawArraysIndirect;
-                GLVertexArray.this.glDrawElementsIndirect = GL40::glDrawElementsIndirect;
-            } else if (cap.GL_ARB_draw_indirect) {
-                GLVertexArray.this.glDrawArraysIndirect = ARBDrawIndirect::glDrawArraysIndirect;
-                GLVertexArray.this.glDrawElementsIndirect = ARBDrawIndirect::glDrawElementsIndirect;
-            } else {
-                GLVertexArray.this.glDrawArraysIndirect = (mode, offset) -> {
-                    throw new UnsupportedOperationException("glDrawArraysIndirec) is not supported! glDrawArraysIndirect requires either an OpenGL 4.0 context or ARB_draw_indirect.");
-                };
-                GLVertexArray.this.glDrawElementsIndirect = (mode, index, offset) -> {
-                    throw new UnsupportedOperationException("glDrawElementsIndirect is not supported! glDrawElementsIndirect requires either an OpenGL 4.0 context or ARB_draw_indirect.");
-                };
-            }
-
-            if (cap.OpenGL31) {
-                GLVertexArray.this.glDrawElementsInstanced = GL31::glDrawElementsInstanced;
-                GLVertexArray.this.glDrawArraysInstanced = GL31::glDrawArraysInstanced;
-            } else if (cap.GL_ARB_draw_instanced) {
-                GLVertexArray.this.glDrawElementsInstanced = ARBDrawInstanced::glDrawElementsInstancedARB;
-                GLVertexArray.this.glDrawArraysInstanced = ARBDrawInstanced::glDrawArraysInstancedARB;
-            } else {
-                GLVertexArray.this.glDrawElementsInstanced = (drawMode, count, type, offset, instanceCount) -> {
-                    final int currentProgram = GL11.glGetInteger(GL20.GL_CURRENT_PROGRAM);
-                    assert GL11.glGetError() == GL11.GL_NO_ERROR : String.format("glGetInteger(GL_CURRENT_PROGRAM) = %d failed!", currentProgram);
-
-                    final int uLoc = GL20.glGetUniformLocation(currentProgram, "gl_InstanceID");
-                    assert GL11.glGetError() == GL11.GL_NO_ERROR : String.format("glGetUniformLocation(%d, gl_InstanceID) = %d failed!", currentProgram, uLoc);
-
-                    for (int i = 0; i < instanceCount; i++) {
-                        GL20.glUniform1i(uLoc, i);
-                        assert GL11.glGetError() == GL11.GL_NO_ERROR : String.format("glUniform1i(%d, %d) failed!", uLoc, i);
-
-                        GL11.glDrawElements(drawMode, count, type, offset);
-                        assert GL11.glGetError() == GL11.GL_NO_ERROR : String.format("glDrawElements(%d, %d, %d, %d) failed!", drawMode, count, type, offset);
-                    }
-                };
-
-                GLVertexArray.this.glDrawArraysInstanced = (drawMode, first, count, instanceCount) -> {
-                    final int currentProgram = GL11.glGetInteger(GL20.GL_CURRENT_PROGRAM);
-                    assert GL11.glGetError() == GL11.GL_NO_ERROR : String.format("glGetInteger(GL_CURRENT_PROGRAM) = %d failed!", currentProgram);
-
-                    final int uLoc = GL20.glGetUniformLocation(currentProgram, "gl_InstanceID");
-                    assert GL11.glGetError() == GL11.GL_NO_ERROR : String.format("glGetUniformLocation(%d, gl_InstanceID) = %d failed!", currentProgram, uLoc);
-
-                    for (int i = 0; i < instanceCount; i++) {
-                        GL20.glUniform1i(uLoc, i);
-                        assert GL11.glGetError() == GL11.GL_NO_ERROR : String.format("glUniform1i(%d, %d) failed!", uLoc, i);
-
-                        GL11.glDrawArrays(drawMode, first, count);
-                        assert GL11.glGetError() == GL11.GL_NO_ERROR : String.format("glDrawArrays(%d, %d, %d) failed!", drawMode, first, count);
-                    }
-                };
-            }
-
-            if (cap.OpenGL41) {
-                GLVertexArray.this.glVertexAttribLPointer = GL41::glVertexAttribLPointer;
-            } else if (cap.GL_ARB_vertex_attrib_64bit) {
-                GLVertexArray.this.glVertexAttribLPointer = ARBVertexAttrib64Bit::glVertexAttribLPointer;
-            } else {
-                GLVertexArray.this.glVertexAttribLPointer = (index, size, type, stride, offset) -> {
-                    throw new UnsupportedOperationException("glVertexAttribLPointer is not supported! glVertexAttribLPointer requires OpenGL 4.1 or ARB_vertex_attrib_64bit.");
-                };
-            }
-
-            if (cap.OpenGL33) {
-                GLVertexArray.this.glVertexAttribDivisor = GL33::glVertexAttribDivisor;
-            } else if (cap.GL_ARB_instanced_arrays) {
-                GLVertexArray.this.glVertexAttribDivisor = ARBInstancedArrays::glVertexAttribDivisorARB;
-            } else {
-                GLVertexArray.this.glVertexAttribDivisor = (index, divisor) -> {
-                    throw new UnsupportedOperationException("glVertexAttribDivisor is not supported! glVertexAttribDivisor requires OpenGL 3.3 or ARB_instanecd_arrays.");
-                };
-            }
-
-            GLVertexArray.this.vaoId = GLVertexArray.this.glGenVertexArrays.get();
+            GLVertexArray.this.vaoId = GLTools.getDSAInstance().glGenVertexArrays();
             GLVertexArray.this.name = "id=" + GLVertexArray.this.vaoId;
+
+            LOGGER.trace(
+                    GLOOP_MARKER,
+                    "Initialized GLVertexArray[{}]",
+                    GLVertexArray.this.name);
+
+            LOGGER.trace(
+                    GLOOP_MARKER,
+                    "############## End GLVertexArray Init Task ###############");
         }
-    }    
+    }
 
     /**
      * Runs a draw elements indirect call on the object's default thread.
@@ -346,7 +187,7 @@ public class GLVertexArray extends GLObject {
             final GLBuffer indirectCommandBuffer,
             final long offset) throws GLException {
 
-        new DrawElementsIndirectTask(drawMode, indexType, indirectCommandBuffer, offset).glRun(this.getThread());        
+        new DrawElementsIndirectTask(drawMode, indexType, indirectCommandBuffer, offset).glRun(this.getThread());
     }
 
     /**
@@ -391,9 +232,9 @@ public class GLVertexArray extends GLObject {
                 final GLBuffer indirectCommandBuffer,
                 final long offset) throws GLException {
 
-            Objects.requireNonNull(this.indexType = indexType);
-            Objects.requireNonNull(this.drawMode = mode);
-            Objects.requireNonNull(this.indirectCommandBuffer = indirectCommandBuffer);
+            this.indexType = Objects.requireNonNull(indexType);
+            this.drawMode = Objects.requireNonNull(mode);
+            this.indirectCommandBuffer = Objects.requireNonNull(indirectCommandBuffer);
 
             if ((this.offset = offset) < 0) {
                 throw new GLException("Offset value cannot be less than 0!");
@@ -402,6 +243,13 @@ public class GLVertexArray extends GLObject {
 
         @Override
         public void run() {
+            LOGGER.trace(GLOOP_MARKER, "############### Start GLVertexArray Draw Elements Indirect Task ##############");
+            LOGGER.trace(GLOOP_MARKER, "\tDrawing GLVertexArray[{}]", getName());
+            LOGGER.trace(GLOOP_MARKER, "\tDraw mode: {}", drawMode);
+            LOGGER.trace(GLOOP_MARKER, "\tIndex type: {}", indexType);
+            LOGGER.trace(GLOOP_MARKER, "\tIndirect command buffer: GLBuffer[{}]", indirectCommandBuffer.getName());
+            LOGGER.trace(GLOOP_MARKER, "\tOffset: {} bytes", this.offset);
+
             checkThread();
 
             if (!GLVertexArray.this.isValid()) {
@@ -410,15 +258,18 @@ public class GLVertexArray extends GLObject {
                 throw new GLException("Invalid GLBuffer!");
             }
 
+            final DSADriver dsa = GLTools.getDSAInstance();
+
             GLVertexArray.this.bind();
 
-            GL15.glBindBuffer(GLBufferTarget.GL_DRAW_INDIRECT_BUFFER.value, this.indirectCommandBuffer.bufferId);
-            assert checkGLError() : glErrorMsg("glBindBuffer(II)", "GL_DRAW_INDIRECT_BUFFER", this.indirectCommandBuffer.bufferId);
+            dsa.glBindBuffer(GLBufferTarget.GL_DRAW_INDIRECT_BUFFER.value, this.indirectCommandBuffer.bufferId);
+            dsa.glDrawElementsIndirect(this.drawMode.value, this.indexType.value, this.offset);
 
-            GLVertexArray.this.glDrawElementsIndirect.call(this.drawMode.value, this.indexType.value, this.offset);
-            assert checkGLError() : glErrorMsg("glDrawElementsIndirect(IIL)", this.drawMode, this.indexType, this.offset);
+            LOGGER.trace(
+                    GLOOP_MARKER,
+                    "############ End GLVertexArray Draw Elements Indirect Task ###########");
         }
-    }    
+    }
 
     /**
      * Runs an indirect draw arrays task on the object's default GLThread.
@@ -436,7 +287,7 @@ public class GLVertexArray extends GLObject {
             final GLBuffer indirectCommandBuffer,
             final long offset) throws GLException {
 
-        new DrawArraysIndirectTask(drawMode, indirectCommandBuffer, offset).glRun(this.getThread());        
+        new DrawArraysIndirectTask(drawMode, indirectCommandBuffer, offset).glRun(this.getThread());
     }
 
     /**
@@ -464,8 +315,8 @@ public class GLVertexArray extends GLObject {
                 final GLBuffer indirectCommandBuffer,
                 final long offset) {
 
-            Objects.requireNonNull(this.indirectCommandBuffer = indirectCommandBuffer);
-            Objects.requireNonNull(this.drawMode = drawMode);
+            this.indirectCommandBuffer = Objects.requireNonNull(indirectCommandBuffer);
+            this.drawMode = Objects.requireNonNull(drawMode);
 
             if ((this.offset = offset) < 0) {
                 throw new GLException("Offset cannot be less than 0!");
@@ -474,6 +325,11 @@ public class GLVertexArray extends GLObject {
 
         @Override
         public void run() {
+            LOGGER.trace(GLOOP_MARKER, "############### Start GLVertexArray Draw Arrays Indirect Task ###############");
+            LOGGER.trace(GLOOP_MARKER, "\tDrawing GLVertexArray[{}]", getName());
+            LOGGER.trace(GLOOP_MARKER, "\tDraw mode: {}", drawMode);
+            LOGGER.trace(GLOOP_MARKER, "\tIndirect command buffer: GLBuffer[{}]", this.indirectCommandBuffer.getName());
+
             checkThread();
 
             if (!GLVertexArray.this.isValid()) {
@@ -484,11 +340,14 @@ public class GLVertexArray extends GLObject {
 
             GLVertexArray.this.bind();
 
-            GL15.glBindBuffer(GLBufferTarget.GL_DRAW_INDIRECT_BUFFER.value, this.indirectCommandBuffer.bufferId);
-            assert checkGLError() : glErrorMsg("glBindBuffer(II)", "GL_DRAW_INDIRECT_BUFFER", this.indirectCommandBuffer.bufferId);
+            final DSADriver dsa = GLTools.getDSAInstance();
 
-            GLVertexArray.this.glDrawArraysIndirect.call(this.drawMode.value, this.offset);
-            assert checkGLError() : glErrorMsg("glDrawArraysIndirect(IL)", this.drawMode, this.offset);
+            dsa.glBindBuffer(GLBufferTarget.GL_DRAW_INDIRECT_BUFFER.value, this.indirectCommandBuffer.bufferId);
+            dsa.glDrawArraysIndirect(this.drawMode.value, this.offset);
+
+            LOGGER.trace(
+                    GLOOP_MARKER,
+                    "############### End GLVertexArray Draw Arrays Indirect Task ###############");
         }
     }
 
@@ -504,7 +363,7 @@ public class GLVertexArray extends GLObject {
             final GLDrawMode drawMode,
             final IntBuffer first, final IntBuffer count) {
 
-        new MultiDrawArraysTask(drawMode, first, count).glRun(this.getThread());        
+        new MultiDrawArraysTask(drawMode, first, count).glRun(this.getThread());
     }
 
     /**
@@ -537,6 +396,10 @@ public class GLVertexArray extends GLObject {
 
         @Override
         public void run() {
+            LOGGER.trace(GLOOP_MARKER,"############### Start GLVertexArray Multi Draw Arrays Task ###############");
+            LOGGER.trace(GLOOP_MARKER, "\tDrawing GLVertexArray[{}]", getName());
+            LOGGER.trace(GLOOP_MARKER, "\tDraw mode: {}",this.drawMode);
+
             checkThread();
 
             if (!GLVertexArray.this.isValid()) {
@@ -544,10 +407,13 @@ public class GLVertexArray extends GLObject {
             }
 
             GLVertexArray.this.bind();
-            GL14.glMultiDrawArrays(this.drawMode.value, this.first, this.count);
-            assert checkGLError() : glErrorMsg("glMultiDrawArrays(I*I)", this.drawMode, toHexString(memAddress(this.first)), this.count);
+            GLTools.getDSAInstance().glMultiDrawArrays(this.drawMode.value, this.first, this.count);
+
+            LOGGER.trace(
+                    GLOOP_MARKER,
+                    "############### End GLVertexArray Multi Draw Arrays Task ###############");
         }
-    }    
+    }
 
     /**
      * Performs a draw elements instanced task on the default OpenGL thread.
@@ -564,7 +430,7 @@ public class GLVertexArray extends GLObject {
             final int count, final GLIndexElementType indexType,
             final long offset, final int instanceCount) {
 
-        new DrawElementsInstancedTask(drawMode, count, indexType, offset, instanceCount).glRun(this.getThread());        
+        new DrawElementsInstancedTask(drawMode, count, indexType, offset, instanceCount).glRun(this.getThread());
     }
 
     /**
@@ -598,8 +464,8 @@ public class GLVertexArray extends GLObject {
                 final int instanceCount) {
 
             this.count = count;
-            Objects.requireNonNull(this.type = indexType);
-            Objects.requireNonNull(this.drawMode = drawMode);
+            this.type = Objects.requireNonNull(indexType);
+            this.drawMode = Objects.requireNonNull(drawMode);
 
             if ((this.offset = offset) < 0) {
                 throw new GLException("Offset cannot be less than 0!");
@@ -612,6 +478,15 @@ public class GLVertexArray extends GLObject {
 
         @Override
         public void run() {
+            LOGGER.trace(GLOOP_MARKER, "############### Start GLVertexArray Draw Elements Instanced Task ###############");
+            LOGGER.trace(GLOOP_MARKER, "\tDrawing GLVertexArray[{}]", getName());
+            LOGGER.trace(GLOOP_MARKER, "\tDraw mode: {}", drawMode);
+            LOGGER.trace(GLOOP_MARKER, "\tCount: {}", count);
+            LOGGER.trace(GLOOP_MARKER, "\tIndex type: {}", type);
+            LOGGER.trace(GLOOP_MARKER, "\tOffset: {} bytes", offset);
+            LOGGER.trace(GLOOP_MARKER, "\tInstance count: {}", this.instanceCount
+            );
+
             checkThread();
 
             if (!GLVertexArray.this.isValid()) {
@@ -620,11 +495,19 @@ public class GLVertexArray extends GLObject {
 
             GLVertexArray.this.bind();
 
-            GLVertexArray.this.glDrawElementsInstanced.call(this.drawMode.value, this.count, this.type.value, this.offset, this.instanceCount);
-            assert checkGLError() : glErrorMsg("glDrawElementsInstanced(IIILI)", this.drawMode, this.count, this.type, this.offset, this.instanceCount);
+            GLTools.getDSAInstance().glDrawElementsInstanced(
+                    this.drawMode.value,
+                    this.count,
+                    this.type.value,
+                    this.offset,
+                    this.instanceCount);
+
+            LOGGER.trace(
+                    GLOOP_MARKER,
+                    "############### End GLVertexArray Draw Elements Instanced Task ###############");
         }
 
-    }    
+    }
 
     /**
      * Performs a draw arrays instanced task on the OpenGL thread associated
@@ -640,7 +523,11 @@ public class GLVertexArray extends GLObject {
             final GLDrawMode mode,
             final int first, final int count, final int instanceCount) {
 
-        new DrawArraysInstancedTask(mode, first, count, instanceCount).glRun(this.getThread());        
+        new DrawArraysInstancedTask(
+                mode,
+                first,
+                count,
+                instanceCount).glRun(this.getThread());
     }
 
     /**
@@ -648,7 +535,7 @@ public class GLVertexArray extends GLObject {
      *
      * @since 15.06.24
      */
-    public class DrawArraysInstancedTask extends GLTask implements GLDrawTask {
+    public final class DrawArraysInstancedTask extends GLTask implements GLDrawTask {
 
         private final GLDrawMode mode;
         private final int first;
@@ -670,8 +557,7 @@ public class GLVertexArray extends GLObject {
                 final int count,
                 final int instanceCount) {
 
-            Objects.requireNonNull(this.mode = mode);
-
+            this.mode = Objects.requireNonNull(mode);
             this.count = count;
 
             if ((this.first = first) < 0) {
@@ -685,6 +571,13 @@ public class GLVertexArray extends GLObject {
 
         @Override
         public void run() {
+            LOGGER.trace(GLOOP_MARKER, "############### Start GLVertexArray Draw Arrays Instanced Task ###############");
+            LOGGER.trace(GLOOP_MARKER, "\tDrawing GLVertexArray[{}]", getName());
+            LOGGER.trace(GLOOP_MARKER, "\tDraw mode: {}", mode);
+            LOGGER.trace(GLOOP_MARKER, "\tFirst: {}", first);
+            LOGGER.trace(GLOOP_MARKER, "\tCount: {}", count);
+            LOGGER.trace(GLOOP_MARKER, "\tInstance count: {}", this.instanceCount);
+
             checkThread();
 
             if (!GLVertexArray.this.isValid()) {
@@ -693,10 +586,17 @@ public class GLVertexArray extends GLObject {
 
             GLVertexArray.this.bind();
 
-            GLVertexArray.this.glDrawArraysInstanced.call(this.mode.value, this.first, this.count, this.instanceCount);
-            assert checkGLError() : glErrorMsg("glDrawArraysInstanced(IIII)", this.mode, this.first, this.count, this.instanceCount);
+            GLTools.getDSAInstance().glDrawArraysInstanced(
+                    this.mode.value,
+                    this.first,
+                    this.count,
+                    this.instanceCount);
+
+            LOGGER.trace(
+                    GLOOP_MARKER,
+                    "############### End GLVertexArray Draw Arrays Instanced Task ###############");
         }
-    }    
+    }
 
     /**
      * Performs a draw elements task on the OpenGL thread associated with this
@@ -712,7 +612,7 @@ public class GLVertexArray extends GLObject {
             final GLDrawMode mode,
             final int count, final GLIndexElementType type, final long offset) {
 
-        new DrawElementsTask(mode, count, type, offset).glRun(this.getThread());        
+        new DrawElementsTask(mode, count, type, offset).glRun(this.getThread());
     }
 
     /**
@@ -742,8 +642,8 @@ public class GLVertexArray extends GLObject {
                 final GLIndexElementType type,
                 final long offset) {
 
-            Objects.requireNonNull(this.mode = mode);
-            Objects.requireNonNull(this.type = type);
+            this.mode = Objects.requireNonNull(mode);
+            this.type = Objects.requireNonNull(type);
 
             if ((this.count = count) < 0) {
                 throw new GLException("Count cannot be less than 0!");
@@ -754,6 +654,13 @@ public class GLVertexArray extends GLObject {
 
         @Override
         public void run() {
+            LOGGER.trace(GLOOP_MARKER, "############### Start GLVertexArray Draw Elements Task ###############");
+            LOGGER.trace(GLOOP_MARKER, "\tDrawing GLVertexArray[{}]", getName());
+            LOGGER.trace(GLOOP_MARKER, "\tDraw mode: {}", mode);
+            LOGGER.trace(GLOOP_MARKER, "\tCount: {}", count);
+            LOGGER.trace(GLOOP_MARKER, "\tIndex type: {}", type);
+            LOGGER.trace(GLOOP_MARKER, "\tOffset: {} bytes", this.offset);
+
             checkThread();
 
             if (!GLVertexArray.this.isValid()) {
@@ -762,10 +669,17 @@ public class GLVertexArray extends GLObject {
 
             GLVertexArray.this.bind();
 
-            GL11.glDrawElements(this.mode.value, this.count, this.type.value, this.offset);
-            assert checkGLError() : glErrorMsg("glDrawElements(IIIL)", this.mode, this.count, this.type, this.offset);
+            GLTools.getDSAInstance().glDrawElements(
+                    this.mode.value,
+                    this.count,
+                    this.type.value,
+                    this.offset);
+
+            LOGGER.trace(
+                    GLOOP_MARKER,
+                    "############### End GLVertexArray Draw Elements Task ###############");
         }
-    }    
+    }
 
     /**
      * Performs a draw arrays task on the OpenGL thread associated with this
@@ -791,8 +705,15 @@ public class GLVertexArray extends GLObject {
      * @param count the number of elements to draw.
      * @since 15.10.30
      */
-    public void drawTransformFeedback(final GLDrawMode mode, final int start, final int count) {
-        new DrawTransformFeedbackTask(mode, start, count).glRun(this.getThread());
+    public void drawTransformFeedback(
+            final GLDrawMode mode,
+            final int start,
+            final int count) {
+
+        new DrawTransformFeedbackTask(
+                mode,
+                start,
+                count).glRun(this.getThread());
     }
 
     /**
@@ -800,7 +721,9 @@ public class GLVertexArray extends GLObject {
      *
      * @since 15.10.30
      */
-    public class DrawTransformFeedbackTask extends GLTask implements GLDrawTask {
+    public final class DrawTransformFeedbackTask
+            extends GLTask
+            implements GLDrawTask {
 
         private final GLDrawMode mode;
         private final int start;
@@ -826,6 +749,12 @@ public class GLVertexArray extends GLObject {
 
         @Override
         public void run() {
+            LOGGER.trace(GLOOP_MARKER, "############### Start GLVertexArray Draw Transform Feedback Task ###############");
+            LOGGER.trace(GLOOP_MARKER, "\tDrawing GLVertexArray[{}]", getName());
+            LOGGER.trace(GLOOP_MARKER, "\tDraw mode: {}", mode);
+            LOGGER.trace(GLOOP_MARKER, "\tStart: {}", start);
+            LOGGER.trace(GLOOP_MARKER, "\tCount: {}", this.count);
+
             checkThread();
 
             if (!GLVertexArray.this.isValid()) {
@@ -834,27 +763,43 @@ public class GLVertexArray extends GLObject {
 
             GLVertexArray.this.bind();
 
-            GL11.glEnable(GL30.GL_RASTERIZER_DISCARD);
-            GL30.glBeginTransformFeedback(this.mode.value);
-            GL11.glDrawArrays(this.mode.value, this.start, this.count);
-            GL30.glEndTransformFeedback();
-            GL11.glDisable(GL30.GL_RASTERIZER_DISCARD);
+            final DSADriver dsa = GLTools.getDSAInstance();
+
+            dsa.glEnable(35977 /* GL_RASTERIZER_DISCARD */);
+            dsa.glBeginTransformFeedback(this.mode.value);
+            dsa.glDrawArrays(this.mode.value, this.start, this.count);
+            dsa.glEndTransformFeedback();
+            dsa.glDisable(35977 /* GL_RASTERIZER_DISCARD */);
+
+            LOGGER.trace(
+                    GLOOP_MARKER,
+                    "############### End GLVertexArray Draw Transform Feedback Task ###############");
         }
     }
 
-    public class DrawArraysTask extends GLTask implements GLDrawTask {
+    public final class DrawArraysTask extends GLTask implements GLDrawTask {
 
         private final GLDrawMode mode;
         private final int start;
         private final int count;
 
+        /**
+         * Constructs a new DrawArraysTask.
+         *
+         * @param mode the draw mode.
+         * @param start the starting vertex id.
+         * @param count the number of vertices to draw.
+         * @since 15.12.18
+         */
         public DrawArraysTask(
                 final GLDrawMode mode,
                 final int start, final int count) {
 
-            Objects.requireNonNull(this.mode = mode);
+            this.mode = Objects.requireNonNull(mode);
 
-            this.count = count;
+            if ((this.count = count) < 1) {
+                throw new GLException("Count value cannot be less than 1!");
+            }
 
             if ((this.start = start) < 0) {
                 throw new GLException("Start value cannot be less than 0!");
@@ -863,6 +808,12 @@ public class GLVertexArray extends GLObject {
 
         @Override
         public void run() {
+            LOGGER.trace(GLOOP_MARKER, "############### Start GLVertexArray Draw Arrays Task ###############");
+            LOGGER.trace(GLOOP_MARKER, "Drawing GLVertexArray[{}]", getName());
+            LOGGER.trace(GLOOP_MARKER, "\tDraw mode: {}", mode);
+            LOGGER.trace(GLOOP_MARKER, "\tStart: {}", start);
+            LOGGER.trace(GLOOP_MARKER, "\tCount: {}", this.count);
+
             checkThread();
 
             if (!GLVertexArray.this.isValid()) {
@@ -871,54 +822,81 @@ public class GLVertexArray extends GLObject {
 
             GLVertexArray.this.bind();
 
-            GL11.glDrawArrays(this.mode.value, this.start, this.count);
-            assert checkGLError() : glErrorMsg("glDrawArrays(III)", this.mode, this.start, this.count);
+            GLTools.getDSAInstance().glDrawArrays(
+                    this.mode.value,
+                    this.start,
+                    this.count);
+
+            LOGGER.trace(
+                    GLOOP_MARKER,
+                    "############### End GLVertexArray Draw Arrays Task ###############");
         }
 
-    }    
+    }
 
+    /**
+     * Deletes the GLVertexArray object.
+     *
+     * @since 15.12.18
+     */
     public void delete() {
         new DeleteTask().glRun(this.getThread());
     }
 
-    public class DeleteTask extends GLTask {
+    /**
+     * A GLTask that deletes the GLVertexArray object.
+     *
+     * @since 15.12.18
+     */
+    public final class DeleteTask extends GLTask {
 
         @Override
         public void run() {
+            LOGGER.trace(GLOOP_MARKER, "############### Start GLVertexArray Delete Task ###############");
+            LOGGER.trace(GLOOP_MARKER, "\tDeleting GLVertexArray[{}]", GLVertexArray.this.getName());
+
             checkThread();
 
             if (GLVertexArray.this.isValid()) {
-                LOGGER.trace("Deleting GLVertexArray[{}]", GLVertexArray.this.vaoId);
-                GLVertexArray.this.glDeleteVertexArrays.call(GLVertexArray.this.vaoId);
-                assert checkGLError() : glErrorMsg("glDeleteVertexArrays(I)", GLVertexArray.this.vaoId);
-
+                GLTools.getDSAInstance().glDeleteVertexArrays(GLVertexArray.this.vaoId);
                 GLVertexArray.this.vaoId = INVALID_VERTEX_ARRAY_ID;
-                GLVertexArray.this.glBindVertexArray = NULL_BIND_VERTEX_ARRAY;
-                GLVertexArray.this.glDeleteVertexArrays = NULL_DELETE_VERTEX_ARRAYS;
-                GLVertexArray.this.glDrawArraysIndirect = NULL_DRAW_ARRAYS_INDIRECT;
-                GLVertexArray.this.glDrawArraysInstanced = NULL_DRAW_ARRAYS_INSTANCED;
-                GLVertexArray.this.glDrawElementsIndirect = NULL_DRAW_ELEMENTS_INDIRECT;
-                GLVertexArray.this.glDrawElementsInstanced = NULL_DRAW_ELEMENTS_INSTANCED;
-                GLVertexArray.this.glGenVertexArrays = NULL_GEN_VERTEX_ARRAYS;
-                GLVertexArray.this.glVertexAttribLPointer = NULL_VERTEX_ATTRIBL_POINTER;
             }
+
+            LOGGER.trace(
+                    GLOOP_MARKER,
+                    "############### End GLVertexArray Delete Task ###############");
         }
     }
 
+    /**
+     * Attaches a GLBuffer as an index buffer.
+     *
+     * @param buffer the GLBuffer to attach.
+     * @since 15.12.18
+     */
     public void attachIndexBuffer(final GLBuffer buffer) {
         new AttachIndexBufferTask(buffer).glRun(this.getThread());
     }
 
-    public class AttachIndexBufferTask extends GLTask {
+    /**
+     * A GLTask that attaches a GLBuffer as an Index Buffer.
+     *
+     * @since 15.12.18
+     */
+    public final class AttachIndexBufferTask extends GLTask {
 
         private final GLBuffer buffer;
 
         public AttachIndexBufferTask(final GLBuffer buffer) {
-            this.buffer = buffer;
+            this.buffer = Objects.requireNonNull(buffer);
         }
 
         @Override
         public void run() {
+            LOGGER.trace(GLOOP_MARKER, "############### Start GLVertexArray Attach Index Buffer Task ###############");
+            LOGGER.trace(GLOOP_MARKER, "\tAttaching to GLVertexArray[{}]", getName());
+            LOGGER.trace(GLOOP_MARKER, "\tIndex buffer: GLBuffer[{}]", this.buffer.getName());
+
             if (!GLVertexArray.this.isValid()) {
                 throw new GLException("Invalid GLVertexArray!");
             } else if (!this.buffer.isValid()) {
@@ -927,11 +905,25 @@ public class GLVertexArray extends GLObject {
 
             GLVertexArray.this.bind();
 
-            GL15.glBindBuffer(GLBufferTarget.GL_ELEMENT_ARRAY_BUFFER.value, this.buffer.bufferId);
-            assert checkGLError() : glErrorMsg("glBindBuffer(II)", "GL_ELEMENT_ARRAY_BUFFER", this.buffer.bufferId);
+            GLTools.getDSAInstance().glBindBuffer(
+                    GLBufferTarget.GL_ELEMENT_ARRAY_BUFFER.value,
+                    this.buffer.bufferId);
+
+            LOGGER.trace(
+                    GLOOP_MARKER,
+                    "############### End GLVertexArray Attach Index Buffer Task ###############");
         }
     }
 
+    /**
+     * Attaches a GLBuffer to the GLVertexArray object.
+     *
+     * @param index the index to attach the GLBuffer.
+     * @param buffer the GLBuffer to attach.
+     * @param type the type of data held by the GLBuffer.
+     * @param size the attribute element size.
+     * @since 15.12.18
+     */
     public void attachBuffer(
             final int index, final GLBuffer buffer,
             final GLVertexAttributeType type, final GLVertexAttributeSize size) {
@@ -939,24 +931,67 @@ public class GLVertexArray extends GLObject {
         new AttachBufferTask(index, buffer, type, size).glRun(this.getThread());
     }
 
+    /**
+     * Attaches a GLBuffer to the GLVertexArray object.
+     *
+     * @param index the index to attach the GLBuffer.
+     * @param buffer the GLBuffer to attach.
+     * @param type the type of data held by the GLBuffer.
+     * @param size the attribute element size.
+     * @param offset the offset to begin reading from the GLBuffer.
+     * @param stride the space between elements in the GLBuffer.
+     * @since 15.12.18
+     */
     public void attachBuffer(
             final int index, final GLBuffer buffer,
             final GLVertexAttributeType type, final GLVertexAttributeSize size,
             final int offset, final int stride) {
 
-        new AttachBufferTask(index, buffer, type, size, false, stride, offset).glRun(this.getThread());
+        new AttachBufferTask(
+                index,
+                buffer,
+                type,
+                size,
+                false,
+                stride,
+                offset).glRun(this.getThread());
     }
 
+    /**
+     * Attaches a GLBuffer to the GLVertexArray object.
+     *
+     * @param index the index to attach the GLBuffer.
+     * @param buffer the GLBuffer to attach.
+     * @param type the type of data held by the GLBuffer.
+     * @param size the attribute element size.
+     * @param offset the offset to begin reading from the GLBuffer.
+     * @param stride the space between elements in the GLBuffer.
+     * @param divisor the rate at which the element index increases.
+     * @since 15.12.18
+     */
     public void attachBuffer(
             final int index, final GLBuffer buffer,
             final GLVertexAttributeType type, final GLVertexAttributeSize size,
             final int offset, final int stride,
             final int divisor) {
 
-        new AttachBufferTask(index, buffer, type, size, false, stride, offset, divisor).glRun(this.getThread());
+        new AttachBufferTask(
+                index,
+                buffer,
+                type,
+                size,
+                false,
+                stride,
+                offset,
+                divisor).glRun(this.getThread());
     }
 
-    public class AttachBufferTask extends GLTask {
+    /**
+     * A GLTask that attaches a GLBuffer to the GLVertexArray object.
+     *
+     * @since 15.12.18
+     */
+    public final class AttachBufferTask extends GLTask {
 
         private final int index;
         private final GLBuffer buffer;
@@ -967,6 +1002,15 @@ public class GLVertexArray extends GLObject {
         private final boolean normalized;
         private final int divisor;
 
+        /**
+         * Constructs a new AttachBufferTask.
+         *
+         * @param index the index to attach the GLBuffer to.
+         * @param buffer the GLBuffer to attach.
+         * @param type the type of data held by the GLBuffer.
+         * @param size the size of the elements in the GLBuffer.
+         * @since 15.12.18
+         */
         public AttachBufferTask(
                 final int index,
                 final GLBuffer buffer,
@@ -977,6 +1021,16 @@ public class GLVertexArray extends GLObject {
 
         }
 
+        /**
+         * Constructs a new AttachBufferTask.
+         *
+         * @param index the index to attach the GLBuffer to.
+         * @param buffer the GLBuffer to attach.
+         * @param type the type of data held by the GLBuffer.
+         * @param size the size of the elements in the GLBuffer.
+         * @param normalized if the data needs to be normalized.
+         * @since 15.12.19
+         */
         public AttachBufferTask(
                 final int index,
                 final GLBuffer buffer,
@@ -1011,7 +1065,7 @@ public class GLVertexArray extends GLObject {
                 throw new GLException("Invalid index value [" + index + "]! Index cannot be less than 0.");
             }
 
-            Objects.requireNonNull(this.size = size);
+            this.size = Objects.requireNonNull(size);
 
             if ((this.offset = offset) < 0) {
                 throw new GLException("Invalid offset value! Offset cannot be less than 0.");
@@ -1025,9 +1079,8 @@ public class GLVertexArray extends GLObject {
                 throw new GLException("Invalid divisor value! Divisor cannot be less than 0.");
             }
 
-            Objects.requireNonNull(this.buffer = buffer);
-            Objects.requireNonNull(this.type = type);
-
+            this.buffer = Objects.requireNonNull(buffer);
+            this.type = Objects.requireNonNull(type);
             this.normalized = normalized;
 
             switch (this.type) {
@@ -1041,6 +1094,17 @@ public class GLVertexArray extends GLObject {
 
         @Override
         public void run() {
+            LOGGER.trace(GLOOP_MARKER, "############### Start GLVertexArray Attach Buffer Task ###############");
+            LOGGER.trace(GLOOP_MARKER, "\tAttaching buffer to GLVertexArray[{}]", getName());
+            LOGGER.trace(GLOOP_MARKER, "\tIndex: {}", index);
+            LOGGER.trace(GLOOP_MARKER, "\tVertex buffer: GLBuffer[{}]", buffer.getName());
+            LOGGER.trace(GLOOP_MARKER, "\tType: {}", type);
+            LOGGER.trace(GLOOP_MARKER, "\tSize: {}", size);
+            LOGGER.trace(GLOOP_MARKER, "\tNormalized: {}", normalized);
+            LOGGER.trace(GLOOP_MARKER, "\tStride: {}", stride);
+            LOGGER.trace(GLOOP_MARKER, "\tOffset: {}", offset);
+            LOGGER.trace(GLOOP_MARKER, "\tDivisor: {}", this.divisor);
+
             checkThread();
 
             if (!GLVertexArray.this.isValid()) {
@@ -1050,30 +1114,28 @@ public class GLVertexArray extends GLObject {
             if (!buffer.isValid()) {
                 throw new GLException("Invalid GLBuffer!");
             }
-            
-            LOGGER.trace("GLVertexArray[{}]: Attaching GLBuffer[{}] on attribute {}", GLVertexArray.this.name, this.buffer.getName(), this.index);
 
             // bind the VAO if it isn't bound already.
             GLVertexArray.this.bind();
 
-            GL15.glBindBuffer(GLBufferTarget.GL_ARRAY_BUFFER.value, this.buffer.bufferId);
-            assert checkGLError() : glErrorMsg("glBindBuffer(II)", "GL_ARRAY_BUFFER", this.buffer.bufferId);
+            final DSADriver dsa = GLTools.getDSAInstance();
 
-            GL20.glEnableVertexAttribArray(this.index);
-            assert checkGLError() : glErrorMsg("glEnableVertexAttribArray(I)", this.index);
+            dsa.glBindBuffer(GLBufferTarget.GL_ARRAY_BUFFER.value, this.buffer.bufferId);
+            dsa.glEnableVertexAttribArray(this.index);
 
             if (this.type == GLVertexAttributeType.GL_DOUBLE) {
-                GLVertexArray.this.glVertexAttribLPointer.call(this.index, this.size.value, this.type.value, this.stride, this.offset);
-                assert checkGLError() : glErrorMsg("glVertexAttribLPointer(IIIIL)", this.index, this.size, this.type, this.stride, this.offset);
+                dsa.glVertexAttribLPointer(this.index, this.size.value, this.type.value, this.stride, this.offset);
             } else {
-                GL20.glVertexAttribPointer(this.index, this.size.value, this.type.value, this.normalized, this.stride, this.offset);
-                assert checkGLError() : glErrorMsg("glVertexAttribPointer(IIIBIL)", this.index, this.size, this.type, this.normalized, this.stride, this.offset);
+                dsa.glVertexAttribPointer(this.index, this.size.value, this.type.value, this.normalized, this.stride, this.offset);
             }
 
             if (this.divisor > 0) {
-                GLVertexArray.this.glVertexAttribDivisor.call(this.index, this.divisor);
-                assert checkGLError() : glErrorMsg("glVertexAttribDivisor(II)", this.index, this.divisor);
+                dsa.glVertexAttribDivisor(this.index, this.divisor);
             }
+
+            LOGGER.trace(
+                    GLOOP_MARKER,
+                    "############### End GLVertexArray Attach Buffer Task ###############");
         }
     }
 

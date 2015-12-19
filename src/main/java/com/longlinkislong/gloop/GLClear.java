@@ -1,19 +1,39 @@
-/*
- * To change this license header, choose License Headers in Project Properties.
- * To change this template file, choose Tools | Templates
- * and open the template in the editor.
+/* 
+ * Copyright (c) 2015, longlinkislong.com
+ * All rights reserved.
+ *
+ * Redistribution and use in source and binary forms, with or without
+ * modification, are permitted provided that the following conditions are met:
+ *
+ * * Redistributions of source code must retain the above copyright notice, this
+ *   list of conditions and the following disclaimer.
+ * * Redistributions in binary form must reproduce the above copyright notice,
+ *   this list of conditions and the following disclaimer in the documentation
+ *   and/or other materials provided with the distribution.
+ *
+ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+ * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+ * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+ * ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE
+ * LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
+ * CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
+ * SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
+ * INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
+ * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
+ * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
+ * POSSIBILITY OF SUCH DAMAGE.
  */
 package com.longlinkislong.gloop;
 
-import static com.longlinkislong.gloop.GLAsserts.checkGLError;
-import static com.longlinkislong.gloop.GLAsserts.glErrorMsg;
+import com.longlinkislong.gloop.dsa.DSADriver;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.Set;
-import org.lwjgl.opengl.GL11;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.slf4j.Marker;
+import org.slf4j.MarkerFactory;
 
 /**
  * GLClear is a aGLObject that represents the parameters used for clearing the
@@ -23,8 +43,10 @@ import org.slf4j.LoggerFactory;
  * @since 15.06.18
  */
 public class GLClear extends GLObject {
-    private static final Logger LOGGER = LoggerFactory.getLogger(GLClear.class);
-    
+
+    private static final Marker GLOOP_MARKER = MarkerFactory.getMarker("GLOOP");
+    private static final Logger LOGGER = LoggerFactory.getLogger("GLClear");
+
     /**
      * The default value the red channel is set to on clear. By default it is
      * 0.0.
@@ -109,6 +131,35 @@ public class GLClear extends GLObject {
      */
     public final double depth;
 
+    private volatile String name = "id=" + System.currentTimeMillis();
+
+    /**
+     * Assigns a human-readable name to the GLClear object.
+     *
+     * @param newName the name.
+     * @since 15.12.17
+     */
+    public final void setName(final CharSequence newName) {
+        GLTask.create(() -> {
+            LOGGER.trace(
+                    GLOOP_MARKER,
+                    "Renamed GLClear[{}] to GLClear[{}]!",
+                    this.name, newName);
+
+            this.name = newName.toString();
+        }).glRun(this.getThread());
+    }
+
+    /**
+     * Retrieves the name of the GLClear object.
+     *
+     * @return the name.
+     * @since 15.12.18
+     */
+    public String getName() {
+        return this.name;
+    }
+
     /**
      * Constructs a new GLClear object on the default OpenGL thread using the
      * default OpenGL clear color value and clear depth value.
@@ -153,8 +204,11 @@ public class GLClear extends GLObject {
             final Set<GLFramebufferMode> clearBits) {
 
         super(thread);
-        
-        LOGGER.trace("Constructed GLClear object on thread: {}", thread);
+
+        LOGGER.trace(
+                GLOOP_MARKER,
+                "Constructed GLClear object on thread: {}",
+                thread);
 
         this.red = r;
         this.green = g;
@@ -182,13 +236,11 @@ public class GLClear extends GLObject {
      * @since 15.07.01
      */
     public GLClear withGLThread(final GLThread thread) {
-        return this.getThread() == thread
-                ? this
-                : new GLClear(
-                        thread,
-                        this.red, this.green, this.blue, this.alpha,
-                        this.depth,
-                        this.clearBits);
+        return new GLClear(
+                thread,
+                this.red, this.green, this.blue, this.alpha,
+                this.depth,
+                this.clearBits);
     }
 
     /**
@@ -242,17 +294,15 @@ public class GLClear extends GLObject {
      */
     public GLClear withClearDepth(final double depth) {
         return new GLClear(this.getThread(), this.red, this.green, this.blue, this.alpha, depth, this.clearBits);
-    }
-
-    private final GLTask clearTask = new ClearTask();
+    }    
 
     /**
      * Performs the OpenGL clear operation.
      *
      * @since 15.07.01
      */
-    public void clear() {
-        this.clearTask.glRun(this.getThread());
+    public void clear() {        
+        new ClearTask().glRun(this.getThread());
     }
 
     /**
@@ -264,17 +314,26 @@ public class GLClear extends GLObject {
 
         @Override
         public void run() {
+            LOGGER.trace(GLOOP_MARKER, "############### Start GLClear Clear Task ###############");
+            LOGGER.trace(GLOOP_MARKER, "\tApplying GLClear[{}]", GLClear.this.getName());
+            LOGGER.trace(GLOOP_MARKER, "\t<red={}, green={}, blue={}, alpha={}>", GLClear.this.red, GLClear.this.green, GLClear.this.blue, GLClear.this.alpha);
+            LOGGER.trace(GLOOP_MARKER, "\tdepth={}", GLClear.this.depth);
+            LOGGER.trace(GLOOP_MARKER, "\tClear bitfield: {}", GLClear.this.clearBitField);                    
+
             final GLThread thread = GLThread.getCurrent().orElseThrow(GLException::new);
-                        
-            thread.currentClear = GLClear.this.withGLThread(thread);            
-            GL11.glClearColor(GLClear.this.red, GLClear.this.green, GLClear.this.blue, GLClear.this.alpha);
-            assert checkGLError() : glErrorMsg("glClearColor(FFFF)", GLClear.this.red, GLClear.this.green, GLClear.this.blue, GLClear.this.alpha);            
-                        
-            GL11.glClearDepth(GLClear.this.depth);
-            assert checkGLError() : glErrorMsg("glClearDepth(D)", GLClear.this.depth);            
-            
-            GL11.glClear(GLClear.this.clearBitField);
-            assert checkGLError() : glErrorMsg("glClear(I)", GLClear.this.clearBits);            
+            final DSADriver dsa = GLTools.getDSAInstance();
+
+            if (thread == GLClear.this.getThread()) {
+                thread.currentClear = GLClear.this;
+            } else {
+                thread.currentClear = GLClear.this.withGLThread(thread);
+            }
+
+            dsa.glClearColor(GLClear.this.red, GLClear.this.green, GLClear.this.blue, GLClear.this.alpha);
+            dsa.glClearDepth(GLClear.this.depth);
+            dsa.glClear(GLClear.this.clearBitField);
+
+            LOGGER.trace(GLOOP_MARKER, "############### End GLClear Clear Task ###############");
         }
 
     }

@@ -1,7 +1,27 @@
-/*
- * To change this license header, choose License Headers in Project Properties.
- * To change this template file, choose Tools | Templates
- * and open the template in the editor.
+/* 
+ * Copyright (c) 2015, longlinkislong.com
+ * All rights reserved.
+ *
+ * Redistribution and use in source and binary forms, with or without
+ * modification, are permitted provided that the following conditions are met:
+ *
+ * * Redistributions of source code must retain the above copyright notice, this
+ *   list of conditions and the following disclaimer.
+ * * Redistributions in binary form must reproduce the above copyright notice,
+ *   this list of conditions and the following disclaimer in the documentation
+ *   and/or other materials provided with the distribution.
+ *
+ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+ * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+ * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+ * ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE
+ * LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
+ * CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
+ * SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
+ * INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
+ * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
+ * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
+ * POSSIBILITY OF SUCH DAMAGE.
  */
 package com.longlinkislong.gloop.dsa;
 
@@ -59,6 +79,7 @@ import org.lwjgl.opengl.GL;
 import org.lwjgl.opengl.GL11;
 import org.lwjgl.opengl.GL12;
 import org.lwjgl.opengl.GL13;
+import org.lwjgl.opengl.GL14;
 import org.lwjgl.opengl.GL15;
 import org.lwjgl.opengl.GL20;
 import org.lwjgl.opengl.GL21;
@@ -72,7 +93,7 @@ import static org.lwjgl.system.MemoryUtil.memAddress;
  *
  * @author zmichaels
  */
-public class FakeDSA implements EXTDSADriver {
+public final class FakeDSA extends Common implements EXTDSADriver {
 
     private static final boolean CAN_CAST_DOUBLE_TO_FLOAT;
     private static final boolean IGNORE_FRAMEBUFFER_SUPPORT;
@@ -991,14 +1012,14 @@ public class FakeDSA implements EXTDSADriver {
         assert checkMipmapLevel(level) : invalidMipmapLevelMsg(level);
         assert checkOffset(xOffset) : invalidXOffsetMsg(xOffset);
         assert checkOffset(yOffset) : invalidYOffsetMsg(yOffset);
-        assert checkDimension(width) :invalidWidthMsg(width);
-        assert checkDimension(height): invalidHeightMsg(height);
+        assert checkDimension(width) : invalidWidthMsg(width);
+        assert checkDimension(height) : invalidHeightMsg(height);
         assert checkGLenum(format, GLTextureFormat::of) : invalidGLenumMsg(format);
         assert checkGLenum(type, GLType::of) : invalidGLenumMsg(type);
         assert checkBufferIsNative(pixels) : bufferIsNotNativeMsg(pixels);
         assert pixels.isDirect() : NON_DIRECT_BUFFER_MSG;
         assert checkBufferSize(width, height, 1, format, type, pixels) : bufferTooSmallMsg(width, height, 1, format, type, pixels);
-        
+
         this.saveTexture2d();
 
         GL11.glBindTexture(GL11.GL_TEXTURE_2D, textureId);
@@ -1025,13 +1046,13 @@ public class FakeDSA implements EXTDSADriver {
         assert checkBufferIsNative(pixels) : bufferIsNotNativeMsg(pixels);
         assert pixels.isDirect() : NON_DIRECT_BUFFER_MSG;
         assert checkBufferSize(width, height, depth, format, type, pixels) : bufferTooSmallMsg(width, height, depth, format, type, pixels);
-        
+
         this.saveTexture3d();
         GL11.glBindTexture(GL12.GL_TEXTURE_3D, textureId);
         assert checkGLError() : glErrorMsg("glBindTexture(II)", "GL_TEXTURE_3D", textureId);
 
         GL12.glTexSubImage3D(GL12.GL_TEXTURE_3D, level, xOffset, yOffset, zOffset, width, height, depth, format, type, pixels);
-        assert checkGLError() : glErrorMsg("glTexSubImage3D(IIIIIIIIII*)", "GL_TEXTURE_3D", level, xOffset, yOffset, zOffset, width, height, depth, GLTextureFormat.of(format).get(),GLType.of(type).get(), toHexString(memAddress(pixels)));
+        assert checkGLError() : glErrorMsg("glTexSubImage3D(IIIIIIIIII*)", "GL_TEXTURE_3D", level, xOffset, yOffset, zOffset, width, height, depth, GLTextureFormat.of(format).get(), GLType.of(type).get(), toHexString(memAddress(pixels)));
 
         this.restoreTexture3d();
     }
@@ -1049,7 +1070,7 @@ public class FakeDSA implements EXTDSADriver {
         assert checkBufferIsNative(pixels) : bufferIsNotNativeMsg(pixels);
         assert pixels.isDirect() : NON_DIRECT_BUFFER_MSG;
         assert checkBufferSize(width, 1, 1, format, type, pixels) : bufferTooSmallMsg(width, 1, 1, format, type, pixels);
-        
+
         this.saveTexture1d();
         GL11.glBindTexture(target, texture);
         assert checkGLError() : glErrorMsg("glBindTexture(II)", GLTextureTarget.of(target).get(), texture);
@@ -1069,7 +1090,7 @@ public class FakeDSA implements EXTDSADriver {
         assert checkDimension(width) : invalidWidthMsg(width);
         assert border == 0 : "Border must be 0.";
         assert checkGLenum(type, GLType::of) : invalidGLenumMsg(type);
-        
+
         this.saveTexture1d();
 
         GL11.glBindTexture(target, texture);
@@ -1095,7 +1116,7 @@ public class FakeDSA implements EXTDSADriver {
         assert checkBufferIsNative(pixels) : bufferIsNotNativeMsg(pixels);
         assert pixels.isDirect() : NON_DIRECT_BUFFER_MSG;
         assert checkBufferSize(width, height, 1, format, type, pixels) : bufferTooSmallMsg(width, height, 1, format, type, pixels);
-        
+
         this.saveTexture2d();
         GL11.glBindTexture(target, texture);
         assert checkGLError() : glErrorMsg("glBindTexture(II)", GLTextureTarget.of(target).get(), texture);
@@ -1113,11 +1134,11 @@ public class FakeDSA implements EXTDSADriver {
         assert checkMipmapLevel(level) : invalidMipmapLevelMsg(level);
         assert checkGLenum(internalFormat, GLTextureInternalFormat::of) : invalidGLenumMsg(internalFormat);
         assert checkDimension(width) : invalidWidthMsg(width);
-        assert checkDimension(height) : invalidHeightMsg(height);     
+        assert checkDimension(height) : invalidHeightMsg(height);
         assert border == 0 : "Border must be 0.";
         assert checkGLenum(format, GLTextureFormat::of) : invalidGLenumMsg(format);
         assert checkGLenum(type, GLType::of) : invalidGLenumMsg(type);
-        
+
         this.saveTexture2d();
         GL11.glBindTexture(target, texture);
         assert checkGLError() : glErrorMsg("glBindTexture(II)", GLTextureTarget.of(target).get(), texture);
@@ -1143,7 +1164,7 @@ public class FakeDSA implements EXTDSADriver {
         assert checkBufferIsNative(pixels) : bufferIsNotNativeMsg(pixels);
         assert pixels.isDirect() : NON_DIRECT_BUFFER_MSG;
         assert checkBufferSize(width, height, depth, format, type, pixels) : bufferTooSmallMsg(width, height, depth, format, type, pixels);
-        
+
         this.saveTexture3d();
         GL11.glBindTexture(target, texture);
         assert checkGLError() : glErrorMsg("glBindTexture(II)", GLTextureTarget.of(target).get(), texture);
@@ -1166,11 +1187,11 @@ public class FakeDSA implements EXTDSADriver {
         assert border == 0 : "Border must be 0.";
         assert checkGLenum(format, GLTextureFormat::of) : invalidGLenumMsg(format);
         assert checkGLenum(type, GLType::of) : invalidGLenumMsg(type);
-        
+
         this.saveTexture3d();
-        GL11.glBindTexture(target, texture);        
+        GL11.glBindTexture(target, texture);
         assert checkGLError() : glErrorMsg("glBindTexture(II)", GLTextureTarget.of(target).get(), texture);
-        
+
         GL12.glTexImage3D(target, level, internalFormat, width, height, depth, border, format, type, ptr);
         assert checkGLError() : glErrorMsg("glTexImage3D(IIIIIIIIIL)", GLTextureTarget.of(target).get(), level, GLTextureInternalFormat.of(internalFormat).get(), width, height, depth, border, GLTextureFormat.of(format).get(), GLType.of(type).get(), ptr);
 
@@ -1183,32 +1204,32 @@ public class FakeDSA implements EXTDSADriver {
         assert checkGLenum(texTarget, GLTextureTarget::of) : invalidGLenumMsg(texTarget);
         assert checkId(texture) : invalidTextureIdMsg(texture);
         assert checkMipmapLevel(level) : invalidMipmapLevelMsg(level);
-        
+
         final ContextCapabilities cap = GL.getCapabilities();
 
         if (cap.OpenGL30) {
             this.saveFramebuffer();
             GL30.glBindFramebuffer(GL30.GL_FRAMEBUFFER, framebuffer);
             assert checkGLError() : glErrorMsg("glBindFramebuffer(II)", "GL_FRAMEBUFFER", framebuffer);
-            
+
             GL30.glFramebufferTexture1D(GL30.GL_FRAMEBUFFER, attachment, texTarget, texture, level);
             assert checkGLError() : glErrorMsg("glFramebufferTexture1D(IIIII)", "GL_FRAMEBUFFER", attachment, GLTextureTarget.of(texTarget).get(), texture, level);
-            
+
             this.restoreFramebuffer();
         } else if (cap.GL_ARB_framebuffer_object) {
             this.saveFramebuffer();
             ARBFramebufferObject.glBindFramebuffer(GL30.GL_FRAMEBUFFER, framebuffer);
             assert checkGLError() : glErrorMsg("glBindFramebufferARB(II)", "GL_FRAMEBUFFER", framebuffer);
-            
+
             ARBFramebufferObject.glFramebufferTexture1D(GL30.GL_FRAMEBUFFER, attachment, texTarget, texture, level);
             assert checkGLError() : glErrorMsg("glFramebufferTexture1DARB(IIIII)", "GL_FRAMEBUFFER", attachment, GLTextureTarget.of(texTarget), texture, level);
-            
+
             this.restoreFramebuffer();
         } else if (cap.GL_EXT_framebuffer_object) {
             this.saveFramebuffer();
             EXTFramebufferObject.glBindFramebufferEXT(GL30.GL_FRAMEBUFFER, framebuffer);
             assert checkGLError() : glErrorMsg("glBindFramebufferEXT(II)", "GL_FRAMEBUFFER", framebuffer);
-            
+
             EXTFramebufferObject.glFramebufferTexture1DEXT(GL30.GL_FRAMEBUFFER, attachment, texTarget, texture, level);
             assert checkGLError() : glErrorMsg("glFramebufferTExture1DEXT(IIIII)", "GL_FRAMEBUFFER", attachment, GLTextureTarget.of(texTarget).get(), texture, level);
             this.restoreFramebuffer();
@@ -1225,14 +1246,14 @@ public class FakeDSA implements EXTDSADriver {
         assert checkGLenum(texTarget, GLTextureTarget::of) : invalidGLenumMsg(texTarget);
         assert checkId(texture) : invalidTextureIdMsg(texture);
         assert checkMipmapLevel(level) : invalidMipmapLevelMsg(level);
-        
+
         final ContextCapabilities cap = GL.getCapabilities();
 
         if (cap.OpenGL30) {
             this.saveFramebuffer();
             GL30.glBindFramebuffer(GL30.GL_FRAMEBUFFER, framebuffer);
             assert checkGLError() : glErrorMsg("glBindFramebuffer(II)", "GL_FRAMEBUFFER", framebuffer);
-            
+
             GL30.glFramebufferTexture2D(GL30.GL_FRAMEBUFFER, attachment, texTarget, texture, level);
             assert checkGLError() : glErrorMsg("glFramebufferTexture2D(IIIII)", "GL_FRAMEBUFFER", attachment, GLTextureTarget.of(texTarget).get(), texture, level);
             this.restoreFramebuffer();
@@ -1240,7 +1261,7 @@ public class FakeDSA implements EXTDSADriver {
             this.saveFramebuffer();
             ARBFramebufferObject.glBindFramebuffer(GL30.GL_FRAMEBUFFER, framebuffer);
             assert checkGLError() : glErrorMsg("glBindFramebufferARB(II)", "GL_FRAMEBUFFER", framebuffer);
-            
+
             ARBFramebufferObject.glFramebufferTexture2D(GL30.GL_FRAMEBUFFER, attachment, texTarget, texture, level);
             assert checkGLError() : glErrorMsg("glBindFramebufferTexture2DABR(IIIII)", "GL_FRAMEBUFFER", attachment, GLTextureTarget.of(texTarget).get(), texture, level);
             this.restoreFramebuffer();
@@ -1248,7 +1269,7 @@ public class FakeDSA implements EXTDSADriver {
             this.saveFramebuffer();
             EXTFramebufferObject.glBindFramebufferEXT(GL30.GL_FRAMEBUFFER, framebuffer);
             assert checkGLError() : glErrorMsg("glBindFramebufferEXT(II)", "GL_FRAMEBUFFER", framebuffer);
-            
+
             EXTFramebufferObject.glFramebufferTexture2DEXT(GL30.GL_FRAMEBUFFER, attachment, texTarget, texture, level);
             assert checkGLError() : glErrorMsg("glFramebufferTexture2DEXT(IIIII)", "GL_FRAMEBUFFER", attachment, GLTextureTarget.of(texTarget).get(), texture, level);
             this.restoreFramebuffer();
@@ -1261,19 +1282,19 @@ public class FakeDSA implements EXTDSADriver {
     public void glBlitNamedFramebuffer(int readFramebuffer, int drawFramebuffer, int srcX0, int srcY0, int srcX1, int srcY1, int dstX0, int dstY0, int dstX1, int dstY1, int mask, int filter) {
         assert checkNullableId(readFramebuffer) : invalidFramebufferIdMsg(readFramebuffer);
         assert checkNullableId(drawFramebuffer) : invalidFramebufferIdMsg(drawFramebuffer);
-        
+
         final ContextCapabilities cap = GL.getCapabilities();
 
         if (cap.OpenGL30) {
             final int prevReadFB = GL11.glGetInteger(GL30.GL_READ_FRAMEBUFFER_BINDING);
             assert checkGLError() : glErrorMsg("glGetInteger(I)", "GL_READ_FRAMEBUFFER_BINDING");
-            
+
             final int prevDrawFB = GL11.glGetInteger(GL30.GL_DRAW_FRAMEBUFFER_BINDING);
             assert checkGLError() : glErrorMsg("glGetInteger(I)", "GL_DRAW_FRAMEBUFFER_BINDING");
-            
+
             GL30.glBindFramebuffer(GL30.GL_READ_FRAMEBUFFER, readFramebuffer);
             assert checkGLError() : glErrorMsg("glBindFramebuffer(II)", "GL_READ_FRAMEBUFFER", readFramebuffer);
-            
+
             GL30.glBindFramebuffer(GL30.GL_DRAW_FRAMEBUFFER, drawFramebuffer);
             assert checkGLError() : glErrorMsg("glBindFramebuffer(II)", "GL_DRAW_FRAMEBUFFER", drawFramebuffer);
 
@@ -1291,10 +1312,10 @@ public class FakeDSA implements EXTDSADriver {
 
             final int prevDrawFB = GL11.glGetInteger(ARBFramebufferObject.GL_DRAW_FRAMEBUFFER_BINDING);
             assert checkGLError() : glErrorMsg("glGetInteger(I)", "GL_DRAW_FRAMEBUFFER_BINDING");
-            
+
             ARBFramebufferObject.glBindFramebuffer(ARBFramebufferObject.GL_DRAW_FRAMEBUFFER, drawFramebuffer);
             assert checkGLError() : glErrorMsg("glBindFramebufferARB(II)", "GL_DRAW_FRAMEBUFFER", drawFramebuffer);
-            
+
             ARBFramebufferObject.glBindFramebuffer(ARBFramebufferObject.GL_READ_FRAMEBUFFER, readFramebuffer);
             assert checkGLError() : glErrorMsg("glBindFramebufferARB(II)", "GL_READ_FRAMEBUFFER", readFramebuffer);
 
@@ -1306,7 +1327,7 @@ public class FakeDSA implements EXTDSADriver {
 
             ARBFramebufferObject.glBindFramebuffer(ARBFramebufferObject.GL_READ_FRAMEBUFFER, prevReadFB);
             assert checkGLError() : glErrorMsg("glBindFramebuffer(II)", "GL_READ_FRAMEBUFFER", prevReadFB);
-        } else {            
+        } else {
             throw new UnsupportedOperationException("glBlitFramebuffer requires either an OpenGL3.0 context or ARB_framebuffer_object!");
         }
     }
@@ -1316,7 +1337,7 @@ public class FakeDSA implements EXTDSADriver {
         assert checkId(bufferId) : invalidBufferIdMsg(bufferId);
         assert checkGLenum(format, GLTextureFormat::of) : invalidGLenumMsg(format);
         assert checkGLenum(type, GLType::of) : invalidGLenumMsg(type);
-        
+
         final int prevPixBuffer = GL11.glGetInteger(GL21.GL_PIXEL_PACK_BUFFER_BINDING);
         assert checkGLError() : glErrorMsg("glGetInteger(I)", "GL_PIXEL_PACK_BUFFER_BINDING");
 
@@ -1341,7 +1362,7 @@ public class FakeDSA implements EXTDSADriver {
         assert checkBufferIsNative(pixels) : bufferIsNotNativeMsg(pixels);
         assert pixels.isDirect() : NON_DIRECT_BUFFER_MSG;
         assert checkBufferSize(bufferSize, 1, 1, format, type, pixels) : bufferTooSmallMsg(bufferSize, 1, 1, format, type, pixels);
-        
+
         this.saveTexture(target);
 
         GL11.glBindTexture(target, texture);

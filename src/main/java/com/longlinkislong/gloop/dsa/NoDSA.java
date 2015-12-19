@@ -1,7 +1,27 @@
-/*
- * To change this license header, choose License Headers in Project Properties.
- * To change this template file, choose Tools | Templates
- * and open the template in the editor.
+/* 
+ * Copyright (c) 2015, longlinkislong.com
+ * All rights reserved.
+ *
+ * Redistribution and use in source and binary forms, with or without
+ * modification, are permitted provided that the following conditions are met:
+ *
+ * * Redistributions of source code must retain the above copyright notice, this
+ *   list of conditions and the following disclaimer.
+ * * Redistributions in binary form must reproduce the above copyright notice,
+ *   this list of conditions and the following disclaimer in the documentation
+ *   and/or other materials provided with the distribution.
+ *
+ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+ * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+ * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+ * ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE
+ * LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
+ * CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
+ * SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
+ * INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
+ * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
+ * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
+ * POSSIBILITY OF SUCH DAMAGE.
  */
 package com.longlinkislong.gloop.dsa;
 
@@ -27,7 +47,7 @@ import org.lwjgl.opengl.GL44;
  *
  * @author zmichaels
  */
-public class NoDSA implements EXTDSADriver {
+public final class NoDSA extends Common implements EXTDSADriver {   
 
     @Override
     public void glNamedFramebufferTexture1D(int framebuffer, int attachment, int texTarget, int texture, int level) {
@@ -36,13 +56,13 @@ public class NoDSA implements EXTDSADriver {
         if (cap.OpenGL30) {
             GL30.glBindFramebuffer(GL30.GL_FRAMEBUFFER, framebuffer);
             assert GL11.glGetError() == GL11.GL_NO_ERROR : String.format("glBindFramebuffer(GL_FRAMEBUFFER, %d) failed!", framebuffer);
-            
+
             GL30.glFramebufferTexture1D(GL30.GL_FRAMEBUFFER, attachment, texTarget, texture, level);
             assert GL11.glGetError() == GL11.GL_NO_ERROR : String.format("glFramebufferTexture1D(GL_FRAMEBUFFER, %d, %d, %d, %d) failed!", attachment, texTarget, texture, level);
-        } else if(cap.GL_ARB_framebuffer_object) {
+        } else if (cap.GL_ARB_framebuffer_object) {
             ARBFramebufferObject.glBindFramebuffer(ARBFramebufferObject.GL_FRAMEBUFFER, framebuffer);
             ARBFramebufferObject.glFramebufferTexture1D(ARBFramebufferObject.GL_FRAMEBUFFER, attachment, texTarget, texture, level);
-        } else if(cap.GL_EXT_framebuffer_object) {
+        } else if (cap.GL_EXT_framebuffer_object) {
             EXTFramebufferObject.glBindFramebufferEXT(EXTFramebufferObject.GL_FRAMEBUFFER_EXT, framebuffer);
             EXTFramebufferObject.glFramebufferTexture1DEXT(EXTFramebufferObject.GL_FRAMEBUFFER_EXT, attachment, texTarget, texture, level);
         } else {
@@ -332,26 +352,26 @@ public class NoDSA implements EXTDSADriver {
         GL15.glBindBuffer(GL15.GL_ARRAY_BUFFER, pName);
         return GL15.glGetBufferParameteri(GL15.GL_ARRAY_BUFFER, pName);
     }
-    
+
     @Override
     public void glBlitNamedFramebuffer(int readFramebuffer, int drawFramebuffer, int srcX0, int srcY0, int srcX1, int srcY1, int dstX0, int dstY0, int dstX1, int dstY1, int mask, int filter) {
         final ContextCapabilities cap = GL.getCapabilities();
-        
-        if(cap.OpenGL30) {
+
+        if (cap.OpenGL30) {
             GL30.glBindFramebuffer(GL30.GL_READ_FRAMEBUFFER, readFramebuffer);
             GL30.glBindFramebuffer(GL30.GL_DRAW_FRAMEBUFFER, drawFramebuffer);
-            
+
             GL30.glBlitFramebuffer(srcX0, srcY0, srcX1, srcY1, dstX0, dstY0, dstX1, dstY1, mask, filter);
-            
+
             GL30.glBindFramebuffer(GL30.GL_READ_FRAMEBUFFER, 0);
             GL30.glBindFramebuffer(GL30.GL_DRAW_FRAMEBUFFER, 0);
         }
     }
-    
+
     @Override
-    public void glGetTextureImage(int texture, int target, int level, int format, int type, int bufferSize, ByteBuffer pixels) {        
+    public void glGetTextureImage(int texture, int target, int level, int format, int type, int bufferSize, ByteBuffer pixels) {
         GL11.glBindTexture(target, texture);
-        GL11.glGetTexImage(target, level, format, type, pixels);        
+        GL11.glGetTexImage(target, level, format, type, pixels);
     }
 
     public static DSADriver getInstance() {

@@ -1,7 +1,27 @@
-/*
- * To change this license header, choose License Headers in Project Properties.
- * To change this template file, choose Tools | Templates
- * and open the template in the editor.
+/* 
+ * Copyright (c) 2015, longlinkislong.com
+ * All rights reserved.
+ *
+ * Redistribution and use in source and binary forms, with or without
+ * modification, are permitted provided that the following conditions are met:
+ *
+ * * Redistributions of source code must retain the above copyright notice, this
+ *   list of conditions and the following disclaimer.
+ * * Redistributions in binary form must reproduce the above copyright notice,
+ *   this list of conditions and the following disclaimer in the documentation
+ *   and/or other materials provided with the distribution.
+ *
+ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+ * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+ * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+ * ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE
+ * LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
+ * CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
+ * SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
+ * INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
+ * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
+ * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
+ * POSSIBILITY OF SUCH DAMAGE.
  */
 package com.longlinkislong.gloop.dsa;
 
@@ -57,12 +77,19 @@ import org.lwjgl.opengl.ContextCapabilities;
 import org.lwjgl.opengl.GL;
 import org.lwjgl.opengl.GL41;
 import static org.lwjgl.system.MemoryUtil.memAddress;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.slf4j.Marker;
+import org.slf4j.MarkerFactory;
 
 /**
  *
  * @author zmichaels
  */
-public class ARBDSA implements DSADriver {
+public final class ARBDSA extends Common implements DSADriver {
+
+    private static final Marker GL_MARKER = MarkerFactory.getMarker("OPENGL");
+    private static final Logger LOGGER = LoggerFactory.getLogger("OPENGL");
 
     public static DSADriver getInstance() {
         return Holder.INSTANCE;
@@ -70,6 +97,8 @@ public class ARBDSA implements DSADriver {
 
     @Override
     public int glCreateFramebuffers() {
+        LOGGER.trace(GL_MARKER, "glCreateFramebuffers()");
+
         final int out = ARBDirectStateAccess.glCreateFramebuffers();
         assert checkGLError() : glErrorMsg("glCreateFramebuffersARB(void)");
 
@@ -83,6 +112,11 @@ public class ARBDSA implements DSADriver {
         assert checkGLenum(internalFormat, GLTextureInternalFormat::of) : invalidGLenumMsg(internalFormat);
         assert checkDimension(width) : invalidWidthMsg(width);
 
+        LOGGER.trace(
+                GL_MARKER,
+                "glTextureStorage1D({}, {}, {}, {})",
+                textureId, levels, internalFormat, width);
+
         ARBDirectStateAccess.glTextureStorage1D(textureId, levels, internalFormat, width);
         assert checkGLError() : glErrorMsg("glTextureStorage1dARB(IIII)", textureId, levels, GLTextureInternalFormat.of(internalFormat).get(), width);
     }
@@ -94,6 +128,11 @@ public class ARBDSA implements DSADriver {
         assert checkGLenum(internalFormat, GLTextureInternalFormat::of) : invalidGLenumMsg(internalFormat);
         assert checkDimension(width) : invalidWidthMsg(width);
         assert checkDimension(height) : invalidHeightMsg(height);
+
+        LOGGER.trace(
+                GL_MARKER,
+                "glTextureStorage2DARB({}, {}, {}, {}, {})",
+                textureId, levels, internalFormat, width, height);
 
         ARBDirectStateAccess.glTextureStorage2D(textureId, levels, internalFormat, width, height);
         assert checkGLError() : glErrorMsg("glTextureStorage2dARB(IIIII)", textureId, levels, GLTextureInternalFormat.of(internalFormat).get(), width, height);
@@ -108,6 +147,11 @@ public class ARBDSA implements DSADriver {
         assert checkDimension(height) : invalidHeightMsg(height);
         assert checkDimension(depth) : invalidDepthMsg(depth);
 
+        LOGGER.trace(
+                GL_MARKER,
+                "glTextureStorage3D({}, {}, {}, {}, {}, {}) (ARB)",
+                textureId, levels, internalFormat, width, height, depth);
+
         ARBDirectStateAccess.glTextureStorage3D(textureId, levels, internalFormat, width, height, depth);
         assert checkGLError() : glErrorMsg("glTextureStorage3dARB(IIIIII)", textureId, levels, GLTextureInternalFormat.of(internalFormat).get(), width, height, depth);
     }
@@ -115,6 +159,11 @@ public class ARBDSA implements DSADriver {
     @Override
     public void glTextureParameteri(int textureId, int pName, int val) {
         assert checkId(textureId) : invalidTextureIdMsg(textureId);
+
+        LOGGER.trace(
+                GL_MARKER,
+                "glTextureParemeteri({}, {}, {}) (ARB)",
+                textureId, pName, val);
 
         ARBDirectStateAccess.glTextureParameteri(textureId, pName, val);
         assert checkGLError() : glErrorMsg("glTextureParameteriARB(III)", textureId, pName, val);
@@ -125,6 +174,11 @@ public class ARBDSA implements DSADriver {
         assert checkId(textureId) : invalidTextureIdMsg(textureId);
         assert checkFloat(val) : invalidFloatMsg(val);
 
+        LOGGER.trace(
+                GL_MARKER,
+                "glTextureParemeterf({}, {}, {}) (ARB)",
+                textureId, pName, val);
+
         ARBDirectStateAccess.glTextureParameterf(textureId, pName, val);
         assert checkGLError() : glErrorMsg("glTextureParameterfARB(IIF)", textureId, pName, val);
     }
@@ -132,6 +186,11 @@ public class ARBDSA implements DSADriver {
     @Override
     public int glGetNamedBufferParameteri(int bufferId, int pName) {
         assert checkNullableId(bufferId) : invalidNullableBufferIdMsg(bufferId);
+
+        LOGGER.trace(
+                GL_MARKER,
+                "glGetNamedBufferParameteri({}, {}) (ARB)",
+                bufferId, pName);
 
         final int out = ARBDirectStateAccess.glGetNamedBufferParameteri(bufferId, pName);
         assert checkGLError() : glErrorMsg("glGetNamedBufferParameteriARB(II)", bufferId, pName);
@@ -144,6 +203,11 @@ public class ARBDSA implements DSADriver {
         assert checkId(framebuffer) : invalidFramebufferIdMsg(framebuffer);
         assert checkId(texture) : invalidTextureIdMsg(texture);
         assert checkMipmapLevel(level) : invalidMipmapLevelMsg(level);
+
+        LOGGER.trace(
+                GL_MARKER,
+                "glGetNamedFramebufferTexture({}, {}, {}, {}) (ARB)",
+                framebuffer, attachment, texture, level);
 
         ARBDirectStateAccess.glNamedFramebufferTexture(framebuffer, attachment, texture, level);
         assert checkGLError() : glErrorMsg("glNamedFramebufferTextureARB(IIII)", framebuffer, attachment, texture, level);
@@ -159,6 +223,14 @@ public class ARBDSA implements DSADriver {
         assert checkNullableId(readFramebuffer) : invalidFramebufferIdMsg(readFramebuffer);
         assert checkNullableId(drawFramebuffer) : invalidFramebufferIdMsg(drawFramebuffer);
 
+        LOGGER.trace(
+                GL_MARKER,
+                "glBlitNamedFramebuffer({}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}) (ARB)",
+                readFramebuffer, drawFramebuffer,
+                srcX, srcY, srcX1, srcY1,
+                dstX0, dstY0, dstX1, dstY1,
+                mask, filter);
+
         ARBDirectStateAccess.glBlitNamedFramebuffer(readFramebuffer, drawFramebuffer, srcX1, srcY1, srcX1, srcY1, dstX0, dstY0, dstX1, dstY1, mask, filter);
         assert checkGLError() : glErrorMsg("glBlitNamedFramebufferARB(IIIIIIIIIIII)", readFramebuffer, drawFramebuffer, srcX, srcY, srcX1, srcY1, dstX0, dstY0, dstX1, dstY1, mask, filter);
     }
@@ -172,6 +244,11 @@ public class ARBDSA implements DSADriver {
         assert checkBufferIsNative(pixels) : bufferIsNotNativeMsg(pixels);
         assert pixels.isDirect() : NON_DIRECT_BUFFER_MSG;
         assert checkBufferSize(bufferSize, 1, 1, format, type, pixels) : bufferTooSmallMsg(bufferSize, 1, 1, format, type, pixels);
+
+        LOGGER.trace(
+                GL_MARKER,
+                "glGetTextureImage({}, {}, {}, {}, {}, {}) (ARB)",
+                texture, level, format, type, bufferSize, pixels);
 
         ARBDirectStateAccess.glGetTextureImage(texture, level, format, type, bufferSize, pixels);
         assert checkGLError() : glErrorMsg("glGetTextureImageARB(IIIII*)", texture, level, GLTextureFormat.of(format).get(), GLType.of(type).get(), bufferSize, toHexString(memAddress(pixels)));
@@ -196,6 +273,8 @@ public class ARBDSA implements DSADriver {
 
     @Override
     public int glCreateBuffers() {
+        LOGGER.trace(GL_MARKER, "glCreateBuffers() (ARB)");
+
         final int out = ARBDirectStateAccess.glCreateBuffers();
         assert checkGLError() : glErrorMsg("glCreateBuffersARB(void)");
 
@@ -205,6 +284,8 @@ public class ARBDSA implements DSADriver {
     @Override
     public int glCreateTextures(int target) {
         assert checkGLenum(target, GLTextureTarget::of) : invalidGLenumMsg(target);
+
+        LOGGER.trace(GL_MARKER, "glCreateTextures({}) (ARB)", target);
 
         final int out = ARBDirectStateAccess.glCreateTextures(target);
         assert checkGLError() : glErrorMsg("glCreateTexturesARB(I)", GLTextureTarget.of(target).get());
@@ -218,6 +299,11 @@ public class ARBDSA implements DSADriver {
         assert checkSize(size) : invalidSizeMsg(size);
         assert checkGLenum(usage, GLBufferUsage::of) : invalidGLenumMsg(usage);
 
+        LOGGER.trace(
+                GL_MARKER,
+                "glNamedBufferData({}, {}, {}) (ARB)",
+                bufferId, size, usage);
+
         ARBDirectStateAccess.glNamedBufferData(bufferId, size, usage);
         assert checkGLError() : glErrorMsg("glNamedBufferDataARB(ILI)", bufferId, size, GLBufferUsage.of(usage).get());
     }
@@ -227,6 +313,11 @@ public class ARBDSA implements DSADriver {
         assert checkId(bufferId) : invalidBufferIdMsg(bufferId);
         assert checkBufferIsNative(data) : bufferIsNotNativeMsg(data);
         assert data.isDirect() : NON_DIRECT_BUFFER_MSG;
+
+        LOGGER.trace(
+                GL_MARKER,
+                "glNamedBufferData({}, {}, {}) (ARB)",
+                bufferId, data, usage);
 
         ARBDirectStateAccess.glNamedBufferData(bufferId, data, usage);
         assert checkGLError() : glErrorMsg("glNamedBufferDataARB(I*I)", bufferId, toHexString(memAddress(data)), usage);
@@ -239,6 +330,11 @@ public class ARBDSA implements DSADriver {
         assert checkBufferIsNative(data) : bufferIsNotNativeMsg(data);
         assert data.isDirect() : NON_DIRECT_BUFFER_MSG;
 
+        LOGGER.trace(
+                GL_MARKER,
+                "glNamedBufferSubData({}, {}, {}) (ARB)",
+                buffer, offset, data);
+
         ARBDirectStateAccess.glNamedBufferSubData(buffer, offset, data);
         assert checkGLError() : glErrorMsg("glNamedBufferSubData(IL*)", buffer, offset, toHexString(memAddress(data)));
     }
@@ -249,6 +345,9 @@ public class ARBDSA implements DSADriver {
         assert checkBufferIsNative(data);
         assert data.isDirect() : NON_DIRECT_BUFFER_MSG;
 
+        LOGGER.trace(GL_MARKER, "glNamedBufferStorage({}, {}, {}) (ARB)",
+                bufferId, data, flags);
+
         ARBDirectStateAccess.glNamedBufferStorage(bufferId, data, flags);
         assert checkGLError() : glErrorMsg("glNamedBufferStorageARB(I*I)", bufferId, toHexString(memAddress(data)), flags);
     }
@@ -257,6 +356,11 @@ public class ARBDSA implements DSADriver {
     public void glNamedBufferStorage(int bufferId, long size, int flags) {
         assert checkId(bufferId) : invalidBufferIdMsg(bufferId);
         assert checkSize(size) : invalidSizeMsg(size);
+
+        LOGGER.trace(
+                GL_MARKER,
+                "glNamedBufferStorage({}, {}, {}) (ARB)",
+                bufferId, size, flags);
 
         ARBDirectStateAccess.glNamedBufferStorage(bufferId, size, flags);
         assert checkGLError() : glErrorMsg("glNamedBufferStorageARB(ILI)", bufferId, size, flags);
@@ -269,6 +373,11 @@ public class ARBDSA implements DSADriver {
         assert checkBufferIsNative(out) : bufferIsNotNativeMsg(out);
         assert out.isDirect() : NON_DIRECT_BUFFER_MSG;
 
+        LOGGER.trace(
+                GL_MARKER,
+                "glGetNamedBufferSubData({}, {}, {}) (ARB)",
+                bufferId, offset, out);
+
         ARBDirectStateAccess.glGetNamedBufferSubData(bufferId, offset, out);
         assert checkGLError() : glErrorMsg("glGetNamedBufferSubDataARB(IL*)", bufferId, offset, toHexString(memAddress(out)));
     }
@@ -279,6 +388,11 @@ public class ARBDSA implements DSADriver {
         assert checkOffset(offset) : invalidOffsetMsg(offset);
         assert checkSize(length) : invalidSizeMsg(length);
 
+        LOGGER.trace(
+                GL_MARKER,
+                "glMapNamedBufferRange({}, {}, {}, {}) (ARB)",
+                bufferId, offset, length, access);
+
         final ByteBuffer out = ARBDirectStateAccess.glMapNamedBufferRange(bufferId, offset, length, access, recycled);
         assert checkGLError() : glErrorMsg("glMapNamedBufferRangeARB(ILLI)", bufferId, offset, length, access);
 
@@ -288,6 +402,11 @@ public class ARBDSA implements DSADriver {
     @Override
     public void glUnmapNamedBuffer(int bufferId) {
         assert checkId(bufferId) : invalidBufferIdMsg(bufferId);
+
+        LOGGER.trace(
+                GL_MARKER,
+                "glUnmapNamedBuffer({}) (ARB)",
+                bufferId);
 
         ARBDirectStateAccess.glUnmapNamedBuffer(bufferId);
         assert checkGLError() : glErrorMsg("glUnmapNamedBufferARB(I)", bufferId);
@@ -300,6 +419,13 @@ public class ARBDSA implements DSADriver {
         assert checkOffset(readOffset) : invalidOffsetMsg(readOffset);
         assert checkOffset(writeOffset) : invalidOffsetMsg(writeOffset);
         assert checkSize(size) : invalidSizeMsg(size);
+
+        LOGGER.trace(
+                GL_MARKER,
+                "glCopyNamedBufferSubData({}, {}, {}, {}, {}) (ARB)",
+                readBufferId, writeBufferId,
+                readOffset, writeOffset,
+                size);
 
         ARBDirectStateAccess.glCopyNamedBufferSubData(readBufferId, writeBufferId, readOffset, writeOffset, size);
         assert checkGLError() : glErrorMsg("glCopyNamedBufferSubDataARB(IILLL)", readBufferId, writeBufferId, readOffset, writeOffset, size);
@@ -314,9 +440,19 @@ public class ARBDSA implements DSADriver {
         final ContextCapabilities cap = GL.getCapabilities();
 
         if (cap.OpenGL41) {
+            LOGGER.trace(
+                    GL_MARKER,
+                    "glProgramUniform1f({}, {}, {})",
+                    programId, location, value);
+
             GL41.glProgramUniform1f(programId, location, value);
             assert checkGLError() : glErrorMsg("glProgramUniform1f(IIF)", programId, location, value);
         } else if (cap.GL_ARB_separate_shader_objects) {
+            LOGGER.trace(
+                    GL_MARKER,
+                    "glProgramUniform1f({}, {}, {}) (ARB)",
+                    programId, location, value);
+
             ARBSeparateShaderObjects.glProgramUniform1f(programId, location, value);
             assert checkGLError() : glErrorMsg("glProgramUniform1fARB(IIF)", programId, location, value);
         } else {
@@ -334,9 +470,19 @@ public class ARBDSA implements DSADriver {
         final ContextCapabilities cap = GL.getCapabilities();
 
         if (cap.OpenGL41) {
+            LOGGER.trace(
+                    GL_MARKER,
+                    "glProgramUniform2f({}, {}, {}, {})",
+                    programId, location, v0, v1);
+
             GL41.glProgramUniform2f(programId, location, v0, v1);
             assert checkGLError() : glErrorMsg("glProgramUniform2f(IIFF)", programId, location, v0, v1);
         } else if (cap.GL_ARB_separate_shader_objects) {
+            LOGGER.trace(
+                    GL_MARKER,
+                    "glProgramUniform2f({}, {}, {}, {}) (ARB)",
+                    programId, location, v0, v1);
+
             ARBSeparateShaderObjects.glProgramUniform2f(programId, location, v0, v1);
             assert checkGLError() : glErrorMsg("glProgramUniform2fARB(IIFF)", programId, location, v0, v1);
         } else {
@@ -355,9 +501,19 @@ public class ARBDSA implements DSADriver {
         final ContextCapabilities cap = GL.getCapabilities();
 
         if (cap.OpenGL41) {
+            LOGGER.trace(
+                    GL_MARKER,
+                    "glProgramUniform3f({}, {}, {}, {}, {})",
+                    programId, location, v0, v1, v2);
+
             GL41.glProgramUniform3f(programId, location, v0, v1, v2);
             assert checkGLError() : glErrorMsg("glProgramUniform3f(IIFFF)", programId, location, v0, v1, v2);
         } else if (cap.GL_ARB_separate_shader_objects) {
+            LOGGER.trace(
+                    GL_MARKER,
+                    "glProgramUniform3f({}, {}, {}, {}, {}) (ARB)",
+                    programId, location, v0, v1, v2);
+
             ARBSeparateShaderObjects.glProgramUniform3f(programId, location, v0, v1, v2);
             assert checkGLError() : glErrorMsg("glProgramUniform3fARB(IIFFF)", programId, location, v0, v1, v2);
         } else {
@@ -377,9 +533,19 @@ public class ARBDSA implements DSADriver {
         final ContextCapabilities cap = GL.getCapabilities();
 
         if (cap.OpenGL41) {
+            LOGGER.trace(
+                    GL_MARKER,
+                    "glProgramUniform4f({}, {}, {}, {}, {}, {})",
+                    programId, location, v0, v1, v2, v3);
+
             GL41.glProgramUniform4f(programId, location, v0, v1, v2, v3);
             assert checkGLError() : glErrorMsg("glProgramUniform4f(IIFFFF)", programId, location, v0, v1, v2, v3);
         } else if (cap.GL_ARB_separate_shader_objects) {
+            LOGGER.trace(
+                    GL_MARKER,
+                    "glProgramUniform4f({}, {}, {}, {}, {}, {}) (ARB)",
+                    programId, location, v0, v1, v2, v3);
+
             ARBSeparateShaderObjects.glProgramUniform4f(programId, location, v0, v1, v2, v3);
             assert checkGLError() : glErrorMsg("glProgramUniform4fARB(IIFFFF)", programId, location, v0, v1, v2, v3);
         } else {
@@ -395,9 +561,19 @@ public class ARBDSA implements DSADriver {
         final ContextCapabilities cap = GL.getCapabilities();
 
         if (cap.OpenGL41) {
+            LOGGER.trace(
+                    GL_MARKER,
+                    "glProgramUniform1i({}, {}, {})",
+                    programId, location, value);
+
             GL41.glProgramUniform1i(programId, location, value);
             assert checkGLError() : glErrorMsg("glProgramUniform1i(III)", programId, location, value);
         } else if (cap.GL_ARB_separate_shader_objects) {
+            LOGGER.trace(
+                    GL_MARKER,
+                    "glProgramUniform1i({}, {}, {}) (ARB)",
+                    programId, location, value);
+
             ARBSeparateShaderObjects.glProgramUniform1i(programId, location, value);
             assert checkGLError() : glErrorMsg("glProgramUniform1iARB(III)", programId, location, value);
         } else {
@@ -413,9 +589,19 @@ public class ARBDSA implements DSADriver {
         final ContextCapabilities cap = GL.getCapabilities();
 
         if (cap.OpenGL41) {
+            LOGGER.trace(
+                    GL_MARKER,
+                    "glProgramUniform2i({}, {}, {}, {})",
+                    programId, location, v0, v1);
+
             GL41.glProgramUniform2i(programId, location, v0, v1);
             assert checkGLError() : glErrorMsg("glProgramUniform2i(IIII)", programId, location, v0, v1);
         } else if (cap.GL_ARB_separate_shader_objects) {
+            LOGGER.trace(
+                    GL_MARKER,
+                    "glProgramUniform2i({}, {}, {}, {}) (ARB)",
+                    programId, location, v0, v1);
+
             ARBSeparateShaderObjects.glProgramUniform2i(programId, location, v0, v1);
             assert checkGLError() : glErrorMsg("glProgramUniform2iARB(IIII)", programId, location, v0, v1);
         } else {
@@ -431,9 +617,19 @@ public class ARBDSA implements DSADriver {
         final ContextCapabilities cap = GL.getCapabilities();
 
         if (cap.OpenGL41) {
+            LOGGER.trace(
+                    GL_MARKER,
+                    "glProgramUniform3i({}, {}, {}, {}, {})",
+                    programId, location, v0, v1, v2);
+
             GL41.glProgramUniform3i(programId, location, v0, v1, v2);
             assert checkGLError() : glErrorMsg("glProgramUniform3i(IIIII)", programId, location, v0, v1, v2);
         } else if (cap.GL_ARB_separate_shader_objects) {
+            LOGGER.trace(
+                    GL_MARKER,
+                    "glProgramUniform3i({}, {}, {}, {}, {}) (ARB)",
+                    programId, location, v0, v1, v2);
+
             ARBSeparateShaderObjects.glProgramUniform3i(programId, location, v0, v1, v2);
             assert checkGLError() : glErrorMsg("glProgramUniform3iARB(IIIII)", programId, location, v0, v1, v2);
         } else {
@@ -449,9 +645,18 @@ public class ARBDSA implements DSADriver {
         final ContextCapabilities cap = GL.getCapabilities();
 
         if (cap.OpenGL41) {
+            LOGGER.trace(
+                    GL_MARKER,
+                    "glProgramUniform4i({}, {}, {}, {}, {}, {})",
+                    programId, location, v0, v1, v2, v3);
+
             GL41.glProgramUniform4i(programId, location, v0, v1, v2, v3);
             assert checkGLError() : glErrorMsg("glProgramUnfirom4i(IIIIII)", programId, location, v0, v1, v2, v3);
         } else if (cap.GL_ARB_separate_shader_objects) {
+            LOGGER.trace(
+                    GL_MARKER,
+                    "glProgramUniform4i({}, {}, {}, {}, {}, {}) (ARB)",
+                    programId, location, v0, v1, v2, v3);
             ARBSeparateShaderObjects.glProgramUniform4i(programId, location, v0, v1, v2, v3);
             assert checkGLError() : glErrorMsg("glProgramUniform4iARB(IIIIII)", programId, location, v0, v1, v2, v3);
         } else {
@@ -468,9 +673,19 @@ public class ARBDSA implements DSADriver {
         final ContextCapabilities cap = GL.getCapabilities();
 
         if (cap.OpenGL41) {
+            LOGGER.trace(
+                    GL_MARKER,
+                    "glProgramUniform1d({}, {}, {})",
+                    programId, location, value);
+
             GL41.glProgramUniform1d(programId, location, value);
             assert checkGLError() : glErrorMsg("glProgramUniform1d(IID)", programId, location, value);
         } else if (cap.GL_ARB_separate_shader_objects) {
+            LOGGER.trace(
+                    GL_MARKER,
+                    "glProgramUniform1d({}, {}, {}) (ARB)",
+                    programId, location, value);
+
             ARBSeparateShaderObjects.glProgramUniform1d(programId, location, value);
             assert checkGLError() : glErrorMsg("glProgramUniform1dARB(IID)", programId, location, value);
         } else {
@@ -488,9 +703,19 @@ public class ARBDSA implements DSADriver {
         final ContextCapabilities cap = GL.getCapabilities();
 
         if (cap.OpenGL41) {
+            LOGGER.trace(
+                    GL_MARKER,
+                    "glProgramUniform2d({}, {}, {}, {})",
+                    programId, location, v0, v1);
+
             GL41.glProgramUniform2d(programId, location, v0, v1);
             assert checkGLError() : glErrorMsg("glProgramUniform2d(IIDD)", programId, location, v0, v1);
         } else if (cap.GL_ARB_separate_shader_objects) {
+            LOGGER.trace(
+                    GL_MARKER,
+                    "glProgramUniform2d({}, {}, {}, {}) (ARB)",
+                    programId, location, v0, v1);
+
             ARBSeparateShaderObjects.glProgramUniform2d(programId, location, v0, v1);
             assert checkGLError() : glErrorMsg("glProgramUnifrom2dARB(IIDD)", programId, location, v0, v1);
         } else {
@@ -509,9 +734,19 @@ public class ARBDSA implements DSADriver {
         final ContextCapabilities cap = GL.getCapabilities();
 
         if (cap.OpenGL41) {
+            LOGGER.trace(
+                    GL_MARKER,
+                    "glProgramUniform3d({}, {}, {}, {}, {})",
+                    programId, location, v0, v1, v2);
+
             GL41.glProgramUniform3d(programId, location, v0, v1, v2);
             assert checkGLError() : glErrorMsg("glProgramUniform3d(IIDDD)", programId, location, v0, v1, v2);
         } else if (cap.GL_ARB_separate_shader_objects) {
+            LOGGER.trace(
+                    GL_MARKER,
+                    "glProgramUniform3d({}, {}, {}, {}, {}) (ARB)",
+                    programId, location, v0, v1, v2);
+
             ARBSeparateShaderObjects.glProgramUniform3d(programId, location, v0, v1, v2);
             assert checkGLError() : glErrorMsg("glProgramUniform3dARB(IIDDD)", programId, location, v0, v1, v2);
         } else {
@@ -531,9 +766,19 @@ public class ARBDSA implements DSADriver {
         final ContextCapabilities cap = GL.getCapabilities();
 
         if (cap.OpenGL41) {
+            LOGGER.trace(
+                    GL_MARKER,
+                    "glProgramUniform4d({}, {}, {}, {}, {}, {})",
+                    programId, location, v0, v1, v2, v3);
+
             GL41.glProgramUniform4d(programId, location, v0, v1, v2, v3);
             assert checkGLError() : glErrorMsg("glProgramUniform4d(IIDDDD)", programId, location, v0, v1, v2, v3);
         } else if (cap.GL_ARB_separate_shader_objects) {
+            LOGGER.trace(
+                    GL_MARKER,
+                    "glProgramUniform4d({}, {}, {}, {}, {}, {}) (ARB)",
+                    programId, location, v0, v1, v2, v3);
+
             ARBSeparateShaderObjects.glProgramUniform4d(programId, location, v0, v1, v2, v3);
             assert checkGLError() : glErrorMsg("glProgramUniform4dARB(IIDDDD)", programId, location, v0, v1, v2, v3);
         } else {
@@ -550,9 +795,18 @@ public class ARBDSA implements DSADriver {
         final ContextCapabilities cap = GL.getCapabilities();
 
         if (cap.OpenGL41) {
+            LOGGER.trace(
+                    GL_MARKER,
+                    "glProgramUniformMatrix2fv({}, {}, {}, {})",
+                    programId, location, needsTranspose, data);
+
             GL41.glProgramUniformMatrix2fv(programId, location, needsTranspose, data);
             assert checkGLError() : glErrorMsg("glProgramUniformMatrix2fv(IIB*)", programId, location, needsTranspose, toHexString(memAddress(data)));
         } else if (cap.GL_ARB_separate_shader_objects) {
+            LOGGER.trace(
+                    GL_MARKER,
+                    "glProgramUniformMatrix2fv({}, {}, {}, {}) (ARB)",
+                    programId, location, needsTranspose, data);
             ARBSeparateShaderObjects.glProgramUniformMatrix2fv(programId, location, needsTranspose, data);
             assert checkGLError() : glErrorMsg("glProgramUniformMatrix2fvARB(IIB*)", programId, location, needsTranspose, toHexString(memAddress(data)));
         } else {
@@ -569,9 +823,19 @@ public class ARBDSA implements DSADriver {
         final ContextCapabilities cap = GL.getCapabilities();
 
         if (cap.OpenGL41) {
+            LOGGER.trace(
+                    GL_MARKER,
+                    "glProgramUniformMatrix3fv({}, {}, {}, {})",
+                    programId, location, needsTranspose, data);
+
             GL41.glProgramUniformMatrix3fv(programId, location, needsTranspose, data);
             assert checkGLError() : glErrorMsg("glProgramUniformMatrix3fv(IIB*)", programId, location, needsTranspose, toHexString(memAddress(data)));
         } else if (cap.GL_ARB_separate_shader_objects) {
+            LOGGER.trace(
+                    GL_MARKER,
+                    "glProgramUniformMatrix3fv({}, {}, {}, {}) (ARB)",
+                    programId, location, needsTranspose, data);
+
             ARBSeparateShaderObjects.glProgramUniformMatrix3fv(programId, location, needsTranspose, data);
             assert checkGLError() : glErrorMsg("glProgramUniformMatrix3fvARB(IIB*)", programId, location, needsTranspose, toHexString(memAddress(data)));
         } else {
@@ -588,9 +852,19 @@ public class ARBDSA implements DSADriver {
         final ContextCapabilities cap = GL.getCapabilities();
 
         if (cap.OpenGL41) {
+            LOGGER.trace(
+                    GL_MARKER,
+                    "glProgramUniformMatrix4fv({}, {}, {}, {})",
+                    programId, location, needsTranspose, data);
+
             GL41.glProgramUniformMatrix4fv(programId, location, needsTranspose, data);
             assert checkGLError() : glErrorMsg("glProgramUniformMatrix4fv(IIB*)", programId, location, needsTranspose, toHexString(memAddress(data)));
         } else if (cap.GL_ARB_separate_shader_objects) {
+            LOGGER.trace(
+                    GL_MARKER,
+                    "glProgramUniformMatrix4fv({}, {}, {}, {}) (ARB)",
+                    programId, location, needsTranspose, data);
+
             ARBSeparateShaderObjects.glProgramUniformMatrix4fv(programId, location, needsTranspose, data);
             assert checkGLError() : glErrorMsg("glProgramUniformMatrix4fvARB(IIB*)", programId, location, needsTranspose, toHexString(memAddress(data)));
         } else {
@@ -607,9 +881,19 @@ public class ARBDSA implements DSADriver {
         final ContextCapabilities cap = GL.getCapabilities();
 
         if (cap.OpenGL41) {
+            LOGGER.trace(
+                    GL_MARKER,
+                    "glProgramUniformMatrix2dv({}, {}, {}, {})",
+                    programId, location, needsTranspose, data);
+
             GL41.glProgramUniformMatrix2dv(programId, location, needsTranspose, data);
             assert checkGLError() : glErrorMsg("glProgramUniformMatrix2dv(IIB*)", programId, location, needsTranspose, toHexString(memAddress(data)));
         } else if (cap.GL_ARB_separate_shader_objects) {
+            LOGGER.trace(
+                    GL_MARKER,
+                    "glProgramUniformMatrix2dv({}, {}, {}, {}) (ARB)",
+                    programId, location, needsTranspose, data);
+
             ARBSeparateShaderObjects.glProgramUniformMatrix2dv(programId, location, needsTranspose, data);
             assert checkGLError() : glErrorMsg("glProgramUniformMatrix2dvARB(IIB*)", programId, location, needsTranspose, toHexString(memAddress(data)));
         } else {
@@ -626,9 +910,19 @@ public class ARBDSA implements DSADriver {
         final ContextCapabilities cap = GL.getCapabilities();
 
         if (cap.OpenGL41) {
+            LOGGER.trace(
+                    GL_MARKER,
+                    "glProgramUniformMatrix3dv({}, {}, {}, {})",
+                    programId, location, needsTranspose, data);
+
             GL41.glProgramUniformMatrix3dv(programId, location, needsTranspose, data);
             assert checkGLError() : glErrorMsg("glProgramUniformMatrix3dv(IIB*)", programId, location, needsTranspose, toHexString(memAddress(data)));
         } else if (cap.GL_ARB_separate_shader_objects) {
+            LOGGER.trace(
+                    GL_MARKER,
+                    "glProgramUniformMatrix3dv({}, {}, {}, {}) (ARB)",
+                    programId, location, needsTranspose, data);
+
             ARBSeparateShaderObjects.glProgramUniformMatrix3dv(programId, location, needsTranspose, data);
             assert checkGLError() : glErrorMsg("glProgramUniformMatrix3dvARB(IIB*)", programId, location, needsTranspose, toHexString(memAddress(data)));
         } else {
@@ -645,9 +939,19 @@ public class ARBDSA implements DSADriver {
         final ContextCapabilities cap = GL.getCapabilities();
 
         if (cap.OpenGL41) {
+            LOGGER.trace(
+                    GL_MARKER,
+                    "glProgramUniformMatrix4dv({}, {}, {}, {})",
+                    programId, location, needsTranspose, data);
+
             GL41.glProgramUniformMatrix4dv(programId, location, needsTranspose, data);
             assert checkGLError() : glErrorMsg("glProgramUniformMatrix4dv(IIB*)", programId, location, needsTranspose, toHexString(memAddress(data)));
         } else if (cap.GL_ARB_separate_shader_objects) {
+            LOGGER.trace(
+                    GL_MARKER,
+                    "glProgramUniformMatrix4dv({}, {}, {}, {}) (ARB)",
+                    programId, location, needsTranspose, data);
+
             ARBSeparateShaderObjects.glProgramUniformMatrix4dv(programId, location, needsTranspose, data);
             assert checkGLError() : glErrorMsg("glProgramUniformMatrix4dvARB(IIB*)", programId, location, needsTranspose, toHexString(memAddress(data)));
         } else {
@@ -667,6 +971,11 @@ public class ARBDSA implements DSADriver {
         assert pixels.isDirect() : NON_DIRECT_BUFFER_MSG;
         assert checkBufferSize(width, 1, 1, format, type, pixels) : bufferTooSmallMsg(width, 1, 1, format, type, pixels);
 
+        LOGGER.trace(
+                GL_MARKER,
+                "glTextureSubImage1d({}, {}, {}, {}, {}, {}, {})",
+                textureId, level, xOffset, width, format, type, pixels);
+
         ARBDirectStateAccess.glTextureSubImage1D(textureId, level, xOffset, width, format, type, pixels);
         assert checkGLError() : glErrorMsg("glTextureSubImage1DARB(IIIIII*)", textureId, level, xOffset, width, GLTextureFormat.of(format).get(), GLType.of(type).get(), toHexString(memAddress(pixels)));
     }
@@ -683,7 +992,16 @@ public class ARBDSA implements DSADriver {
         assert checkGLenum(type, GLType::of) : invalidGLenumMsg(type);
         assert checkBufferIsNative(pixels) : bufferIsNotNativeMsg(pixels);
         assert pixels.isDirect() : NON_DIRECT_BUFFER_MSG;
-        assert checkBufferSize(width, height, 1, format, type, pixels) : bufferTooSmallMsg(width, height, 1, format, type, pixels);        
+        assert checkBufferSize(width, height, 1, format, type, pixels) : bufferTooSmallMsg(width, height, 1, format, type, pixels);
+
+        LOGGER.trace(
+                GL_MARKER,
+                "glTextureSubImage2D({}, {}, {}, {}, {}, {}, {}, {}, {})",
+                textureId,
+                level,
+                xOffset, yOffset,
+                width, height,
+                format, type, pixels);
 
         ARBDirectStateAccess.glTextureSubImage2D(textureId, level, xOffset, yOffset, width, height, format, type, pixels);
         assert checkGLError() : glErrorMsg("glTextureSubImage2dARB(IIIIIIII*)", textureId, level, xOffset, yOffset, width, height, GLTextureFormat.of(format).get(), GLType.of(type).get(), toHexString(memAddress(pixels)));
@@ -704,6 +1022,15 @@ public class ARBDSA implements DSADriver {
         assert checkBufferIsNative(pixels) : bufferIsNotNativeMsg(pixels);
         assert checkBufferSize(width, height, depth, format, type, pixels) : bufferTooSmallMsg(width, height, depth, format, type, pixels);
 
+        LOGGER.trace(
+                GL_MARKER,
+                "glTextureSubImage3D({}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {})",
+                textureId,
+                level,
+                xOffset, yOffset, zOffset,
+                width, height, depth,
+                format, type, pixels);
+
         ARBDirectStateAccess.glTextureSubImage3D(textureId, level, xOffset, yOffset, zOffset, width, height, depth, format, type, pixels);
         assert checkGLError() : glErrorMsg("glTextureSubImage3dARB(IIIIIIIIIII*)", textureId, level, xOffset, yOffset, zOffset, width, height, depth, GLTextureFormat.of(format).get(), GLType.of(type).get(), toHexString(memAddress(pixels)));
     }
@@ -713,6 +1040,7 @@ public class ARBDSA implements DSADriver {
         assert checkNullableId(unit) : invalidTextureUnitMsg(unit);
         assert checkId(textureId) : invalidTextureIdMsg(textureId);
 
+        LOGGER.trace(GL_MARKER, "glBindTexutreUnit({}, {})", unit, textureId);
         ARBDirectStateAccess.glBindTextureUnit(unit, textureId);
         assert checkGLError() : glErrorMsg("glBindTextureUnitARB(II)", unit, textureId);
     }
@@ -721,6 +1049,7 @@ public class ARBDSA implements DSADriver {
     public void glGenerateTextureMipmap(int textureId) {
         assert checkId(textureId) : invalidTextureIdMsg(textureId);
 
+        LOGGER.trace(GL_MARKER, "glGenerateTextureMipmap({})", textureId);        
         ARBDirectStateAccess.glGenerateTextureMipmap(textureId);
         assert checkGLError() : glErrorMsg("glGenerateTextureMipmapARB(I)", textureId);
     }

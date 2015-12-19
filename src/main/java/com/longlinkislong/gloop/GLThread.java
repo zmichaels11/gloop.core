@@ -1,7 +1,27 @@
-/*
- * To change this license header, choose License Headers in Project Properties.
- * To change this template file, choose Tools | Templates
- * and open the template in the editor.
+/* 
+ * Copyright (c) 2015, longlinkislong.com
+ * All rights reserved.
+ *
+ * Redistribution and use in source and binary forms, with or without
+ * modification, are permitted provided that the following conditions are met:
+ *
+ * * Redistributions of source code must retain the above copyright notice, this
+ *   list of conditions and the following disclaimer.
+ * * Redistributions in binary form must reproduce the above copyright notice,
+ *   this list of conditions and the following disclaimer in the documentation
+ *   and/or other materials provided with the distribution.
+ *
+ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+ * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+ * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+ * ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE
+ * LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
+ * CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
+ * SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
+ * INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
+ * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
+ * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
+ * POSSIBILITY OF SUCH DAMAGE.
  */
 package com.longlinkislong.gloop;
 
@@ -21,12 +41,13 @@ import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
-import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.stream.Collectors;
 import org.lwjgl.glfw.GLFW;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.slf4j.Marker;
+import org.slf4j.MarkerFactory;
 
 /**
  * GLThread is a representation of an OpenGL thread.
@@ -35,7 +56,11 @@ import org.slf4j.LoggerFactory;
  * @since 15.07.01
  */
 public class GLThread implements ExecutorService {
-    private static final Logger LOGGER = LoggerFactory.getLogger(GLThread.class);
+
+    private static final Marker SYS_MARKER = MarkerFactory.getMarker("SYSTEM");
+    private static final Marker GLOOP_MARKER = MarkerFactory.getMarker("GLOOP");
+    private static final Logger LOGGER = LoggerFactory.getLogger("GLThread");
+
     private static final Map<Thread, GLThread> THREAD_MAP = new HashMap<>();
     final Deque<GLBlending> blendStack = new LinkedList<>();
     final Deque<GLClear> clearStack = new LinkedList<>();
@@ -67,6 +92,7 @@ public class GLThread implements ExecutorService {
      * @since 15.07.01
      */
     public void pushBlend() {
+        LOGGER.trace(GLOOP_MARKER, "Pushing GLBlend stack!");
         this.blendStack.push(this.currentBlend);
     }
 
@@ -77,6 +103,7 @@ public class GLThread implements ExecutorService {
      * @since 15.07.01
      */
     public GLBlending popBlend() {
+        LOGGER.trace(GLOOP_MARKER, "Popping GLBlend stack!");
         final GLBlending blend = this.blendStack.pop();
         blend.applyBlending();
         return blend;
@@ -98,6 +125,7 @@ public class GLThread implements ExecutorService {
      * @since 15.07.16
      */
     public void pushClear() {
+        LOGGER.trace(GLOOP_MARKER, "Pushing GLClear stack!");
         this.clearStack.push(this.currentClear);
     }
 
@@ -108,6 +136,7 @@ public class GLThread implements ExecutorService {
      * @since 15.07.01
      */
     public GLClear popClear() {
+        LOGGER.trace(GLOOP_MARKER, "Poping GLClear stack!");
         final GLClear clear = this.clearStack.pop();
         clear.clear();
         return clear;
@@ -129,6 +158,7 @@ public class GLThread implements ExecutorService {
      * @since 15.07.01
      */
     public void pushDepthTest() {
+        LOGGER.trace(GLOOP_MARKER, "Pushing GLDepthTest stack!");
         this.depthTestStack.push(this.currentDepthTest);
     }
 
@@ -139,6 +169,7 @@ public class GLThread implements ExecutorService {
      * @since 15.07.01
      */
     public GLDepthTest popDepthTest() {
+        LOGGER.trace(GLOOP_MARKER, "Poping GLDepthTest stack!");
         final GLDepthTest depthTest = this.depthTestStack.pop();
         depthTest.applyDepthFunc();
         return depthTest;
@@ -160,6 +191,7 @@ public class GLThread implements ExecutorService {
      * @since 15.07.01
      */
     public void pushMask() {
+        LOGGER.trace(GLOOP_MARKER, "Pushing GLMask stack!");
         this.maskStack.push(this.currentMask);
     }
 
@@ -170,6 +202,7 @@ public class GLThread implements ExecutorService {
      * @since 15.07.01
      */
     public GLMask popMask() {
+        LOGGER.trace(GLOOP_MARKER, "Popping GLMask stack!");
         final GLMask mask = this.maskStack.pop();
         mask.applyMask();
         return mask;
@@ -191,6 +224,7 @@ public class GLThread implements ExecutorService {
      * @since 15.07.16
      */
     public void pushPolygonParameters() {
+        LOGGER.trace(GLOOP_MARKER, "Pushing GLPolygonParameters stack!");
         this.polygonParameterStack.push(this.currentPolygonParameters);
     }
 
@@ -201,6 +235,7 @@ public class GLThread implements ExecutorService {
      * @since 15.07.16
      */
     public GLPolygonParameters popPolygonParameters() {
+        LOGGER.trace(GLOOP_MARKER, "Popping GLPolygonParameters stack!");
         final GLPolygonParameters params = this.polygonParameterStack.pop();
         params.applyParameters();
         return params;
@@ -222,6 +257,7 @@ public class GLThread implements ExecutorService {
      * @since 15.07.01
      */
     public void pushViewport() {
+        LOGGER.trace(GLOOP_MARKER, "Pushing GLViewport stack!");
         this.viewportStack.push(this.currentViewport);
     }
 
@@ -232,6 +268,7 @@ public class GLThread implements ExecutorService {
      * @since 15.07.01
      */
     public GLViewport popViewport() {
+        LOGGER.trace(GLOOP_MARKER, "Popping GLViewport stack!");
         final GLViewport viewport = this.viewportStack.pop();
         viewport.applyViewport();
         return viewport;
@@ -240,32 +277,36 @@ public class GLThread implements ExecutorService {
     private final ExecutorService internalExecutor = new ThreadPoolExecutor(
             1, 1, 0L, TimeUnit.MILLISECONDS, new LinkedBlockingQueue<>()) {
 
-                @Override
-                protected void afterExecute(final Runnable task, final Throwable ex) {
-                    super.afterExecute(task, ex);
+        @Override
+        protected void afterExecute(final Runnable task, final Throwable ex) {
+            super.afterExecute(task, ex);
 
-                    if (task != null && task instanceof Future<?>) {
-                        try {
-                            final Future<?> future = (Future<?>) task;
+            if (task != null && task instanceof Future<?>) {
+                try {
+                    final Future<?> future = (Future<?>) task;
 
-                            if (future.isDone()) {
-                                future.get();
-                            }
-                        } catch (CancellationException ce) {                            
-                            LOGGER.error("GLTask was canceled.", ce);
-                        } catch (ExecutionException ee) {
-                            LOGGER.error("Error executing GLTask", ee);                            
-                        } catch (InterruptedException ie) {
-                            LOGGER.error("GLThread was interrupted! Resetting interrupt state.", ie);
-                            Thread.currentThread().interrupt();
-                        }
+                    if (future.isDone()) {
+                        future.get();
                     }
-
-                    if (ex != null) {
-                        LOGGER.error("Error executing GLTask!", ex);                        
-                    }
+                } catch (CancellationException ce) {
+                    LOGGER.error(SYS_MARKER, "GLTask was canceled.");
+                    LOGGER.error(SYS_MARKER, ce.getMessage(), ce);
+                } catch (ExecutionException ee) {
+                    LOGGER.error(SYS_MARKER, "Error executing GLTask");
+                    LOGGER.error(SYS_MARKER, ee.getMessage(), ee);
+                } catch (InterruptedException ie) {
+                    LOGGER.error(SYS_MARKER, "GLThread was interrupted! Resetting interrupt state.");
+                    LOGGER.error(SYS_MARKER, ie.getMessage(), ie);
+                    Thread.currentThread().interrupt();
                 }
-            };
+            }
+
+            if (ex != null) {
+                LOGGER.error(SYS_MARKER, "Error executing GLTask!");
+                LOGGER.error(ex.getMessage(), ex);
+            }
+        }
+    };
     private Thread internalThread = null;
     private boolean shouldHaltScheduledTasks = false;
 
@@ -275,7 +316,7 @@ public class GLThread implements ExecutorService {
 
     @Override
     public void shutdown() {
-        LOGGER.info("Shutting down thread: GLThread[{}]", this);
+        LOGGER.info(SYS_MARKER, "Shutting down thread: GLThread[{}]", this);
         this.shouldHaltScheduledTasks = true;
         this.internalExecutor.shutdown();
     }
@@ -298,15 +339,15 @@ public class GLThread implements ExecutorService {
      */
     public void submitGLTask(final GLTask task) {
         this.internalExecutor.execute(task);
-    }  
-    
+    }
+
     /**
      * Schedules an OpenGL task to run at every iteration of the main loop.
      *
      * @param task the task to schedule.
      * @since 15.07.16
      */
-    public void scheduleGLTask(final GLTask task) {                
+    public void scheduleGLTask(final GLTask task) {
         this.internalExecutor.execute(new GLTask() {
 
             @Override
@@ -379,6 +420,8 @@ public class GLThread implements ExecutorService {
         if (Thread.currentThread() == this.internalThread) {
             throw new RuntimeException("Attempted barrier insertion on OpenGL thread!");
         }
+
+        LOGGER.trace(SYS_MARKER, "************** Inserting barrier **************");
         return new BarrierQuery().glCall(this);
     }
 
@@ -456,6 +499,7 @@ public class GLThread implements ExecutorService {
 
         @Override
         public Void call() throws Exception {
+            LOGGER.trace(SYS_MARKER, "*************** BARRIER *************");
             return null;
         }
 
@@ -469,8 +513,8 @@ public class GLThread implements ExecutorService {
             final long id = THREAD_ID.getAndIncrement();
             final String name = id == 0 ? "OpenGL Thread: Primary" : "OpenGL Thread: " + id;
 
-            LOGGER.debug("Renamed GLThread[{}] to GLThread[{}]", GLThread.this.internalThread.getName(), name);
-            GLThread.this.internalThread.setName(name);            
+            LOGGER.debug(SYS_MARKER, "Renamed GLThread[{}] to GLThread[{}]", GLThread.this.internalThread.getName(), name);
+            GLThread.this.internalThread.setName(name);
             THREAD_MAP.put(GLThread.this.internalThread, GLThread.this);
         }
     }
@@ -497,9 +541,7 @@ public class GLThread implements ExecutorService {
         public FrameCapTask(final double targetFPS) {
             this.targetFrameTime = 1.0 / targetFPS;
 
-            if (DEBUG) {
-                System.out.printf("[GLTools]: Target thread time: %.2fs\n", this.targetFrameTime);
-            }
+            LOGGER.debug(SYS_MARKER, "Target thread time: {}", this.targetFrameTime);
         }
 
         /**
@@ -533,7 +575,7 @@ public class GLThread implements ExecutorService {
 
                     Thread.sleep(GLTools.clamp((long) sleepMS, 0L, 100L), GLTools.clamp((int) sleepNS, 0, 999999));
                 } catch (InterruptedException ex) {
-                    // -\_0_0_/-
+                    LOGGER.error(SYS_MARKER, ex.getMessage(), ex);
                     Thread.currentThread().interrupt();
                 }
             }
@@ -621,8 +663,8 @@ public class GLThread implements ExecutorService {
             this.varFPS = this.getAverageFPS() - this.getFPS();
             this.totalVar += this.varFPS * this.varFPS;
 
-            if (DEBUG && this.frameCount % this.updateInterval == 0) {
-                System.out.println(this);
+            if (this.frameCount % this.updateInterval == 0) {
+                LOGGER.debug("{}", this);
             }
         }
 
@@ -715,16 +757,13 @@ public class GLThread implements ExecutorService {
         return GLThread.getCurrent().orElseGet(GLThread::getDefaultInstance);
     }
 
-    private static final boolean DEBUG;
-
     static {
-        DEBUG = Boolean.getBoolean("debug") && !System.getProperty("debug.exclude", "").contains("glthread");
         NativeTools.getInstance().autoLoad();
     }
-    
+
     @Override
     public String toString() {
-        if(this.getThread() == null) {
+        if (this.getThread() == null) {
             return "OpenGL Thread: [initializing]";
         } else {
             return this.getThread().getName();

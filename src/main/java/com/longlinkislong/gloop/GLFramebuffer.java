@@ -1,7 +1,27 @@
-/*
- * To change this license header, choose License Headers in Project Properties.
- * To change this template file, choose Tools | Templates
- * and open the template in the editor.
+/* 
+ * Copyright (c) 2015, longlinkislong.com
+ * All rights reserved.
+ *
+ * Redistribution and use in source and binary forms, with or without
+ * modification, are permitted provided that the following conditions are met:
+ *
+ * * Redistributions of source code must retain the above copyright notice, this
+ *   list of conditions and the following disclaimer.
+ * * Redistributions in binary form must reproduce the above copyright notice,
+ *   this list of conditions and the following disclaimer in the documentation
+ *   and/or other materials provided with the distribution.
+ *
+ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+ * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+ * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+ * ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE
+ * LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
+ * CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
+ * SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
+ * INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
+ * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
+ * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
+ * POSSIBILITY OF SUCH DAMAGE.
  */
 package com.longlinkislong.gloop;
 
@@ -10,11 +30,8 @@ import static com.longlinkislong.gloop.GLAsserts.bufferIsNotNativeMsg;
 import static com.longlinkislong.gloop.GLAsserts.bufferTooSmallMsg;
 import static com.longlinkislong.gloop.GLAsserts.checkBufferIsNative;
 import static com.longlinkislong.gloop.GLAsserts.checkBufferSize;
-import static com.longlinkislong.gloop.GLAsserts.checkGLError;
-import static com.longlinkislong.gloop.GLAsserts.glErrorMsg;
 import com.longlinkislong.gloop.dsa.DSADriver;
 import com.longlinkislong.gloop.dsa.EXTDSADriver;
-import static java.lang.Long.toHexString;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.nio.IntBuffer;
@@ -22,18 +39,10 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
-import org.lwjgl.opengl.ARBFramebufferObject;
-import org.lwjgl.opengl.ContextCapabilities;
-import org.lwjgl.opengl.EXTFramebufferObject;
-import org.lwjgl.opengl.GL;
-import org.lwjgl.opengl.GL11;
-import org.lwjgl.opengl.GL15;
-import org.lwjgl.opengl.GL20;
-import org.lwjgl.opengl.GL21;
-import org.lwjgl.opengl.GL30;
-import static org.lwjgl.system.MemoryUtil.memAddress;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.slf4j.Marker;
+import org.slf4j.MarkerFactory;
 
 /**
  * An OpenGL object that represents a framebuffer.
@@ -43,21 +52,40 @@ import org.slf4j.LoggerFactory;
  */
 public class GLFramebuffer extends GLObject {
 
-    private static final Logger LOGGER = LoggerFactory.getLogger(GLFramebuffer.class);
+    private static final Marker GLOOP_MARKER = MarkerFactory.getMarker("GLOOP");
+    private static final Logger LOGGER = LoggerFactory.getLogger("GLFramebuffer");
+
     private static final int INVALID_FRAMEBUFFER_ID = -1;
     private int framebufferId = INVALID_FRAMEBUFFER_ID;
-    private int nextColorAttachment = GL30.GL_COLOR_ATTACHMENT0;
+    private int nextColorAttachment = 36064 /* GL_COLOR_ATTACHMENT0 */;
     private final Map<String, Integer> attachments = new HashMap<>();
     private final boolean isLocked;
     private String name = "";
 
+    /**
+     * Assigns a human-readable name to the GLFramebuffer.
+     *
+     * @param name the human-readable name.
+     * @since 15.12.18
+     */
     public final void setName(final CharSequence name) {
         GLTask.create(() -> {
-            LOGGER.debug("Renamed GLFramebuffer[{}] to GLFramebuffer[{}]", this.name, name);
+            LOGGER.trace(
+                    GLOOP_MARKER,
+                    "Renamed GLFramebuffer[{}] to GLFramebuffer[{}]",
+                    this.name,
+                    name);
+
             this.name = name.toString();
         });
     }
 
+    /**
+     * Retrieves the name of the GLFramebuffer.
+     *
+     * @return the name.
+     * @since 15.12.18
+     */
     public final String getName() {
         return this.name;
     }
@@ -69,8 +97,10 @@ public class GLFramebuffer extends GLObject {
      */
     public GLFramebuffer() {
         this(GLThread.getDefaultInstance());
-        
-        LOGGER.warn("Constructing GLFramebuffer object on arbitrary GLThreads is discouraged.");
+
+        LOGGER.warn(
+                GLOOP_MARKER,
+                "Constructing GLFramebuffer object on arbitrary GLThreads is discouraged.");
     }
 
     /**
@@ -82,7 +112,10 @@ public class GLFramebuffer extends GLObject {
     public GLFramebuffer(final GLThread thread) {
         super(thread);
 
-        LOGGER.trace("Constructed GLFramebuffer on thread: ", thread);
+        LOGGER.trace(
+                GLOOP_MARKER,
+                "Constructed GLFramebuffer on thread: ",
+                thread);
 
         this.isLocked = false;
         this.init();
@@ -90,9 +123,10 @@ public class GLFramebuffer extends GLObject {
 
     private GLFramebuffer(final GLThread thread, final int fbId) {
         super(thread);
-        
+
         this.isLocked = true;
         this.framebufferId = fbId;
+        this.name = "id=" + fbId;
     }
 
     private static final Map<GLThread, GLFramebuffer> DEFAULT_FRAMEBUFFERS = new HashMap<>();
@@ -153,125 +187,35 @@ public class GLFramebuffer extends GLObject {
      *
      * @since 15.07.20
      */
-    public class IsCompleteQuery extends GLQuery<Boolean> {
+    public final class IsCompleteQuery extends GLQuery<Boolean> {
 
         @Override
         public Boolean call() throws Exception {
+            LOGGER.trace(GLOOP_MARKER, "############### Start GLFramebuffer Is Complete Query ###############");
+            LOGGER.trace(GLOOP_MARKER, "\tQuerying GLFramebuffer[{}]", GLFramebuffer.this.getName());
+
             checkThread();
 
-            final ContextCapabilities cap = GL.getCapabilities();
+            final DSADriver dsa = GLTools.getDSAInstance();
+            final int currentFB = dsa.glGetInteger(36006 /* GL_FRAMEBUFFER_BINDING */);
 
-            if (cap.OpenGL30) {
-                final int currentFB = GL11.glGetInteger(GL30.GL_FRAMEBUFFER_BINDING);
-                assert checkGLError() : glErrorMsg("glGetInteger(I)", "GL_FRAMEBUFFER_BINDING");
+            dsa.glBindFramebuffer(
+                    36160 /* GL_FRAMEBUFFER */,
+                    GLFramebuffer.this.framebufferId);
 
-                GL30.glBindFramebuffer(GL30.GL_FRAMEBUFFER, GLFramebuffer.this.framebufferId);
-                assert checkGLError() : glErrorMsg("glBindFramebuffer(II)", "GL_FRAMEBUFFER", GLFramebuffer.this.framebufferId);
+            final int complete = dsa.glCheckFramebufferStatus(36160 /* GL_FRAMEBUFFER */);
+            final boolean res = complete == 36053 /* GL_FRAMEBUFFER_COMPLETE */;
 
-                final int complete = GL30.glCheckFramebufferStatus(GL30.GL_FRAMEBUFFER);
-                assert checkGLError() : glErrorMsg("glCheckFramebufferStatus(I)", "GL_FRAMEBUFFER");
-                final boolean res = complete == GL30.GL_FRAMEBUFFER_COMPLETE;
+            dsa.glBindFramebuffer(36160 /* GL_FRAMEBUFFER */, currentFB);
 
-                GL30.glBindFramebuffer(GL30.GL_FRAMEBUFFER, currentFB);
-                assert checkGLError() : glErrorMsg("glBindFramebuffer(II)", "GL_FRAMEBUFFER", currentFB);
-
-                LOGGER.trace("GLFramebuffer[{}].complete = {}", name, res);
-
-                return res;
-            } else if (cap.GL_ARB_framebuffer_object) {
-                final int currentFB = GL11.glGetInteger(ARBFramebufferObject.GL_FRAMEBUFFER_BINDING);
-                assert checkGLError() : glErrorMsg("glGetInteger(I)", "GL_FRAMEBUFFER_BINDING_ARB");
-
-                ARBFramebufferObject.glBindFramebuffer(ARBFramebufferObject.GL_FRAMEBUFFER, GLFramebuffer.this.framebufferId);
-                assert checkGLError() : glErrorMsg("glBindFramebufferARB(II)", "GL_FRAMEBUFFER", GLFramebuffer.this.framebufferId);
-
-                final int complete = ARBFramebufferObject.glCheckFramebufferStatus(ARBFramebufferObject.GL_FRAMEBUFFER);
-                assert checkGLError() : glErrorMsg("glCheckFramebufferStatusARB(I)", "GL_FRAMEBUFFER");
-
-                final boolean res = complete == ARBFramebufferObject.GL_FRAMEBUFFER_COMPLETE;
-
-                ARBFramebufferObject.glBindFramebuffer(ARBFramebufferObject.GL_FRAMEBUFFER, currentFB);
-                assert checkGLError() : glErrorMsg("glBindFramebufferARB(II)", "GL_FRAMEBUFFER", currentFB);
-
-                LOGGER.trace("GLFramebuffer[{}].complete = {}", name, res);
-
-                return res;
-            } else if (cap.GL_EXT_framebuffer_object) {
-                final int currentFB = GL11.glGetInteger(EXTFramebufferObject.GL_FRAMEBUFFER_BINDING_EXT);
-                assert checkGLError() : glErrorMsg("glGetInteger(I)", "GL_FRAMEBUFFER_BINDING_EXT");
-
-                EXTFramebufferObject.glBindFramebufferEXT(EXTFramebufferObject.GL_FRAMEBUFFER_EXT, GLFramebuffer.this.framebufferId);
-                assert checkGLError() : glErrorMsg("glBindFramebufferEXT(II)", "GL_FRAMEBUFFER_EXT", GLFramebuffer.this.framebufferId);
-
-                final int complete = EXTFramebufferObject.glCheckFramebufferStatusEXT(EXTFramebufferObject.GL_FRAMEBUFFER_EXT);
-                assert checkGLError() : glErrorMsg("glCheckFramebufferStatusEXT(I)", "GL_FRAMEBUFFER_EXT");
-
-                final boolean res = complete == EXTFramebufferObject.GL_FRAMEBUFFER_COMPLETE_EXT;
-
-                EXTFramebufferObject.glBindFramebufferEXT(EXTFramebufferObject.GL_FRAMEBUFFER_EXT, currentFB);
-                assert checkGLError() : glErrorMsg("glBindFramebufferEXT(II)", "GL_FRAMEBUFFER_EXT", currentFB);
-
-                LOGGER.trace("GLFramebuffer[{}].complete = {}", name, res);
-
-                return res;
-            } else {
-                throw new UnsupportedOperationException("GLFramebuffer requires either an OpenGL3.0 context, arb_framebuffer_object, or ext_framebuffer_object.");
+            if (!res) {
+                LOGGER.warn(GLOOP_MARKER, "GLFramebuffer[{}] is not complete!", GLFramebuffer.this.getName());
             }
+
+            LOGGER.trace(GLOOP_MARKER, "############### End GLFramebuffer Is Complete Query ###############");
+
+            return res;
         }
-    }
-
-    /**
-     * Executes a task with the current framebuffer bound. The framebuffer bind
-     * will be undone after the task is executed.
-     *
-     * @since 15.07.20
-     */
-    public class BindlessUseTask extends GLTask {
-
-        final GLTask taskToRun;
-        final GLTask bindTask;
-
-        public BindlessUseTask(final BindTask bindTask, final GLTask task) {
-            this.taskToRun = Objects.requireNonNull(task);
-            this.bindTask = Objects.requireNonNull(bindTask);
-        }
-
-        @Override
-        public void run() {
-            checkThread();
-
-            final ContextCapabilities cap = GL.getCapabilities();
-
-            if (cap.OpenGL30) {
-                final int currentFB = GL11.glGetInteger(GL30.GL_FRAMEBUFFER);
-                assert checkGLError() : glErrorMsg("glGetInteger(I)", "GL_FRAMEBUFFER");
-
-                this.bindTask.run();
-                this.taskToRun.run();
-
-                GL30.glBindFramebuffer(GL30.GL_FRAMEBUFFER, currentFB);
-                assert checkGLError() : glErrorMsg("glBindFramebuffer(II)", "GL_FRAMEBUFFER", currentFB);
-            } else if (cap.GL_ARB_framebuffer_object) {
-                final int currentFB = GL11.glGetInteger(ARBFramebufferObject.GL_FRAMEBUFFER);
-                assert checkGLError() : glErrorMsg("glGetInteger(I)", "GL_FRAMEBUFFER_ARB");
-
-                this.bindTask.run();
-                this.taskToRun.run();
-
-                ARBFramebufferObject.glBindFramebuffer(ARBFramebufferObject.GL_FRAMEBUFFER, currentFB);
-                assert checkGLError() : glErrorMsg("glBindFramebufferARB(II)", "GL_FRAMEBUFFER_ARB", currentFB);
-            } else if (cap.GL_EXT_framebuffer_object) {
-                final int currentFB = GL11.glGetInteger(EXTFramebufferObject.GL_FRAMEBUFFER_EXT);
-                assert checkGLError() : glErrorMsg("glGetIngeter(I)", "GL_FRAMEBUFFER_EXT");
-
-                this.bindTask.run();
-                this.taskToRun.run();
-
-                EXTFramebufferObject.glBindFramebufferEXT(EXTFramebufferObject.GL_FRAMEBUFFER_EXT, currentFB);
-                assert checkGLError() : glErrorMsg("GL_FRAMEBUFFER_EXT", currentFB);
-            }
-        }
-
     }
 
     /**
@@ -288,10 +232,12 @@ public class GLFramebuffer extends GLObject {
      *
      * @since 15.07.06
      */
-    public class InitTask extends GLTask {
+    public final class InitTask extends GLTask {
 
         @Override
         public void run() {
+            LOGGER.trace(GLOOP_MARKER, "############### Start GLFramebuffer Init Task ###############");
+
             checkThread();
 
             if (GLFramebuffer.this.isLocked) {
@@ -300,9 +246,15 @@ public class GLFramebuffer extends GLObject {
                 throw new GLException("GLFramebuffer already initialized!");
             }
 
-            GLFramebuffer.this.framebufferId = GLTools.getDSAInstance().glCreateFramebuffers();
+            GLFramebuffer.this.framebufferId = GLTools
+                    .getDSAInstance()
+                    .glCreateFramebuffers();
+
             GLFramebuffer.this.name = "id=" + GLFramebuffer.this.framebufferId;
-            LOGGER.trace("GLFramebuffer[{}] is initialized!", GLFramebuffer.this.name);
+
+            LOGGER.trace(GLOOP_MARKER, "Initialized GLFramebuffer[{}]!", GLFramebuffer.this.name);
+
+            LOGGER.trace(GLOOP_MARKER, "############### End GLFramebuffer Init Task ###############");
         }
 
     }
@@ -321,10 +273,13 @@ public class GLFramebuffer extends GLObject {
      *
      * @since 15.07.06
      */
-    public class DeleteTask extends GLTask {
+    public final class DeleteTask extends GLTask {
 
         @Override
         public void run() {
+            LOGGER.trace(GLOOP_MARKER, "############### Start GLFramebuffer Delete Task ###############");
+            LOGGER.trace(GLOOP_MARKER, "\tDeleting GLFramebuffer[{}]", GLFramebuffer.this.getName());
+
             checkThread();
 
             if (GLFramebuffer.this.isLocked) {
@@ -333,31 +288,16 @@ public class GLFramebuffer extends GLObject {
                 throw new GLException("GLFramebuffer is not valid!");
             }
 
-            final ContextCapabilities cap = GL.getCapabilities();
-
-            LOGGER.trace("Deleting GLFramebuffer[{}]", GLFramebuffer.this.name);
-
-            if (cap.OpenGL30) {
-                GL30.glDeleteFramebuffers(GLFramebuffer.this.framebufferId);
-                assert GL11.glGetError() == GL11.GL_NO_ERROR : String.format("glDeleteFramebuffers(%d) failed!", GLFramebuffer.this.framebufferId);
-            } else if (cap.GL_ARB_framebuffer_object) {
-                ARBFramebufferObject.glDeleteFramebuffers(GLFramebuffer.this.framebufferId);
-                assert GL11.glGetError() == GL11.GL_NO_ERROR : String.format("glDeleteFramebuffersARB(%d) failed!", GLFramebuffer.this.framebufferId);
-            } else if (cap.GL_EXT_framebuffer_object) {
-                EXTFramebufferObject.glDeleteFramebuffersEXT(GLFramebuffer.this.framebufferId);
-                assert GL11.glGetError() == GL11.GL_NO_ERROR : String.format("glDeleteFramebuffersEXT(%d) failed!", GLFramebuffer.this.framebufferId);
-            } else {
-                throw new GLException("glDeleteFramebuffers is not supported! glDeleteFramebuffers requires either: an OpenGL 3.0 context, ARB_framebuffer_Object, or EXT_framebuffer_object.");
-            }
+            GLTools.getDSAInstance().glDeleteFramebuffers(
+                    GLFramebuffer.this.framebufferId);
 
             GLFramebuffer.this.framebufferId = INVALID_FRAMEBUFFER_ID;
             GLFramebuffer.this.attachments.clear();
-            GLFramebuffer.this.lastBindTask = null;
-            GLFramebuffer.this.nextColorAttachment = GL30.GL_COLOR_ATTACHMENT0;
+            GLFramebuffer.this.nextColorAttachment = 36064 /* GL_COLOR_ATTACHMENT0 */;
+
+            LOGGER.trace(GLOOP_MARKER, "############### End GLFramebuffer Delete Task ###############");
         }
     }
-
-    private BindTask lastBindTask = null;
 
     /**
      * Binds the select color attachments to the render buffer.
@@ -379,20 +319,12 @@ public class GLFramebuffer extends GLObject {
      * @param length the number of color attachments to bind.
      * @since 15.07.06
      */
-    public void bind(final CharSequence[] attachments, final int offset, final int length) {
-        if (this.lastBindTask != null && this.lastBindTask.attachmentNames.length == length) {
-            for (int i = offset; i < length; i++) {
-                if (!attachments[i].toString().equals(this.lastBindTask.attachmentNames[i - offset])) {
-                    this.lastBindTask = null;
-                    return;
-                }
-            }
+    public void bind(
+            final CharSequence[] attachments,
+            final int offset,
+            final int length) {
 
-            this.lastBindTask.glRun(this.getThread());
-        } else {
-            this.lastBindTask = new BindTask(attachments, offset, length);
-            this.lastBindTask.glRun(this.getThread());
-        }
+        new BindTask(attachments, offset, length).glRun(this.getThread());
     }
 
     /**
@@ -400,10 +332,10 @@ public class GLFramebuffer extends GLObject {
      *
      * @since 15.07.06
      */
-    public class BindTask extends GLTask {
+    public final class BindTask extends GLTask {
 
-        final IntBuffer attachments;
-        final String[] attachmentNames;
+        private final IntBuffer attachments;
+        private final String[] attachmentNames;
 
         /**
          * Constructs a new BindTask with the specified color attachments.
@@ -451,19 +383,28 @@ public class GLFramebuffer extends GLObject {
 
         @Override
         public void run() {
+            LOGGER.trace(GLOOP_MARKER, "############### Start GLFramebuffer Bind Task ###############");
+            LOGGER.trace(GLOOP_MARKER, "\tBinding GLFramebuffer[{}]", GLFramebuffer.this.getName());
+
             checkThread();
 
             if (!GLFramebuffer.this.isValid()) {
                 throw new GLException("Invalid GLFramebuffer!");
             }
 
-            GL30.glBindFramebuffer(GL30.GL_FRAMEBUFFER, GLFramebuffer.this.framebufferId);
-            assert checkGLError() : glErrorMsg("glBindFramebuffer(II)", "GL_FRAMEBUFFER", GLFramebuffer.this.framebufferId);
+            final DSADriver dsa = GLTools.getDSAInstance();
+
+            dsa.glBindFramebuffer(
+                    36160 /* GL_FRAMEBUFFER */,
+                    GLFramebuffer.this.framebufferId);
 
             if (this.attachments != null) {
-                GL20.glDrawBuffers(this.attachments);
-                assert checkGLError() : glErrorMsg("glDrawBuffers(*)", toHexString(memAddress(this.attachments)));
+                dsa.glDrawBuffers(this.attachments);
             }
+
+            LOGGER.trace(
+                    GLOOP_MARKER,
+                    "############### End GLFramebuffer Bind Task ###############");
         }
     }
 
@@ -488,8 +429,15 @@ public class GLFramebuffer extends GLObject {
      * @return self reference
      * @since 15.07.06
      */
-    public GLFramebuffer addDepthStencilAttachment(final GLTexture attachment, final int level) {
-        new AddDepthStencilAttachmentTask(attachment, level).glRun(this.getThread());
+    public GLFramebuffer addDepthStencilAttachment(
+            final GLTexture attachment,
+            final int level) {
+
+        new AddDepthStencilAttachmentTask(
+                attachment,
+                level)
+                .glRun(this.getThread());
+
         return this;
     }
 
@@ -499,10 +447,10 @@ public class GLFramebuffer extends GLObject {
      *
      * @since 15.07.06
      */
-    public class AddDepthStencilAttachmentTask extends GLTask {
+    public final class AddDepthStencilAttachmentTask extends GLTask {
 
-        final GLTexture depthStencilAttachment;
-        final int level;
+        private final GLTexture depthStencilAttachment;
+        private final int level;
 
         /**
          * Constructs a new AddDepthStencilAttachmentTask using the specified
@@ -527,7 +475,8 @@ public class GLFramebuffer extends GLObject {
                 final GLTexture attachment,
                 final int level) {
 
-            Objects.requireNonNull(this.depthStencilAttachment = attachment);
+            this.depthStencilAttachment = Objects.requireNonNull(attachment);
+
             if ((this.level = level) < 0) {
                 throw new GLException("Mipmap level cannot be less than 0!");
             }
@@ -535,13 +484,16 @@ public class GLFramebuffer extends GLObject {
 
         @Override
         public void run() {
+            LOGGER.trace(GLOOP_MARKER, "############### Start GLFramebuffer Add Depth Stencil Attachment Task ###############");
+            LOGGER.trace(GLOOP_MARKER, "\tAdding depth stencil attachment to GLFramebuffer[{}]", GLFramebuffer.this.getName());
+            LOGGER.trace(GLOOP_MARKER, "\tDepth stencil attachment: GLTexture[{}]", this.depthStencilAttachment.getName());
+            LOGGER.trace(GLOOP_MARKER, "\tMipmap level: {}", this.level);
+
             checkThread();
 
             if (!GLFramebuffer.this.isValid()) {
                 throw new GLException("Invalid GLFramebuffer!");
             }
-
-            LOGGER.trace("GLFramebuffer[{}]: Adding depth stencil attachment: {}", GLFramebuffer.this.name, this.depthStencilAttachment.getName());
 
             final DSADriver dsa = GLTools.getDSAInstance();
 
@@ -553,7 +505,7 @@ public class GLFramebuffer extends GLObject {
                     case GL_TEXTURE_1D:
                         patch.glNamedFramebufferTexture1D(
                                 GLFramebuffer.this.framebufferId,
-                                GL30.GL_DEPTH_STENCIL_ATTACHMENT,
+                                33306 /* GL_DEPTH_STENCIL_ATTACHMENT */,
                                 target.value,
                                 this.depthStencilAttachment.textureId,
                                 this.level);
@@ -561,20 +513,24 @@ public class GLFramebuffer extends GLObject {
                     case GL_TEXTURE_2D:
                         patch.glNamedFramebufferTexture2D(
                                 GLFramebuffer.this.framebufferId,
-                                GL30.GL_DEPTH_STENCIL_ATTACHMENT,
+                                33306 /* GL_DEPTH_STENCIL_ATTACHMENT */,
                                 target.value,
                                 this.depthStencilAttachment.textureId,
                                 this.level);
                         break;
                     default:
-                        throw new GLException("Texture target type: " + target + " is currently not supported.");
+                        throw new GLException("Texture target type: ["
+                                + target
+                                + "] is currently not supported.");
                 }
             } else {
                 dsa.glNamedFramebufferTexture(
                         GLFramebuffer.this.framebufferId,
-                        GL30.GL_DEPTH_STENCIL_ATTACHMENT,
+                        33306 /* GL_DEPTH_STENCIL_ATTACHMENT */,
                         this.depthStencilAttachment.textureId, level);
             }
+
+            LOGGER.trace(GLOOP_MARKER, "############### End GLFramebuffer Add Depth Stencil Attachment Task ###############");
         }
     }
 
@@ -598,8 +554,15 @@ public class GLFramebuffer extends GLObject {
      * @return self reference
      * @since 15.07.06
      */
-    public GLFramebuffer addDepthAttachment(final GLTexture depthAttachment, final int level) {
-        new AddDepthAttachmentTask(depthAttachment, level).glRun(this.getThread());
+    public GLFramebuffer addDepthAttachment(
+            final GLTexture depthAttachment,
+            final int level) {
+
+        new AddDepthAttachmentTask(
+                depthAttachment,
+                level)
+                .glRun(this.getThread());
+
         return this;
     }
 
@@ -608,10 +571,10 @@ public class GLFramebuffer extends GLObject {
      *
      * @since 15.07.06
      */
-    public class AddDepthAttachmentTask extends GLTask {
+    public final class AddDepthAttachmentTask extends GLTask {
 
-        final GLTexture depthAttachment;
-        final int level;
+        private final GLTexture depthAttachment;
+        private final int level;
 
         /**
          * Constructs a new AddDepthAttachmentTask. Mipmap level 0 is used.
@@ -642,6 +605,11 @@ public class GLFramebuffer extends GLObject {
 
         @Override
         public void run() {
+            LOGGER.trace(GLOOP_MARKER, "############### Start GLFramebuffer Add Depth Attachment Task ###############");
+            LOGGER.trace(GLOOP_MARKER, "\tAdding depth attachment to GLFramebuffer[{}]", GLFramebuffer.this.getName());
+            LOGGER.trace(GLOOP_MARKER, "\tDepth attachment: GLTexture[{}]", this.depthAttachment.getName());
+            LOGGER.trace(GLOOP_MARKER, "\tMipmap level: {}", this.level);
+
             checkThread();
 
             if (GLFramebuffer.this.isLocked) {
@@ -649,8 +617,6 @@ public class GLFramebuffer extends GLObject {
             } else if (!GLFramebuffer.this.isValid()) {
                 throw new GLException("Invalid GLFramebuffer!");
             }
-
-            LOGGER.trace("GLFramebuffer[{}]: Adding depth attachment: {}", GLFramebuffer.this.getName(), this.depthAttachment.getName());
 
             final DSADriver dsa = GLTools.getDSAInstance();
 
@@ -662,7 +628,7 @@ public class GLFramebuffer extends GLObject {
                     case GL_TEXTURE_1D:
                         patch.glNamedFramebufferTexture1D(
                                 GLFramebuffer.this.framebufferId,
-                                GL30.GL_DEPTH_ATTACHMENT,
+                                36096 /* GL_DEPTH_ATTACHMENT */,
                                 target.value,
                                 this.depthAttachment.textureId,
                                 this.level);
@@ -670,21 +636,25 @@ public class GLFramebuffer extends GLObject {
                     case GL_TEXTURE_2D:
                         patch.glNamedFramebufferTexture2D(
                                 GLFramebuffer.this.framebufferId,
-                                GL30.GL_DEPTH_ATTACHMENT,
+                                36096 /* GL_DEPTH_ATTACHMENT */,
                                 target.value,
                                 this.depthAttachment.textureId,
                                 this.level);
                         break;
                     default:
-                        throw new GLException("Texture target type: " + target + " is currently not supported!");
+                        throw new GLException("Texture target type: "
+                                + target
+                                + " is currently not supported!");
                 }
             } else {
                 dsa.glNamedFramebufferTexture(
                         GLFramebuffer.this.framebufferId,
-                        GL30.GL_DEPTH_ATTACHMENT,
+                        36096 /* GL_DEPTH_ATTACHMENT */,
                         this.depthAttachment.textureId,
                         this.level);
             }
+
+            LOGGER.trace(GLOOP_MARKER, "############### End GLFramebuffer Add Depth Attachment Task ###############");
         }
     }
 
@@ -727,9 +697,10 @@ public class GLFramebuffer extends GLObject {
      */
     public class AddColorAttachmentTask extends GLTask {
 
-        final GLTexture colorAttachment;
-        final int attachmentId;
-        final int level;
+        private final GLTexture colorAttachment;
+        private final int attachmentId;
+        private final int level;
+        private final String attachmentName;
 
         /**
          * Constructs a new AddColorAttachmentTask. Mipmap level 0 is used.
@@ -755,19 +726,28 @@ public class GLFramebuffer extends GLObject {
                 final GLTexture attachment,
                 final int level) {
 
-            Objects.requireNonNull(this.colorAttachment = attachment);
+            this.colorAttachment = Objects.requireNonNull(attachment);
+
             if ((this.level = level) < 0) {
                 throw new GLException("Color attachment level cannot be less than 0!");
             }
 
             this.attachmentId = GLFramebuffer.this.nextColorAttachment;
-            GLFramebuffer.this.nextColorAttachment++;
 
-            GLFramebuffer.this.attachments.put(name.toString(), attachmentId);
+            GLFramebuffer.this.nextColorAttachment++;
+            GLFramebuffer.this.attachments.put(
+                    this.attachmentName = name.toString(),
+                    attachmentId);
         }
 
         @Override
         public void run() {
+            LOGGER.trace(GLOOP_MARKER, "############### Start GLFramebuffer Add Color Attachment Task ###############");
+            LOGGER.trace(GLOOP_MARKER, "\tAdding color attachment to GLFramebuffer[{}]", GLFramebuffer.this.getName());
+            LOGGER.trace(GLOOP_MARKER, "\tAttachment name: {}", this.attachmentName);
+            LOGGER.trace(GLOOP_MARKER, "\tColor attachment: GLTexture[{}]", this.colorAttachment.getName());
+            LOGGER.trace(GLOOP_MARKER, "\tMipmap level: {}", this.level);
+
             checkThread();
 
             if (GLFramebuffer.this.isLocked) {
@@ -776,8 +756,6 @@ public class GLFramebuffer extends GLObject {
                 throw new GLException("Invalid GLFramebuffer!");
             }
 
-            LOGGER.trace("GLFramebuffer[{}]: Adding color attachment: {}", GLFramebuffer.this.getName(), this.colorAttachment.getName());
-            
             final DSADriver dsa = GLTools.getDSAInstance();
 
             if (dsa instanceof EXTDSADriver) {
@@ -802,7 +780,9 @@ public class GLFramebuffer extends GLObject {
                                 this.level);
                         break;
                     default:
-                        throw new GLException("Texture target type: " + target + " is not supported!");
+                        throw new GLException("Texture target type: ["
+                                + target
+                                + "] is not supported!");
                 }
             } else {
                 dsa.glNamedFramebufferTexture(
@@ -811,6 +791,8 @@ public class GLFramebuffer extends GLObject {
                         this.colorAttachment.textureId,
                         this.level);
             }
+
+            LOGGER.trace(GLOOP_MARKER, "############### End GLFramebuffer Add Color Attachment Task ###############");
         }
     }
 
@@ -836,7 +818,13 @@ public class GLFramebuffer extends GLObject {
             final int dstX0, final int dstY0, final int dstX1, final int dstY1,
             final Set<GLFramebufferMode> mask, final GLTextureMagFilter filter) {
 
-        new BlitTask(readFB, writeFB, srcX0, srcY0, srcX1, srcY1, dstX0, dstY0, dstX1, dstY1, mask, filter).glRun();
+        new BlitTask(
+                readFB,
+                writeFB,
+                srcX0, srcY0, srcX1, srcY1,
+                dstX0, dstY0, dstX1, dstY1,
+                mask,
+                filter).glRun();
     }
 
     /**
@@ -889,14 +877,24 @@ public class GLFramebuffer extends GLObject {
             this.dstX1 = dstX1;
             this.dstY1 = dstY1;
 
-            this.bitfield = mask.stream()
+            this.bitfield = mask
+                    .stream()
                     .map(m -> m.value)
                     .reduce(0, (prev, current) -> prev | current);
+
             this.filter = Objects.requireNonNull(filter);
         }
 
         @Override
         public void run() {
+            LOGGER.trace(GLOOP_MARKER, "############### Start GLFramebuffer Blit Task ###############");
+            LOGGER.trace(GLOOP_MARKER, "\tRead GLFramebuffer[{}]", readFB.getName());
+            LOGGER.trace(GLOOP_MARKER, "\tWrite GLFramebuffer[{}]", writeFB.getName());
+            LOGGER.trace(GLOOP_MARKER, "\tRead rectangle: <{}, {}, {}, {}>", this.srcX0, this.srcY0, this.srcX1, this.srcY1);
+            LOGGER.trace(GLOOP_MARKER, "\tWrite rectangle: <{}, {}, {}, {}>", this.dstX0, this.dstY0, this.dstX1, this.dstY1);
+            LOGGER.trace(GLOOP_MARKER, "\tMask bitfield: {}", this.bitfield);
+            LOGGER.trace(GLOOP_MARKER, "\tFilter: {}", this.filter);
+
             this.readFB.checkThread();
             this.writeFB.checkThread();
 
@@ -911,6 +909,8 @@ public class GLFramebuffer extends GLObject {
                     srcX0, srcY0, srcX1, srcY1,
                     dstX0, dstY0, dstX1, dstY1,
                     this.bitfield, this.filter.value);
+
+            LOGGER.trace(GLOOP_MARKER, "############### End GLFramebuffer Blit task ###############");
         }
     }
 
@@ -956,16 +956,16 @@ public class GLFramebuffer extends GLObject {
      *
      * @since 15.09.18
      */
-    public class ReadPixelsTask extends GLTask {
+    public final class ReadPixelsTask extends GLTask {
 
-        final int x;
-        final int y;
-        final int width;
-        final int height;
-        final GLTextureFormat format;
-        final GLType type;
-        final ByteBuffer pixels;
-        final GLBuffer pixelPackBuffer;
+        private final int x;
+        private final int y;
+        private final int width;
+        private final int height;
+        private final GLTextureFormat format;
+        private final GLType type;
+        private final ByteBuffer pixels;
+        private final GLBuffer pixelPackBuffer;
 
         /**
          * Constructs a new ReadPixelsTask for reading pixel data from the
@@ -1021,50 +1021,51 @@ public class GLFramebuffer extends GLObject {
 
         @Override
         public void run() {
+            LOGGER.trace(GLOOP_MARKER, "############### Start GLFramebuffer Read Pixels Task ###############");
+            LOGGER.trace(GLOOP_MARKER, "\tRead start: <{}, {}>", this.x, this.y);
+            LOGGER.trace(GLOOP_MARKER, "\tRead size: <{}, {}>", this.width, this.height);
+            LOGGER.trace(GLOOP_MARKER, "\tFormat: {}", this.format);
+            LOGGER.trace(GLOOP_MARKER, "\tType: {}", this.type);
+
             checkThread();
 
-            final int currentFb = GL11.glGetInteger(GL30.GL_FRAMEBUFFER_BINDING);
-            assert checkGLError() : glErrorMsg("glGetInteger(I)", "GL_FRAMEBUFFER_BINDING");
+            final DSADriver dsa = GLTools.getDSAInstance();
+            final int currentFb = dsa.glGetInteger(36006 /* GL_FRAMEBUFFER_BINDING */);
 
             boolean undoFBBind = false;
 
             if (currentFb != GLFramebuffer.this.framebufferId) {
-                GL30.glBindFramebuffer(GL30.GL_FRAMEBUFFER, framebufferId);
-                assert checkGLError() : glErrorMsg("glBindFramebuffer(II)", "GL_FRAMEBUFFER", GLFramebuffer.this.framebufferId);
+                dsa.glBindFramebuffer(36160 /* GL30.GL_FRAMEBUFFER */, framebufferId);
                 undoFBBind = true;
             }
 
             if (this.pixels == null) {
-                final int currentPixelPackBuffer = GL11.glGetInteger(GL21.GL_PIXEL_PACK_BUFFER_BINDING);
-                assert checkGLError() : glErrorMsg("glGetInteger(I)", "GL_PIXEL_PACK_BUFFER_BINDING");
+                final int currentPixelPackBuffer = dsa.glGetInteger(35053 /* GL_PIXEL_PACK_BUFFER_BINDING */);
 
                 boolean undoBufferBind = false;
 
                 if (this.pixelPackBuffer.bufferId != currentPixelPackBuffer) {
-                    GL15.glBindBuffer(GL21.GL_PIXEL_PACK_BUFFER, this.pixelPackBuffer.bufferId);
-                    assert checkGLError() : glErrorMsg("glBindBuffer(II)", "GL_PIXEL_PACK_BUFFER", this.pixelPackBuffer.bufferId);
+                    dsa.glBindBuffer(35051 /* GL_PIXEL_PACK_BUFFER */, this.pixelPackBuffer.bufferId);
 
                     undoBufferBind = true;
                 }
 
                 // read into pixel pack buffer                
-                GL11.glReadPixels(this.x, this.y, this.width, this.height, this.format.value, this.type.value, 0L);
-                assert checkGLError() : glErrorMsg("glReadPixels(IIIIIIL)", this.x, this.y, this.width, this.height, this.format, this.type, 0L);
+                dsa.glReadPixels(this.x, this.y, this.width, this.height, this.format.value, this.type.value, 0L);
 
                 if (undoBufferBind) {
-                    GL15.glBindBuffer(GL21.GL_PIXEL_PACK_BUFFER, this.pixelPackBuffer.bufferId);
-                    assert checkGLError() : glErrorMsg("glBindBuffer(II)", "GL_PIXEL_PACK_BUFFER", this.pixelPackBuffer.bufferId);
+                    dsa.glBindBuffer(35051 /* GL_PIXEL_PACK_BUFFER */, this.pixelPackBuffer.bufferId);
                 }
             } else {
                 // read into a ByteBuffer
-                GL11.glReadPixels(this.x, this.y, this.width, this.height, this.format.value, this.type.value, this.pixels);
-                assert checkGLError() : glErrorMsg("glReadPixels(IIIIII*)", this.x, this.y, this.width, this.height, this.format, this.type, toHexString(memAddress(this.pixels)));
+                dsa.glReadPixels(this.x, this.y, this.width, this.height, this.format.value, this.type.value, this.pixels);
             }
 
             if (undoFBBind) {
-                GL30.glBindFramebuffer(GL30.GL_FRAMEBUFFER, currentFb);
-                assert checkGLError() : glErrorMsg("glBindFramebuffer(II)", "GL_FRAMEBUFFER", currentFb);
+                dsa.glBindFramebuffer(36160 /* GL30.GL_FRAMEBUFFER */, currentFb);
             }
+
+            LOGGER.trace(GLOOP_MARKER, "############### End GLFramebuffer Read Pixels Task ###############");
         }
     }
 

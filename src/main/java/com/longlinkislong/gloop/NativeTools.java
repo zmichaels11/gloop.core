@@ -1,13 +1,32 @@
-/*
- * To change this license header, choose License Headers in Project Properties.
- * To change this template file, choose Tools | Templates
- * and open the template in the editor.
+/* 
+ * Copyright (c) 2015, longlinkislong.com
+ * All rights reserved.
+ *
+ * Redistribution and use in source and binary forms, with or without
+ * modification, are permitted provided that the following conditions are met:
+ *
+ * * Redistributions of source code must retain the above copyright notice, this
+ *   list of conditions and the following disclaimer.
+ * * Redistributions in binary form must reproduce the above copyright notice,
+ *   this list of conditions and the following disclaimer in the documentation
+ *   and/or other materials provided with the distribution.
+ *
+ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+ * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+ * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+ * ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE
+ * LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
+ * CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
+ * SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
+ * INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
+ * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
+ * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
+ * POSSIBILITY OF SUCH DAMAGE.
  */
 package com.longlinkislong.gloop;
 
 import java.io.IOException;
 import java.io.InputStream;
-import java.net.URL;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.nio.file.Files;
@@ -25,8 +44,9 @@ import org.slf4j.MarkerFactory;
  * @since 15.08.05
  */
 public final class NativeTools {
-    private static final Marker SYSTEM_MARKER = MarkerFactory.getMarker("SYSTEM");
-    private static final Logger LOGGER = LoggerFactory.getLogger(NativeTools.class);
+
+    private static final Marker SYS_MARKER = MarkerFactory.getMarker("SYSTEM");
+    private static final Logger LOGGER = LoggerFactory.getLogger("NativeTools");
     public static final OperatingSystem OPERATING_SYSTEM;
     public static final Architecture ARCHITECTURE;
 
@@ -34,16 +54,16 @@ public final class NativeTools {
         final String os = System.getProperty("os.name", "unknown").toLowerCase();
 
         if (os.contains("windows")) {
-            LOGGER.trace("Windows OS detected!");
+            LOGGER.trace(SYS_MARKER, "Windows OS detected!");
             OPERATING_SYSTEM = OperatingSystem.WINDOWS;
         } else if (os.contains("linux")) {
-            LOGGER.trace("Linux OS detected!");
+            LOGGER.trace(SYS_MARKER, "Linux OS detected!");
             OPERATING_SYSTEM = OperatingSystem.LINUX;
         } else if (os.contains("mac")) {
-            LOGGER.trace("Mac OSX detected!");
+            LOGGER.trace(SYS_MARKER, "Mac OSX detected!");
             OPERATING_SYSTEM = OperatingSystem.OSX;
         } else {
-            LOGGER.warn("Unknown OS: {}! Natives will not be loaded.", os);
+            LOGGER.warn(SYS_MARKER, "Unknown OS: {}! Natives will not be loaded.", os);
             OPERATING_SYSTEM = OperatingSystem.UNSUPPORTED;
         }
 
@@ -52,23 +72,23 @@ public final class NativeTools {
         switch (arch) {
             case "amd64":
             case "x86_64":
-                LOGGER.trace("64bit runtime detected!");
+                LOGGER.trace(SYS_MARKER, "64bit runtime detected!");
                 ARCHITECTURE = Architecture.X86_64;
                 break;
             case "x86":
             case "i386":
-                LOGGER.trace("32bit runtime detected!");
+                LOGGER.trace(SYS_MARKER, "32bit runtime detected!");
                 ARCHITECTURE = Architecture.X86;
                 break;
             default:
-                LOGGER.warn("Unknown architecture {}! Natives will not be loaded.", arch);
+                LOGGER.warn(SYS_MARKER, "Unknown architecture {}! Natives will not be loaded.", arch);
                 ARCHITECTURE = Architecture.UNSUPPORTED;
                 break;
         }
 
         final String jvm = System.getProperty("java.version");
 
-        LOGGER.debug(SYSTEM_MARKER, "JVM version: {}", jvm);        
+        LOGGER.debug(SYS_MARKER, "JVM version: {}", jvm);
     }
 
     private static final class Holder {
@@ -128,6 +148,7 @@ public final class NativeTools {
     private NativeTools() {
         ByteBuffer data = ByteBuffer.allocateDirect(1024);
 
+        LOGGER.trace(SYS_MARKER, "Allocating {} native buffers for word pool...", wordPool.length);
         for (int i = 0; i < wordPool.length; i++) {
             data.position(i * 4);
             wordPool[i] = data.slice().order(ByteOrder.nativeOrder());
@@ -135,6 +156,7 @@ public final class NativeTools {
 
         data = ByteBuffer.allocateDirect(1024);
 
+        LOGGER.trace(SYS_MARKER, "Allocating {} native buffers for dword pool...", dwordPool.length);
         for (int i = 0; i < dwordPool.length; i++) {
             data.position(i * 8);
             dwordPool[i] = data.slice().order(ByteOrder.nativeOrder());
@@ -142,6 +164,7 @@ public final class NativeTools {
 
         data = ByteBuffer.allocateDirect(1024);
 
+        LOGGER.trace(SYS_MARKER, "Allocating {} native buffers for qword pool...", qwordPool.length);
         for (int i = 0; i < qwordPool.length; i++) {
             data.position(i * 16);
             qwordPool[i] = data.slice().order(ByteOrder.nativeOrder());
@@ -149,6 +172,7 @@ public final class NativeTools {
 
         data = ByteBuffer.allocateDirect(1024);
 
+        LOGGER.trace(SYS_MARKER, "Allocating {} native buffers for oword pool...", owordPool.length);
         for (int i = 0; i < owordPool.length; i++) {
             data.position(i * 32);
             owordPool[i] = data.slice().order(ByteOrder.nativeOrder());
@@ -156,6 +180,7 @@ public final class NativeTools {
 
         data = ByteBuffer.allocateDirect(1024);
 
+        LOGGER.trace(SYS_MARKER, "Allocating {} native buffers for qvword pool...", qvwordPool.length);
         for (int i = 0; i < qvwordPool.length; i++) {
             data.position(i * 64);
             qvwordPool[i] = data.slice().order(ByteOrder.nativeOrder());
@@ -163,6 +188,7 @@ public final class NativeTools {
 
         data = ByteBuffer.allocateDirect(1024);
 
+        LOGGER.trace(SYS_MARKER, "Allocating {} native buffers for ovword pool...", ovwordPool.length);
         for (int i = 0; i < ovwordPool.length; i++) {
             data.position(i * 128);
             ovwordPool[i] = data.slice().order(ByteOrder.nativeOrder());
@@ -225,6 +251,9 @@ public final class NativeTools {
      */
     public ByteBuffer nextWord() {
         final int id = this.nextWId();
+        
+        LOGGER.trace(SYS_MARKER, "Retrieving word [{}]", id);
+        
         final ByteBuffer out = this.wordPool[id];
 
         out.clear();
@@ -240,6 +269,9 @@ public final class NativeTools {
      */
     public ByteBuffer nextDWord() {
         final int id = this.nextDWId();
+        
+        LOGGER.trace(SYS_MARKER, "Retrieving dword [{}]", id);
+        
         final ByteBuffer out = this.dwordPool[id];
 
         out.clear();
@@ -255,6 +287,9 @@ public final class NativeTools {
      */
     public ByteBuffer nextQWord() {
         final int id = this.nextQWId();
+        
+        LOGGER.trace(SYS_MARKER, "Retrieving qword [{}]", id);
+        
         final ByteBuffer out = this.qwordPool[id];
 
         out.clear();
@@ -270,6 +305,9 @@ public final class NativeTools {
      */
     public ByteBuffer nextOWord() {
         final int id = this.nextOWId();
+        
+        LOGGER.trace(SYS_MARKER, "Retrieving oword [{}]", id);
+        
         final ByteBuffer out = this.owordPool[id];
 
         out.clear();
@@ -285,6 +323,9 @@ public final class NativeTools {
      */
     public ByteBuffer nextQVWord() {
         final int id = this.nextQVWId();
+        
+        LOGGER.trace(SYS_MARKER, "Retrieving quad-vector word [{}]", id);
+        
         final ByteBuffer out = this.qvwordPool[id];
 
         out.clear();
@@ -298,8 +339,11 @@ public final class NativeTools {
      * @return the 1028bit word.
      * @since 15.08.05
      */
-    public ByteBuffer nextOVWord() {
+    public ByteBuffer nextOVWord() {        
         final int id = this.nextOVWId();
+        
+        LOGGER.trace(SYS_MARKER, "Retrieving oct-vector word [{}]", id);
+        
         final ByteBuffer out = this.ovwordPool[id];
 
         out.clear();
@@ -308,14 +352,16 @@ public final class NativeTools {
     }
 
     private String mapLibraryName(final String libraryName) {
+        LOGGER.trace(SYS_MARKER, "Translating {} to OS library name...", libraryName);
+        
         switch (OPERATING_SYSTEM) {
             case WINDOWS:
                 switch (ARCHITECTURE) {
                     case X86:
-                        LOGGER.trace(SYSTEM_MARKER, "Using library: {}32.dll", libraryName);
+                        LOGGER.trace(SYS_MARKER, "Using library: {}32.dll", libraryName);
                         return libraryName + "32.dll";
                     case X86_64:
-                        LOGGER.trace(SYSTEM_MARKER, "Using library: {}.dll", libraryName);
+                        LOGGER.trace(SYS_MARKER, "Using library: {}.dll", libraryName);
                         return libraryName + ".dll";
                     default:
                         throw new UnsupportedOperationException("Unsupported Windows Architecture: " + ARCHITECTURE);
@@ -323,10 +369,10 @@ public final class NativeTools {
             case LINUX:
                 switch (ARCHITECTURE) {
                     case X86:
-                        LOGGER.trace(SYSTEM_MARKER, "Using library: {}32.so", libraryName);
+                        LOGGER.trace(SYS_MARKER, "Using library: {}32.so", libraryName);
                         return libraryName + "32.so";
                     case X86_64:
-                        LOGGER.trace(SYSTEM_MARKER, "Using library: {}.so", libraryName);
+                        LOGGER.trace(SYS_MARKER, "Using library: {}.so", libraryName);
                         return libraryName + ".so";
                     default:
                         throw new UnsupportedOperationException("Unsupported Linux Architecture: " + ARCHITECTURE);
@@ -334,10 +380,10 @@ public final class NativeTools {
             case OSX:
                 switch (ARCHITECTURE) {
                     case X86:
-                        LOGGER.trace(SYSTEM_MARKER, "Using library: {}32.dylib", libraryName);
+                        LOGGER.trace(SYS_MARKER, "Using library: {}32.dylib", libraryName);
                         return libraryName + "32.dylib";
                     case X86_64:
-                        LOGGER.trace(SYSTEM_MARKER, "Using library: {}.dylib", libraryName);
+                        LOGGER.trace(SYS_MARKER, "Using library: {}.dylib", libraryName);
                         return libraryName + ".dylib";
                     default:
                         throw new UnsupportedOperationException("Unsupported Mac OSX Architecture: " + ARCHITECTURE);
@@ -350,11 +396,14 @@ public final class NativeTools {
     private volatile boolean isLoaded = false;
 
     void autoLoad() {
+        LOGGER.trace(SYS_MARKER, "Autoloading natives...");
+
         if (System.getProperty("org.lwjgl.librarypath") == null) {
             try {
                 this.loadNatives();
             } catch (RuntimeException ex) {
-                System.err.println("Unable to autoload natives! " + ex.getMessage());
+                LOGGER.error(SYS_MARKER, "Unable to autoload natives!");
+                LOGGER.error(SYS_MARKER, ex.getMessage(), ex);
             }
         }
     }
@@ -368,11 +417,11 @@ public final class NativeTools {
         final String libOpenAL = mapLibraryName(OPERATING_SYSTEM == OperatingSystem.WINDOWS ? "OpenAL" : "libopenal");
         final Path tempRoot;
 
-        LOGGER.debug(SYSTEM_MARKER, "Loading natives: {}, {}", libLWJGL, libOpenAL);        
+        LOGGER.debug(SYS_MARKER, "Loading natives: {}, {}", libLWJGL, libOpenAL);
 
-        try {            
+        try {
             tempRoot = Files.createTempDirectory("com.longlinkislong.gloop.natives");
-            LOGGER.trace(SYSTEM_MARKER, "Created temp folder: {}", tempRoot);
+            LOGGER.trace(SYS_MARKER, "Created temp folder: {}", tempRoot);
             tempRoot.toFile().deleteOnExit();
         } catch (IOException ex) {
             throw new RuntimeException("Unable to create temp directory!", ex);
@@ -381,7 +430,7 @@ public final class NativeTools {
         try (final InputStream inLibLWJGL = NativeTools.class.getResourceAsStream("/" + libLWJGL)) {
             final Path pLibLWJGL = tempRoot.resolve(Paths.get(libLWJGL));
 
-            LOGGER.trace(SYSTEM_MARKER, "Resolving {} as {}", libLWJGL, NativeTools.class.getResource("/" + libLWJGL));
+            LOGGER.trace(SYS_MARKER, "Resolving {} as {}", libLWJGL, NativeTools.class.getResource("/" + libLWJGL));
             Files.copy(inLibLWJGL, pLibLWJGL);
             pLibLWJGL.toFile().deleteOnExit();
         } catch (IOException ex) {
@@ -389,9 +438,9 @@ public final class NativeTools {
         }
 
         try (final InputStream inLibOpenAL = NativeTools.class.getResourceAsStream("/" + libOpenAL)) {
-            final Path pLibOpenAL = tempRoot.resolve(Paths.get(libOpenAL));            
+            final Path pLibOpenAL = tempRoot.resolve(Paths.get(libOpenAL));
 
-            LOGGER.trace(SYSTEM_MARKER, "Resolving {} as {}", libOpenAL, NativeTools.class.getResource("/" + libOpenAL));
+            LOGGER.trace(SYS_MARKER, "Resolving {} as {}", libOpenAL, NativeTools.class.getResource("/" + libOpenAL));
             Files.copy(inLibOpenAL, pLibOpenAL);
             pLibOpenAL.toFile().deleteOnExit();
         } catch (IOException ex) {
@@ -399,7 +448,7 @@ public final class NativeTools {
         }
 
         System.setProperty("org.lwjgl.librarypath", tempRoot.toString());
-        LOGGER.trace(SYSTEM_MARKER, "Set system property: org.lwjgl.librarypath={}", System.getProperty("org.lwjgl.librarypath"));
+        LOGGER.trace(SYS_MARKER, "Set system property: org.lwjgl.librarypath={}", System.getProperty("org.lwjgl.librarypath"));
 
         this.isLoaded = true;
     }

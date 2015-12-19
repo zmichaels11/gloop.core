@@ -1,30 +1,85 @@
-/*
- * To change this license header, choose License Headers in Project Properties.
- * To change this template file, choose Tools | Templates
- * and open the template in the editor.
+/* 
+ * Copyright (c) 2015, longlinkislong.com
+ * All rights reserved.
+ *
+ * Redistribution and use in source and binary forms, with or without
+ * modification, are permitted provided that the following conditions are met:
+ *
+ * * Redistributions of source code must retain the above copyright notice, this
+ *   list of conditions and the following disclaimer.
+ * * Redistributions in binary form must reproduce the above copyright notice,
+ *   this list of conditions and the following disclaimer in the documentation
+ *   and/or other materials provided with the distribution.
+ *
+ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+ * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+ * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+ * ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE
+ * LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
+ * CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
+ * SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
+ * INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
+ * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
+ * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
+ * POSSIBILITY OF SUCH DAMAGE.
  */
 package com.longlinkislong.gloop;
 
-import static com.longlinkislong.gloop.GLAsserts.checkGLError;
-import static com.longlinkislong.gloop.GLAsserts.glErrorMsg;
+import com.longlinkislong.gloop.dsa.DSADriver;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Objects;
-import org.lwjgl.opengl.EXTTextureFilterAnisotropic;
-import org.lwjgl.opengl.GL11;
-import org.lwjgl.opengl.GL12;
-import org.lwjgl.opengl.GL33;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.slf4j.Marker;
+import org.slf4j.MarkerFactory;
 
 /**
+ * GLSampler object overrides the texture parameter settings of GLTexture when
+ * bound.
  *
  * @author zmichaels
+ * @since 15.12.18
  */
 public class GLSampler extends GLObject {
+
+    private static final Marker GLOOP_MARKER = MarkerFactory.getMarker("GLOOP");
+    private static final Logger LOGGER = LoggerFactory.getLogger("GLSampler");
 
     private static final int INVALID_SAMPLER_ID = -1;
     private int samplerId = INVALID_SAMPLER_ID;
     private final GLTextureParameters parameters;
     private final boolean isLocked;
+
+    private volatile String name = "";
+
+    /**
+     * Assigns a human-readable name to the GLSampler.
+     *
+     * @param newName the new name of the sampler.
+     * @since 15.12.18
+     */
+    public final void setName(final CharSequence newName) {
+        GLTask.create(() -> {
+            LOGGER.trace(
+                    GLOOP_MARKER,
+                    "Renamed GLSampler[{}] to GLSampler[{}]!",
+                    this.name,
+                    newName);
+
+            this.name = newName.toString();
+        }).glRun(this.getThread());
+    }
+
+    /**
+     * Retrieves the name of the GLSampler.
+     *
+     * @return the name of the sampler object.
+     * @since 15.12.18
+     */
+    public final String getName() {
+        return this.name;
+    }
 
     private GLSampler() {
         this(GLThread.getDefaultInstance());
@@ -59,7 +114,7 @@ public class GLSampler extends GLObject {
     public GLSampler(final GLThread thread, final GLTextureParameters parameters) {
         super(thread);
 
-        Objects.requireNonNull(this.parameters = parameters);
+        this.parameters = Objects.requireNonNull(parameters);
         this.isLocked = false;
     }
 
@@ -86,6 +141,8 @@ public class GLSampler extends GLObject {
     public static GLSampler getDefaultSampler(final GLThread thread) {
         if (!DEFAULT_SAMPLERS.containsKey(thread)) {
             final GLSampler sampler = new GLSampler(thread);
+
+            sampler.setName(String.format("thread=%s DEFAULT", thread.getThread().getName()));
 
             DEFAULT_SAMPLERS.put(thread, sampler);
             return sampler;
@@ -123,42 +180,35 @@ public class GLSampler extends GLObject {
 
         @Override
         public void run() {
+            LOGGER.trace(GLOOP_MARKER, "############### Start GLSampler Init Task ###############");
+
             if (GLSampler.this.isLocked) {
                 throw new GLException("Cannot initialize the null instance of the GLSampler object!");
             } else if (GLSampler.this.isValid()) {
                 throw new GLException("GLSampler is already initialized!");
             }
 
-            GLSampler.this.samplerId = GL33.glGenSamplers();
-            assert checkGLError() : glErrorMsg("glGenSamplers(void)");
+            final DSADriver dsa = GLTools.getDSAInstance();
 
-            GL33.glSamplerParameteri(GL11.GL_TEXTURE_WRAP_S, GLSampler.this.samplerId, GLSampler.this.parameters.wrapS.value);
-            assert checkGLError() : glErrorMsg("glSamplerParameteri(III)", "GL_TEXTURE_WRAP_S", GLSampler.this.samplerId, GLSampler.this.parameters.wrapS);
+            GLSampler.this.samplerId = dsa.glGenSamplers();
 
-            GL33.glSamplerParameteri(GL11.GL_TEXTURE_WRAP_T, GLSampler.this.samplerId, GLSampler.this.parameters.wrapT.value);
-            assert checkGLError() : glErrorMsg("glSamplerParameteri(III)", "GL_TEXTURE_WRAP_T", GLSampler.this.samplerId, GLSampler.this.parameters.wrapT);
+            dsa.glSamplerParameteri(10242 /* GL_TEXTURE_WRAP_S */, GLSampler.this.samplerId, GLSampler.this.parameters.wrapS.value);
+            dsa.glSamplerParameteri(10243 /* GL_TEXTURE_WRAP_T */, GLSampler.this.samplerId, GLSampler.this.parameters.wrapT.value);
+            dsa.glSamplerParameteri(32882 /* GL_TEXTURE_WRAP_R */, GLSampler.this.samplerId, GLSampler.this.parameters.wrapR.value);
+            dsa.glSamplerParameterf(33082 /* GL_TEXTURE_MIN_LOD */, GLSampler.this.samplerId, GLSampler.this.parameters.minLOD);
+            dsa.glSamplerParameterf(33083 /* GL_TEXTURE_MAX_LOD */, GLSampler.this.samplerId, GLSampler.this.parameters.maxLOD);
+            dsa.glSamplerParameteri(10241 /* GL_TEXTURE_MIN_FILTER */, GLSampler.this.samplerId, GLSampler.this.parameters.minFilter.value);
+            dsa.glSamplerParameteri(10240 /* GL_TEXTURE_MAG_FILTER */, GLSampler.this.samplerId, GLSampler.this.parameters.magFilter.value);
+            dsa.glSamplerParameterf(34046 /* GL_TEXTURE_MAX_ANISOTROPY_EXT */, GLSampler.this.samplerId, GLSampler.this.parameters.anisotropicLevel);
 
-            GL33.glSamplerParameteri(GL12.GL_TEXTURE_WRAP_R, GLSampler.this.samplerId, GLSampler.this.parameters.wrapR.value);
-            assert checkGLError() : glErrorMsg("glSamplerParameteri(III)", "GL_TEXTURE_WRAP_R", GLSampler.this.samplerId, GLSampler.this.parameters.wrapR);
+            LOGGER.trace(
+                    GLOOP_MARKER,
+                    "Initialized GLSampler[{}]!",
+                    GLSampler.this.getName());
 
-            GL33.glSamplerParameterf(GL12.GL_TEXTURE_MIN_LOD, GLSampler.this.samplerId, GLSampler.this.parameters.minLOD);
-            assert checkGLError() : glErrorMsg("glSamplerParameterf(IIF)", "GL_TEXTURE_MIN_LOD", GLSampler.this.samplerId, GLSampler.this.parameters.minLOD);
-
-            GL33.glSamplerParameterf(GL12.GL_TEXTURE_MAX_LOD, GLSampler.this.samplerId, GLSampler.this.parameters.maxLOD);
-            assert checkGLError() : glErrorMsg("glSamplerParameterf(IIF)", "GL_TEXTURE_MAX_LOD", GLSampler.this.samplerId, GLSampler.this.parameters.maxLOD);
-
-            GL33.glSamplerParameteri(GL11.GL_TEXTURE_MIN_FILTER, GLSampler.this.samplerId, GLSampler.this.parameters.minFilter.value);
-            assert checkGLError() : glErrorMsg("glSamplerParameteri(III)", "GL_TEXTURE_MIN_FILTER", GLSampler.this.samplerId, GLSampler.this.parameters.minFilter);
-
-            GL33.glSamplerParameteri(GL11.GL_TEXTURE_MAG_FILTER, GLSampler.this.samplerId, GLSampler.this.parameters.magFilter.value);
-            assert checkGLError() : glErrorMsg("glSamplerParameteri(III)", "GL_TEXTURE_MAG_FILTER", GLSampler.this.samplerId, GLSampler.this.parameters.magFilter);
-
-            GL33.glSamplerParameterf(EXTTextureFilterAnisotropic.GL_TEXTURE_MAX_ANISOTROPY_EXT, GLSampler.this.samplerId, GLSampler.this.parameters.anisotropicLevel);
-            assert checkGLError() : glErrorMsg("glSamplerParameterf(IIF)", "GL_TEXTURE_MAX_ANISOTROPY_EXT", GLSampler.this.samplerId, GLSampler.this.parameters.anisotropicLevel);
+            LOGGER.trace(GLOOP_MARKER, "############### End GLSampler Init Task ###############");
         }
     }
-
-    private BindTask bindTask = null;
 
     /**
      * Binds the sampler to the specified sampler unit.
@@ -167,13 +217,7 @@ public class GLSampler extends GLObject {
      * @since 15.07.06
      */
     public void bind(final int unit) {
-        if (bindTask != null && this.bindTask.unit == unit) {
-            this.bindTask.glRun(this.getThread());
-        } else {
-            this.bindTask = new BindTask(unit);
-
-            this.bindTask.glRun(this.getThread());
-        }
+        new BindTask(unit).glRun(this.getThread());
     }
 
     /**
@@ -181,9 +225,9 @@ public class GLSampler extends GLObject {
      *
      * @since 15.07.06
      */
-    public class BindTask extends GLTask {
+    public final class BindTask extends GLTask {
 
-        final int unit;
+        private final int unit;
 
         /**
          * Constructs a new BindTask for binding the sampler object to the
@@ -200,12 +244,19 @@ public class GLSampler extends GLObject {
 
         @Override
         public void run() {
+            LOGGER.trace(GLOOP_MARKER, "############### Start GLSampler Bind Task ###############");
+            LOGGER.trace(GLOOP_MARKER, "\tBinding GLSampler[{}]", getName());
+            LOGGER.trace(GLOOP_MARKER, "\tTexture unit: {}", this.unit);
+
             if (!GLSampler.this.isValid()) {
                 throw new GLException("Invalid GLSampler!");
             }
 
-            GL33.glBindSampler(unit, GLSampler.this.samplerId);
-            assert checkGLError() : glErrorMsg("glBindSampler(II)", unit, GLSampler.this.samplerId);
+            GLTools.getDSAInstance().glBindSampler(unit, GLSampler.this.samplerId);
+
+            LOGGER.trace(
+                    GLOOP_MARKER,
+                    "############### End GLSampler Bind Task ###############");
         }
     }
 
@@ -228,16 +279,20 @@ public class GLSampler extends GLObject {
 
         @Override
         public void run() {
+            LOGGER.trace(GLOOP_MARKER, "############### Start GLSampler Delete Task ###############");
+            LOGGER.trace(GLOOP_MARKER, "\tDeleting GLSampler[{}]", GLSampler.this.getName());
+
             if (!GLSampler.this.isValid()) {
                 throw new GLException("GLSampler is invalid!");
             } else if (GLSampler.this.isLocked) {
                 throw new GLException("Cannot delete default GLSampler!");
             }
 
-            GL33.glDeleteSamplers(GLSampler.this.samplerId);
-            assert checkGLError() : glErrorMsg("glDeleteSamplers(I)", GLSampler.this.samplerId);
-
+            GLTools.getDSAInstance().glDeleteSamplers(GLSampler.this.samplerId);
             GLSampler.this.samplerId = INVALID_SAMPLER_ID;
+
+            LOGGER.trace(
+                    GLOOP_MARKER, "############### End GLSampler Delete Task ###############");
         }
     }
 

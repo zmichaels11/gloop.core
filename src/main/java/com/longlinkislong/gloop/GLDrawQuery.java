@@ -1,15 +1,36 @@
-/*
- * To change this license header, choose License Headers in Project Properties.
- * To change this template file, choose Tools | Templates
- * and open the template in the editor.
+/* 
+ * Copyright (c) 2015, longlinkislong.com
+ * All rights reserved.
+ *
+ * Redistribution and use in source and binary forms, with or without
+ * modification, are permitted provided that the following conditions are met:
+ *
+ * * Redistributions of source code must retain the above copyright notice, this
+ *   list of conditions and the following disclaimer.
+ * * Redistributions in binary form must reproduce the above copyright notice,
+ *   this list of conditions and the following disclaimer in the documentation
+ *   and/or other materials provided with the distribution.
+ *
+ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+ * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+ * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+ * ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE
+ * LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
+ * CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
+ * SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
+ * INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
+ * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
+ * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
+ * POSSIBILITY OF SUCH DAMAGE.
  */
 package com.longlinkislong.gloop;
 
-import static com.longlinkislong.gloop.GLAsserts.checkGLError;
-import static com.longlinkislong.gloop.GLAsserts.glErrorMsg;
+import com.longlinkislong.gloop.dsa.DSADriver;
 import java.util.Objects;
-import org.lwjgl.opengl.GL15;
-import org.lwjgl.opengl.GL30;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.slf4j.Marker;
+import org.slf4j.MarkerFactory;
 
 /**
  * An OpenGL object that performs a conditional draw based on the outcome of a
@@ -20,8 +41,40 @@ import org.lwjgl.opengl.GL30;
  */
 public class GLDrawQuery extends GLObject {
 
+    private static final Marker GLOOP_MARKER = MarkerFactory.getMarker("GLOOP");
+    private static final Logger LOGGER = LoggerFactory.getLogger("GLDrawQuery");
+
     private static final int INVALID_QUERY_ID = -1;
-    private int queryId = INVALID_QUERY_ID;
+    private transient volatile int queryId = INVALID_QUERY_ID;
+    private transient volatile String name = "";
+
+    /**
+     * Assigns a human-readable name to the GLDrawQuery.
+     *
+     * @param newName the human-readable name.
+     * @since 15.12.18
+     */
+    public final void setName(final CharSequence newName) {
+        GLTask.create(() -> {
+            LOGGER.trace(
+                    GLOOP_MARKER,
+                    "Renamed GLDrawQuery[{}] to GLDrawQuery[{}]!",
+                    this.name,
+                    newName);
+
+            this.name = newName.toString();
+        }).glRun(this.getThread());
+    }
+
+    /**
+     * Retrieves the name of the GLDrawQuery
+     *
+     * @return the name.
+     * @since 15.12.18
+     */
+    public final String getName() {
+        return this.name;
+    }
 
     /**
      * Constructs a new GLDrawQuery object on the default OpenGL thread.
@@ -67,27 +120,20 @@ public class GLDrawQuery extends GLObject {
         new InitTask().glRun(this.getThread());
     }
 
-    private DrawQueryTask lastDrawQuery = null;
-
     /**
      * Performs a draw query.
+     *
      * @param testDraw the draw function to use as a test.
      * @param condition the conditional requirements to pass the test.
      * @since 15.06.18
      */
     public void drawQuery(final GLDrawTask testDraw, final GLDrawQueryCondition condition) {
-        if (this.lastDrawQuery == null
-                || this.lastDrawQuery.testDraw != testDraw
-                || this.lastDrawQuery.condition != condition) {
-
-            this.lastDrawQuery = new DrawQueryTask(testDraw, condition);
-        }
-
-        this.lastDrawQuery.glRun(this.getThread());
+        new DrawQueryTask(testDraw, condition).glRun(this.getThread());
     }
 
     /**
      * A GLTask that performs the draw query.
+     *
      * @since 15.06.18
      */
     public class DrawQueryTask extends GLTask {
@@ -96,7 +142,9 @@ public class GLDrawQuery extends GLObject {
         final GLDrawQueryCondition condition;
 
         /**
-         * Constructs a new DrawQueryTask with the supplied task and passing condition.
+         * Constructs a new DrawQueryTask with the supplied task and passing
+         * condition.
+         *
          * @param task the test draw task.
          * @param condition the conditions for a pass.
          * @since 15.06.18
@@ -105,63 +153,90 @@ public class GLDrawQuery extends GLObject {
                 final GLDrawTask task,
                 final GLDrawQueryCondition condition) {
 
-            Objects.requireNonNull(this.testDraw = task);
-            Objects.requireNonNull(this.condition = condition);
+            this.testDraw = Objects.requireNonNull(task);
+            this.condition = Objects.requireNonNull(condition);
         }
 
         @Override
         public void run() {
+            LOGGER.trace(GLOOP_MARKER, "############### Start DrawQueryTask ###############");
+            LOGGER.trace(GLOOP_MARKER, "\tApplying GLDrawQuery[{}]", GLDrawQuery.this.getName());
+            LOGGER.trace(GLOOP_MARKER, "\tConditional: {}", this.condition);
+            LOGGER.trace(GLOOP_MARKER, "\tDraw Task: {}", this.testDraw);
+
             if (!GLDrawQuery.this.isValid()) {
                 throw new GLException("Invalid GLDrawQuery!");
             }
 
-            GL15.glBeginQuery(this.condition.value, GLDrawQuery.this.queryId);
-            assert checkGLError() : glErrorMsg("glBeginQuery(II)", this.condition, GLDrawQuery.this.queryId);
-            
+            final DSADriver dsa = GLTools.getDSAInstance();
+
+            dsa.glBeginQuery(this.condition.value, GLDrawQuery.this.queryId);
+
             this.testDraw.run();
-            GL15.glEndQuery(this.condition.value);
-            assert checkGLError() : glErrorMsg("glEndQuery(I)", this.condition);
+
+            dsa.glEndQuery(this.condition.value);
+
+            LOGGER.trace(GLOOP_MARKER, "############### End DrawQueryTask ###############");
         }
     }
 
-    private ConditionalDrawTask lastConditionalDraw = null;
+    /**
+     * Draws a GLDrawTask if the draw query condition passes.
+     *
+     * @param mode the query mode.
+     * @param fullDraw the draw task.
+     * @since 15.12.18
+     */
+    public void conditionalDraw(
+            final GLDrawQueryMode mode,
+            final GLDrawTask fullDraw) {
 
-    public void conditionalDraw(final GLDrawQueryMode mode, final GLDrawTask fullDraw) {
-        if (this.lastConditionalDraw == null
-                || this.lastConditionalDraw.mode != mode
-                || this.lastConditionalDraw.fullDraw != fullDraw) {
-
-            this.lastConditionalDraw = new ConditionalDrawTask(mode, fullDraw);
-        }
-
-        this.lastConditionalDraw.glRun(this.getThread());
+        new ConditionalDrawTask(mode, fullDraw).glRun(this.getThread());
     }
 
-    public class ConditionalDrawTask extends GLTask {
+    /**
+     * A GLTask that draws if the condition passes.
+     *
+     * @since 15.12.18
+     */
+    public final class ConditionalDrawTask extends GLTask {
 
-        final GLDrawTask fullDraw;
-        final GLDrawQueryMode mode;
+        private final GLDrawTask fullDraw;
+        private final GLDrawQueryMode mode;
 
+        /**
+         * Constructs a new ConditionalDrawTask.
+         *
+         * @param mode the query mode.
+         * @param task the task.
+         * @since 15.12.18
+         */
         public ConditionalDrawTask(
                 final GLDrawQueryMode mode,
                 final GLDrawTask task) {
 
-            Objects.requireNonNull(this.fullDraw = task);
-            Objects.requireNonNull(this.mode = mode);
+            this.fullDraw = Objects.requireNonNull(task);
+            this.mode = Objects.requireNonNull(mode);
         }
 
         @Override
         public void run() {
+            LOGGER.trace(GLOOP_MARKER, "############### Start GLDrawQuery ConditionTask ###############");
+            LOGGER.trace(GLOOP_MARKER, "\tApplying conditional GLDrawQuery[{}]", GLDrawQuery.this.getName());
+            LOGGER.trace(GLOOP_MARKER, "\tConditional: {}", this.mode);
+            LOGGER.trace(GLOOP_MARKER, "\tDraw task: {}", this.fullDraw);
+
             if (!GLDrawQuery.this.isValid()) {
                 throw new GLException("Invalid GLDrawQuery!");
             }
 
-            GL30.glBeginConditionalRender(GLDrawQuery.this.queryId, this.mode.value);
-            assert checkGLError() : glErrorMsg("glBeginConditionalRender(II)", GLDrawQuery.this.queryId, this.mode);
-            
+            final DSADriver dsa = GLTools.getDSAInstance();
+
+            dsa.glBeginConditionalRender(GLDrawQuery.this.queryId, this.mode.value);
             this.fullDraw.run();
-            GL30.glEndConditionalRender();
-            assert checkGLError() : glErrorMsg("glEndConditionalRender(void)");
+            dsa.glEndConditionalRender();
+
+            LOGGER.trace(GLOOP_MARKER, "############### End GLDrawQuery Condition Task ###############");
         }
     }
 
@@ -169,11 +244,20 @@ public class GLDrawQuery extends GLObject {
 
         @Override
         public void run() {
+            LOGGER.trace(GLOOP_MARKER, "############### Start GLDrawQuery Init Task ###############");
+
             if (!GLDrawQuery.this.isValid()) {
                 throw new GLException("Invalid GLDrawQuery!");
             }
 
-            GLDrawQuery.this.queryId = GL15.glGenQueries();
+            final int id = GLTools.getDSAInstance().glGenQueries();
+
+            GLDrawQuery.this.queryId = id;
+            GLDrawQuery.this.name = "id=" + id;
+
+            LOGGER.trace(GLOOP_MARKER, "Initialized GLDrawQuery[{}]", GLDrawQuery.this.name);
+
+            LOGGER.trace(GLOOP_MARKER, "############### End GLDrawQuery Init Task ###############");
         }
     }
 
@@ -181,12 +265,16 @@ public class GLDrawQuery extends GLObject {
 
         @Override
         public void run() {
+            LOGGER.trace(GLOOP_MARKER, "############### Start GLDrawQuery Delete Task ###############");
+            LOGGER.trace(GLOOP_MARKER, "\tDeleting GLDrawQuery[{}]", GLDrawQuery.this.getName());
+
             if (!GLDrawQuery.this.isValid()) {
                 throw new GLException("Invalid GLDrawQuery!");
             }
 
-            GL15.glDeleteQueries(GLDrawQuery.this.queryId);
-            assert checkGLError() : glErrorMsg("glDeleteQueries(I)", GLDrawQuery.this.queryId);
+            GLTools.getDSAInstance().glDeleteQueries(GLDrawQuery.this.queryId);
+
+            LOGGER.trace(GLOOP_MARKER, "############### End GLDrawQuery Delete Task ###############");
         }
     }
 }

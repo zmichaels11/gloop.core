@@ -1,7 +1,27 @@
-/*
- * To change this license header, choose License Headers in Project Properties.
- * To change this template file, choose Tools | Templates
- * and open the template in the editor.
+/* 
+ * Copyright (c) 2015, longlinkislong.com
+ * All rights reserved.
+ *
+ * Redistribution and use in source and binary forms, with or without
+ * modification, are permitted provided that the following conditions are met:
+ *
+ * * Redistributions of source code must retain the above copyright notice, this
+ *   list of conditions and the following disclaimer.
+ * * Redistributions in binary form must reproduce the above copyright notice,
+ *   this list of conditions and the following disclaimer in the documentation
+ *   and/or other materials provided with the distribution.
+ *
+ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+ * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+ * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+ * ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE
+ * LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
+ * CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
+ * SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
+ * INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
+ * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
+ * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
+ * POSSIBILITY OF SUCH DAMAGE.
  */
 package com.longlinkislong.gloop;
 
@@ -23,11 +43,11 @@ import java.util.Optional;
 public enum GLBufferTarget {
 
     GL_EXTERNAL_VIRTUAL_MEMORY_BUFFER(37216) {
-                @Override
-                public boolean isSupported() {
-                    return GLTools.isGPUAmd() && hasOpenGLVersion(41);
-                }
-            },
+        @Override
+        public boolean isSupported() {
+            return GLTools.isGPUAmd() && hasOpenGLVersion(41);
+        }
+    },
     /**
      * An array buffer is used generally for vertex data. It can also be used as
      * a generic target.
@@ -35,11 +55,11 @@ public enum GLBufferTarget {
      * @since 15.05.27
      */
     GL_ARRAY_BUFFER(34962) {
-                @Override
-                public boolean isSupported() {
-                    return hasOpenGLVersion(15);
-                }
-            },
+        @Override
+        public boolean isSupported() {
+            return hasOpenGLVersion(15);
+        }
+    },
     /**
      * A uniform buffer allows buffers to be used to transport bulk uniform data
      * to a shader program.
@@ -47,11 +67,11 @@ public enum GLBufferTarget {
      * @since 15.05.27
      */
     GL_UNIFORM_BUFFER(35345) {
-                @Override
-                public boolean isSupported() {
-                    return hasOpenGLVersion(31);
-                }
-            },
+        @Override
+        public boolean isSupported() {
+            return hasOpenGLVersion(31);
+        }
+    },
     /**
      * An index buffer binding for buffers used as storage for atomic counters.
      * Requires OpenGL 4.2 or ARB_shader_atomic_counters
@@ -105,7 +125,7 @@ public enum GLBufferTarget {
      *
      * @since 15.06.23
      */
-    GL_DISPATCH_INDIRECT_BUFFER(37102){
+    GL_DISPATCH_INDIRECT_BUFFER(37102) {
         @Override
         public boolean isSupported() {
             return hasOpenGLVersion(43);
@@ -206,28 +226,22 @@ public enum GLBufferTarget {
      * @return true if the GLBufferTarget is supported.
      * @since 15.07.02
      */
-    public abstract boolean isSupported();    
-    
+    public abstract boolean isSupported();
+
     /**
-     * Converts an OpenGL GLenum value to a GLBufferTarget constant. This method
-     * will return null if no GLBufferTarget constant matches the GLenum value.
+     * Translates the GLenum into the corresponding GLBufferTarget object.
      *
-     * @param value the GLenum value to convert.
-     * @return the GLBufferTarget constant or null.
-     * @since 15.05.27
+     * @param glEnum the GLenum value.
+     * @return the GLBufferTarget wrapped in an Optional.
+     * @since 15.12.18
      */
-    @Deprecated
-    public static GLBufferTarget valueOf(final int value) {
-        return of(value).get();
-    }
-    
     public static Optional<GLBufferTarget> of(final int glEnum) {
-        for(GLBufferTarget tgt : values()) {
-            if(tgt.value == glEnum) {
+        for (GLBufferTarget tgt : values()) {
+            if (tgt.value == glEnum) {
                 return Optional.of(tgt);
             }
         }
-        
+
         return Optional.empty();
     }
 }

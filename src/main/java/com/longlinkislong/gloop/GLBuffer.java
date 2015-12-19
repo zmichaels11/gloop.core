@@ -1,21 +1,37 @@
-/*
- * To change this license header, choose License Headers in Project Properties.
- * To change this template file, choose Tools | Templates
- * and open the template in the editor.
+/* 
+ * Copyright (c) 2015, longlinkislong.com
+ * All rights reserved.
+ *
+ * Redistribution and use in source and binary forms, with or without
+ * modification, are permitted provided that the following conditions are met:
+ *
+ * * Redistributions of source code must retain the above copyright notice, this
+ *   list of conditions and the following disclaimer.
+ * * Redistributions in binary form must reproduce the above copyright notice,
+ *   this list of conditions and the following disclaimer in the documentation
+ *   and/or other materials provided with the distribution.
+ *
+ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+ * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+ * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+ * ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE
+ * LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
+ * CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
+ * SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
+ * INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
+ * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
+ * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
+ * POSSIBILITY OF SUCH DAMAGE.
  */
 package com.longlinkislong.gloop;
 
-import static com.longlinkislong.gloop.GLAsserts.checkGLError;
-import static com.longlinkislong.gloop.GLAsserts.glErrorMsg;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.util.Objects;
-import org.lwjgl.opengl.ContextCapabilities;
-import org.lwjgl.opengl.GL;
-import org.lwjgl.opengl.GL15;
-import org.lwjgl.system.MemoryUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.slf4j.Marker;
+import org.slf4j.MarkerFactory;
 
 /**
  * GLBuffer represents an OpenGL Buffer object.
@@ -26,20 +42,41 @@ import org.slf4j.LoggerFactory;
  */
 public class GLBuffer extends GLObject {
 
-    private String name = "";
-    private static final Logger LOGGER = LoggerFactory.getLogger(GLBuffer.class);
-    private static final int INVALID_BUFFER_ID = -1;
-    int bufferId = INVALID_BUFFER_ID;
-    private ByteBuffer mappedBuffer = null;
-    private int accessFlags = GLBufferAccess.GL_MAP_WRITE.value | GLBufferAccess.GL_MAP_READ.value;
+    private static final Marker GLOOP_MARKER = MarkerFactory.getMarker("GLOOP");
+    private static final Logger LOGGER = LoggerFactory.getLogger("GLBuffer");
 
+    private static final int INVALID_BUFFER_ID = -1;
+
+    transient volatile int bufferId = INVALID_BUFFER_ID;
+
+    private transient volatile ByteBuffer mappedBuffer = null;
+    private volatile int accessFlags = GLBufferAccess.GL_MAP_WRITE.value | GLBufferAccess.GL_MAP_READ.value;
+    private volatile String name = "";
+
+    /**
+     * Assigns a human-readable name to the GLBuffer.
+     *
+     * @param name the human-readable name.
+     * @since 15.12.18
+     */
     public final void setName(final CharSequence name) {
         GLTask.create(() -> {
-            LOGGER.debug("Renamed GLBuffer[{}] to GLBuffer[{}]", this.name, name);
+            LOGGER.debug(
+                    GLOOP_MARKER,
+                    "Renamed GLBuffer[{}] to GLBuffer[{}]",
+                    this.name,
+                    name);
+
             this.name = name.toString();
         }).glRun(this.getThread());
     }
 
+    /**
+     * Retrieves the name of the GLBuffer.
+     *
+     * @return the name.
+     * @since 15.12.18
+     */
     public final String getName() {
         return this.name;
     }
@@ -61,7 +98,10 @@ public class GLBuffer extends GLObject {
     public GLBuffer(final GLThread thread) {
         super(thread);
 
-        LOGGER.trace("Constructed GLBuffer object on thread: {}", thread);
+        LOGGER.trace(
+                GLOOP_MARKER,
+                "Constructed GLBuffer object on thread: {}",
+                thread);
 
         this.init();
     }
@@ -86,10 +126,12 @@ public class GLBuffer extends GLObject {
      * some time after the constructor is called. This method should only be
      * called if the GLBuffer has been deleted.
      *
+     * @return self-reference
      * @since 15.05.13
      */
-    public final void init() {
+    public final GLBuffer init() {
         new InitTask().glRun(this.getThread());
+        return this;
     }
 
     /**
@@ -102,17 +144,20 @@ public class GLBuffer extends GLObject {
 
         @Override
         public void run() {
+            LOGGER.trace(GLOOP_MARKER, "############### Start GLBuffer Init Task ###############");
+
             if (!GLBuffer.this.isValid()) {
                 GLBuffer.this.bufferId = GLTools.getDSAInstance().glCreateBuffers();
                 GLBuffer.this.name = "id=" + GLBuffer.this.bufferId;
-                LOGGER.trace("GLBuffer[{}] is initialized!", GLBuffer.this.name);
+
+                LOGGER.trace(GLOOP_MARKER, "Initialized GLBuffer[{}]!", GLBuffer.this.getName());
             } else {
                 throw new GLException("GLBuffer is already initialized!");
             }
+
+            LOGGER.trace(GLOOP_MARKER, "############### End GLBuffer Init Task ###############");
         }
     }
-
-    private ParameterQuery lastParameterQuery = null;
 
     /**
      * Sends an OpenGL query asking for a property
@@ -122,14 +167,7 @@ public class GLBuffer extends GLObject {
      * @since 15.05.13
      */
     public final int getParameter(final GLBufferParameterName pName) {
-
-        if (lastParameterQuery != null && pName == lastParameterQuery.pName) {
-            return lastParameterQuery.glCall(this.getThread());
-        } else {
-            this.lastParameterQuery = new ParameterQuery(pName);
-
-            return this.lastParameterQuery.glCall(this.getThread());
-        }
+        return new ParameterQuery(pName).glCall(this.getThread());
     }
 
     /**
@@ -155,13 +193,18 @@ public class GLBuffer extends GLObject {
 
         @Override
         public Integer call() throws Exception {
+            LOGGER.trace(GLOOP_MARKER, "############### Start GLBuffer Parameter Query ###############");
+            LOGGER.trace(GLOOP_MARKER, "\tQuerying parameter of GLBuffer[{}]", GLBuffer.this.getName());
+            LOGGER.trace(GLOOP_MARKER, "\tParameter name: {}", this.pName);
+
             if (!GLBuffer.this.isValid()) {
                 throw new GLException("Invalid GLBuffer!");
             }
 
             final int result = GLTools.getDSAInstance().glGetNamedBufferParameteri(GLBuffer.this.bufferId, this.pName.value);
 
-            LOGGER.trace("GLBuffer[{}].{} = {}", GLBuffer.this.name, this.pName, result);
+            LOGGER.trace(GLOOP_MARKER, "GLBuffer[{}].{} = {}!", GLBuffer.this.getName(), this.pName, result);
+            LOGGER.trace(GLOOP_MARKER, "############### End GLBuffer Parameter Query ###############");
 
             return result;
         }
@@ -193,14 +236,15 @@ public class GLBuffer extends GLObject {
 
         @Override
         public void run() {
+            LOGGER.trace(GLOOP_MARKER, "############### Start GLBuffer Delete Task ###############");
+            LOGGER.trace(GLOOP_MARKER, "\tDeleting GLBuffer[{}]", GLBuffer.this.getName());
+
             if (GLBuffer.this.isValid()) {
-                LOGGER.trace("Deleting GLBuffer[{}]", GLBuffer.this.name);
-
-                GL15.glDeleteBuffers(GLBuffer.this.bufferId);
-                assert checkGLError() : glErrorMsg("glDeleteBuffers(I)", GLBuffer.this.bufferId);
-
+                GLTools.getDSAInstance().glDeleteBuffers(GLBuffer.this.bufferId);
                 GLBuffer.this.bufferId = INVALID_BUFFER_ID;
             }
+
+            LOGGER.trace(GLOOP_MARKER, "############### End GLBuffer Delete Task ###############");
         }
     }
 
@@ -272,13 +316,18 @@ public class GLBuffer extends GLObject {
 
         @Override
         public void run() {
+            LOGGER.trace(GLOOP_MARKER, "############### Start GLBuffer Upload Task ###############");
+            LOGGER.trace(GLOOP_MARKER, "\tUploading data to GLBuffer[{}]", GLBuffer.this.getName());
+            LOGGER.trace(GLOOP_MARKER, "\tUploading {} bytes", this.data.remaining());
+            LOGGER.trace(GLOOP_MARKER, "\tSetting buffer usage hint: {}", this.usage);
+
             if (!GLBuffer.this.isValid()) {
                 throw new GLException("GLBuffer is invalid!");
             }
 
-            LOGGER.trace("GLBuffer[{}]: Uploading {} bytes.", GLBuffer.this.name, this.data.remaining());
-
             GLTools.getDSAInstance().glNamedBufferData(GLBuffer.this.bufferId, this.data, this.usage.value);
+
+            LOGGER.trace(GLOOP_MARKER, "############### End GLBuffer Upload Task ###############");
         }
     }
 
@@ -368,11 +417,14 @@ public class GLBuffer extends GLObject {
 
         @Override
         public void run() {
+            LOGGER.trace(GLOOP_MARKER, "############### Start GLBuffer Allocate Immutable Task ###############");
+            LOGGER.trace(GLOOP_MARKER, "\tApplying allocate to GLBuffer[{}]", GLBuffer.this.getName());
+            LOGGER.trace(GLOOP_MARKER, "\tAllocating {} bytes", this.size);
+            LOGGER.trace(GLOOP_MARKER, "\tBuffer storage bitfield: {}", this.flags);
+
             if (!GLBuffer.this.isValid()) {
                 throw new GLException("Invalid GLBuffer!");
             }
-
-            LOGGER.trace("GLBuffer[{}]: Allocating {} bytes [IMMUTABLE]", GLBuffer.this.name, this.size);
 
             GLTools.getDSAInstance().glNamedBufferStorage(
                     GLBuffer.this.bufferId,
@@ -380,6 +432,8 @@ public class GLBuffer extends GLObject {
                     this.flags);
 
             GLBuffer.this.accessFlags = this.flags;
+
+            LOGGER.trace(GLOOP_MARKER, "############# End GLBuffer Allocate Immutable Task ##############");
         }
 
     }
@@ -424,13 +478,18 @@ public class GLBuffer extends GLObject {
 
         @Override
         public void run() {
+            LOGGER.trace(GLOOP_MARKER, "############### Start GLBuffer Allocate Task ###############");
+            LOGGER.trace(GLOOP_MARKER, "\tApplying allocate on GLBuffer[{}]", GLBuffer.this.getName());
+            LOGGER.trace(GLOOP_MARKER, "\tAllocating {} bytes", this.size);
+            LOGGER.trace(GLOOP_MARKER, "\tSetting buffer usage hint: {}", this.usage);
+
             if (!GLBuffer.this.isValid()) {
                 throw new GLException("Invalid GLBuffer!");
             }
 
-            LOGGER.trace("GLBuffer[{}]: Allocating {} bytes.", GLBuffer.this.name, this.size);
-
             GLTools.getDSAInstance().glNamedBufferData(GLBuffer.this.bufferId, this.size, this.usage.value);
+
+            LOGGER.trace(GLOOP_MARKER, "############### End GLBuffer Allocate Task ###############");
         }
 
     }
@@ -531,6 +590,10 @@ public class GLBuffer extends GLObject {
 
         @Override
         public ByteBuffer call() throws Exception {
+            LOGGER.trace(GLOOP_MARKER, "############### Start GLBuffer Download Query ###############");
+            LOGGER.trace(GLOOP_MARKER, "\tDownloading GLBuffer[{}]", GLBuffer.this.getName());
+            LOGGER.trace(GLOOP_MARKER, "\tOffset: {} bytes", this.offset);
+
             if (!GLBuffer.this.isValid()) {
                 throw new GLException("Invalid GLBuffer!");
             }
@@ -545,8 +608,11 @@ public class GLBuffer extends GLObject {
                 out = this.writeBuffer;
             }
 
-            LOGGER.trace("GLBuffer[{}]: download {} bytes", GLBuffer.this.name, out.capacity());
+            LOGGER.trace(GLOOP_MARKER, "GLBuffer[{}]: download {} bytes", GLBuffer.this.name, out.capacity());
+
             GLTools.getDSAInstance().glGetNamedBufferSubData(GLBuffer.this.bufferId, this.offset, out);
+
+            LOGGER.trace(GLOOP_MARKER, "############### End GLBuffer Download Query ###############");
 
             return out;
         }
@@ -601,6 +667,11 @@ public class GLBuffer extends GLObject {
 
         @Override
         public ByteBuffer call() throws Exception {
+            LOGGER.trace(GLOOP_MARKER, "############### Start GLBuffer Map Query ###############");
+            LOGGER.trace(GLOOP_MARKER, "\tMapping GLBuffer[{}]", GLBuffer.this.getName());
+            LOGGER.trace(GLOOP_MARKER, "\tOffset: {} bytes", this.offset);
+            LOGGER.trace(GLOOP_MARKER, "\tSize: {} bytes", this.length);
+
             if (!GLBuffer.this.isValid()) {
                 throw new GLException("Invalid GLBuffer!");
             }
@@ -614,7 +685,7 @@ public class GLBuffer extends GLObject {
 
             GLBuffer.this.mappedBuffer = newBuffer;
 
-            LOGGER.trace("GLBuffer[{}]: Mapped buffer address: {}", GLBuffer.this.name, MemoryUtil.memAddress(newBuffer));
+            LOGGER.trace(GLOOP_MARKER, "############### End GLBuffer Map Query ###############");
 
             return newBuffer;
         }
@@ -630,10 +701,12 @@ public class GLBuffer extends GLObject {
      * after GLBuffer.map is called and before OpenGL next tries to read from
      * the GLBuffer.
      *
+     * @return self reference.
      * @since 15.05.13
      */
-    public void unmap() {
+    public GLBuffer unmap() {
         new UnmapTask().glRun(this.getThread());
+        return this;
     }
 
     /**
@@ -645,12 +718,16 @@ public class GLBuffer extends GLObject {
 
         @Override
         public void run() {
+            LOGGER.trace(GLOOP_MARKER, "############### Start GLBuffer Unmap Task ###############");
+            LOGGER.trace(GLOOP_MARKER, "\tUnmapping GLBuffer[{}]", GLBuffer.this.getName());                    
+
             if (!GLBuffer.this.isValid()) {
                 throw new GLException("Invalid GLBuffer!");
             }
 
-            LOGGER.trace("GLBuffer[{}]: Unmapped buffer", GLBuffer.this.bufferId);
             GLTools.getDSAInstance().glUnmapNamedBuffer(GLBuffer.this.bufferId);
+
+            LOGGER.trace(GLOOP_MARKER, "############### End GLBuffer Unmap Task ###############");
         }
     }
 
@@ -678,13 +755,13 @@ public class GLBuffer extends GLObject {
      *
      * @since 15.05.13
      */
-    public static class CopyTask extends GLTask {
+    public static final class CopyTask extends GLTask {
 
-        final GLBuffer src;
-        final long srcOffset;
-        final GLBuffer dest;
-        final long destOffset;
-        final long size;
+        private final GLBuffer src;
+        private final long srcOffset;
+        private final GLBuffer dest;
+        private final long destOffset;
+        private final long size;
 
         /**
          * Constructs a new CopyTask.
@@ -710,15 +787,22 @@ public class GLBuffer extends GLObject {
 
         @Override
         public void run() {
+            LOGGER.trace(GLOOP_MARKER, "############### Start GLBuffer Copy Task ###############");
+            LOGGER.trace(GLOOP_MARKER, "\tSrc GLBuffer[{}]", this.src.getName());
+            LOGGER.trace(GLOOP_MARKER, "\tDest GLBUffer[{}]", this.dest.getName());
+            LOGGER.trace(GLOOP_MARKER, "\tSrc offset: {} bytes", this.srcOffset);
+            LOGGER.trace(GLOOP_MARKER, "\tDest offset: {} bytes", this.destOffset);
+            LOGGER.trace(GLOOP_MARKER, "\tSize: {} bytes", this.size);
+
             if (!src.isValid() || !dest.isValid()) {
                 throw new GLException("Invalid GLBuffer!");
             }
 
-            LOGGER.trace("Copying {} bytes from GLBuffer[{}]+{} to GLBuffer[{}]+{}", size, src.name, srcOffset, dest.name, destOffset);
-
             GLTools.getDSAInstance().glCopyNamedBufferSubData(
                     src.bufferId, dest.bufferId,
                     srcOffset, destOffset, size);
+
+            LOGGER.trace(GLOOP_MARKER, "############### End GLBuffer Copy Task ###############");
         }
     }
 
@@ -741,9 +825,7 @@ public class GLBuffer extends GLObject {
 
         @Override
         public Boolean call() throws Exception {
-            final ContextCapabilities cap = GL.getCapabilities();
-
-            return cap.OpenGL44 || cap.GL_ARB_buffer_storage;
+            return GLTools.hasOpenGLVersion(44);
         }
 
     }
