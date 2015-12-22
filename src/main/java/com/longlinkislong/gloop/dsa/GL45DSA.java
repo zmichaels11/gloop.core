@@ -72,12 +72,12 @@ import java.nio.ByteBuffer;
 import java.nio.DoubleBuffer;
 import java.nio.FloatBuffer;
 import org.lwjgl.opengl.GL;
-import org.lwjgl.opengl.GL11;
-import org.lwjgl.opengl.GL14;
-import org.lwjgl.opengl.GL15;
-import org.lwjgl.opengl.GL20;
 import org.lwjgl.opengl.GL41;
 import org.lwjgl.opengl.GL45;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.slf4j.Marker;
+import org.slf4j.MarkerFactory;
 import static org.lwjgl.system.MemoryUtil.memAddress;
 
 /**
@@ -86,7 +86,10 @@ import static org.lwjgl.system.MemoryUtil.memAddress;
  * @author zmichaels
  * @since 15.07.14
  */
-public final class GL45DSA extends Common implements DSADriver {    
+public final class GL45DSA extends Common implements DSADriver {
+
+    private static final Marker GL_MARKER = MarkerFactory.getMarker("OPENGL");
+    private static final Logger LOGGER = LoggerFactory.getLogger("OPENGL");
 
     @Override
     public String toString() {
@@ -95,6 +98,7 @@ public final class GL45DSA extends Common implements DSADriver {
 
     @Override
     public int glCreateFramebuffers() {
+        LOGGER.trace(GL_MARKER, "glCreateFramebuffers()");
         final int out = GL45.glCreateFramebuffers();
         assert checkGLError() : glErrorMsg("glCreateFramebuffers(void)");
         return out;
@@ -102,15 +106,16 @@ public final class GL45DSA extends Common implements DSADriver {
 
     @Override
     public int glCreateBuffers() {
+        LOGGER.trace(GL_MARKER, "glCreateBuffers()");
         final int out = GL45.glCreateBuffers();
         assert checkGLError() : glErrorMsg("glCreateBuffers(void)");
-
         return out;
     }
 
     @Override
     public int glCreateTextures(int target) {
         assert checkGLenum(target, GLTextureTarget::of) : invalidGLenumMsg(target);
+        LOGGER.trace(GL_MARKER, "glCreateTextures({})", target);
         final int out = GL45.glCreateTextures(target);
         assert checkGLError() : glErrorMsg("glCreateTextures(I)", GLTextureTarget.of(target).get());
         return out;
@@ -128,6 +133,7 @@ public final class GL45DSA extends Common implements DSADriver {
         assert checkBufferIsNative(out) : bufferIsNotNativeMsg(out);
         assert out.isDirect() : NON_DIRECT_BUFFER_MSG;
 
+        LOGGER.trace(GL_MARKER, "glGetNamedBufferSubData({}, {}, {})", bufferId, offset, out);
         GL45.glGetNamedBufferSubData(bufferId, offset, out);
         assert checkGLError() : glErrorMsg("glGetNamedBufferSubData(IL*)", bufferId, offset, toHexString(memAddress(out)));
     }
@@ -149,6 +155,7 @@ public final class GL45DSA extends Common implements DSADriver {
         assert checkSize(size) : invalidSizeMsg(size);
         assert checkGLenum(usage, GLBufferUsage::of) : invalidGLenumMsg(usage);
 
+        LOGGER.trace(GL_MARKER, "glNamedBufferData({}, {}, {})", bufferId, size, usage);
         GL45.glNamedBufferData(bufferId, size, usage);
         assert checkGLError() : glErrorMsg("glNamedBufferData(ILI)", bufferId, size, GLBufferUsage.of(usage).get());
     }
@@ -160,6 +167,7 @@ public final class GL45DSA extends Common implements DSADriver {
         assert data.isDirect() : NON_DIRECT_BUFFER_MSG;
         assert checkGLenum(usage, GLBufferUsage::of) : invalidGLenumMsg(usage);
 
+        LOGGER.trace(GL_MARKER, "glNamedBufferData({}, {}, {})", bufferId, data, usage);
         GL45.glNamedBufferData(bufferId, data, usage);
         assert checkGLError() : glErrorMsg("glNamedBufferData(I*I)", bufferId, toHexString(memAddress(data)), GLBufferUsage.of(usage).get());
     }
@@ -171,6 +179,7 @@ public final class GL45DSA extends Common implements DSADriver {
         assert checkBufferIsNative(data) : bufferIsNotNativeMsg(data);
         assert data.isDirect() : NON_DIRECT_BUFFER_MSG;
 
+        LOGGER.trace(GL_MARKER, "glNamedBufferSubData({}, {}, {})", buffer, offset, data);
         GL45.glNamedBufferSubData(buffer, offset, data);
         assert checkGLError() : glErrorMsg("glNamedBufferSubData(IL*)", buffer, offset, toHexString(memAddress(data)));
     }
@@ -181,6 +190,7 @@ public final class GL45DSA extends Common implements DSADriver {
         assert checkBufferIsNative(data) : bufferIsNotNativeMsg(data);
         assert data.isDirect() : NON_DIRECT_BUFFER_MSG;
 
+        LOGGER.trace(GL_MARKER, "glNamedBufferStorage({}, {}, {})", bufferId, data, flags);
         GL45.glNamedBufferStorage(bufferId, data, flags);
         assert checkGLError() : glErrorMsg("glNamedBufferStorage(I*I)", bufferId, toHexString(memAddress(data)), flags);
     }
@@ -190,6 +200,7 @@ public final class GL45DSA extends Common implements DSADriver {
         assert checkId(bufferId) : invalidBufferIdMsg(bufferId);
         assert checkSize(size) : invalidSizeMsg(size);
 
+        LOGGER.trace(GL_MARKER, "glNamedBufferStorage({}, {}, {})", bufferId, size, flags);
         GL45.glNamedBufferStorage(bufferId, size, flags);
         assert checkGLError() : glErrorMsg("glNamedBufferStorage(ILI)", bufferId, size, flags);
     }
@@ -200,6 +211,7 @@ public final class GL45DSA extends Common implements DSADriver {
         assert checkOffset(offset) : invalidOffsetMsg(offset);
         assert checkSize(length) : invalidSizeMsg(length);
 
+        LOGGER.trace(GL_MARKER, "glMapNamedBufferRange({}, {}, {}, {})", bufferId, offset, length, access);
         final ByteBuffer out = GL45.glMapNamedBufferRange(bufferId, offset, length, access, recycled);
         assert checkGLError() : glErrorMsg("glMapNamedBufferRange(ILLI)", bufferId, offset, length, access);
 
@@ -210,6 +222,7 @@ public final class GL45DSA extends Common implements DSADriver {
     public void glUnmapNamedBuffer(int bufferId) {
         assert checkId(bufferId) : invalidBufferIdMsg(bufferId);
 
+        LOGGER.trace(GL_MARKER, "glUnmapNamedBuffer({})", bufferId);
         GL45.glUnmapNamedBuffer(bufferId);
         assert checkGLError() : glErrorMsg("glUnmapNamedBuffer(I)", bufferId);
     }
@@ -222,6 +235,7 @@ public final class GL45DSA extends Common implements DSADriver {
         assert checkOffset(writeOffset) : invalidOffsetMsg(writeOffset);
         assert checkSize(size) : invalidSizeMsg(size);
 
+        LOGGER.trace(GL_MARKER, "glCopyNamedBufferSubData({}, {}, {}, {}, {})", readBufferId, writeBufferId, readOffset, writeOffset, size);
         GL45.glCopyNamedBufferSubData(readBufferId, writeBufferId, readOffset, writeOffset, size);
         assert checkGLError() : glErrorMsg("glCopyNamedBufferSubData(IIIII)", readBufferId, writeBufferId, readOffset, writeOffset, size);
     }
@@ -232,6 +246,7 @@ public final class GL45DSA extends Common implements DSADriver {
         assert checkOffset(location) : invalidUniformLocationMsg(location);
         assert checkFloat(value) : invalidFloatMsg(value);
 
+        LOGGER.trace(GL_MARKER, "glProgramUniform1f({}, {}, {})", programId, location, value);
         GL41.glProgramUniform1f(programId, location, value);
         assert checkGLError() : glErrorMsg("glProgramUniform1f(IIF)", programId, location, value);
     }
@@ -243,6 +258,7 @@ public final class GL45DSA extends Common implements DSADriver {
         assert checkFloat(v0) : invalidFloatMsg(v0);
         assert checkFloat(v1) : invalidFloatMsg(v1);
 
+        LOGGER.trace(GL_MARKER, "glProgramUniform2f({}, {}, {}, {})", programId, location, v0, v1);
         GL41.glProgramUniform2f(programId, location, v0, v1);
         assert checkGLError() : glErrorMsg("glProgramUniform2f(IIFF)", programId, location, v0, v1);
     }
@@ -255,6 +271,7 @@ public final class GL45DSA extends Common implements DSADriver {
         assert checkFloat(v1) : invalidFloatMsg(v1);
         assert checkFloat(v2) : invalidFloatMsg(v2);
 
+        LOGGER.trace(GL_MARKER, "glProgramUniform3f({}, {}, {}, {}, {})", programId, location, v0, v1, v2);
         GL41.glProgramUniform3f(programId, location, v0, v1, v2);
         assert checkGLError() : glErrorMsg("glProgramUniform3f(IIFFF)", programId, location, v0, v1, v2);
     }
@@ -268,6 +285,7 @@ public final class GL45DSA extends Common implements DSADriver {
         assert checkFloat(v2) : invalidFloatMsg(v2);
         assert checkFloat(v3) : invalidFloatMsg(v3);
 
+        LOGGER.trace(GL_MARKER, "glProgramUniform4f({}, {}, {}, {}, {}, {})", programId, location, v0, v1, v2, v3);
         GL41.glProgramUniform4f(programId, location, v0, v1, v2, v3);
         assert checkGLError() : glErrorMsg("glProgramUniform4f(IIFFFF)", programId, location, v0, v1, v2, v3);
     }
@@ -278,6 +296,7 @@ public final class GL45DSA extends Common implements DSADriver {
         assert checkOffset(location) : invalidUniformLocationMsg(location);
         assert checkDouble(value) : invalidDoubleMsg(value);
 
+        LOGGER.trace(GL_MARKER, "glProgramUniform1d({}, {}, {})", programId, location, value);
         GL41.glProgramUniform1d(programId, location, value);
         assert checkGLError() : glErrorMsg("glProgramUniform1d(IID)", programId, location, value);
     }
@@ -289,6 +308,7 @@ public final class GL45DSA extends Common implements DSADriver {
         assert checkDouble(v0) : invalidDoubleMsg(v0);
         assert checkDouble(v1) : invalidDoubleMsg(v1);
 
+        LOGGER.trace(GL_MARKER, "glProgramUniform2d({}, {}, {}, {})", programId, location, v0, v1);
         GL41.glProgramUniform2d(programId, location, v0, v1);
         assert checkGLError() : glErrorMsg("glProgramUniform2d(IIDD)", programId, location, v0, v1);
     }
@@ -301,6 +321,7 @@ public final class GL45DSA extends Common implements DSADriver {
         assert checkDouble(v1) : invalidDoubleMsg(v1);
         assert checkDouble(v2) : invalidDoubleMsg(v2);
 
+        LOGGER.trace(GL_MARKER, "glProgramUniform3d({}, {}, {}, {}, {})", programId, location, v0, v1, v2);
         GL41.glProgramUniform3d(programId, location, v0, v1, v2);
         assert checkGLError() : glErrorMsg("glProgramUniform3d(IIDDD)", programId, location, v0, v1, v2);
     }
@@ -314,6 +335,7 @@ public final class GL45DSA extends Common implements DSADriver {
         assert checkDouble(v2) : invalidDoubleMsg(v2);
         assert checkDouble(v3) : invalidDoubleMsg(v3);
 
+        LOGGER.trace(GL_MARKER, "glProgramUniform4d({}, {}, {}, {}, {}, {})", programId, location, v0, v1, v2, v3);
         GL41.glProgramUniform4d(programId, location, v0, v1, v2, v3);
         assert checkGLError() : glErrorMsg("glProgramUniform4d(IIDDDD)", programId, location, v0, v1, v2, v3);
     }
@@ -324,6 +346,7 @@ public final class GL45DSA extends Common implements DSADriver {
         assert checkOffset(location) : invalidUniformLocationMsg(location);
         assert data.isDirect() : NON_DIRECT_BUFFER_MSG;
 
+        LOGGER.trace(GL_MARKER, "glProgramUniformMatrix2fv({}, {}, {}, {})", programId, location, needsTranspose, data);
         GL41.glProgramUniformMatrix2fv(programId, location, needsTranspose, data);
         assert checkGLError() : glErrorMsg("glProgramUniformMatrix2fv(IIB*)", programId, location, needsTranspose, toHexString(memAddress(data)));
     }
@@ -334,6 +357,7 @@ public final class GL45DSA extends Common implements DSADriver {
         assert checkOffset(location) : invalidUniformLocationMsg(location);
         assert data.isDirect() : NON_DIRECT_BUFFER_MSG;
 
+        LOGGER.trace(GL_MARKER, "glProgramUniformMatrix3fv({}, {}, {}, {})", programId, location, needsTranspose, data);
         GL41.glProgramUniformMatrix3fv(programId, location, needsTranspose, data);
         assert checkGLError() : glErrorMsg("glProgramUniformMatrix3fv(IIB*)", programId, location, needsTranspose, toHexString(memAddress(data)));
     }
@@ -344,6 +368,7 @@ public final class GL45DSA extends Common implements DSADriver {
         assert checkOffset(location) : invalidUniformLocationMsg(location);
         assert data.isDirect() : NON_DIRECT_BUFFER_MSG;
 
+        LOGGER.trace(GL_MARKER, "glProgramUniformMatrix4fv({}, {}, {}, {})", programId, location, needsTranspose, data);
         GL41.glProgramUniformMatrix4fv(programId, location, needsTranspose, data);
         assert checkGLError() : glErrorMsg("glProgramUniformMatrix4fv(IIB*)", programId, location, needsTranspose, toHexString(memAddress(data)));
     }
@@ -354,6 +379,7 @@ public final class GL45DSA extends Common implements DSADriver {
         assert checkOffset(location) : invalidUniformLocationMsg(location);
         assert data.isDirect() : NON_DIRECT_BUFFER_MSG;
 
+        LOGGER.trace(GL_MARKER, "glProgramUniformMatrix2dv({}, {}, {}, {})", programId, location, needsTranspose, data);
         GL41.glProgramUniformMatrix2dv(programId, location, needsTranspose, data);
         assert checkGLError() : glErrorMsg("glProgramUniformMatrix2dv(IIB*)", programId, location, needsTranspose, toHexString(memAddress(data)));
     }
@@ -364,6 +390,7 @@ public final class GL45DSA extends Common implements DSADriver {
         assert checkOffset(location) : invalidUniformLocationMsg(location);
         assert data.isDirect() : NON_DIRECT_BUFFER_MSG;
 
+        LOGGER.trace(GL_MARKER, "glProgramUniformMatrix3dv({}, {}, {}, {})", programId, location, needsTranspose, data);
         GL41.glProgramUniformMatrix3dv(programId, location, needsTranspose, data);
         assert checkGLError() : glErrorMsg("glProgramUniformMatrix3dv(IIB*)", programId, location, needsTranspose, toHexString(memAddress(data)));
     }
@@ -374,6 +401,7 @@ public final class GL45DSA extends Common implements DSADriver {
         assert checkOffset(location) : invalidUniformLocationMsg(location);
         assert data.isDirect() : NON_DIRECT_BUFFER_MSG;
 
+        LOGGER.trace(GL_MARKER, "glProgramUniformMatrix4dv({}, {}, {}, {})", programId, location, needsTranspose, data);
         GL41.glProgramUniformMatrix4dv(programId, location, needsTranspose, data);
         assert checkGLError() : glErrorMsg("glProgramUniformMatrix4dv(IIB*)", programId, location, needsTranspose, toHexString(memAddress(data)));
     }
@@ -382,6 +410,7 @@ public final class GL45DSA extends Common implements DSADriver {
     public void glTextureParameteri(int textureId, int pName, int val) {
         assert checkId(textureId) : invalidTextureIdMsg(textureId);
 
+        LOGGER.trace(GL_MARKER, "glTextureParameteri({}, {}, {})", textureId, pName, val);
         GL45.glTextureParameteri(textureId, pName, val);
         assert checkGLError() : glErrorMsg("glTextureParameteri(III)", textureId, pName, val);
     }
@@ -391,6 +420,7 @@ public final class GL45DSA extends Common implements DSADriver {
         assert checkId(textureId) : invalidTextureIdMsg(textureId);
         assert checkFloat(val) : invalidFloatMsg(val);
 
+        LOGGER.trace(GL_MARKER, "glTextureParameterf({}, {}, {})", textureId, pName, val);
         GL45.glTextureParameterf(textureId, pName, val);
         assert checkGLError() : glErrorMsg("glTextureParameterf(IIF)", textureId, pName, val);
     }
@@ -407,6 +437,7 @@ public final class GL45DSA extends Common implements DSADriver {
         assert pixels.isDirect() : NON_DIRECT_BUFFER_MSG;
         assert checkBufferSize(width, 1, 1, format, type, pixels) : bufferTooSmallMsg(width, 1, 1, format, type, pixels);
 
+        LOGGER.trace(GL_MARKER, "glTextureSubImage1D({}, {}, {}, {}, {}, {})", textureId, level, xOffset, width, format, type, pixels);
         GL45.glTextureSubImage1D(textureId, level, xOffset, width, format, type, pixels);
         assert checkGLError() : glErrorMsg("glTextureSubImage1D(IIIIII*)", textureId, level, xOffset, width, GLTextureFormat.of(format).get(), GLType.of(type).get(), toHexString(memAddress(pixels)));
     }
@@ -425,6 +456,7 @@ public final class GL45DSA extends Common implements DSADriver {
         assert pixels.isDirect() : NON_DIRECT_BUFFER_MSG;
         assert checkBufferSize(width, height, 1, format, type, pixels) : bufferTooSmallMsg(width, height, 1, format, type, pixels);
 
+        LOGGER.trace(GL_MARKER, "glTextureSubImage2D({}, {}, {}, {}, {}, {}, {}, {}, {})", textureId, level, xOffset, yOffset, width, height, type, pixels);
         GL45.glTextureSubImage2D(textureId, level, xOffset, yOffset, width, height, format, type, pixels);
         assert checkGLError() : glErrorMsg("glTextureSubImage2D(IIIIIIII*)", textureId, level, xOffset, yOffset, width, height, GLTextureFormat.of(format).get(), GLType.of(type).get(), toHexString(memAddress(pixels)));
     }
@@ -445,6 +477,7 @@ public final class GL45DSA extends Common implements DSADriver {
         assert pixels.isDirect() : NON_DIRECT_BUFFER_MSG;
         assert checkBufferSize(width, height, depth, format, type, pixels) : bufferTooSmallMsg(width, height, depth, format, type, pixels);
 
+        LOGGER.trace(GL_MARKER, "glTextureSubImage3D({}, {}, {}, {, {}, {}, {}, {}, {}, {}, {})", textureId, level, xOffset, yOffset, zOffset, width, height, depth, format, type, pixels);
         GL45.glTextureSubImage3D(textureId, level, xOffset, yOffset, zOffset, width, height, depth, format, type, pixels);
         assert checkGLError() : glErrorMsg("glTextureSubImage3D(IIIIIIIIII*)", textureId, level, xOffset, yOffset, zOffset, width, height, depth, GLTextureFormat.of(format).get(), GLType.of(type).get(), toHexString(memAddress(pixels)));
     }
@@ -454,6 +487,7 @@ public final class GL45DSA extends Common implements DSADriver {
         assert checkNullableId(unit) : invalidTextureUnitMsg(unit);
         assert checkId(textureId) : invalidTextureIdMsg(textureId);
 
+        LOGGER.trace(GL_MARKER, "glBindTextureUnit({}, {})", unit, textureId);
         GL45.glBindTextureUnit(unit, textureId);
         assert checkGLError() : glErrorMsg("glBindTextureUnit(II)", unit, textureId);
     }
@@ -467,6 +501,7 @@ public final class GL45DSA extends Common implements DSADriver {
         assert checkId(programId) : invalidProgramIdMsg(programId);
         assert checkOffset(location) : invalidUniformLocationMsg(location);
 
+        LOGGER.trace(GL_MARKER, "glProgramUniform1i({}, {}, {})", programId, location, value);
         GL41.glProgramUniform1i(programId, location, value);
         assert checkGLError() : glErrorMsg("glProgramUniform1i(III)", programId, location, value);
     }
@@ -476,6 +511,7 @@ public final class GL45DSA extends Common implements DSADriver {
         assert checkId(programId) : invalidProgramIdMsg(programId);
         assert checkOffset(location) : invalidUniformLocationMsg(location);
 
+        LOGGER.trace(GL_MARKER, "glProgramUniform2i({}, {}, {}, {})", programId, location, v0, v1);
         GL41.glProgramUniform2i(programId, location, v0, v1);
         assert checkGLError() : glErrorMsg("glProgramUniform2i(IIII)", programId, location, v0, v1);
     }
@@ -485,6 +521,7 @@ public final class GL45DSA extends Common implements DSADriver {
         assert checkId(programId) : invalidProgramIdMsg(programId);
         assert checkOffset(location) : invalidUniformLocationMsg(location);
 
+        LOGGER.trace(GL_MARKER, "glProgramUniform3i({}, {}, {}, {}, {})", programId, location, v0,  v1, v2);
         GL41.glProgramUniform3i(programId, location, v0, v1, v2);
         assert checkGLError() : glErrorMsg("glProgramUniform3i(IIIII)", programId, location, v0, v1, v2);
     }
@@ -494,6 +531,7 @@ public final class GL45DSA extends Common implements DSADriver {
         assert checkId(programId) : invalidProgramIdMsg(programId);
         assert checkOffset(location) : invalidUniformLocationMsg(location);
 
+        LOGGER.trace(GL_MARKER, "glProgramUniform4i({}, {}, {}, {}, {}, {})", programId, location, v0, v1, v2, v3);
         GL41.glProgramUniform4i(programId, location, v0, v1, v2, v3);
         assert checkGLError() : glErrorMsg("glProgramUniform4i(IIIIIII)", programId, location, v0, v1, v2, v3);
     }
@@ -505,6 +543,7 @@ public final class GL45DSA extends Common implements DSADriver {
         assert checkGLenum(internalFormat, GLTextureInternalFormat::of) : invalidGLenumMsg(internalFormat);
         assert checkDimension(width) : invalidWidthMsg(width);
 
+        LOGGER.trace(GL_MARKER, "glTextureStorage1D({}, {}, {}, {})", textureId, levels, internalFormat, width);
         GL45.glTextureStorage1D(textureId, levels, internalFormat, width);
         assert checkGLError() : glErrorMsg("glTextureStorage1d(IIII)", textureId, levels, GLTextureInternalFormat.of(internalFormat).get(), width);
     }
@@ -517,6 +556,7 @@ public final class GL45DSA extends Common implements DSADriver {
         assert checkDimension(width) : invalidWidthMsg(width);
         assert checkDimension(height) : invalidHeightMsg(height);
 
+        LOGGER.trace(GL_MARKER, "glTextureStorage2D({}, {}, {}, {}, {})", textureId, levels, internalFormat, width, height);
         GL45.glTextureStorage2D(textureId, levels, internalFormat, width, height);
         assert checkGLError() : glErrorMsg("glTextureStorage2D(IIIII)", textureId, levels, GLTextureInternalFormat.of(internalFormat).get(), width, height);
     }
@@ -530,6 +570,7 @@ public final class GL45DSA extends Common implements DSADriver {
         assert checkDimension(height) : invalidHeightMsg(height);
         assert checkDimension(depth) : invalidDepthMsg(depth);
 
+        LOGGER.trace(GL_MARKER, "glTextureStorage3D({}, {}, {}, {}, {}, {})", textureId, levels, internalFormat, width, height, depth);
         GL45.glTextureStorage3D(textureId, levels, internalFormat, width, height, depth);
         assert checkGLError() : glErrorMsg("glTextureStorage3D(IIIIII)", textureId, levels, GLTextureInternalFormat.of(internalFormat).get(), width, height, depth);
     }
@@ -538,6 +579,7 @@ public final class GL45DSA extends Common implements DSADriver {
     public void glGenerateTextureMipmap(int textureId) {
         assert checkId(textureId) : invalidTextureIdMsg(textureId);
 
+        LOGGER.trace(GL_MARKER, "glGenerateTextureMipmap({})", textureId);
         GL45.glGenerateTextureMipmap(textureId);
         assert checkGLError() : glErrorMsg("glGenerateTextureMipmap(I)", textureId);
     }
@@ -548,6 +590,7 @@ public final class GL45DSA extends Common implements DSADriver {
         assert checkId(texture) : invalidTextureIdMsg(texture);
         assert checkMipmapLevel(level) : invalidMipmapLevelMsg(level);
 
+        LOGGER.trace(GL_MARKER, "glNamedFramebufferTexture({}, {}, {}, {})", framebuffer, attachment, texture, level);
         GL45.glNamedFramebufferTexture(framebuffer, attachment, texture, level);
         assert checkGLError() : glErrorMsg("glNamedFramebufferTexture(IIII)", framebuffer, attachment, texture, level);
     }
@@ -562,7 +605,8 @@ public final class GL45DSA extends Common implements DSADriver {
         assert checkNullableId(readFramebuffer) : invalidFramebufferIdMsg(readFramebuffer);
         assert checkNullableId(drawFramebuffer) : invalidFramebufferIdMsg(drawFramebuffer);
 
-        GL45.glBlitNamedFramebuffer(readFramebuffer, drawFramebuffer, srcX0, srcY0, srcX1, srcY1, dstX0, dstX1, dstY0, dstY1, mask, filter);
+        LOGGER.trace(GL_MARKER, "glBlitNamedFramebuffer({}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {})", readFramebuffer, drawFramebuffer, srcX0, srcY0, srcX1, srcY1, dstX0, dstY0, dstX1, dstY1, mask, filter);
+        GL45.glBlitNamedFramebuffer(readFramebuffer, drawFramebuffer, srcX0, srcY0, srcX1, srcY1, dstX0, dstY0, dstX1, dstY1, mask, filter);
         assert checkGLError() : glErrorMsg("glBlitNamedFramebuffer(IIIIIIIIIIII)", readFramebuffer, drawFramebuffer, srcX0, srcY0, srcX1, srcY1, dstX0, dstX1, dstY0, dstY1, mask, filter);
     }
 
@@ -577,6 +621,7 @@ public final class GL45DSA extends Common implements DSADriver {
         assert pixels.isDirect() : NON_DIRECT_BUFFER_MSG;
         assert checkBufferSize(bufferSize, 1, 1, format, type, pixels) : bufferTooSmallMsg(bufferSize, 1, 1, format, type, pixels);
 
+        LOGGER.trace(GL_MARKER, "glGetTextureImage({}, {}, {}, {}, {}, {})", texture, level, format, type, bufferSize, pixels);
         GL45.glGetTextureImage(texture, level, format, type, bufferSize, pixels);
         assert checkGLError() : glErrorMsg("glGetTextureImage(IIIII*)", texture, level, GLTextureFormat.of(format).get(), GLType.of(type).get(), bufferSize, toHexString(memAddress(pixels)));
     }

@@ -61,7 +61,7 @@ public class GLBuffer extends GLObject {
      */
     public final void setName(final CharSequence name) {
         GLTask.create(() -> {
-            LOGGER.debug(
+            LOGGER.trace(
                     GLOOP_MARKER,
                     "Renamed GLBuffer[{}] to GLBuffer[{}]",
                     this.name,

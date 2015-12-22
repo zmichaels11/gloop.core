@@ -76,11 +76,11 @@ import org.lwjgl.opengl.ARBSeparateShaderObjects;
 import org.lwjgl.opengl.ContextCapabilities;
 import org.lwjgl.opengl.GL;
 import org.lwjgl.opengl.GL41;
-import static org.lwjgl.system.MemoryUtil.memAddress;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.slf4j.Marker;
 import org.slf4j.MarkerFactory;
+import static org.lwjgl.system.MemoryUtil.memAddress;
 
 /**
  *

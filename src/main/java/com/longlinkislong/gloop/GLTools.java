@@ -1602,6 +1602,9 @@ public class GLTools {
             }
 
             LOGGER.debug(SYS_MARKER, "Using DSADriver: {}", getDSAImplement());
+            if(DSA == NoDSA.getInstance()) {
+                LOGGER.warn(SYS_MARKER, "Using NoDSA implementation is potentially unsafe!");
+            }
         }
 
         return DSA;
