@@ -1463,7 +1463,7 @@ public class GLTools {
     }
 
     private static boolean _hasOpenGLVersion(final int version) {
-        return GLTools.getDSAInstance().getOpenGLVersion() == version;
+        return GLTools.getDSAInstance().getOpenGLVersion() >= version;
     }
 
     /**
