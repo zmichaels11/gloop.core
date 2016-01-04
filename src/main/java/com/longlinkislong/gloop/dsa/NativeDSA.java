@@ -899,4 +899,24 @@ public final class NativeDSA implements EXTDSADriver {
     public void glViewport(int x, int y, int width, int height) {
         throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
     }
+
+    @Override
+    public void glInvalidateTexImage(int texId, int level) {
+        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+    }
+
+    @Override
+    public void glInvalidateBufferSubData(int bufferId, int offset, int length) {
+        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+    }
+
+    @Override
+    public void glInvalidateBufferData(int bufferId) {
+        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+    }
+
+    @Override
+    public void glInvalidateTexSubImage(int texId, int level, int xOffset, int yOffset, int zOffset, int width, int height, int depth) {
+        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+    }
 }

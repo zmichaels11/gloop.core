@@ -42,6 +42,7 @@ import org.lwjgl.opengl.ARBBufferStorage;
 import org.lwjgl.opengl.ARBCopyBuffer;
 import org.lwjgl.opengl.ARBFramebufferObject;
 import org.lwjgl.opengl.ARBGPUShaderFP64;
+import org.lwjgl.opengl.ARBInvalidateSubdata;
 import org.lwjgl.opengl.EXTFramebufferBlit;
 import org.lwjgl.opengl.EXTFramebufferObject;
 import org.lwjgl.opengl.GL;
@@ -53,6 +54,7 @@ import org.lwjgl.opengl.GL21;
 import org.lwjgl.opengl.GL30;
 import org.lwjgl.opengl.GL31;
 import org.lwjgl.opengl.GL40;
+import org.lwjgl.opengl.GL43;
 import org.lwjgl.opengl.GL44;
 import org.lwjgl.opengl.GLCapabilities;
 import static org.lwjgl.system.MemoryUtil.memAddress;
@@ -70,6 +72,90 @@ public final class NoDSA extends Common implements EXTDSADriver {
     private static final Marker GL_MARKER = MarkerFactory.getMarker("OPENGL");
     private static final Logger LOGGER = LoggerFactory.getLogger("OPENGL");
 
+    @Override
+    public void glInvalidateBufferData(final int bufferId) {
+        if (GL.getCapabilities().OpenGL43) {
+            LOGGER.trace("glInvalidateBufferData({})", bufferId);
+            GL43.glInvalidateBufferData(bufferId);
+            assert checkGLError() : glErrorMsg("glInvalidateBufferData(I) failed!", bufferId);
+        } else if (GL.getCapabilities().GL_ARB_invalidate_subdata) {
+            LOGGER.trace("glInvalidateBufferData({}) (ARB)", bufferId);
+            ARBInvalidateSubdata.glInvalidateBufferData(bufferId);
+            assert checkGLError() : glErrorMsg("glInvalidateBufferDataARB(I) failed!", bufferId);
+        } else {
+            LOGGER.trace(GL_MARKER, "glInvalidateBufferData is not supported; call ignored.");
+        }
+    }
+
+    @Override
+    public void glInvalidateBufferSubData(final int bufferId, final int offset, final int length) {
+        if (GL.getCapabilities().OpenGL43) {
+            LOGGER.trace("glInvalidateBufferSubData({}, {}, {})", bufferId, offset, length);
+            GL43.glInvalidateBufferSubData(bufferId, offset, length);
+            assert checkGLError() : glErrorMsg("glInvalidateBufferSubData(III) failed!", bufferId, offset, length);
+        } else if (GL.getCapabilities().GL_ARB_invalidate_subdata) {
+            LOGGER.trace("glInvalidateBufferSubData({}, {}, {}) (ARB)", bufferId, offset, length);
+            ARBInvalidateSubdata.glInvalidateBufferSubData(bufferId, offset, length);
+            assert checkGLError() : glErrorMsg("glInvalidateBufferSubDataARB(III) failed!", bufferId, offset, length);
+        } else {
+            LOGGER.trace(GL_MARKER, "glInvalidateBufferSubData is not supported; call ignored.");
+        }
+    }
+
+    @Override
+    public void glInvalidateTexSubImage(
+            final int texImg, final int level,
+            final int xOffset, final int yOffset, final int zOffset,
+            final int width, final int height, final int depth) {
+
+        if (GL.getCapabilities().OpenGL43) {
+            LOGGER.trace(GL_MARKER, "glInvalidateTexSubImage({}, {}, {}, {}, {}, {}, {}, {})",
+                    texImg, level,
+                    xOffset, yOffset, zOffset,
+                    width, height, depth);
+            GL43.glInvalidateTexSubImage(
+                    texImg, level,
+                    xOffset, yOffset, zOffset,
+                    width, height, depth);
+            assert checkGLError() : glErrorMsg("glInvalidateTexSubImage(IIIIIIII) failed!",
+                    texImg, level,
+                    xOffset, yOffset, zOffset,
+                    width, height, depth);
+        } else if (GL.getCapabilities().GL_ARB_invalidate_subdata) {
+            LOGGER.trace(GL_MARKER, "glInvalidateTexSubImage({}, {}, {}, {}, {}, {}, {}, {}) (ARB)",
+                    texImg, level,
+                    xOffset, yOffset, zOffset,
+                    width, height, depth);
+
+            ARBInvalidateSubdata.glInvalidateTexSubImage(
+                    texImg, level,
+                    xOffset, yOffset, zOffset,
+                    width, height, depth);
+
+            assert checkGLError() : glErrorMsg("glInvalidateTexSubImageARB(IIIIIIII) failed!",
+                    texImg, level,
+                    xOffset, yOffset, zOffset,
+                    width, height, depth);
+        } else {
+            LOGGER.trace(GL_MARKER, "glInvalidateTexImage is unsupported; call ignored.");
+        }
+    }
+    
+    @Override
+    public void glInvalidateTexImage(final int texImg, final int level) {
+        if(GL.getCapabilities().OpenGL43) {
+            LOGGER.trace(GL_MARKER, "glInvalidateTexImage({}, {})", texImg, level);
+            GL43.glInvalidateTexImage(texImg, level);
+            assert checkGLError() : glErrorMsg("glInvalidateTexImage(II)", texImg, level);
+        } else if(GL.getCapabilities().GL_ARB_invalidate_subdata) {
+            LOGGER.trace(GL_MARKER, "glInvalidateTexImage({}, {}) (ARB)", texImg, level);
+            ARBInvalidateSubdata.glInvalidateTexImage(texImg, level);
+            assert checkGLError() : glErrorMsg("glInvalidateTexImageARB(II)", texImg, level);
+        } else {
+            LOGGER.trace(GL_MARKER, "glInvalidateTexImage is unsupported; call ignored.");
+        }
+    }
+    
     @Override
     public void glNamedFramebufferTexture1D(int framebuffer, int attachment, int texTarget, int texture, int level) {
         final GLCapabilities cap = GL.getCapabilities();

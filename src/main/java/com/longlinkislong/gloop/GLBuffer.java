@@ -719,7 +719,7 @@ public class GLBuffer extends GLObject {
         @Override
         public void run() {
             LOGGER.trace(GLOOP_MARKER, "############### Start GLBuffer Unmap Task ###############");
-            LOGGER.trace(GLOOP_MARKER, "\tUnmapping GLBuffer[{}]", GLBuffer.this.getName());                    
+            LOGGER.trace(GLOOP_MARKER, "\tUnmapping GLBuffer[{}]", GLBuffer.this.getName());
 
             if (!GLBuffer.this.isValid()) {
                 throw new GLException("Invalid GLBuffer!");
@@ -828,5 +828,87 @@ public class GLBuffer extends GLObject {
             return GLTools.hasOpenGLVersion(44);
         }
 
+    }
+
+    /**
+     * Invalidates a sub-section of the GLBuffer.
+     *
+     * @param offset the offset to invalidate.
+     * @param length the number of bytes to invalidate.
+     * @since 16.01.04
+     */
+    public void invalidateSubData(final int offset, final int length) {
+        new InvalidateSubDataTask(offset, length).glRun(this.getThread());
+    }
+
+    /**
+     * A GLTask that invalidates a segment of a GLBuffer.
+     *
+     * @since 16.01.04
+     */
+    public final class InvalidateSubDataTask extends GLTask {
+
+        private final int offset;
+        private final int length;
+
+        /**
+         * Constructs a new InvalidateSubDataTask.
+         *
+         * @param offset the offset
+         * @param length the length
+         * @since 16.01.04s
+         */
+        public InvalidateSubDataTask(final int offset, final int length) {
+            if ((this.offset = offset) < 0) {
+                throw new GLException("Offset cannot be less than 0!");
+            } else if ((this.length = length) < 0) {
+                throw new GLException("Length cannot be less than 0!");
+            }
+        }
+
+        @Override
+        public void run() {
+            LOGGER.trace(GLOOP_MARKER, "############### Start GLBuffer InvalidateSubData Task ###############");
+            if (!GLBuffer.this.isValid()) {
+                throw new GLException("Invalid GLBuffer!");
+            }
+
+            GLTools.getDSAInstance().glInvalidateBufferSubData(
+                    GLBuffer.this.bufferId,
+                    this.offset,
+                    this.length);
+
+            LOGGER.trace(GLOOP_MARKER, "############### End GLBuffer InvalidateSubData Task ###############");
+        }
+    }
+
+    /**
+     * Invalidates the GLBuffer.
+     *
+     * @since 16.01.04
+     */
+    public void invalidate() {
+        new InvalidateTask().glRun(this.getThread());
+    }
+
+    /**
+     * A GLTask that invalidates the GLBuffer.
+     *
+     * @since 16.01.04
+     */
+    public final class InvalidateTask extends GLTask {
+
+        @Override
+        public void run() {
+            LOGGER.trace(GLOOP_MARKER, "############### Start GLBuffer Invalidate Task ###############");
+
+            if (!GLBuffer.this.isValid()) {
+                throw new GLException("Invalid GLBuffer!");
+            }
+
+            GLTools.getDSAInstance().glInvalidateBufferData(GLBuffer.this.bufferId);
+
+            LOGGER.trace(GLOOP_MARKER, "############### End GLBuffer Invalidate Task ###############");
+        }
     }
 }

@@ -1067,7 +1067,7 @@ public class GLFramebuffer extends GLObject {
 
             LOGGER.trace(GLOOP_MARKER, "############### End GLFramebuffer Read Pixels Task ###############");
         }
-    }
+    }        
 
     @Override
     public final boolean isShareable() {

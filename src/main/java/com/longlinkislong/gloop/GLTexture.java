@@ -1635,4 +1635,133 @@ public class GLTexture extends GLObject {
         }
 
     }
+
+    /**
+     * Invalidates the specified mipmap level of the texture.
+     *
+     * @param level the mipmap level to invalidate.
+     * @since 16.01.04
+     */
+    public void invalidate(final int level) {
+        new InvalidateTask(level).glRun(this.getThread());
+    }
+
+    /**
+     * A GLTask that invalidates a mipmap level.
+     *
+     * @since 16.01.04
+     */
+    public final class InvalidateTask extends GLTask {
+
+        private final int level;
+
+        /**
+         * Constructs a new InvalidateTask.
+         *
+         * @param level the mipmap level to invalidate.
+         * @since 16.01.04
+         */
+        public InvalidateTask(final int level) {
+            if ((this.level = level) < 0) {
+                throw new GLException("Level cannot be less than 0!");
+            }
+        }
+
+        @Override
+        public void run() {
+            LOGGER.trace(GLOOP_MARKER,
+                    "############### Begin GLTexture Invalidate Task ###############");
+            LOGGER.trace(GLOOP_MARKER, "Mipmap level: {}", this.level);
+
+            if (!GLTexture.this.isValid()) {
+                throw new GLException("Invalid GLTexture!");
+            } else {
+                GLTools.getDSAInstance().glInvalidateTexImage(
+                        GLTexture.this.textureId,
+                        this.level);
+            }
+
+            LOGGER.trace(GLOOP_MARKER, "############### End GLTexture Invalidate Task ###############");
+        }
+    }
+
+    /**
+     * Invalidates a section of the GLTexture.
+     * @param level the level to invalidate.
+     * @param xOffset the x-offset to invalidate.
+     * @param yOffset the y-offset to invalidate.
+     * @param zOffset the z-offset to invalidate.
+     * @param width the width 
+     * @param height the height.
+     * @param depth the depth.
+     */
+    public void invalidateSubImage(
+            final int level,
+            final int xOffset, final int yOffset, final int zOffset,
+            final int width, final int height, final int depth) {
+        
+        new InvalidateSubImageTask(
+                level, 
+                xOffset, yOffset, zOffset, 
+                width, height, depth)
+                .glRun(this.getThread());
+    }
+
+    /**
+     * A GLTask that invalidates a section of a GLTexture.
+     *
+     * @since 16.01.04
+     */
+    public final class InvalidateSubImageTask extends GLTask {
+
+        private final int level;
+        private final int xOffset, yOffset, zOffset;
+        private final int width, height, depth;
+
+        /**
+         * Constructs a new InvalidateSubImageTask
+         *
+         * @param level the mipmap level
+         * @param xOffset the x-offset
+         * @param yOffset the y-offset
+         * @param zOffset the z-offset
+         * @param width the width
+         * @param height the height
+         * @param depth the depth.
+         * @since 16.01.04
+         */
+        public InvalidateSubImageTask(
+                final int level,
+                final int xOffset, final int yOffset, final int zOffset,
+                final int width, final int height, final int depth) {
+
+            if ((this.level = level) < 0) {
+                throw new GLException("Mipmap level cannot be less than 0!");
+            } else if ((this.xOffset = xOffset) < 0) {
+                throw new GLException("XOffset cannot be less than 0!");
+            } else if ((this.yOffset = yOffset) < 0) {
+                throw new GLException("YOffset cannot be less than 0!");
+            } else if ((this.zOffset = zOffset) < 0) {
+                throw new GLException("ZOffset cannot be less than 0!");
+            } else if ((this.width = width) < 0) {
+                throw new GLException("Width cannot be less than 0!");
+            } else if ((this.height = height) < 0) {
+                throw new GLException("Height cannot be less than 0!");
+            } else if ((this.depth = depth) < 0) {
+                throw new GLException("Depth cannot be less than 0!");
+            }
+        }
+
+        @Override
+        public void run() {
+            if (!GLTexture.this.isValid()) {
+                throw new GLException("Invalid GLTexture!");
+            } else {
+                GLTools.getDSAInstance().glInvalidateTexSubImage(
+                        GLTexture.this.textureId, this.level,
+                        this.xOffset, this.yOffset, this.zOffset,
+                        this.width, this.height, this.depth);
+            }
+        }
+    }
 }

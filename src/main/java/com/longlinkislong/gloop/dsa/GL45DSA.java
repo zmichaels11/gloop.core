@@ -73,6 +73,7 @@ import java.nio.DoubleBuffer;
 import java.nio.FloatBuffer;
 import org.lwjgl.opengl.GL;
 import org.lwjgl.opengl.GL41;
+import org.lwjgl.opengl.GL43;
 import org.lwjgl.opengl.GL45;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -95,7 +96,45 @@ public final class GL45DSA extends Common implements DSADriver {
     public String toString() {
         return "GL45DSA";
     }
+    
+    @Override
+    public void glInvalidateBufferData(final int bufferId) {
+        LOGGER.trace(GL_MARKER, "glInvalidateBufferData({})", bufferId);
+        GL43.glInvalidateBufferData(bufferId);
+        assert checkGLError() : glErrorMsg("glInvalidateBufferData(I) failed!", bufferId);
+    }
+    
+    @Override
+    public void glInvalidateBufferSubData(final int bufferId, final int offset, final int length) {
+        LOGGER.trace(GL_MARKER, "glInvalidateBufferSubData({}, {}, {})", bufferId, offset, length);
+        GL43.glInvalidateBufferSubData(bufferId, offset, length);
+        assert checkGLError() : glErrorMsg("glInvalidateBufferSubData(III) failed!", bufferId, offset, length);
+    }
+    
+    @Override
+    public void glInvalidateTexSubImage(
+            final int texImg, final int level, 
+            final int xOffset, final int yOffset, final int zOffset, 
+            final int width, final int height, final int depth) {
+        
+        LOGGER.trace(GL_MARKER, "glInvalidateTexSubImage({}, {}, {}, {}, {}, {}, {}, {})",
+                texImg, level,
+                xOffset, yOffset, zOffset,
+                width, height, depth);
+        GL43.glInvalidateTexSubImage(texImg, level, xOffset, yOffset, zOffset, width, height, depth);
+        assert checkGLError() : glErrorMsg("glInvalidateTexSubImage(IIIIIIII) failed!",
+                texImg, level,
+                xOffset, yOffset, zOffset,
+                width, height, depth);
+    }
 
+    @Override
+    public void glInvalidateTexImage(final int texImg, final int level) {
+        LOGGER.trace(GL_MARKER, "glInvalidateTexImage({}, {})", texImg, level);
+        GL43.glInvalidateTexImage(texImg, level);
+        assert checkGLError() : glErrorMsg("glInvalidateTexImage(II) failed!", texImg, level);
+    }
+    
     @Override
     public int glCreateFramebuffers() {
         LOGGER.trace(GL_MARKER, "glCreateFramebuffers()");

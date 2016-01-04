@@ -38,6 +38,14 @@ import java.nio.IntBuffer;
  */
 public interface DSADriver {
 
+    void glInvalidateBufferSubData(int bufferId, int offset, int length);
+    
+    void glInvalidateBufferData(int bufferId);
+    
+    void glInvalidateTexSubImage(int texId, int level, int xOffset, int yOffset, int zOffset, int width, int height, int depth);
+    
+    void glInvalidateTexImage(int texId, int level);
+    
     void glReadPixels(int x, int y, int w, int h, int format, int type, long ptr);
     
     void glReadPixels(int x, int y, int w, int h, int format, int type, ByteBuffer buffer);
