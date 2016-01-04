@@ -251,9 +251,9 @@ public final class NativeTools {
      */
     public ByteBuffer nextWord() {
         final int id = this.nextWId();
-        
+
         LOGGER.trace(SYS_MARKER, "Retrieving word [{}]", id);
-        
+
         final ByteBuffer out = this.wordPool[id];
 
         out.clear();
@@ -269,9 +269,9 @@ public final class NativeTools {
      */
     public ByteBuffer nextDWord() {
         final int id = this.nextDWId();
-        
+
         LOGGER.trace(SYS_MARKER, "Retrieving dword [{}]", id);
-        
+
         final ByteBuffer out = this.dwordPool[id];
 
         out.clear();
@@ -287,9 +287,9 @@ public final class NativeTools {
      */
     public ByteBuffer nextQWord() {
         final int id = this.nextQWId();
-        
+
         LOGGER.trace(SYS_MARKER, "Retrieving qword [{}]", id);
-        
+
         final ByteBuffer out = this.qwordPool[id];
 
         out.clear();
@@ -305,9 +305,9 @@ public final class NativeTools {
      */
     public ByteBuffer nextOWord() {
         final int id = this.nextOWId();
-        
+
         LOGGER.trace(SYS_MARKER, "Retrieving oword [{}]", id);
-        
+
         final ByteBuffer out = this.owordPool[id];
 
         out.clear();
@@ -323,9 +323,9 @@ public final class NativeTools {
      */
     public ByteBuffer nextQVWord() {
         final int id = this.nextQVWId();
-        
+
         LOGGER.trace(SYS_MARKER, "Retrieving quad-vector word [{}]", id);
-        
+
         final ByteBuffer out = this.qvwordPool[id];
 
         out.clear();
@@ -339,11 +339,11 @@ public final class NativeTools {
      * @return the 1028bit word.
      * @since 15.08.05
      */
-    public ByteBuffer nextOVWord() {        
+    public ByteBuffer nextOVWord() {
         final int id = this.nextOVWId();
-        
+
         LOGGER.trace(SYS_MARKER, "Retrieving oct-vector word [{}]", id);
-        
+
         final ByteBuffer out = this.ovwordPool[id];
 
         out.clear();
@@ -353,7 +353,7 @@ public final class NativeTools {
 
     private String mapLibraryName(final String libraryName) {
         LOGGER.trace(SYS_MARKER, "Translating {} to OS library name...", libraryName);
-        
+
         switch (OPERATING_SYSTEM) {
             case WINDOWS:
                 switch (ARCHITECTURE) {
@@ -415,6 +415,8 @@ public final class NativeTools {
 
         final String libLWJGL = mapLibraryName(OPERATING_SYSTEM == OperatingSystem.WINDOWS ? "lwjgl" : "liblwjgl");
         final String libOpenAL = mapLibraryName(OPERATING_SYSTEM == OperatingSystem.WINDOWS ? "OpenAL" : "libopenal");
+        final String libGLFW = mapLibraryName(OPERATING_SYSTEM == OperatingSystem.WINDOWS ? "glfw" : "libglfw");
+        final String libjemalloc = mapLibraryName(OPERATING_SYSTEM == OperatingSystem.WINDOWS ? "jemalloc" : "libjemalloc");
         final Path tempRoot;
 
         LOGGER.debug(SYS_MARKER, "Loading natives: {}, {}", libLWJGL, libOpenAL);
@@ -424,6 +426,8 @@ public final class NativeTools {
             LOGGER.trace(SYS_MARKER, "Created temp folder: {}", tempRoot);
             tempRoot.toFile().deleteOnExit();
         } catch (IOException ex) {
+            LOGGER.error(SYS_MARKER, "Unable to create temp directory!");
+            LOGGER.error(SYS_MARKER, ex.getMessage(), ex);
             throw new RuntimeException("Unable to create temp directory!", ex);
         }
 
@@ -434,7 +438,8 @@ public final class NativeTools {
             Files.copy(inLibLWJGL, pLibLWJGL);
             pLibLWJGL.toFile().deleteOnExit();
         } catch (IOException ex) {
-            throw new RuntimeException(String.format("Unable to copy [%s] to temp directory!", libLWJGL), ex);
+            LOGGER.error(SYS_MARKER, "Unable to copy[{}] to temp directory!", libLWJGL);
+            LOGGER.error(SYS_MARKER, ex.getMessage(), ex);
         }
 
         try (final InputStream inLibOpenAL = NativeTools.class.getResourceAsStream("/" + libOpenAL)) {
@@ -444,7 +449,30 @@ public final class NativeTools {
             Files.copy(inLibOpenAL, pLibOpenAL);
             pLibOpenAL.toFile().deleteOnExit();
         } catch (IOException ex) {
-            throw new RuntimeException(String.format("Unable to copy [%s] to temp directory!", libOpenAL), ex);
+            LOGGER.error(SYS_MARKER, "Unable to copy [{}] to temp directory!", libOpenAL);
+            LOGGER.error(SYS_MARKER, ex.getMessage(), ex);
+        }
+
+        try (final InputStream inLibGLFW = NativeTools.class.getResourceAsStream("/" + libGLFW)) {
+            final Path pLibGLFW = tempRoot.resolve(Paths.get(libGLFW));
+
+            LOGGER.trace(SYS_MARKER, "Resolving {} as {}", libGLFW, NativeTools.class.getResource("/" + libGLFW));
+            Files.copy(inLibGLFW, pLibGLFW);
+            pLibGLFW.toFile().deleteOnExit();
+        } catch (IOException ex) {
+            LOGGER.error(SYS_MARKER, "Unable to copy [{}] to temp directory!", libGLFW);
+            LOGGER.error(SYS_MARKER, ex.getMessage(), ex);
+        }
+
+        try (final InputStream inLibjemalloc = NativeTools.class.getResourceAsStream("/" + libjemalloc)) {
+            final Path pLibjemalloc = tempRoot.resolve(Paths.get(libjemalloc));
+
+            LOGGER.trace(SYS_MARKER, "Resolving {} as {}", libjemalloc, NativeTools.class.getResource("/" + libjemalloc));
+            Files.copy(inLibjemalloc, pLibjemalloc);
+            pLibjemalloc.toFile().deleteOnExit();
+        } catch (IOException ex) {
+            LOGGER.error(SYS_MARKER, "Unable to copy [{}] to temp directory!", libjemalloc);
+            LOGGER.error(SYS_MARKER, ex.getMessage(), ex);
         }
 
         System.setProperty("org.lwjgl.librarypath", tempRoot.toString());
