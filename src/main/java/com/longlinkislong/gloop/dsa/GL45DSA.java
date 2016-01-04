@@ -123,7 +123,7 @@ public final class GL45DSA extends Common implements DSADriver {
 
     @Override
     public boolean isSupported() {
-        return GL.getCurrent().getCapabilities().OpenGL45;
+        return GL.getCapabilities().OpenGL45;
     }
 
     @Override

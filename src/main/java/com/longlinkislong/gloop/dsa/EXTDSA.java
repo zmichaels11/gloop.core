@@ -71,12 +71,12 @@ import java.nio.DoubleBuffer;
 import java.nio.FloatBuffer;
 import org.lwjgl.opengl.ARBBufferStorage;
 import org.lwjgl.opengl.ARBSeparateShaderObjects;
-import org.lwjgl.opengl.ContextCapabilities;
 import org.lwjgl.opengl.EXTDirectStateAccess;
 import org.lwjgl.opengl.GL;
 import org.lwjgl.opengl.GL11;
 import org.lwjgl.opengl.GL12;
 import org.lwjgl.opengl.GL41;
+import org.lwjgl.opengl.GLCapabilities;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.slf4j.Marker;
@@ -115,7 +115,7 @@ public final class EXTDSA extends Common implements EXTDSADriver {
 
     @Override
     public boolean isSupported() {
-        final ContextCapabilities cap = GL.getCapabilities();
+        final GLCapabilities cap = GL.getCapabilities();
 
         return cap.GL_EXT_direct_state_access && FakeDSA.getInstance().isSupported();
     }
@@ -561,7 +561,7 @@ public final class EXTDSA extends Common implements EXTDSADriver {
         assert checkBufferIsNative(data) : bufferIsNotNativeMsg(data);
         assert data.isDirect() : NON_DIRECT_BUFFER_MSG;
 
-        final ContextCapabilities cap = GL.getCapabilities();
+        final GLCapabilities cap = GL.getCapabilities();
 
         if (cap.GL_ARB_buffer_storage) {
             LOGGER.trace(GL_MARKER, "glNamedBufferStorageEXT({}, {}, {})", bufferId, data, flags);
@@ -577,7 +577,7 @@ public final class EXTDSA extends Common implements EXTDSADriver {
         assert checkId(bufferId) : invalidBufferIdMsg(bufferId);
         assert checkSize(size) : invalidSizeMsg(size);
 
-        final ContextCapabilities cap = GL.getCapabilities();
+        final GLCapabilities cap = GL.getCapabilities();
 
         if (cap.GL_ARB_buffer_storage) {
             LOGGER.trace(GL_MARKER, "glNamedBufferStorageEXT({}, {}, {})", bufferId, size, flags);
@@ -594,7 +594,7 @@ public final class EXTDSA extends Common implements EXTDSADriver {
         assert checkOffset(location) : invalidUniformLocationMsg(location);
         assert checkDouble(value) : invalidDoubleMsg(value);
 
-        final ContextCapabilities cap = GL.getCapabilities();
+        final GLCapabilities cap = GL.getCapabilities();
 
         if (cap.OpenGL41) {
             LOGGER.trace(GL_MARKER, "glProgramUniform1d({}, {}, {})", programId, location, value);
@@ -616,7 +616,7 @@ public final class EXTDSA extends Common implements EXTDSADriver {
         assert checkDouble(v0) : invalidDoubleMsg(v0);
         assert checkDouble(v1) : invalidDoubleMsg(v1);
 
-        final ContextCapabilities cap = GL.getCapabilities();
+        final GLCapabilities cap = GL.getCapabilities();
 
         if (cap.OpenGL41) {
             LOGGER.trace(GL_MARKER, "glProgramUniform2d({}, {}, {}, {})", programId, location, v0, v1);
@@ -639,7 +639,7 @@ public final class EXTDSA extends Common implements EXTDSADriver {
         assert checkDouble(v1) : invalidDoubleMsg(v1);
         assert checkDouble(v2) : invalidDoubleMsg(v2);
 
-        final ContextCapabilities cap = GL.getCapabilities();
+        final GLCapabilities cap = GL.getCapabilities();
 
         if (cap.OpenGL41) {
             LOGGER.trace(GL_MARKER, "glProgramUniform3d({}, {}, {}, {}, {})", programId, location, v0, v1, v2);
@@ -663,7 +663,7 @@ public final class EXTDSA extends Common implements EXTDSADriver {
         assert checkDouble(v2) : invalidDoubleMsg(v2);
         assert checkDouble(v3) : invalidDoubleMsg(v3);
 
-        final ContextCapabilities cap = GL.getCapabilities();
+        final GLCapabilities cap = GL.getCapabilities();
 
         if (cap.OpenGL41) {
             LOGGER.trace(GL_MARKER, "glProgramUniform4d({}, {}, {}, {}, {}, {})", programId, location, v0, v1, v2, v3);
@@ -684,7 +684,7 @@ public final class EXTDSA extends Common implements EXTDSADriver {
         assert checkOffset(location) : invalidUniformLocationMsg(location);
         assert data.isDirect() : NON_DIRECT_BUFFER_MSG;
 
-        final ContextCapabilities cap = GL.getCapabilities();
+        final GLCapabilities cap = GL.getCapabilities();
 
         if (cap.OpenGL41) {
             LOGGER.trace(GL_MARKER, "glProgramUniform2dv({}, {}, {}, {})", programId, location, needsTranspose, data);
@@ -705,7 +705,7 @@ public final class EXTDSA extends Common implements EXTDSADriver {
         assert checkOffset(location) : invalidUniformLocationMsg(location);
         assert data.isDirect() : NON_DIRECT_BUFFER_MSG;
 
-        final ContextCapabilities cap = GL.getCapabilities();
+        final GLCapabilities cap = GL.getCapabilities();
 
         if (cap.OpenGL41) {
             LOGGER.trace(GL_MARKER, "glProgramUniformMatrix3dv({}, {}, {}, {})", programId, location, needsTranspose, data);
@@ -726,7 +726,7 @@ public final class EXTDSA extends Common implements EXTDSADriver {
         assert checkOffset(location) : invalidUniformLocationMsg(location);
         assert data.isDirect() : NON_DIRECT_BUFFER_MSG;
 
-        final ContextCapabilities cap = GL.getCapabilities();
+        final GLCapabilities cap = GL.getCapabilities();
 
         if (cap.OpenGL41) {
             LOGGER.trace(GL_MARKER, "glProgramUniformMatrix4dv({}, {}, {}, {})", programId, location, needsTranspose, data);

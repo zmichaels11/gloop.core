@@ -42,7 +42,6 @@ import org.lwjgl.opengl.ARBBufferStorage;
 import org.lwjgl.opengl.ARBCopyBuffer;
 import org.lwjgl.opengl.ARBFramebufferObject;
 import org.lwjgl.opengl.ARBGPUShaderFP64;
-import org.lwjgl.opengl.ContextCapabilities;
 import org.lwjgl.opengl.EXTFramebufferBlit;
 import org.lwjgl.opengl.EXTFramebufferObject;
 import org.lwjgl.opengl.GL;
@@ -55,6 +54,7 @@ import org.lwjgl.opengl.GL30;
 import org.lwjgl.opengl.GL31;
 import org.lwjgl.opengl.GL40;
 import org.lwjgl.opengl.GL44;
+import org.lwjgl.opengl.GLCapabilities;
 import static org.lwjgl.system.MemoryUtil.memAddress;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -72,7 +72,7 @@ public final class NoDSA extends Common implements EXTDSADriver {
 
     @Override
     public void glNamedFramebufferTexture1D(int framebuffer, int attachment, int texTarget, int texture, int level) {
-        final ContextCapabilities cap = GL.getCapabilities();
+        final GLCapabilities cap = GL.getCapabilities();
 
         if (cap.OpenGL30) {
             LOGGER.trace(GL_MARKER, "glBindFramebuffer(GL_FRAMEBUFFER, {})", framebuffer);
@@ -106,7 +106,7 @@ public final class NoDSA extends Common implements EXTDSADriver {
 
     @Override
     public void glNamedFramebufferTexture2D(int framebuffer, int attachment, int texTarget, int texture, int level) {
-        final ContextCapabilities cap = GL.getCapabilities();
+        final GLCapabilities cap = GL.getCapabilities();
 
         if (cap.OpenGL30) {
             LOGGER.trace(GL_MARKER, "glBindFramebuffer(GL_FRAMEBUFFER, {})", framebuffer);
@@ -161,7 +161,7 @@ public final class NoDSA extends Common implements EXTDSADriver {
 
     @Override
     public void glGenerateTextureMipmap(int textureId, int target) {
-        final ContextCapabilities cap = GL.getCapabilities();
+        final GLCapabilities cap = GL.getCapabilities();
 
         if (cap.OpenGL30) {
             LOGGER.trace(GL_MARKER, "glBindTexture({}, {})", target, textureId);
@@ -272,7 +272,7 @@ public final class NoDSA extends Common implements EXTDSADriver {
 
     @Override
     public boolean isSupported() {
-        final ContextCapabilities cap = GL.getCapabilities();
+        final GLCapabilities cap = GL.getCapabilities();
 
         final boolean hasDoubleSupport = cap.OpenGL40 || cap.GL_ARB_gpu_shader_fp64 || CAN_CAST_DOUBLE_TO_FLOAT;
         final boolean hasFramebufferSupport = cap.OpenGL30 || cap.GL_ARB_framebuffer_object || cap.GL_EXT_framebuffer_object || IGNORE_FRAMEBUFFER_SUPPORT;
@@ -310,7 +310,7 @@ public final class NoDSA extends Common implements EXTDSADriver {
 
     @Override
     public int glCreateFramebuffers() {
-        final ContextCapabilities cap = GL.getCapabilities();
+        final GLCapabilities cap = GL.getCapabilities();
 
         if (cap.OpenGL30) {
             LOGGER.trace(GL_MARKER, "glGenFramebuffers()");
@@ -378,7 +378,7 @@ public final class NoDSA extends Common implements EXTDSADriver {
 
     @Override
     public void glNamedBufferStorage(int bufferId, ByteBuffer data, int flags) {
-        final ContextCapabilities cap = GL.getCapabilities();
+        final GLCapabilities cap = GL.getCapabilities();
 
         LOGGER.trace(GL_MARKER, "glBindBuffer(GL_ARRAY_BUFFER, {})", bufferId);
         GL15.glBindBuffer(GL15.GL_ARRAY_BUFFER, bufferId);
@@ -399,7 +399,7 @@ public final class NoDSA extends Common implements EXTDSADriver {
 
     @Override
     public void glNamedBufferStorage(int bufferId, long size, int flags) {
-        final ContextCapabilities cap = GL.getCapabilities();
+        final GLCapabilities cap = GL.getCapabilities();
 
         LOGGER.trace(GL_MARKER, "glBindBuffer(GL_ARRAY_BUFFER, {})", bufferId);
         GL15.glBindBuffer(GL15.GL_ARRAY_BUFFER, bufferId);
@@ -455,7 +455,7 @@ public final class NoDSA extends Common implements EXTDSADriver {
 
     @Override
     public void glCopyNamedBufferSubData(int readBufferId, int writeBufferId, long readOffset, long writeOffset, long size) {
-        final ContextCapabilities cap = GL.getCapabilities();
+        final GLCapabilities cap = GL.getCapabilities();
 
         if (cap.OpenGL31) {
             LOGGER.trace(GL_MARKER, "glBindBuffer(GL_COPY_READ_BUFFER, {})", readBufferId);
@@ -552,7 +552,7 @@ public final class NoDSA extends Common implements EXTDSADriver {
 
     @Override
     public void glProgramUniform1d(int programId, int location, double value) {
-        final ContextCapabilities cap = GL.getCapabilities();
+        final GLCapabilities cap = GL.getCapabilities();
 
         glUseProgram(programId);
 
@@ -573,7 +573,7 @@ public final class NoDSA extends Common implements EXTDSADriver {
 
     @Override
     public void glProgramUniform2d(int programId, int location, double v0, double v1) {
-        final ContextCapabilities cap = GL.getCapabilities();
+        final GLCapabilities cap = GL.getCapabilities();
 
         glUseProgram(programId);
 
@@ -594,7 +594,7 @@ public final class NoDSA extends Common implements EXTDSADriver {
 
     @Override
     public void glProgramUniform3d(int programId, int location, double v0, double v1, double v2) {
-        final ContextCapabilities cap = GL.getCapabilities();
+        final GLCapabilities cap = GL.getCapabilities();
 
         glUseProgram(programId);
 
@@ -615,7 +615,7 @@ public final class NoDSA extends Common implements EXTDSADriver {
 
     @Override
     public void glProgramUniform4d(int programId, int location, double v0, double v1, double v2, double v3) {
-        final ContextCapabilities cap = GL.getCapabilities();
+        final GLCapabilities cap = GL.getCapabilities();
 
         glUseProgram(programId);
 
@@ -654,7 +654,7 @@ public final class NoDSA extends Common implements EXTDSADriver {
 
     @Override
     public void glProgramUniformMatrix2d(int programId, int location, boolean needsTranspose, DoubleBuffer data) {
-        final ContextCapabilities cap = GL.getCapabilities();
+        final GLCapabilities cap = GL.getCapabilities();
 
         glUseProgram(programId);
         if (cap.OpenGL40) {
@@ -685,7 +685,7 @@ public final class NoDSA extends Common implements EXTDSADriver {
 
     @Override
     public void glProgramUniformMatrix3d(int programId, int location, boolean needsTranspose, DoubleBuffer data) {
-        final ContextCapabilities cap = GL.getCapabilities();
+        final GLCapabilities cap = GL.getCapabilities();
 
         glUseProgram(programId);
 
@@ -717,7 +717,7 @@ public final class NoDSA extends Common implements EXTDSADriver {
 
     @Override
     public void glProgramUniformMatrix4d(int programId, int location, boolean needsTranspose, DoubleBuffer data) {
-        final ContextCapabilities cap = GL.getCapabilities();
+        final GLCapabilities cap = GL.getCapabilities();
 
         glUseProgram(programId);
 
@@ -795,7 +795,7 @@ public final class NoDSA extends Common implements EXTDSADriver {
 
     @Override
     public void glBlitNamedFramebuffer(int readFramebuffer, int drawFramebuffer, int srcX0, int srcY0, int srcX1, int srcY1, int dstX0, int dstY0, int dstX1, int dstY1, int mask, int filter) {
-        final ContextCapabilities cap = GL.getCapabilities();
+        final GLCapabilities cap = GL.getCapabilities();
 
         if (cap.OpenGL30) {
             LOGGER.trace(GL_MARKER, "glBindFramebuffer(GL_READ_FRAMEBUFFER, {})", readFramebuffer);

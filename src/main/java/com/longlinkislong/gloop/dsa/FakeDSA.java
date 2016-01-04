@@ -69,7 +69,6 @@ import java.nio.ByteBuffer;
 import java.nio.DoubleBuffer;
 import java.nio.FloatBuffer;
 import org.lwjgl.opengl.ARBFramebufferObject;
-import org.lwjgl.opengl.ContextCapabilities;
 import org.lwjgl.opengl.EXTFramebufferObject;
 import org.lwjgl.opengl.GL;
 import org.lwjgl.opengl.GL11;
@@ -78,6 +77,7 @@ import org.lwjgl.opengl.GL15;
 import org.lwjgl.opengl.GL20;
 import org.lwjgl.opengl.GL21;
 import org.lwjgl.opengl.GL30;
+import org.lwjgl.opengl.GLCapabilities;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.slf4j.Marker;
@@ -100,7 +100,7 @@ public final class FakeDSA extends Common implements EXTDSADriver {
     }
 
     private void restoreFramebuffer() {
-        final ContextCapabilities cap = GL.getCapabilities();
+        final GLCapabilities cap = GL.getCapabilities();
 
         if (cap.OpenGL30) {
             LOGGER.trace(GL_MARKER, "glBindFramebuffer(GL_FRAMEBUFFER, {})", this.saveFramebuffer);
@@ -223,7 +223,7 @@ public final class FakeDSA extends Common implements EXTDSADriver {
 
     @Override
     public int glCreateFramebuffers() {
-        final ContextCapabilities cap = GL.getCapabilities();
+        final GLCapabilities cap = GL.getCapabilities();
         final int id;
 
         if (cap.OpenGL30) {
@@ -856,7 +856,7 @@ public final class FakeDSA extends Common implements EXTDSADriver {
         assert checkNullableId(readFramebuffer) : invalidFramebufferIdMsg(readFramebuffer);
         assert checkNullableId(drawFramebuffer) : invalidFramebufferIdMsg(drawFramebuffer);
 
-        final ContextCapabilities cap = GL.getCapabilities();
+        final GLCapabilities cap = GL.getCapabilities();
 
         LOGGER.trace(GL_MARKER, "glGetInteger(GL_READ_FRAMEBUFFER_BINDING)");
         final int prevReadFB = GL11.glGetInteger(GL30.GL_READ_FRAMEBUFFER_BINDING);

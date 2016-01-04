@@ -73,9 +73,9 @@ import java.nio.DoubleBuffer;
 import java.nio.FloatBuffer;
 import org.lwjgl.opengl.ARBDirectStateAccess;
 import org.lwjgl.opengl.ARBSeparateShaderObjects;
-import org.lwjgl.opengl.ContextCapabilities;
 import org.lwjgl.opengl.GL;
 import org.lwjgl.opengl.GL41;
+import org.lwjgl.opengl.GLCapabilities;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.slf4j.Marker;
@@ -266,7 +266,7 @@ public final class ARBDSA extends Common implements DSADriver {
 
     @Override
     public boolean isSupported() {
-        final ContextCapabilities cap = GL.getCurrent().getCapabilities();
+        final GLCapabilities cap = GL.getCapabilities();
 
         return cap.GL_ARB_direct_state_access && FakeDSA.getInstance().isSupported();
     }
@@ -437,7 +437,7 @@ public final class ARBDSA extends Common implements DSADriver {
         assert checkOffset(location) : invalidUniformLocationMsg(location);
         assert checkFloat(value) : invalidFloatMsg(value);
 
-        final ContextCapabilities cap = GL.getCapabilities();
+        final GLCapabilities cap = GL.getCapabilities();
 
         if (cap.OpenGL41) {
             LOGGER.trace(
@@ -467,7 +467,7 @@ public final class ARBDSA extends Common implements DSADriver {
         assert checkFloat(v0) : invalidFloatMsg(v0);
         assert checkFloat(v1) : invalidFloatMsg(v1);
 
-        final ContextCapabilities cap = GL.getCapabilities();
+        final GLCapabilities cap = GL.getCapabilities();
 
         if (cap.OpenGL41) {
             LOGGER.trace(
@@ -498,7 +498,7 @@ public final class ARBDSA extends Common implements DSADriver {
         assert checkFloat(v1) : invalidFloatMsg(v1);
         assert checkFloat(v2) : invalidFloatMsg(v2);
 
-        final ContextCapabilities cap = GL.getCapabilities();
+        final GLCapabilities cap = GL.getCapabilities();
 
         if (cap.OpenGL41) {
             LOGGER.trace(
@@ -530,7 +530,7 @@ public final class ARBDSA extends Common implements DSADriver {
         assert checkFloat(v2) : invalidFloatMsg(v2);
         assert checkFloat(v3) : invalidFloatMsg(v3);
 
-        final ContextCapabilities cap = GL.getCapabilities();
+        final GLCapabilities cap = GL.getCapabilities();
 
         if (cap.OpenGL41) {
             LOGGER.trace(
@@ -558,7 +558,7 @@ public final class ARBDSA extends Common implements DSADriver {
         assert checkId(programId) : invalidProgramIdMsg(programId);
         assert checkOffset(location) : invalidUniformLocationMsg(location);
 
-        final ContextCapabilities cap = GL.getCapabilities();
+        final GLCapabilities cap = GL.getCapabilities();
 
         if (cap.OpenGL41) {
             LOGGER.trace(
@@ -586,7 +586,7 @@ public final class ARBDSA extends Common implements DSADriver {
         assert checkId(programId) : invalidProgramIdMsg(programId);
         assert checkOffset(location) : invalidUniformLocationMsg(location);
 
-        final ContextCapabilities cap = GL.getCapabilities();
+        final GLCapabilities cap = GL.getCapabilities();
 
         if (cap.OpenGL41) {
             LOGGER.trace(
@@ -614,7 +614,7 @@ public final class ARBDSA extends Common implements DSADriver {
         assert checkId(programId) : invalidProgramIdMsg(programId);
         assert checkOffset(location) : invalidUniformLocationMsg(location);
 
-        final ContextCapabilities cap = GL.getCapabilities();
+        final GLCapabilities cap = GL.getCapabilities();
 
         if (cap.OpenGL41) {
             LOGGER.trace(
@@ -642,7 +642,7 @@ public final class ARBDSA extends Common implements DSADriver {
         assert checkId(programId) : invalidProgramIdMsg(programId);
         assert checkOffset(location) : invalidUniformLocationMsg(location);
 
-        final ContextCapabilities cap = GL.getCapabilities();
+        final GLCapabilities cap = GL.getCapabilities();
 
         if (cap.OpenGL41) {
             LOGGER.trace(
@@ -670,7 +670,7 @@ public final class ARBDSA extends Common implements DSADriver {
         assert checkOffset(location) : invalidUniformLocationMsg(location);
         assert checkDouble(value) : invalidDoubleMsg(value);
 
-        final ContextCapabilities cap = GL.getCapabilities();
+        final GLCapabilities cap = GL.getCapabilities();
 
         if (cap.OpenGL41) {
             LOGGER.trace(
@@ -700,7 +700,7 @@ public final class ARBDSA extends Common implements DSADriver {
         assert checkDouble(v0) : invalidDoubleMsg(v0);
         assert checkDouble(v1) : invalidDoubleMsg(v1);
 
-        final ContextCapabilities cap = GL.getCapabilities();
+        final GLCapabilities cap = GL.getCapabilities();
 
         if (cap.OpenGL41) {
             LOGGER.trace(
@@ -731,7 +731,7 @@ public final class ARBDSA extends Common implements DSADriver {
         assert checkDouble(v1) : invalidDoubleMsg(v1);
         assert checkDouble(v2) : invalidDoubleMsg(v2);
 
-        final ContextCapabilities cap = GL.getCapabilities();
+        final GLCapabilities cap = GL.getCapabilities();
 
         if (cap.OpenGL41) {
             LOGGER.trace(
@@ -763,7 +763,7 @@ public final class ARBDSA extends Common implements DSADriver {
         assert checkDouble(v2) : invalidDoubleMsg(v2);
         assert checkDouble(v3) : invalidDoubleMsg(v3);
 
-        final ContextCapabilities cap = GL.getCapabilities();
+        final GLCapabilities cap = GL.getCapabilities();
 
         if (cap.OpenGL41) {
             LOGGER.trace(
@@ -792,7 +792,7 @@ public final class ARBDSA extends Common implements DSADriver {
         assert checkOffset(location) : invalidUniformLocationMsg(location);
         assert data.isDirect() : NON_DIRECT_BUFFER_MSG;
 
-        final ContextCapabilities cap = GL.getCapabilities();
+        final GLCapabilities cap = GL.getCapabilities();
 
         if (cap.OpenGL41) {
             LOGGER.trace(
@@ -820,7 +820,7 @@ public final class ARBDSA extends Common implements DSADriver {
         assert checkOffset(location) : invalidUniformLocationMsg(location);
         assert data.isDirect() : NON_DIRECT_BUFFER_MSG;
 
-        final ContextCapabilities cap = GL.getCapabilities();
+        final GLCapabilities cap = GL.getCapabilities();
 
         if (cap.OpenGL41) {
             LOGGER.trace(
@@ -849,7 +849,7 @@ public final class ARBDSA extends Common implements DSADriver {
         assert checkOffset(location) : invalidUniformLocationMsg(location);
         assert data.isDirect() : NON_DIRECT_BUFFER_MSG;
 
-        final ContextCapabilities cap = GL.getCapabilities();
+        final GLCapabilities cap = GL.getCapabilities();
 
         if (cap.OpenGL41) {
             LOGGER.trace(
@@ -878,7 +878,7 @@ public final class ARBDSA extends Common implements DSADriver {
         assert checkOffset(location) : invalidUniformLocationMsg(location);
         assert data.isDirect() : NON_DIRECT_BUFFER_MSG;
 
-        final ContextCapabilities cap = GL.getCapabilities();
+        final GLCapabilities cap = GL.getCapabilities();
 
         if (cap.OpenGL41) {
             LOGGER.trace(
@@ -907,7 +907,7 @@ public final class ARBDSA extends Common implements DSADriver {
         assert checkOffset(location) : invalidUniformLocationMsg(location);
         assert data.isDirect() : NON_DIRECT_BUFFER_MSG;
 
-        final ContextCapabilities cap = GL.getCapabilities();
+        final GLCapabilities cap = GL.getCapabilities();
 
         if (cap.OpenGL41) {
             LOGGER.trace(
@@ -936,7 +936,7 @@ public final class ARBDSA extends Common implements DSADriver {
         assert checkOffset(location) : invalidUniformLocationMsg(location);
         assert data.isDirect() : NON_DIRECT_BUFFER_MSG;
 
-        final ContextCapabilities cap = GL.getCapabilities();
+        final GLCapabilities cap = GL.getCapabilities();
 
         if (cap.OpenGL41) {
             LOGGER.trace(
@@ -1049,7 +1049,7 @@ public final class ARBDSA extends Common implements DSADriver {
     public void glGenerateTextureMipmap(int textureId) {
         assert checkId(textureId) : invalidTextureIdMsg(textureId);
 
-        LOGGER.trace(GL_MARKER, "glGenerateTextureMipmap({})", textureId);        
+        LOGGER.trace(GL_MARKER, "glGenerateTextureMipmap({})", textureId);
         ARBDirectStateAccess.glGenerateTextureMipmap(textureId);
         assert checkGLError() : glErrorMsg("glGenerateTextureMipmapARB(I)", textureId);
     }

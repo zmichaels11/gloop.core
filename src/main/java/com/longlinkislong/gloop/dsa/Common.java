@@ -51,7 +51,6 @@ import org.lwjgl.opengl.ARBUniformBufferObject;
 import org.lwjgl.opengl.ARBVertexArrayObject;
 import org.lwjgl.opengl.ARBVertexAttrib64Bit;
 import org.lwjgl.opengl.ARBVertexShader;
-import org.lwjgl.opengl.ContextCapabilities;
 import org.lwjgl.opengl.EXTBlendEquationSeparate;
 import org.lwjgl.opengl.EXTFramebufferObject;
 import org.lwjgl.opengl.EXTTransformFeedback;
@@ -67,6 +66,7 @@ import org.lwjgl.opengl.GL33;
 import org.lwjgl.opengl.GL40;
 import org.lwjgl.opengl.GL41;
 import org.lwjgl.opengl.GL43;
+import org.lwjgl.opengl.GLCapabilities;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.slf4j.Marker;
@@ -112,7 +112,7 @@ public abstract class Common {
     }
 
     public final void glDrawBuffers(IntBuffer attachments) {
-        final ContextCapabilities cap = GL.getCapabilities();
+        final GLCapabilities cap = GL.getCapabilities();
 
         if (cap.OpenGL20) {
             LOGGER.trace(GL_MARKER, "glDrawBuffers({})", attachments);
@@ -128,7 +128,7 @@ public abstract class Common {
     }
 
     public final void glDeleteFramebuffers(int fbId) {
-        final ContextCapabilities cap = GL.getCapabilities();
+        final GLCapabilities cap = GL.getCapabilities();
 
         if (cap.OpenGL30) {
             LOGGER.trace(GL_MARKER, "glDeleteFramebuffers({})", fbId);
@@ -148,7 +148,7 @@ public abstract class Common {
     }
 
     public final int glCheckFramebufferStatus(int fbId) {
-        final ContextCapabilities cap = GL.getCapabilities();
+        final GLCapabilities cap = GL.getCapabilities();
 
         if (cap.OpenGL30) {
             LOGGER.trace(GL_MARKER, "glCheckFramebufferStatus({})", fbId);
@@ -173,7 +173,7 @@ public abstract class Common {
     }
 
     public final void glBindFramebuffer(int target, int fb) {
-        final ContextCapabilities cap = GL.getCapabilities();
+        final GLCapabilities cap = GL.getCapabilities();
 
         if (cap.OpenGL30) {
             LOGGER.trace(GL_MARKER, "glBindFramebuffer({}, {})", target, fb);
@@ -247,7 +247,7 @@ public abstract class Common {
     }
 
     public final void glDeleteProgram(int pId) {
-        final ContextCapabilities cap = GL.getCapabilities();
+        final GLCapabilities cap = GL.getCapabilities();
 
         if (cap.OpenGL20) {
             LOGGER.trace(GL_MARKER, "glDeleteProgram({})", pId);
@@ -263,7 +263,7 @@ public abstract class Common {
     }
 
     public final int glCreateProgram() {
-        final ContextCapabilities cap = GL.getCapabilities();
+        final GLCapabilities cap = GL.getCapabilities();
 
         if (cap.OpenGL20) {
             LOGGER.trace(GL_MARKER, "glCreateProgram()");
@@ -282,7 +282,7 @@ public abstract class Common {
     }
 
     public final void glShaderStorageBlockBinding(int pId, int sbId, int sbb) {
-        final ContextCapabilities cap = GL.getCapabilities();
+        final GLCapabilities cap = GL.getCapabilities();
 
         if (cap.OpenGL43) {
             LOGGER.trace(GL_MARKER, "glShaderStorageBlockBinding({}, {}, {})", pId, sbId, sbb);
@@ -298,7 +298,7 @@ public abstract class Common {
     }
 
     public final int glGetUniformBlockIndex(int pId, CharSequence name) {
-        final ContextCapabilities cap = GL.getCapabilities();
+        final GLCapabilities cap = GL.getCapabilities();
 
         if (cap.OpenGL31) {
             LOGGER.trace(GL_MARKER, "glGetUniformBlockIndex({}, {})", pId, name);
@@ -316,7 +316,7 @@ public abstract class Common {
     }
 
     public final void glUniformBlockBinding(int pId, int ubId, int ubb) {
-        final ContextCapabilities cap = GL.getCapabilities();
+        final GLCapabilities cap = GL.getCapabilities();
 
         if (cap.OpenGL31) {
             LOGGER.trace(GL_MARKER, "glUniformBlockBinding({}, {}, {})", pId, ubId, ubb);
@@ -332,7 +332,7 @@ public abstract class Common {
     }
 
     public final int glGetProgramResourceLocation(int pId, int progInf, CharSequence name) {
-        final ContextCapabilities cap = GL.getCapabilities();
+        final GLCapabilities cap = GL.getCapabilities();
 
         if (cap.OpenGL43) {
             LOGGER.trace(GL_MARKER, "glGetProgramResourceLocation({}, {}, {})", pId, progInf, name);
@@ -360,7 +360,7 @@ public abstract class Common {
     }
 
     public final void glDispatchCompute(int x, int y, int z) {
-        final ContextCapabilities cap = GL.getCapabilities();
+        final GLCapabilities cap = GL.getCapabilities();
 
         if (cap.OpenGL43) {
             LOGGER.trace(GL_MARKER, "glDispatchCompute({}, {}, {})", x, y, z);
@@ -376,7 +376,7 @@ public abstract class Common {
     }
 
     public final void glDetachShader(int pId, int shId) {
-        final ContextCapabilities cap = GL.getCapabilities();
+        final GLCapabilities cap = GL.getCapabilities();
 
         if (cap.OpenGL20) {
             LOGGER.trace(GL_MARKER, "glDetachShader({}, {})", pId, shId);
@@ -392,7 +392,7 @@ public abstract class Common {
     }
 
     public final void glAttachShader(int pId, int shId) {
-        final ContextCapabilities cap = GL.getCapabilities();
+        final GLCapabilities cap = GL.getCapabilities();
 
         if (cap.OpenGL20) {
             LOGGER.trace(GL_MARKER, "glAttachShader({}, {})", pId, shId);
@@ -408,7 +408,7 @@ public abstract class Common {
     }
 
     public final void glLinkProgram(int pId) {
-        final ContextCapabilities cap = GL.getCapabilities();
+        final GLCapabilities cap = GL.getCapabilities();
 
         if (cap.OpenGL20) {
             LOGGER.trace(GL_MARKER, "glLinkProgram({})", pId);
@@ -424,7 +424,7 @@ public abstract class Common {
     }
 
     public final int glGetProgrami(int pId, int param) {
-        final ContextCapabilities cap = GL.getCapabilities();
+        final GLCapabilities cap = GL.getCapabilities();
 
         if (cap.OpenGL20) {
             LOGGER.trace(GL_MARKER, "glGetProgrami({}, {})", pId, param);
@@ -442,7 +442,7 @@ public abstract class Common {
     }
 
     public final String glGetProgramInfoLog(int pId, int length) {
-        final ContextCapabilities cap = GL.getCapabilities();
+        final GLCapabilities cap = GL.getCapabilities();
 
         if (cap.OpenGL20) {
             LOGGER.trace(GL_MARKER, "glGetProgramInfoLog({}, {})", pId, length);
@@ -460,7 +460,7 @@ public abstract class Common {
     }
 
     public final void glTransformFeedbackVaryings(int pId, CharSequence[] varyings, int type) {
-        final ContextCapabilities cap = GL.getCapabilities();
+        final GLCapabilities cap = GL.getCapabilities();
 
         if (cap.OpenGL30) {
             LOGGER.trace(GL_MARKER, "glTransformFeedbackVaryings({}, {}, {})", pId, varyings, type);
@@ -476,7 +476,7 @@ public abstract class Common {
     }
 
     public final void glBindAttribLocation(int pId, int index, CharSequence name) {
-        final ContextCapabilities cap = GL.getCapabilities();
+        final GLCapabilities cap = GL.getCapabilities();
 
         if (cap.OpenGL20) {
             LOGGER.trace(GL_MARKER, "glBindAttribLocation({}, {}, {})", pId, index, name);
@@ -491,7 +491,7 @@ public abstract class Common {
     }
 
     public final int glGetUniformLocation(int pId, CharSequence uName) {
-        final ContextCapabilities cap = GL.getCapabilities();
+        final GLCapabilities cap = GL.getCapabilities();
 
         if (cap.OpenGL20) {
             LOGGER.trace(GL_MARKER, "glGetUniformLocation({}, {})", pId, uName);
@@ -509,7 +509,7 @@ public abstract class Common {
     }
 
     public final void glUseProgram(int pId) {
-        final ContextCapabilities cap = GL.getCapabilities();
+        final GLCapabilities cap = GL.getCapabilities();
 
         if (cap.OpenGL20) {
             LOGGER.trace(GL_MARKER, "glUseProgram({})", pId);
@@ -525,7 +525,7 @@ public abstract class Common {
     }
 
     public final void glSamplerParameterf(int target, int sId, float value) {
-        final ContextCapabilities cap = GL.getCapabilities();
+        final GLCapabilities cap = GL.getCapabilities();
 
         if (cap.OpenGL33) {
             LOGGER.trace(GL_MARKER, "glSamplerParameterf({}, {}, {})", target, sId, value);
@@ -541,7 +541,7 @@ public abstract class Common {
     }
 
     public final void glBindSampler(int unit, int sId) {
-        final ContextCapabilities cap = GL.getCapabilities();
+        final GLCapabilities cap = GL.getCapabilities();
 
         if (cap.OpenGL33) {
             LOGGER.trace(GL_MARKER, "glBindSampler({}, {})", unit, sId);
@@ -557,7 +557,7 @@ public abstract class Common {
     }
 
     public final int glGenSamplers() {
-        final ContextCapabilities cap = GL.getCapabilities();
+        final GLCapabilities cap = GL.getCapabilities();
 
         if (cap.OpenGL33) {
             LOGGER.trace(GL_MARKER, "glGenSamplers()");
@@ -575,7 +575,7 @@ public abstract class Common {
     }
 
     public final void glDeleteSamplers(int sId) {
-        final ContextCapabilities cap = GL.getCapabilities();
+        final GLCapabilities cap = GL.getCapabilities();
 
         if (cap.OpenGL33) {
             LOGGER.trace(GL_MARKER, "glDeleteSamplers({})", sId);
@@ -591,7 +591,7 @@ public abstract class Common {
     }
 
     public final void glSamplerParameteri(int pId, int sId, int value) {
-        final ContextCapabilities cap = GL.getCapabilities();
+        final GLCapabilities cap = GL.getCapabilities();
 
         if (cap.OpenGL33) {
             LOGGER.trace(GL_MARKER, "glSamplerParameteri({}, {}, {})", pId, sId, value);
@@ -613,7 +613,7 @@ public abstract class Common {
     }
 
     public final String glGetShaderInfoLog(int shId, int length) {
-        final ContextCapabilities cap = GL.getCapabilities();
+        final GLCapabilities cap = GL.getCapabilities();
 
         if (cap.OpenGL20) {
             LOGGER.trace(GL_MARKER, "glGetShaderInfoLog({}, {})", shId, length);
@@ -631,7 +631,7 @@ public abstract class Common {
     }
 
     public final void glDeleteShader(int shId) {
-        final ContextCapabilities cap = GL.getCapabilities();
+        final GLCapabilities cap = GL.getCapabilities();
 
         if (cap.OpenGL20) {
             LOGGER.trace(GL_MARKER, "glDeleteShader({})", shId);
@@ -647,7 +647,7 @@ public abstract class Common {
     }
 
     public final int glCreateShader(int type) {
-        final ContextCapabilities cap = GL.getCapabilities();
+        final GLCapabilities cap = GL.getCapabilities();
 
         if (cap.OpenGL20) {
             LOGGER.trace(GL_MARKER, "glCreateShader({})", type);
@@ -665,7 +665,7 @@ public abstract class Common {
     }
 
     public final void glShaderSource(int shId, CharSequence src) {
-        final ContextCapabilities cap = GL.getCapabilities();
+        final GLCapabilities cap = GL.getCapabilities();
 
         if (cap.OpenGL20) {
             LOGGER.trace(GL_MARKER, "glShaderSource({}, {})", shId, src);
@@ -680,7 +680,7 @@ public abstract class Common {
     }
 
     public final void glCompileShader(int shId) {
-        final ContextCapabilities cap = GL.getCapabilities();
+        final GLCapabilities cap = GL.getCapabilities();
 
         if (cap.OpenGL20) {
             LOGGER.trace(GL_MARKER, "glCompileShader({})", shId);
@@ -696,7 +696,7 @@ public abstract class Common {
     }
 
     public final int glGetShaderi(int shId, int pId) {
-        final ContextCapabilities cap = GL.getCapabilities();
+        final GLCapabilities cap = GL.getCapabilities();
 
         if (cap.OpenGL20) {
             LOGGER.trace(GL_MARKER, "glGetShaderi({}, {})", shId, pId);
@@ -720,7 +720,7 @@ public abstract class Common {
     }
 
     public final void glTexBuffer(int target, int internalFormat, int bufferId) {
-        final ContextCapabilities cap = GL.getCapabilities();
+        final GLCapabilities cap = GL.getCapabilities();
 
         if (cap.OpenGL30) {
             LOGGER.trace(GL_MARKER, "glTexBuffer({}, {}, {})", target, internalFormat, bufferId);
@@ -769,7 +769,7 @@ public abstract class Common {
     }
 
     public final void glVertexAttribDivisor(int index, int divisor) {
-        final ContextCapabilities cap = GL.getCapabilities();
+        final GLCapabilities cap = GL.getCapabilities();
 
         if (cap.OpenGL33) {
             LOGGER.trace(GL_MARKER, "glVertexAttribDivisor({}, {})", index, divisor);
@@ -785,7 +785,7 @@ public abstract class Common {
     }
 
     public final void glEnableVertexAttribArray(int index) {
-        final ContextCapabilities cap = GL.getCapabilities();
+        final GLCapabilities cap = GL.getCapabilities();
 
         if (cap.OpenGL20) {
             LOGGER.trace(GL_MARKER, "glEnableVertexAttribArray({})", index);
@@ -801,7 +801,7 @@ public abstract class Common {
     }
 
     public final void glVertexAttribLPointer(int index, int size, int type, int stride, long offset) {
-        final ContextCapabilities cap = GL.getCapabilities();
+        final GLCapabilities cap = GL.getCapabilities();
 
         if (cap.OpenGL41) {
             LOGGER.trace(GL_MARKER, "glVertexAttribLPointer({}, {}, {}, {}, {})", index, size, type, stride, offset);
@@ -821,7 +821,7 @@ public abstract class Common {
     }
 
     public final void glVertexAttribPointer(int index, int size, int type, boolean normalized, int stride, long offset) {
-        final ContextCapabilities cap = GL.getCapabilities();
+        final GLCapabilities cap = GL.getCapabilities();
 
         if (cap.OpenGL20) {
             LOGGER.trace(GL_MARKER, "glVertexAttribPointer({}, {}, {}, {}, {}, {})", index, size, type, normalized, stride, offset);
@@ -837,7 +837,7 @@ public abstract class Common {
     }
 
     public final void glBeginTransformFeedback(int mode) {
-        final ContextCapabilities cap = GL.getCapabilities();
+        final GLCapabilities cap = GL.getCapabilities();
 
         if (cap.OpenGL30) {
             LOGGER.trace(GL_MARKER, "glBeginTransformFeedback({})", mode);
@@ -853,7 +853,7 @@ public abstract class Common {
     }
 
     public final void glEndTransformFeedback() {
-        final ContextCapabilities cap = GL.getCapabilities();
+        final GLCapabilities cap = GL.getCapabilities();
 
         if (cap.OpenGL30) {
             LOGGER.trace(GL_MARKER, "glEndTransformFeedback()");
@@ -873,7 +873,7 @@ public abstract class Common {
     }
 
     public final void glBindVertexArray(int vaoId) {
-        final ContextCapabilities cap = GL.getCapabilities();
+        final GLCapabilities cap = GL.getCapabilities();
 
         if (cap.OpenGL30) {
             LOGGER.trace(GL_MARKER, "glBindVertexArray({})", vaoId);
@@ -888,7 +888,7 @@ public abstract class Common {
     }
 
     public final int glGenVertexArrays() {
-        final ContextCapabilities cap = GL.getCapabilities();
+        final GLCapabilities cap = GL.getCapabilities();
 
         if (cap.OpenGL30) {
             LOGGER.trace(GL_MARKER, "glGenVertexArrays()");
@@ -907,7 +907,7 @@ public abstract class Common {
     }
 
     public final void glDeleteVertexArrays(int vao) {
-        final ContextCapabilities cap = GL.getCapabilities();
+        final GLCapabilities cap = GL.getCapabilities();
 
         if (cap.OpenGL30) {
             LOGGER.trace(GL_MARKER, "glDeleteVertexArrays({})", vao);
@@ -940,7 +940,7 @@ public abstract class Common {
     }
 
     public final int getOpenGLVersion() {
-        final ContextCapabilities cap = GL.getCapabilities();
+        final GLCapabilities cap = GL.getCapabilities();
 
         if (cap.OpenGL40) {
             if (cap.OpenGL45) {
@@ -992,7 +992,7 @@ public abstract class Common {
     }
 
     public final void glDrawArraysInstanced(int drawMode, int first, int count, int instanceCount) {
-        final ContextCapabilities cap = GL.getCapabilities();
+        final GLCapabilities cap = GL.getCapabilities();
 
         if (cap.OpenGL31) {
             LOGGER.trace(GL_MARKER, "glDrawArraysInstanced({}, {}, {}, {})", drawMode, first, count, instanceCount);
@@ -1025,7 +1025,7 @@ public abstract class Common {
     }
 
     public final void glDrawElementsInstanced(int drawMode, int count, int type, long offset, int instanceCount) {
-        final ContextCapabilities cap = GL.getCapabilities();
+        final GLCapabilities cap = GL.getCapabilities();
 
         if (cap.OpenGL31) {
             LOGGER.trace(GL_MARKER, "glDrawElementsInstanced({}, {}, {}, {}, {})", drawMode, count, type, offset, instanceCount);
@@ -1070,7 +1070,7 @@ public abstract class Common {
     }
 
     public final void glDrawArraysIndirect(int mode, long offset) {
-        final ContextCapabilities cap = GL.getCapabilities();
+        final GLCapabilities cap = GL.getCapabilities();
 
         if (cap.OpenGL40) {
             LOGGER.trace(GL_MARKER, "glDrawArraysIndirect({}, {})", mode, offset);
@@ -1086,7 +1086,7 @@ public abstract class Common {
     }
 
     public final void glDrawElementsIndirect(int mode, int type, long offset) {
-        final ContextCapabilities cap = GL.getCapabilities();
+        final GLCapabilities cap = GL.getCapabilities();
 
         if (cap.OpenGL40) {
             LOGGER.trace(GL_MARKER, "glDrawElementsIndirect({}, {}, {})", mode, type, offset);
@@ -1102,7 +1102,7 @@ public abstract class Common {
     }
 
     public final void glBeginConditionalRender(int query, int mode) {
-        final ContextCapabilities cap = GL.getCapabilities();
+        final GLCapabilities cap = GL.getCapabilities();
 
         if (cap.OpenGL30) {
             LOGGER.trace(GL_MARKER, "glBeginConditionalRender({}, {})", query, mode);
@@ -1114,7 +1114,7 @@ public abstract class Common {
     }
 
     public final void glEndConditionalRender() {
-        final ContextCapabilities cap = GL.getCapabilities();
+        final GLCapabilities cap = GL.getCapabilities();
 
         if (cap.OpenGL30) {
             LOGGER.trace(GL_MARKER, "glEndConditionalRender()");
@@ -1193,7 +1193,7 @@ public abstract class Common {
     }
 
     public final void glBlendEquationSeparate(int rgb, int alpha) {
-        final ContextCapabilities cap = GL.getCapabilities();
+        final GLCapabilities cap = GL.getCapabilities();
 
         if (cap.OpenGL20) {
             LOGGER.trace(GL_MARKER, "glBlendEquationSeparate({}, {})", rgb, alpha);
@@ -1215,7 +1215,7 @@ public abstract class Common {
     }
 
     public final void glUniform1f(int loc, float value) {
-        final ContextCapabilities cap = GL.getCapabilities();
+        final GLCapabilities cap = GL.getCapabilities();
 
         if (cap.OpenGL20) {
             LOGGER.trace(GL_MARKER, "glUniform1f({}, {})", loc, value);
@@ -1231,7 +1231,7 @@ public abstract class Common {
     }
 
     public final void glUniform2f(int loc, float v0, float v1) {
-        final ContextCapabilities cap = GL.getCapabilities();
+        final GLCapabilities cap = GL.getCapabilities();
 
         if (cap.OpenGL20) {
             LOGGER.trace(GL_MARKER, "glUniform2f({}, {}, {})", loc, v0, v1);
@@ -1247,7 +1247,7 @@ public abstract class Common {
     }
 
     public final void glUniform3f(int loc, float v0, float v1, float v2) {
-        final ContextCapabilities cap = GL.getCapabilities();
+        final GLCapabilities cap = GL.getCapabilities();
 
         if (cap.OpenGL20) {
             LOGGER.trace(GL_MARKER, "glUniform3f({}, {}, {}, {})", loc, v0, v1, v2);
@@ -1263,7 +1263,7 @@ public abstract class Common {
     }
 
     public final void glUniform4f(int loc, float v0, float v1, float v2, float v3) {
-        final ContextCapabilities cap = GL.getCapabilities();
+        final GLCapabilities cap = GL.getCapabilities();
 
         if (cap.OpenGL20) {
             LOGGER.trace(GL_MARKER, "glUniform4f({}, {}, {}, {}, {})", loc, v0, v1, v2, v3);
@@ -1279,7 +1279,7 @@ public abstract class Common {
     }
 
     public final void glUniform1i(int loc, int value) {
-        final ContextCapabilities cap = GL.getCapabilities();
+        final GLCapabilities cap = GL.getCapabilities();
 
         if (cap.OpenGL20) {
             LOGGER.trace(GL_MARKER, "glUniform1i({}, {})", loc, value);
@@ -1295,7 +1295,7 @@ public abstract class Common {
     }
 
     public final void glUniform2i(int loc, int v0, int v1) {
-        final ContextCapabilities cap = GL.getCapabilities();
+        final GLCapabilities cap = GL.getCapabilities();
 
         if (cap.OpenGL20) {
             LOGGER.trace(GL_MARKER, "glUniform2i({}, {}, {})", loc, v0, v1);
@@ -1311,7 +1311,7 @@ public abstract class Common {
     }
 
     public final void glUniform3i(int loc, int v0, int v1, int v2) {
-        final ContextCapabilities cap = GL.getCapabilities();
+        final GLCapabilities cap = GL.getCapabilities();
 
         if (cap.OpenGL20) {
             LOGGER.trace(GL_MARKER, "glUniform3i({}, {}, {}, {})", loc, v0, v1, v2);
@@ -1327,7 +1327,7 @@ public abstract class Common {
     }
 
     public final void glUniform4i(int loc, int v0, int v1, int v2, int v3) {
-        final ContextCapabilities cap = GL.getCapabilities();
+        final GLCapabilities cap = GL.getCapabilities();
 
         if (cap.OpenGL20) {
             LOGGER.trace(GL_MARKER, "glUniform4i({}, {}, {}, {}, {})", loc, v0, v1, v2, v3);
@@ -1343,7 +1343,7 @@ public abstract class Common {
     }
 
     public final void glUniformMatrix2fv(int location, boolean needsTranspose, FloatBuffer data) {
-        final ContextCapabilities cap = GL.getCapabilities();
+        final GLCapabilities cap = GL.getCapabilities();
 
         if (cap.OpenGL20) {
             LOGGER.trace(GL_MARKER, "glUniformMatrix2fv({}, {}, {})", location, needsTranspose, data);
@@ -1359,7 +1359,7 @@ public abstract class Common {
     }
 
     public final void glUniformMatrix3fv(int location, boolean needsTranspose, FloatBuffer data) {
-        final ContextCapabilities cap = GL.getCapabilities();
+        final GLCapabilities cap = GL.getCapabilities();
 
         if (cap.OpenGL20) {
             LOGGER.trace(GL_MARKER, "glUniformMatrix3fv({}, {}, {})", location, needsTranspose, data);
@@ -1375,7 +1375,7 @@ public abstract class Common {
     }
 
     public final void glUniformMatrix4fv(int location, boolean needsTranspose, FloatBuffer data) {
-        final ContextCapabilities cap = GL.getCapabilities();
+        final GLCapabilities cap = GL.getCapabilities();
 
         if (cap.OpenGL20) {
             LOGGER.trace(GL_MARKER, "glUniformMatrix4fv({}, {}, {})", location, needsTranspose, data);
