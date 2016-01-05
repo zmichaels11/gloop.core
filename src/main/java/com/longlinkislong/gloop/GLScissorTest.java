@@ -48,7 +48,7 @@ public class GLScissorTest extends GLObject {
     public final int width;
     public final int height;
 
-    private volatile String name = "id=" + System.currentTimeMillis();
+    private String name = "id=" + System.currentTimeMillis();
 
     /**
      * Assigns a human-readable name to the GLScissorTest.

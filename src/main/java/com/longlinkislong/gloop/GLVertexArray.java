@@ -51,7 +51,7 @@ public class GLVertexArray extends GLObject {
     private static final int INVALID_VERTEX_ARRAY_ID = -1;
 
     private transient volatile int vaoId = INVALID_VERTEX_ARRAY_ID;
-    private volatile String name = "";
+    private String name = "";
 
     /**
      * Assigns a human-readable name to the GLVertexArray object.

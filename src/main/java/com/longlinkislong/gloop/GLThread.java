@@ -61,7 +61,7 @@ public class GLThread implements ExecutorService {
     private static final Marker GLOOP_MARKER = MarkerFactory.getMarker("GLOOP");
     private static final Logger LOGGER = LoggerFactory.getLogger("GLThread");
 
-    private static final Map<Thread, GLThread> THREAD_MAP = new HashMap<>();
+    private static final transient Map<Thread, GLThread> THREAD_MAP = new HashMap<>();
     final Deque<GLBlending> blendStack = new LinkedList<>();
     final Deque<GLClear> clearStack = new LinkedList<>();
     final Deque<GLDepthTest> depthTestStack = new LinkedList<>();
@@ -274,7 +274,7 @@ public class GLThread implements ExecutorService {
         return viewport;
     }
 
-    private final ExecutorService internalExecutor = new ThreadPoolExecutor(
+    private transient final ExecutorService internalExecutor = new ThreadPoolExecutor(
             1, 1, 0L, TimeUnit.MILLISECONDS, new LinkedBlockingQueue<>()) {
 
         @Override
@@ -307,7 +307,7 @@ public class GLThread implements ExecutorService {
             }
         }
     };
-    private Thread internalThread = null;
+    private transient Thread internalThread = null;
     private boolean shouldHaltScheduledTasks = false;
 
     protected Thread getThread() {
@@ -519,7 +519,7 @@ public class GLThread implements ExecutorService {
         }
     }
 
-    private static final AtomicLong THREAD_ID = new AtomicLong();
+    private static transient final AtomicLong THREAD_ID = new AtomicLong();
 
     /**
      * A GLTask that limits the current framerate to the specified limit.

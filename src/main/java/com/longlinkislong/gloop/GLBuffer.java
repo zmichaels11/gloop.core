@@ -51,7 +51,7 @@ public class GLBuffer extends GLObject {
 
     private transient volatile ByteBuffer mappedBuffer = null;
     private volatile int accessFlags = GLBufferAccess.GL_MAP_WRITE.value | GLBufferAccess.GL_MAP_READ.value;
-    private volatile String name = "";
+    private String name = "";
 
     /**
      * Assigns a human-readable name to the GLBuffer.

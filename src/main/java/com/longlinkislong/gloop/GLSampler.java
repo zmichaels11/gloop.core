@@ -47,11 +47,11 @@ public class GLSampler extends GLObject {
     private static final Logger LOGGER = LoggerFactory.getLogger("GLSampler");
 
     private static final int INVALID_SAMPLER_ID = -1;
-    private int samplerId = INVALID_SAMPLER_ID;
+    private volatile transient int samplerId = INVALID_SAMPLER_ID;
     private final GLTextureParameters parameters;
     private final boolean isLocked;
 
-    private volatile String name = "";
+    private String name = "";
 
     /**
      * Assigns a human-readable name to the GLSampler.

@@ -48,7 +48,7 @@ public final class GLPerfMon extends GLObject {
         PERF_MON_ENABLED = Boolean.getBoolean("com.longlinkislong.gloop.glperfmon.enabled");
     }
 
-    private int monitorId = INVALID_MONITOR_ID;
+    private volatile transient int monitorId = INVALID_MONITOR_ID;
 
     private Map<String, Group> groups;
 

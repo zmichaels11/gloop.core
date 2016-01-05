@@ -65,7 +65,7 @@ public class GLTexture extends GLObject {
 
     private volatile GLTextureTarget target;
     private volatile boolean isSparse;
-    private volatile String name = "";
+    private String name = "";
 
     private volatile int vpageWidth;
     private volatile int vpageHeight;

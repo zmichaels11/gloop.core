@@ -56,8 +56,8 @@ public class GLFramebuffer extends GLObject {
     private static final Logger LOGGER = LoggerFactory.getLogger("GLFramebuffer");
 
     private static final int INVALID_FRAMEBUFFER_ID = -1;
-    private int framebufferId = INVALID_FRAMEBUFFER_ID;
-    private int nextColorAttachment = 36064 /* GL_COLOR_ATTACHMENT0 */;
+    private volatile transient int framebufferId = INVALID_FRAMEBUFFER_ID;
+    private volatile int nextColorAttachment = 36064 /* GL_COLOR_ATTACHMENT0 */;
     private final Map<String, Integer> attachments = new HashMap<>();
     private final boolean isLocked;
     private String name = "";

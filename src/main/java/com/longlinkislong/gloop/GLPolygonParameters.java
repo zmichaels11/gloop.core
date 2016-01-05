@@ -56,7 +56,7 @@ public class GLPolygonParameters extends GLObject {
     public final GLPolygonMode mode;
     public final float polygonOffsetFactor, polygonOffsetUnits;
 
-    private volatile String name = "";
+    private String name = "";
 
     /**
      * Assigns a human-readable name to the GLPolygonParameters

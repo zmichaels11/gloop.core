@@ -58,10 +58,10 @@ public class GLProgram extends GLObject {
     private static final Map<Thread, GLProgram> CURRENT = new HashMap<>();
     private static final int INVALID_PROGRAM_ID = -1;
 
-    volatile int programId = INVALID_PROGRAM_ID;
+    volatile transient int programId = INVALID_PROGRAM_ID;
 
     private final Map<String, Integer> uniforms = new HashMap<>();
-    private volatile String name = "";
+    private String name = "";
 
     /**
      * Assigns a human-readable name to the GLProgram.

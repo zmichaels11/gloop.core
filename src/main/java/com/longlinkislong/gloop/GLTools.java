@@ -1582,8 +1582,8 @@ public class GLTools {
         }
     }
 
-    private static DSADriver DSA = null;
-    private static final DSADriver[] DSA_IMPLEMENTATIONS;
+    private static transient DSADriver DSA = null;
+    private static transient final DSADriver[] DSA_IMPLEMENTATIONS;
 
     /**
      * Retrieves the current DSADriver.
