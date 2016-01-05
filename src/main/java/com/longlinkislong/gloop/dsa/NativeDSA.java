@@ -919,4 +919,19 @@ public final class NativeDSA implements EXTDSADriver {
     public void glInvalidateTexSubImage(int texId, int level, int xOffset, int yOffset, int zOffset, int width, int height, int depth) {
         throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
     }
+
+    @Override
+    public boolean isSparseTextureSupported() {
+        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+    }
+
+    @Override
+    public int glGetInternalFormati(int target, int format, int pName) {
+        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+    }
+
+    @Override
+    public void glTexPageCommitment(int texture, int target, int level, int xOffset, int yOffset, int zOffset, int width, int height, int depth, boolean commit) {
+        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+    }
 }

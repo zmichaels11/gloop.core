@@ -72,6 +72,7 @@ import java.nio.FloatBuffer;
 import org.lwjgl.opengl.ARBBufferStorage;
 import org.lwjgl.opengl.ARBInvalidateSubdata;
 import org.lwjgl.opengl.ARBSeparateShaderObjects;
+import org.lwjgl.opengl.ARBSparseTexture;
 import org.lwjgl.opengl.EXTDirectStateAccess;
 import org.lwjgl.opengl.GL;
 import org.lwjgl.opengl.GL11;
@@ -90,8 +91,36 @@ import static org.lwjgl.system.MemoryUtil.memAddress;
  * @author zmichaels
  */
 public final class EXTDSA extends Common implements EXTDSADriver {
+
     private static final Marker GL_MARKER = MarkerFactory.getMarker("OPENGL");
     private static final Logger LOGGER = LoggerFactory.getLogger("OPENGL");
+
+    @Override
+    public void glTexPageCommitment(
+            final int texture,
+            final int target,
+            final int level,
+            final int xOffset, final int yOffset, final int zOffset,
+            final int width, final int height, final int depth,
+            final boolean commit) {
+
+        if (GL.getCapabilities().GL_ARB_sparse_texture) {
+            LOGGER.trace(GL_MARKER, "glTexturePageCommitmentEXT({}, {}, {}, {}, {}, {}, {}, {}, {})",
+                    texture, level, xOffset, yOffset, zOffset, width, height, depth, commit);
+
+            ARBSparseTexture.glTexturePageCommitmentEXT(
+                    texture, level,
+                    xOffset, yOffset, zOffset,
+                    width, height, depth,
+                    commit);
+
+            assert checkGLError() : glErrorMsg("glTexturePageCommitmentEXT(IIIIIIIII) failed!",
+                    texture, level, xOffset, yOffset, zOffset,
+                    width, height, depth, commit);
+        } else {
+            LOGGER.warn(GL_MARKER, "GL_ARB_sparse_texture is not supported; call to glTexturePageCommitmentEXT ignored.");
+        }
+    }
 
     @Override
     public void glInvalidateBufferData(final int bufferId) {
@@ -161,14 +190,14 @@ public final class EXTDSA extends Common implements EXTDSADriver {
             LOGGER.trace(GL_MARKER, "glInvalidateTexImage is unsupported; call ignored.");
         }
     }
-    
+
     @Override
     public void glInvalidateTexImage(final int texImg, final int level) {
-        if(GL.getCapabilities().OpenGL43) {
+        if (GL.getCapabilities().OpenGL43) {
             LOGGER.trace(GL_MARKER, "glInvalidateTexImage({}, {})", texImg, level);
             GL43.glInvalidateTexImage(texImg, level);
             assert checkGLError() : glErrorMsg("glInvalidateTexImage(II)", texImg, level);
-        } else if(GL.getCapabilities().GL_ARB_invalidate_subdata) {
+        } else if (GL.getCapabilities().GL_ARB_invalidate_subdata) {
             LOGGER.trace(GL_MARKER, "glInvalidateTexImage({}, {}) (ARB)", texImg, level);
             ARBInvalidateSubdata.glInvalidateTexImage(texImg, level);
             assert checkGLError() : glErrorMsg("glInvalidateTexImageARB(II)", texImg, level);
@@ -176,7 +205,7 @@ public final class EXTDSA extends Common implements EXTDSADriver {
             LOGGER.trace(GL_MARKER, "glInvalidateTexImage is unsupported; call ignored.");
         }
     }
-    
+
     @Override
     public void glGetTextureImage(int texture, int target, int level, int format, int type, int bufferSize, ByteBuffer pixels) {
         assert checkId(texture) : invalidTextureIdMsg(texture);
@@ -190,7 +219,7 @@ public final class EXTDSA extends Common implements EXTDSADriver {
 
         LOGGER.trace(GL_MARKER, "glGetTextureImageEXT({}, {}, {}, {}, {}, {})", texture, target, level, format, type, pixels);
         EXTDirectStateAccess.glGetTextureImageEXT(texture, target, level, format, type, pixels);
-        
+
         assert checkGLError() : glErrorMsg("glGetTextureImageEXT(IIIII*)", texture, GLTextureTarget.of(target).get(), level, GLTextureFormat.of(format).get(), GLType.of(type).get(), toHexString(memAddress(pixels)));
     }
 
@@ -213,7 +242,7 @@ public final class EXTDSA extends Common implements EXTDSADriver {
         assert checkGLenum(usage, GLBufferUsage::of) : invalidGLenumMsg(usage);
 
         LOGGER.trace(GL_MARKER, "glNamedBufferDataEXT({}, {}, {})", bufferId, size, usage);
-        
+
         EXTDirectStateAccess.glNamedBufferDataEXT(bufferId, size, usage);
         assert checkGLError() : glErrorMsg("glNamedBufferDataEXT(ILI)", bufferId, size, GLBufferUsage.of(usage).get());
     }
@@ -260,7 +289,7 @@ public final class EXTDSA extends Common implements EXTDSADriver {
         assert checkGLenum(pName, GLBufferParameterName::of) : invalidGLenumMsg(pName);
 
         LOGGER.trace(GL_MARKER, "glGetNamedBufferParameteriEXT({}, {})", bufferId, pName);
-        
+
         final int rVal = EXTDirectStateAccess.glGetNamedBufferParameteriEXT(bufferId, pName);
         assert checkGLError() : glErrorMsg("glGetNamedBufferParameteriEXT(II)", bufferId, GLBufferParameterName.of(pName).get());
 
@@ -274,7 +303,7 @@ public final class EXTDSA extends Common implements EXTDSADriver {
         assert checkSize(length) : invalidSizeMsg(length);
 
         LOGGER.trace(GL_MARKER, "glMapNamedBufferRangeEXT({}, {}, {}, {})", bufferId, offset, length, access);
-        
+
         final ByteBuffer out = EXTDirectStateAccess.glMapNamedBufferRangeEXT(bufferId, offset, length, access, recycled);
         assert checkGLError() : glErrorMsg("glMapNamedBufferRangeEXT(ILLI)", bufferId, offset, length, access);
 
@@ -348,7 +377,7 @@ public final class EXTDSA extends Common implements EXTDSADriver {
         assert checkFloat(v2) : invalidFloatMsg(v2);
         assert checkFloat(v3) : invalidFloatMsg(v3);
 
-        LOGGER.trace(GL_MARKER, "glProgramUniform4fEXT({}, {}, {}, {}, {}, {})", programId, location, v0, v1, v2, v3);        
+        LOGGER.trace(GL_MARKER, "glProgramUniform4fEXT({}, {}, {}, {}, {}, {})", programId, location, v0, v1, v2, v3);
         EXTDirectStateAccess.glProgramUniform4fEXT(programId, location, v0, v1, v2, v3);
         assert checkGLError() : glErrorMsg("glProgramUniform4fEXT(IIFFFF)", programId, location, v0, v1, v2, v3);
     }
@@ -653,7 +682,7 @@ public final class EXTDSA extends Common implements EXTDSADriver {
             LOGGER.trace(GL_MARKER, "glNamedBufferStorageEXT({}, {}, {})", bufferId, data, flags);
             ARBBufferStorage.glNamedBufferStorageEXT(bufferId, data, flags);
             assert checkGLError() : glErrorMsg("glNamedBufferStorageEXT(I*I)", bufferId, toHexString(memAddress(data)), flags);
-        } else {            
+        } else {
             FakeDSA.getInstance().glNamedBufferStorage(bufferId, data, flags);
         }
     }

@@ -102,6 +102,20 @@ public class GLTextureParameters {
     public static final float DEFAULT_ANISOTROPIC_LEVEL = 1f;
 
     /**
+     * Default sparse texture allocation.
+     *
+     * @since 16.01.05
+     */
+    public static final boolean DEFAULT_SPARSE_ALLOCATION = false;
+
+    /**
+     * Specifies if the texture should be allocated as a sparse texture.
+     *
+     * @since 16.01.05
+     */
+    public final boolean isSparse;
+
+    /**
      * The wrap rule along the S-axis. (Used in 1D, 2D, and 3D textures).
      *
      * @since 15.12.17
@@ -189,7 +203,8 @@ public class GLTextureParameters {
                 DEFAULT_MIN_FILTER, DEFAULT_MAG_FILTER,
                 DEFAULT_MIN_LOD, DEFAULT_MAX_LOD,
                 DEFAULT_WRAP_S, DEFAULT_WRAP_T, DEFAULT_WRAP_R,
-                DEFAULT_ANISOTROPIC_LEVEL);
+                DEFAULT_ANISOTROPIC_LEVEL,
+                DEFAULT_SPARSE_ALLOCATION);
     }
 
     /**
@@ -206,14 +221,16 @@ public class GLTextureParameters {
      * textures).
      * @param anisotropicLevel the level of anisotropic filtering. 1.0 specifies
      * isotropic filtering.
+     * @param isSparse true to allocate texture as a sparse texture.
      * @since 15.12.17
      */
     public GLTextureParameters(
             final GLTextureMinFilter minFilter, final GLTextureMagFilter magFilter,
             final float minLOD, final float maxLOD,
             final GLTextureWrap wrapS, final GLTextureWrap wrapT, final GLTextureWrap wrapR,
-            final float anisotropicLevel) {
+            final float anisotropicLevel, final boolean isSparse) {
 
+        this.isSparse = isSparse;
         this.wrapR = Objects.requireNonNull(wrapR);
         this.wrapS = Objects.requireNonNull(wrapS);
         this.wrapT = Objects.requireNonNull(wrapT);
@@ -222,13 +239,9 @@ public class GLTextureParameters {
 
         if (!Float.isFinite(this.minLOD = minLOD)) {
             throw new ArithmeticException("MinLOD must be a finite number!");
-        }
-
-        if (!Float.isFinite(this.maxLOD = maxLOD)) {
+        } else if (!Float.isFinite(this.maxLOD = maxLOD)) {
             throw new ArithmeticException("MaxLOD must be a finite number!");
-        }
-
-        if (!Float.isFinite(anisotropicLevel)) {
+        } else if (!Float.isFinite(anisotropicLevel)) {
             throw new ArithmeticException("Anisotropic level must be a finite number!");
         } else if (anisotropicLevel < 1.0f) {
             throw new ArithmeticException("Anisotropic level must be greater than or equal to 1.0!");
@@ -255,7 +268,8 @@ public class GLTextureParameters {
                 this.minFilter, this.magFilter,
                 this.minLOD, this.maxLOD,
                 wrapS, wrapT, wrapR,
-                this.anisotropicLevel);
+                this.anisotropicLevel,
+                this.isSparse);
     }
 
     /**
@@ -273,7 +287,8 @@ public class GLTextureParameters {
                 this.minFilter, this.magFilter,
                 minLOD, maxLOD,
                 this.wrapS, this.wrapT, this.wrapR,
-                this.anisotropicLevel);
+                this.anisotropicLevel,
+                this.isSparse);
     }
 
     /**
@@ -292,7 +307,8 @@ public class GLTextureParameters {
                 minFilter, magFilter,
                 this.minLOD, this.maxLOD,
                 this.wrapS, this.wrapT, this.wrapR,
-                this.anisotropicLevel);
+                this.anisotropicLevel,
+                this.isSparse);
     }
 
     /**
@@ -310,7 +326,25 @@ public class GLTextureParameters {
                 this.minFilter, this.magFilter,
                 this.minLOD, this.maxLOD,
                 this.wrapS, this.wrapT, this.wrapR,
-                anisoLevel);
+                anisoLevel,
+                this.isSparse);
+    }
+
+    /**
+     * Creates a new instance of GLTextureParameters by copying all of the
+     * values and overriding the sparse allocation.
+     *
+     * @param allocateSparse true to enable sparse texture.
+     * @return the new GLTextureParameters.
+     * @since 16.01.05
+     */
+    public GLTextureParameters withSparseAllocation(final boolean allocateSparse) {
+        return new GLTextureParameters(
+                this.minFilter, this.magFilter,
+                this.minLOD, this.maxLOD,
+                this.wrapS, this.wrapT, this.wrapR,
+                this.anisotropicLevel,
+                allocateSparse);
     }
 
     private static MaxAnisotropyQuery ANISO_QUERY = new MaxAnisotropyQuery();
@@ -365,7 +399,7 @@ public class GLTextureParameters {
             LOGGER.trace(
                     GLOOP_MARKER,
                     "############### End GLTextureParameters Max Anisotropic Query ###############");
-            
+
             return this.maxLevel;
         }
 

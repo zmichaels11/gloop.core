@@ -71,6 +71,7 @@ import static java.lang.Long.toHexString;
 import java.nio.ByteBuffer;
 import java.nio.DoubleBuffer;
 import java.nio.FloatBuffer;
+import org.lwjgl.opengl.ARBSparseTexture;
 import org.lwjgl.opengl.GL;
 import org.lwjgl.opengl.GL41;
 import org.lwjgl.opengl.GL43;
@@ -95,6 +96,33 @@ public final class GL45DSA extends Common implements DSADriver {
     @Override
     public String toString() {
         return "GL45DSA";
+    }
+    
+    @Override
+    public void glTexPageCommitment(
+            final int texture,
+            final int target,
+            final int level,
+            final int xOffset, final int yOffset, final int zOffset,
+            final int width, final int height, final int depth,
+            final boolean commit) {
+
+        if (GL.getCapabilities().GL_ARB_sparse_texture) {
+            LOGGER.trace(GL_MARKER, "glTexturePageCommitmentEXT({}, {}, {}, {}, {}, {}, {}, {}, {})",
+                    texture, level, xOffset, yOffset, zOffset, width, height, depth, commit);
+
+            ARBSparseTexture.glTexturePageCommitmentEXT(
+                    texture, level,
+                    xOffset, yOffset, zOffset,
+                    width, height, depth,
+                    commit);
+
+            assert checkGLError() : glErrorMsg("glTexturePageCommitmentEXT(IIIIIIIII) failed!",
+                    texture, level, xOffset, yOffset, zOffset,
+                    width, height, depth, commit);
+        } else {
+            LOGGER.warn(GL_MARKER, "GL_ARB_sparse_texture is not supported; call to glTexturePageCommitmentEXT ignored.");
+        }
     }
     
     @Override

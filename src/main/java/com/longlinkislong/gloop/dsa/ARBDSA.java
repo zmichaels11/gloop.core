@@ -98,6 +98,24 @@ public final class ARBDSA extends Common implements DSADriver {
     }
 
     @Override
+    public void glTexPageCommitment(
+            final int texture,
+            final int target,
+            final int level,
+            final int xOffset, final int yOffset, final int zOffset,
+            final int width, final int height, final int depth,
+            final boolean commit) {
+
+        FakeDSA.getInstance().glTexPageCommitment(
+                texture,
+                target, 
+                level,
+                xOffset,  yOffset, zOffset,
+                width, height, depth,
+                commit);
+    }
+
+    @Override
     public void glInvalidateBufferData(final int bufferId) {
         if (GL.getCapabilities().OpenGL43) {
             LOGGER.trace("glInvalidateBufferData({})", bufferId);

@@ -25,6 +25,7 @@
  */
 package com.longlinkislong.gloop.dsa;
 
+import static com.longlinkislong.gloop.GLAsserts.checkGLError;
 import static com.longlinkislong.gloop.GLAsserts.glErrorMsg;
 import com.longlinkislong.gloop.GLBlendEquation;
 import com.longlinkislong.gloop.GLBlendFunc;
@@ -42,6 +43,7 @@ import org.lwjgl.opengl.ARBDrawIndirect;
 import org.lwjgl.opengl.ARBDrawInstanced;
 import org.lwjgl.opengl.ARBFramebufferObject;
 import org.lwjgl.opengl.ARBInstancedArrays;
+import org.lwjgl.opengl.ARBInternalformatQuery;
 import org.lwjgl.opengl.ARBProgramInterfaceQuery;
 import org.lwjgl.opengl.ARBSamplerObjects;
 import org.lwjgl.opengl.ARBShaderObjects;
@@ -65,6 +67,7 @@ import org.lwjgl.opengl.GL31;
 import org.lwjgl.opengl.GL33;
 import org.lwjgl.opengl.GL40;
 import org.lwjgl.opengl.GL41;
+import org.lwjgl.opengl.GL42;
 import org.lwjgl.opengl.GL43;
 import org.lwjgl.opengl.GLCapabilities;
 import org.slf4j.Logger;
@@ -97,6 +100,27 @@ public abstract class Common {
         } else {
             IGNORE_BUFFER_STORAGE_SUPPORT = true;
         }
+    }        
+    
+    public final int glGetInternalFormati(int target, int format, int pName) {
+        if(GL.getCapabilities().OpenGL42) {
+            LOGGER.trace(GL_MARKER, "glGetInternalformati({}, {}, {})", target, format, pName);
+            final int result =  GL42.glGetInternalformati(target, format, pName);
+            assert checkGLError() : glErrorMsg("glGetInternalformati(III) failed!", target, format, pName);
+            return result;
+        } else if(GL.getCapabilities().GL_ARB_internalformat_query) {
+            LOGGER.trace(GL_MARKER, "glGetInternalformati({}, {}, {}) (ARB)", target, format, pName);
+            final int result = ARBInternalformatQuery.glGetInternalformati(target, format, pName);
+            assert checkGLError() : glErrorMsg("glGetInternalformatiARB(III) failed!", target, format, pName);
+            return result;
+        } else {
+            LOGGER.warn(GL_MARKER, "glGetInternalFormati is not supported!");
+            return GL11.GL_FALSE;
+        }
+    }
+    
+    public final boolean isSparseTextureSupported() {
+        return GL.getCapabilities().GL_ARB_sparse_texture;
     }
 
     public final void glReadPixels(int x, int y, int w, int h, int format, int type, long ptr) {

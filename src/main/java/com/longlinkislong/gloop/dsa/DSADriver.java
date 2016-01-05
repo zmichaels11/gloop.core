@@ -38,6 +38,12 @@ import java.nio.IntBuffer;
  */
 public interface DSADriver {
 
+    void glTexPageCommitment(int texture, int target, int level, int xOffset, int yOffset, int zOffset, int width, int height, int depth, boolean commit);
+    
+    int glGetInternalFormati(int target, int format, int pName);
+    
+    boolean isSparseTextureSupported();
+    
     void glInvalidateBufferSubData(int bufferId, int offset, int length);
     
     void glInvalidateBufferData(int bufferId);

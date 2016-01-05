@@ -905,7 +905,7 @@ public class GLBuffer extends GLObject {
             if (!GLBuffer.this.isValid()) {
                 throw new GLException("Invalid GLBuffer!");
             }
-
+            
             GLTools.getDSAInstance().glInvalidateBufferData(GLBuffer.this.bufferId);
 
             LOGGER.trace(GLOOP_MARKER, "############### End GLBuffer Invalidate Task ###############");

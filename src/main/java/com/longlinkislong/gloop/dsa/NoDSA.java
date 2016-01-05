@@ -43,6 +43,7 @@ import org.lwjgl.opengl.ARBCopyBuffer;
 import org.lwjgl.opengl.ARBFramebufferObject;
 import org.lwjgl.opengl.ARBGPUShaderFP64;
 import org.lwjgl.opengl.ARBInvalidateSubdata;
+import org.lwjgl.opengl.ARBSparseTexture;
 import org.lwjgl.opengl.EXTFramebufferBlit;
 import org.lwjgl.opengl.EXTFramebufferObject;
 import org.lwjgl.opengl.GL;
@@ -72,6 +73,39 @@ public final class NoDSA extends Common implements EXTDSADriver {
     private static final Marker GL_MARKER = MarkerFactory.getMarker("OPENGL");
     private static final Logger LOGGER = LoggerFactory.getLogger("OPENGL");
 
+    @Override    
+    public void glTexPageCommitment(
+            final int texture,
+            final int target,
+            final int level,
+            final int xOffset, final int yOffset, final int zOffset,
+            final int width, final int height, final int depth,
+            final boolean commit) {
+
+        if(GL.getCapabilities().GL_ARB_sparse_texture) {
+            glBindTexture(target, texture);
+            
+            LOGGER.trace(GL_MARKER, "glTexPageCommitmentARB({}, {}, {}, {}, {}, {}, {}, {}, {})",
+                    target, level,
+                    xOffset, yOffset, zOffset,
+                    width, height, depth,
+                    commit);
+            
+            ARBSparseTexture.glTexPageCommitmentARB(
+                    target, level,
+                    xOffset, yOffset, zOffset,
+                    width, height, depth,
+                    commit);
+            
+            assert checkGLError() : glErrorMsg("glTexPageCommitmentARB(IIIIIIIII) failed!",
+                    target, level, xOffset, yOffset, zOffset,
+                    width, height, depth,
+                    commit);
+        } else {
+            LOGGER.warn(GL_MARKER, "GL_ARB_sparse_texture is not supported; call to glTexPageCommitmentARB ignored.");
+        }
+    }
+    
     @Override
     public void glInvalidateBufferData(final int bufferId) {
         if (GL.getCapabilities().OpenGL43) {

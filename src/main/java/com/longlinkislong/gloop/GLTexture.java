@@ -25,6 +25,9 @@
  */
 package com.longlinkislong.gloop;
 
+import static com.longlinkislong.gloop.GLTools.DEPTH;
+import static com.longlinkislong.gloop.GLTools.HEIGHT;
+import static com.longlinkislong.gloop.GLTools.WIDTH;
 import com.longlinkislong.gloop.dsa.DSADriver;
 import com.longlinkislong.gloop.dsa.EXTDSADriver;
 import java.nio.ByteBuffer;
@@ -46,6 +49,7 @@ import org.slf4j.MarkerFactory;
  */
 public class GLTexture extends GLObject {
 
+    private static final Marker GL_MARKER = MarkerFactory.getMarker("OPENGL");
     private static final Marker GLOOP_MARKER = MarkerFactory.getMarker("GLOOP");
     private static final Logger LOGGER = LoggerFactory.getLogger("GLTexture");
 
@@ -57,9 +61,78 @@ public class GLTexture extends GLObject {
     private volatile int height = 0;
     private volatile int depth = 0;
 
-    private GLTextureTarget target;
+    private volatile GLTextureInternalFormat internalFormat;
 
+    private volatile GLTextureTarget target;
+    private volatile boolean isSparse;
     private volatile String name = "";
+
+    private volatile int vpageWidth;
+    private volatile int vpageHeight;
+    private volatile int vpageDepth;
+
+    /**
+     * Retrieves the virtual page width. This only has meaningful data if
+     * GL_ARB_sparse_texture is supported and the texture was allocated as a
+     * sparse texture.
+     *
+     * @return the width of the virtual page.
+     * @since 16.01.05
+     */
+    public int getVirtualPageWidth() {
+        return this.vpageWidth;
+    }
+
+    /**
+     * Retrieves the virtual page height. This only has meaningful data if
+     * GL_ARB_sparse_texture is supported and the texture was allocated as a
+     * sparse texture.
+     *
+     * @return the height of the virtual page.
+     * @since 16.01.05
+     */
+    public int getVirtualPageHeight() {
+        return this.vpageHeight;
+    }
+
+    /**
+     * Retrieves the virtual page depth. This only has meaningful data if
+     * GL_ARB_sparse_texture is supported and the texture was allocated as a
+     * sparse texture.
+     *
+     * @return the depth of the virtual page.
+     * @since 16.01.05
+     */
+    public int getVirtualPageDepth() {
+        return this.vpageDepth;
+    }
+
+    /**
+     * Retrieves the internal format of the GLTexture. This is undefined until
+     * an allocate task is executed.
+     *
+     * @return the internal format
+     * @throws GLException if the texture has not been allocated yet.
+     * @since 16.01.05
+     */
+    public GLTextureInternalFormat getInternalFormat() throws GLException {
+        if (this.internalFormat == null) {
+            throw new GLException("GLTexture has not yet been initialized!");
+        } else {
+            return this.internalFormat;
+        }
+    }
+
+    /**
+     * Checks if the GLTexture is marked as sparse. This may return an invalid
+     * state if the texture is not complete yet.
+     *
+     * @return true if the texture is sparse.
+     * @since 16.01.05
+     */
+    public boolean isSparse() {
+        return this.isSparse;
+    }
 
     /**
      * Sets the texture's name.
@@ -244,13 +317,19 @@ public class GLTexture extends GLObject {
     }
 
     /**
-     * Retrieves the type of texture.
+     * Retrieves the type of texture. This is undefined until an allocate task
+     * is processed.
      *
      * @return GL_TEXTURE1D, GL_TEXTURE_2D, or GL_TEXTURE_3D.
+     * @throws GLException if the texture has not been allocated yet.
      * @since 15.07.08
      */
-    public GLTextureTarget getTarget() {
-        return this.target;
+    public GLTextureTarget getTarget() throws GLException {
+        if (this.target == null) {
+            throw new GLException("GLTexture has not yet been initialized!");
+        } else {
+            return this.target;
+        }
     }
 
     /**
@@ -262,7 +341,7 @@ public class GLTexture extends GLObject {
      */
     public int getWidth() throws GLException {
         if (this.width == 0) {
-            throw new GLException("Width has not been set!");
+            throw new GLException("GLTexture has not yet been initialized!");
         } else {
             return this.width;
         }
@@ -278,7 +357,7 @@ public class GLTexture extends GLObject {
      */
     public int getHeight() throws GLException {
         if (this.height == 0) {
-            throw new GLException("Height has not been set!");
+            throw new GLException("GLTexture has not yet been initialized!");
         } else {
             return this.height;
         }
@@ -294,7 +373,7 @@ public class GLTexture extends GLObject {
      */
     public int getDepth() throws GLException {
         if (this.depth == 0) {
-            throw new GLException("Depth has not been set!");
+            throw new GLException("GLTexture has not yet been initialized!");
         } else {
             return this.depth;
         }
@@ -399,6 +478,9 @@ public class GLTexture extends GLObject {
                 GLTexture.this.target = null;
                 GLTexture.this.textureId = INVALID_TEXTURE_ID;
                 GLTexture.this.width = GLTexture.this.height = GLTexture.this.depth = 0;
+                GLTexture.this.isSparse = false;
+                GLTexture.this.internalFormat = null;
+                GLTexture.this.name = "";
             } else {
                 throw new GLException("GLTexture is not valid! Cannot delete a texture if it does not exist.");
             }
@@ -905,6 +987,7 @@ public class GLTexture extends GLObject {
 
             dsa.glTextureStorage3d(textureId, mipmaps, this.internalFormat.value, width, height, depth);
             GLTexture.this.target = GLTextureTarget.GL_TEXTURE_3D;
+            GLTexture.this.internalFormat = this.internalFormat;
 
             LOGGER.trace(
                     GLOOP_MARKER,
@@ -997,6 +1080,7 @@ public class GLTexture extends GLObject {
 
             dsa.glTextureStorage2d(textureId, mipmaps, this.internalFormat.value, width, height);
             GLTexture.this.target = GLTextureTarget.GL_TEXTURE_2D;
+            GLTexture.this.internalFormat = this.internalFormat;
 
             LOGGER.trace(
                     GLOOP_MARKER,
@@ -1082,6 +1166,7 @@ public class GLTexture extends GLObject {
 
             dsa.glTextureStorage1d(textureId, mipmaps, this.internalFormat.value, width);
             GLTexture.this.target = GLTextureTarget.GL_TEXTURE_1D;
+            GLTexture.this.internalFormat = this.internalFormat;
 
             LOGGER.trace(
                     GLOOP_MARKER,
@@ -1323,23 +1408,133 @@ public class GLTexture extends GLObject {
                 final EXTDSADriver patch = (EXTDSADriver) dsa;
                 final int target = GLTexture.this.target.value;
 
-                patch.glTextureParameteri(textureId, target, 10241 /* GL_TEXTURE_MIN_FILTER */, this.params.minFilter.value);
-                patch.glTextureParameteri(textureId, target, 10240 /* GL_TEXTURE_MAG_FILTER */, this.params.magFilter.value);
-                patch.glTextureParameteri(textureId, target, 10242 /* GL_TEXTURE_WRAP_S */, this.params.wrapS.value);
-                patch.glTextureParameteri(textureId, target, 10243 /* GL_TEXTURE_WRAP_T */, this.params.wrapT.value);
-                patch.glTextureParameteri(textureId, target, 32882 /* GL_TEXTURE_WRAP_R */, this.params.wrapR.value);
-                patch.glTextureParameterf(textureId, target, 33082 /* GL_TEXTURE_MIN_LOD */, this.params.minLOD);
-                patch.glTextureParameterf(textureId, target, 33083 /* GL_TEXTURE_MAX_LOD */, this.params.maxLOD);
-                patch.glTextureParameterf(textureId, target, 34046 /* GL_TEXTURE_MAX_ANISOTROPY_EXT */, this.params.anisotropicLevel);
+                patch.glTextureParameteri(
+                        textureId,
+                        target,
+                        10241 /* GL_TEXTURE_MIN_FILTER */,
+                        this.params.minFilter.value);
+
+                patch.glTextureParameteri(
+                        textureId,
+                        target,
+                        10240 /* GL_TEXTURE_MAG_FILTER */,
+                        this.params.magFilter.value);
+
+                patch.glTextureParameteri(
+                        textureId,
+                        target,
+                        10242 /* GL_TEXTURE_WRAP_S */,
+                        this.params.wrapS.value);
+
+                patch.glTextureParameteri(
+                        textureId,
+                        target,
+                        10243 /* GL_TEXTURE_WRAP_T */,
+                        this.params.wrapT.value);
+
+                patch.glTextureParameteri(
+                        textureId,
+                        target,
+                        32882 /* GL_TEXTURE_WRAP_R */,
+                        this.params.wrapR.value);
+
+                patch.glTextureParameterf(
+                        textureId,
+                        target,
+                        33082 /* GL_TEXTURE_MIN_LOD */,
+                        this.params.minLOD);
+
+                patch.glTextureParameterf(
+                        textureId,
+                        target,
+                        33083 /* GL_TEXTURE_MAX_LOD */,
+                        this.params.maxLOD);
+
+                patch.glTextureParameterf(
+                        textureId,
+                        target,
+                        34046 /* GL_TEXTURE_MAX_ANISOTROPY_EXT */,
+                        this.params.anisotropicLevel);
+
+                if (this.params.isSparse) {
+                    if (dsa.isSparseTextureSupported()) {
+                        patch.glTextureParameteri(
+                                textureId,
+                                target,
+                                37286 /* GL_SPARSE_TEXTURE_ARB */,
+                                1 /* GL_TRUE */);
+                        GLTexture.this.isSparse = true;
+                    } else {
+                        LOGGER.warn(GL_MARKER, "Attempted to allocate sparse texture but ARB_sparse_texture is not supported!");
+                    }
+                }
             } else {
-                dsa.glTextureParameteri(textureId, 10241 /* GL_TEXTURE_MIN_FILTER */, this.params.minFilter.value);
-                dsa.glTextureParameteri(textureId, 10240 /* GL_TEXTURE_MAG_FILTER */, this.params.magFilter.value);
-                dsa.glTextureParameteri(textureId, 10242 /* GL_TEXTURE_WRAP_S */, this.params.wrapS.value);
-                dsa.glTextureParameteri(textureId, 10243 /* GL_TEXTURE_WRAP_T */, this.params.wrapT.value);
-                dsa.glTextureParameteri(textureId, 32882 /* GL_TEXTURE_WRAP_R */, this.params.wrapR.value);
-                dsa.glTextureParameterf(textureId, 33082 /* GL_TEXTURE_MIN_LOD */, this.params.minLOD);
-                dsa.glTextureParameterf(textureId, 33083 /* GL_TEXTURE_MAX_LOD */, this.params.maxLOD);
-                dsa.glTextureParameterf(textureId, 34046 /* GL_TEXTURE_MAX_ANISOTROPY_EXT */, this.params.anisotropicLevel);
+                dsa.glTextureParameteri(
+                        textureId,
+                        10241 /* GL_TEXTURE_MIN_FILTER */,
+                        this.params.minFilter.value);
+
+                dsa.glTextureParameteri(
+                        textureId,
+                        10240 /* GL_TEXTURE_MAG_FILTER */,
+                        this.params.magFilter.value);
+
+                dsa.glTextureParameteri(
+                        textureId,
+                        10242 /* GL_TEXTURE_WRAP_S */,
+                        this.params.wrapS.value);
+
+                dsa.glTextureParameteri(
+                        textureId,
+                        10243 /* GL_TEXTURE_WRAP_T */,
+                        this.params.wrapT.value);
+
+                dsa.glTextureParameteri(
+                        textureId,
+                        32882 /* GL_TEXTURE_WRAP_R */,
+                        this.params.wrapR.value);
+
+                dsa.glTextureParameterf(
+                        textureId,
+                        33082 /* GL_TEXTURE_MIN_LOD */,
+                        this.params.minLOD);
+
+                dsa.glTextureParameterf(
+                        textureId,
+                        33083 /* GL_TEXTURE_MAX_LOD */,
+                        this.params.maxLOD);
+
+                dsa.glTextureParameterf(
+                        textureId,
+                        34046 /* GL_TEXTURE_MAX_ANISOTROPY_EXT */,
+                        this.params.anisotropicLevel);
+
+                if (this.params.isSparse) {
+                    if (dsa.isSparseTextureSupported()) {
+                        dsa.glTextureParameteri(
+                                textureId,
+                                37286 /* GL_SPARSE_TEXTURE_ARB */,
+                                1 /* GL_TRUE */);
+                        GLTexture.this.isSparse = true;
+                    } else {
+                        LOGGER.warn(GL_MARKER, "Attempted to allocate sparse texture but ARB_sparse_texture is not supported!");
+                    }
+                }
+            }
+
+            if (GLTexture.this.isSparse) {
+                GLTexture.this.vpageWidth = dsa.glGetInternalFormati(
+                        GLTexture.this.target.value,
+                        GLTexture.this.internalFormat.value,
+                        37269 /* GL_VIRTUAL_PAGE_SIZE_X_ARB */);
+                GLTexture.this.vpageHeight = dsa.glGetInternalFormati(
+                        GLTexture.this.target.value,
+                        GLTexture.this.internalFormat.value,
+                        37270 /* GL_VIRTUAL_PAGE_SIZE_Y_ARB */);
+                GLTexture.this.vpageDepth = dsa.glGetInternalFormati(
+                        GLTexture.this.target.value,
+                        GLTexture.this.internalFormat.value,
+                        37271 /* GL_VIRTUAL_PAGE_SIZE_Z_ARB */);
             }
 
             LOGGER.trace(
@@ -1687,11 +1882,12 @@ public class GLTexture extends GLObject {
 
     /**
      * Invalidates a section of the GLTexture.
+     *
      * @param level the level to invalidate.
      * @param xOffset the x-offset to invalidate.
      * @param yOffset the y-offset to invalidate.
      * @param zOffset the z-offset to invalidate.
-     * @param width the width 
+     * @param width the width
      * @param height the height.
      * @param depth the depth.
      */
@@ -1699,10 +1895,10 @@ public class GLTexture extends GLObject {
             final int level,
             final int xOffset, final int yOffset, final int zOffset,
             final int width, final int height, final int depth) {
-        
+
         new InvalidateSubImageTask(
-                level, 
-                xOffset, yOffset, zOffset, 
+                level,
+                xOffset, yOffset, zOffset,
                 width, height, depth)
                 .glRun(this.getThread());
     }
@@ -1763,5 +1959,322 @@ public class GLTexture extends GLObject {
                         this.width, this.height, this.depth);
             }
         }
+    }
+
+    /**
+     * Marks a section of the texture for deallocation. This is only applicable
+     * to sparse textures.
+     *
+     * @param level the mipmap level.
+     * @param xOffset the xOffset in virtual page units.
+     * @param yOffset the yOffset in virtual page units.
+     * @param zOffset the zOffset in virtual page units.
+     * @param width the width in virtual page units.
+     * @param height the height in virtual page units.
+     * @param depth the depth in virtual page units.
+     * @return self reference.
+     * @since 16.01.05
+     */
+    public GLTexture deallocateRegion(
+            final int level,
+            final int xOffset, final int yOffset, final int zOffset,
+            final int width, final int height, final int depth) {
+
+        new DeallocateRegionTask(
+                level,
+                xOffset, yOffset, zOffset,
+                width, height, depth).glRun(this.getThread());
+
+        return this;
+    }
+
+    /**
+     * A GLTask that marks a section of the texture for deallocation. This is
+     * only applicable to sparse textures.
+     *
+     * @since 16.01.05
+     */
+    public final class DeallocateRegionTask extends GLTask {
+
+        private final int level;
+        private final int xOffset;
+        private final int yOffset;
+        private final int zOffset;
+        private final int width;
+        private final int height;
+        private final int depth;
+
+        /**
+         * Constructs a new DeleteRegionTask.
+         *
+         * @param level the mipmap level.
+         * @param xOffset the xoffset
+         * @param yOffset the yoffset
+         * @param zOffset the zoffset
+         * @param width the width.
+         * @param height the height.
+         * @param depth the depth.
+         * @since 16.01.05
+         */
+        public DeallocateRegionTask(
+                final int level,
+                final int xOffset, final int yOffset, final int zOffset,
+                final int width, final int height, final int depth) {
+
+            if ((this.level = level) < 0) {
+                throw new GLException("Mipmap level cannot be less than 0!");
+            } else if ((this.xOffset = xOffset) < 0) {
+                throw new GLException("XOffset cannot be less than 0!");
+            } else if ((this.yOffset = yOffset) < 0) {
+                throw new GLException("YOffset cannot be less than 0!");
+            } else if ((this.zOffset = zOffset) < 0) {
+                throw new GLException("ZOffset cannot be less than 0!");
+            } else if ((this.width = width) < 0) {
+                throw new GLException("Width cannot be less than 0!");
+            } else if ((this.height = height) < 0) {
+                throw new GLException("Height cannot be less than 0!");
+            } else if ((this.depth = depth) < 0) {
+                throw new GLException("Depth cannot be less than 0!");
+            }
+        }
+
+        @Override
+        public void run() {
+            if (!GLTexture.this.isValid()) {
+                throw new GLException("Invalid GLTexture!");
+            } else if (GLTexture.this.isSparse) {
+                GLTools.getDSAInstance().glTexPageCommitment(
+                        GLTexture.this.textureId, GLTexture.this.target.value,
+                        this.level,
+                        this.xOffset, this.yOffset, this.zOffset,
+                        this.width, this.height, this.depth,
+                        false);
+            }
+        }
+    }
+
+    /**
+     * Allocates all of the pages required for the specified region of the
+     * texture. No operations are performed if the section is already allocated.
+     * This call is ignored if the texture is not allocated as a sparse texture.
+     *
+     * @param level the mipmap level.
+     * @param xOffset the xOffset in virtual page units.
+     * @param yOffset the yOffset in virtual page units.
+     * @param zOffset the zOffset in virtual page units.
+     * @param width the width of the region in virtual page units.
+     * @param height the height of the region in virtual page units.
+     * @param depth the depth of the region in virtual page units.
+     * @return self reference.
+     * @since 16.01.05
+     */
+    public GLTexture allocateRegion(
+            final int level,
+            final int xOffset, final int yOffset, final int zOffset,
+            final int width, final int height, final int depth) {
+
+        new AllocateRegionTask(
+                level,
+                xOffset, yOffset, zOffset,
+                width, height, depth).glRun(this.getThread());
+        return this;
+    }
+
+    /**
+     * Allocates all the pages required for the specified region of the sparse
+     * texture.
+     *
+     * @since 16.01.05
+     */
+    public final class AllocateRegionTask extends GLTask {
+
+        private final int level;
+        private final int xOffset;
+        private final int yOffset;
+        private final int zOffset;
+        private final int width;
+        private final int height;
+        private final int depth;
+
+        /**
+         * Constructs a new AllocateRegionTask.
+         *
+         * @param level the mipmap level.
+         * @param xOffset the x offset.
+         * @param yOffset the y offset
+         * @param zOffset the z offset
+         * @param width the width.
+         * @param height the height.
+         * @param depth the depth.
+         * @since 16.01.05
+         */
+        public AllocateRegionTask(
+                final int level,
+                final int xOffset, final int yOffset, final int zOffset,
+                final int width, final int height, final int depth) {
+
+            if ((this.level = level) < 0) {
+                throw new GLException("Mipmap level cannot be less than 0!");
+            } else if ((this.xOffset = xOffset) < 0) {
+                throw new GLException("XOffset cannot be less than 0!");
+            } else if ((this.yOffset = yOffset) < 0) {
+                throw new GLException("YOffset cannot be less than 0!");
+            } else if ((this.zOffset = zOffset) < 0) {
+                throw new GLException("ZOffset cannot be less than 0!");
+            } else if ((this.width = width) < 0) {
+                throw new GLException("Width cannot be less than 0!");
+            } else if ((this.height = height) < 0) {
+                throw new GLException("Height cannot be less than 0!");
+            } else if ((this.depth = depth) < 0) {
+                throw new GLException("Depth cannot be less than 0!");
+            }
+        }
+
+        @Override
+        public void run() {
+            if (!GLTexture.this.isValid()) {
+                throw new GLException("Invalid GLTexture!");
+            } else if (GLTexture.this.isSparse) {
+                GLTools.getDSAInstance().glTexPageCommitment(
+                        GLTexture.this.textureId, GLTexture.this.target.value,
+                        this.level,
+                        this.xOffset, this.yOffset, this.zOffset,
+                        this.width, this.height, this.depth,
+                        true);
+            }
+        }
+
+    }
+
+    /**
+     * Retrieves the virtual page size for the GLTexture object.
+     *
+     * @return the dimensions of the virtual page size. All dimensions will be 0
+     * if GL_ARB_sparse_texture is not supported.
+     *
+     * @since 16.01.05
+     */
+    public int[] getVirtualPageSize() {
+        return getVirtualPageSize(this.target, this.internalFormat);
+    }
+
+    /**
+     * Checks the virtual page size of the specified texture target/format
+     * combination.
+     *
+     * @param target the texture target.
+     * @param format the internal texture format.
+     * @return an integer tuple specifying the virtual page dimensions. These
+     * will be 0 if GL_ARB_sparse_texture is not supported.
+     * @since 16.01.05
+     */
+    public static int[] getVirtualPageSize(
+            final GLTextureTarget target,
+            final GLTextureInternalFormat format) {
+
+        return new VirtualPageSizeQuery(target, format).glCall(GLThread.getAny());
+    }
+
+    /**
+     * A GLQuery that checks the virtual page size for the specified texture
+     * target/format combination.
+     *
+     * @since 16.01.05
+     */
+    public static final class VirtualPageSizeQuery extends GLQuery<int[]> {
+
+        private final GLTextureInternalFormat format;
+        private final GLTextureTarget target;
+
+        /**
+         * Creates a new VirtualPageSizeQuery.
+         *
+         * @param target the texture target.
+         * @param format the texture internal format.
+         * @since 16.01.05
+         */
+        public VirtualPageSizeQuery(
+                final GLTextureTarget target,
+                final GLTextureInternalFormat format) {
+
+            this.format = Objects.requireNonNull(format, "Format cannot be null!");
+            this.target = Objects.requireNonNull(target, "Target cannot be null!");
+        }
+
+        @Override
+        public int[] call() throws Exception {
+            final int[] out;
+            final DSADriver dsa = GLTools.getDSAInstance();
+
+            switch (this.target) {
+                case GL_TEXTURE_1D:
+                    out = new int[1];
+
+                    out[WIDTH] = dsa.glGetInternalFormati(
+                            this.target.value,
+                            this.format.value,
+                            37269 /* GL_VIRTUAL_PAGE_SIZE_X_ARB */);
+                    break;
+                case GL_TEXTURE_1D_ARRAY:
+                case GL_TEXTURE_2D:
+                    out = new int[2];
+
+                    out[WIDTH] = dsa.glGetInternalFormati(
+                            this.target.value,
+                            this.format.value,
+                            37269 /* GL_VIRTUAL_PAGE_SIZE_X_ARB */);
+                    out[HEIGHT] = dsa.glGetInternalFormati(
+                            this.target.value,
+                            this.format.value,
+                            37270 /* GL_VIRTUAL_PAGE_SIZE_Y_ARB */);
+                    break;
+                case GL_TEXTURE_2D_ARRAY:
+                case GL_TEXTURE_3D:
+                    out = new int[3];
+
+                    out[WIDTH] = dsa.glGetInternalFormati(
+                            this.target.value,
+                            this.format.value,
+                            37269 /* GL_VIRTUAL_PAGE_SIZE_X_ARB */);
+                    out[HEIGHT] = dsa.glGetInternalFormati(
+                            this.target.value,
+                            this.format.value,
+                            37270 /* GL_VIRTUAL_PAGE_SIZE_Y_ARB */);
+                    out[DEPTH] = dsa.glGetInternalFormati(
+                            this.target.value,
+                            this.format.value,
+                            37271 /* GL_VIRTUAL_PAGE_SIZE_Z_ARB */);
+                    break;
+                default:
+                    throw new GLException("Unsupported texture target: " + this.target);
+            }
+
+            return out;
+        }
+
+    }
+
+    /**
+     * Checks if sparse textures are supported.
+     *
+     * @return true if the context supports ARB_sparse_texture.
+     * @since 16.01.05
+     */
+    public static boolean isSparseTextureSupported() {
+        return new SparseTextureSupportQuery().glCall(GLThread.getAny());
+    }
+
+    /**
+     * A GLQuery that checks if sparse textures are supported.
+     *
+     * @since 16.01.05
+     */
+    public static final class SparseTextureSupportQuery extends GLQuery<Boolean> {
+
+        @Override
+        public Boolean call() throws Exception {
+            return GLTools.getDSAInstance().isSparseTextureSupported();
+        }
+
     }
 }
