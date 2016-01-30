@@ -664,7 +664,7 @@ public class GLThread implements ExecutorService {
             this.totalVar += this.varFPS * this.varFPS;
 
             if (this.frameCount % this.updateInterval == 0) {
-                LOGGER.debug("{}", this);
+                LOGGER.trace(GLOOP_MARKER, "{}", this);
             }
         }
 

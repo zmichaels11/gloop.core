@@ -118,6 +118,7 @@ public class GLBuffer extends GLObject {
      * @since 15.05.13
      */
     public boolean isValid() {
+        
         return this.bufferId != INVALID_BUFFER_ID;
     }
 
