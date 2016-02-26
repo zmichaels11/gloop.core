@@ -339,21 +339,21 @@ public class GLBlending extends GLObject {
             LOGGER.trace(GLOOP_MARKER, "\trgb func src: {} rgb func dst: {}", GLBlending.this.rgbFuncSrc, GLBlending.this.rgbFuncDst);
             LOGGER.trace(GLOOP_MARKER, "\talpha func src: {} alpha func dst: {}", GLBlending.this.alphaFuncSrc, GLBlending.this.alphaFuncDst);
 
-            final GLThread thread = GLThread.getCurrent().orElseThrow(GLException::new);
-            final DSADriver dsa = GLTools.getDSAInstance();
-
+            final GLThread thread = GLThread.getCurrent().orElseThrow(GLException::new);            
+            
             thread.currentBlend = GLBlending.this.withGLThread(thread);
 
             switch (GLBlending.this.enabled) {
                 case GL_ENABLED:
-
-                    dsa.glEnable(3042 /* GL_BLEND */);
-                    dsa.glBlendEquationSeparate(GLBlending.this.rgbBlend.value, GLBlending.this.alphaBlend.value);
-                    dsa.glBlendFuncSeparate(GLBlending.this.rgbFuncSrc.value, GLBlending.this.rgbFuncDst.value, GLBlending.this.alphaFuncSrc.value, GLBlending.this.alphaFuncDst.value);
-
+                    GLTools.getDriverInstance().blendingEnable(
+                            GLBlending.this.rgbBlend.value, 
+                            GLBlending.this.alphaBlend.value, 
+                            GLBlending.this.rgbFuncSrc.value, GLBlending.this.rgbFuncDst.value,
+                            GLBlending.this.alphaFuncSrc.value, GLBlending.this.alphaFuncDst.value);
+                    
                     break;
                 case GL_DISABLED:
-                    dsa.glDisable(3042 /* GL_BLEND */);
+                    GLTools.getDriverInstance().blendingDisable();
                     break;
             }
 

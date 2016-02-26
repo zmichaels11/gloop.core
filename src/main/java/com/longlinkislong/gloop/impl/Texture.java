@@ -9,4 +9,7 @@ package com.longlinkislong.gloop.impl;
  *
  * @author zmichaels
  */
-public interface Texture {}
+public interface Texture {
+
+    boolean isValid();
+}

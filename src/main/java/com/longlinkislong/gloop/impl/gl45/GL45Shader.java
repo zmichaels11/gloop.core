@@ -13,4 +13,9 @@ import com.longlinkislong.gloop.impl.Shader;
  */
 public final class GL45Shader implements Shader {
     int shaderId;
+    
+    @Override
+    public boolean isValid() {
+        return shaderId != -1;
+    }
 }

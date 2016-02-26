@@ -10,4 +10,5 @@ package com.longlinkislong.gloop.impl;
  * @author zmichaels
  */
 public interface DrawQuery {    
+    boolean isValid();
 }

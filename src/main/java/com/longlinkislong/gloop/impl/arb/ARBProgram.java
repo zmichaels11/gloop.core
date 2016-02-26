@@ -13,4 +13,9 @@ import com.longlinkislong.gloop.impl.Program;
  */
 public final class ARBProgram implements Program {
     int programId = -1;
+    
+    @Override
+    public boolean isValid() {
+        return programId != -1;
+    }
 }

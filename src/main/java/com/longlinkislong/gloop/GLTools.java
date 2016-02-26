@@ -25,29 +25,19 @@
  */
 package com.longlinkislong.gloop;
 
-import com.longlinkislong.gloop.dsa.ARBDSA;
-import com.longlinkislong.gloop.dsa.DSADriver;
-import com.longlinkislong.gloop.dsa.EXTDSA;
-import com.longlinkislong.gloop.dsa.FakeDSA;
-import com.longlinkislong.gloop.dsa.GL45DSA;
-import com.longlinkislong.gloop.dsa.NoDSA;
+import com.longlinkislong.gloop.impl.Driver;
+import com.longlinkislong.gloop.impl.gl45.GL45Driver;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
-import java.lang.reflect.InvocationTargetException;
-import java.lang.reflect.Method;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.nio.FloatBuffer;
 import java.nio.IntBuffer;
-import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 import java.util.ListIterator;
 import java.util.Optional;
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.slf4j.Marker;
@@ -1404,8 +1394,7 @@ public class GLTools {
         final double scale = uint8 / (double) 0xFF;
         return (int) (0x3 * scale) & 0x3;
     }
-
-    private static final VendorQuery VENDOR_QUERY = new VendorQuery();
+    
     /**
      * Constant for describing an AMD GPU.
      *
@@ -1463,90 +1452,8 @@ public class GLTools {
     }
 
     private static boolean _hasOpenGLVersion(final int version) {
-        return GLTools.getDSAInstance().getOpenGLVersion() >= version;
-    }
-
-    /**
-     * Checks if the vendor is AMD.
-     *
-     * @return true if the GPU is an AMD card.
-     * @since 15.07.09
-     */
-    public static boolean isGPUAmd() {
-        return getVendor().equals(GPU_AMD);
-    }
-
-    /**
-     * Checks if the vendor is NVidia.
-     *
-     * @return true if the GPU is an NVidia card.
-     * @since 15.07.09
-     */
-    public static boolean isNVidia() {
-        return getVendor().equals(GPU_NVIDIA);
-    }
-
-    /**
-     * Checks if the vendor is Intel.
-     *
-     * @return true if the GPU is an Intel card.
-     * @since 15.07.09
-     */
-    public static boolean isIntel() {
-        return getVendor().equals(GPU_INTEL);
-    }
-
-    /**
-     * Retrieves the name of the GPU vendor.
-     *
-     * @return the vendor name.
-     * @since 15.07.09
-     */
-    public static String getVendor() {
-        if (VendorQuery.isSet()) {
-            return VendorQuery.VENDOR;
-        } else {
-            return VENDOR_QUERY.glCall(GLThread.getDefaultInstance());
-        }
-    }
-
-    /**
-     * A GLTask that checks the GPU vendor.
-     *
-     * @since 15.07.09
-     */
-    public static class VendorQuery extends GLQuery<String> {
-
-        private static String VENDOR = null;
-
-        private static boolean isSet() {
-            return VENDOR != null;
-        }
-
-        @Override
-        public String call() throws Exception {
-            LOGGER.trace(GLOOP_MARKER, "Querying OpenGL vendor...");
-
-            if (isSet()) {
-                final String rawVendor = GLTools.getDSAInstance()
-                        .glGetString(7936 /* GL11.GL_VENDOR */)
-                        .toLowerCase();
-
-                if (rawVendor.contains("amd")) {
-                    VENDOR = GPU_AMD;
-                } else if (rawVendor.contains("intel")) {
-                    VENDOR = GPU_INTEL;
-                } else if (rawVendor.contains("nvidia")) {
-                    VENDOR = GPU_NVIDIA;
-                } else {
-                    VENDOR = rawVendor;
-                }
-            }
-
-            return VENDOR;
-        }
-
-    }
+        return true;
+    }            
 
     /**
      * Checks if the given value is a power of 2.
@@ -1582,33 +1489,16 @@ public class GLTools {
         }
     }
 
-    private static transient DSADriver DSA = null;
-    private static transient final DSADriver[] DSA_IMPLEMENTATIONS;
-
-    /**
-     * Retrieves the current DSADriver.
-     *
-     * @return the DSADriver.
-     * @since 15.07.13
-     */
-    public static DSADriver getDSAInstance() {
-        if (DSA == null) {
-            LOGGER.trace(SYS_MARKER, "Scanning for DSA implementations...");
-            for (DSADriver dsaImp : DSA_IMPLEMENTATIONS) {
-                if (dsaImp.isSupported()) {
-                    DSA = dsaImp;
-                    break;
-                }
-            }
-
-            LOGGER.debug(SYS_MARKER, "Using DSADriver: {}", getDSAImplement());
-            if(DSA == NoDSA.getInstance()) {
-                LOGGER.warn(SYS_MARKER, "Using NoDSA implementation is potentially unsafe!");
-            }
-        }
-
-        return DSA;
+    private static final class DriverHolder {
+        private static final Driver INSTANCE = GL45Driver.getInstance();
     }
+    
+    public static Driver getDriverInstance() {
+        return DriverHolder.INSTANCE;
+    }
+    
+    
+        
 
     /**
      * Calculates an estimate on how many bytes are needed for a volume of
@@ -1666,135 +1556,5 @@ public class GLTools {
         }
 
         return (width * height * depth) * fSize * tSize;
-    }
-
-    /**
-     * Retrieves the name of the implementation for Direct State Access that is
-     * currently being used.
-     *
-     * @return the DSA name.
-     * @since 15.07.09
-     */
-    public static String getDSAImplement() {
-        return getDSAInstance().toString();
-    }
-
-    static {
-        NativeTools.getInstance().autoLoad();
-
-        LOGGER.trace(SYS_MARKER, "Checking for DSA override...");
-        // check for driver override.
-        final String dsa = System.getProperty("gloop.gltools.dsa", "");
-        switch (dsa.toLowerCase()) {
-            case "fakedsa":
-            case "fake":
-                LOGGER.info(SYS_MARKER, "Forcing DSA driver: FakeDSA");
-                DSA = FakeDSA.getInstance();
-                break;
-            case "extdsa":
-            case "ext":
-                LOGGER.info(SYS_MARKER, "Forcing DSA driver: EXTDSA");
-                DSA = EXTDSA.getInstance();
-                break;
-            case "gl45dsa":
-            case "gl45":
-                LOGGER.info(SYS_MARKER, "Forcing DSA driver: GL45DSA");
-                DSA = GL45DSA.getInstance();
-                break;
-            case "arbdsa":
-            case "arb":
-                LOGGER.info(SYS_MARKER, "Forcing DSA driver: ARBDSA");
-                DSA = ARBDSA.getInstance();
-                break;
-            case "nodsa":
-            case "no":
-                LOGGER.info(SYS_MARKER, "Forcing DSA driver: NoDSA");
-                DSA = NoDSA.getInstance();
-                break;
-            case "":
-                break;
-            default:
-                LOGGER.warn(SYS_MARKER, "Unknown DSA driver: {}!", dsa);
-        }
-
-        LOGGER.trace(SYS_MARKER, "Scanning for DSA driver plugins...");
-        // check for all plugins
-        final List<Class<? extends DSADriver>> dsaDrivers = new ArrayList<>();
-        final String dsaPlugins = System.getProperty("gloop.gltools.dsa.plugins", "");
-        final List<String> plugins = new ArrayList<>();
-
-        // populate the known plugins with the default plugins.
-        Stream
-                .of(GL45DSA.class, ARBDSA.class, FakeDSA.class)
-                .map(Class::getName)
-                .forEach(plugins::add);
-
-        // detect user-specified plugins
-        Arrays
-                .stream(dsaPlugins.split(","))
-                .map(String::trim)
-                .filter(String::isEmpty)
-                .forEach(plugins::add);
-
-        // find the implementations.
-        for (String plugin : plugins) {
-            if (plugin == null || plugin.isEmpty()) {
-                continue;
-            }
-
-            LOGGER.trace(SYS_MARKER, "Adding DSADriver: {}", plugin);
-
-            try {
-                final Class<?> dsaPlugin = Class.forName(plugin);
-
-                dsaDrivers.add(dsaPlugin.asSubclass(DSADriver.class));
-            } catch (ClassNotFoundException ex) {
-                throw new RuntimeException("Could not find DSA driver: " + plugin, ex);
-            }
-        }
-
-        LOGGER.trace(SYS_MARKER, "Removing blacklisted DSA drivers...");
-        // remove all plugins that are blacklisted.
-        final String dsaBlacklist = System.getProperty("gloop.gltools.dsa.blacklist", "");
-        final String[] blacklisted = dsaBlacklist.split(",");
-
-        for (String blacklistedDSA : blacklisted) {
-            if (blacklistedDSA.trim().isEmpty()) {
-                continue;
-            }
-
-            LOGGER.trace(SYS_MARKER, "Removing DSADriver: {}", blacklistedDSA);
-
-            Optional<Class<?>> blacklistedDSADriver = Optional.empty();
-
-            for (Class<?> driver : dsaDrivers) {
-                if (driver.getName().toLowerCase().endsWith(blacklistedDSA.toLowerCase())) {
-                    blacklistedDSADriver = Optional.of(driver);
-                    break;
-                }
-            }
-
-            blacklistedDSADriver.ifPresent(dsaDrivers::remove);
-        }
-
-        // construct the array of available DSADrivers from the list of known plugins
-        DSA_IMPLEMENTATIONS = dsaDrivers.stream().map(def -> {
-            try {
-                LOGGER.trace(SYS_MARKER, "Loading driver: {}", def.getName());
-
-                final Method singletonGetter = def.getMethod("getInstance");
-
-                return singletonGetter.invoke(null);
-            } catch (IllegalAccessException | IllegalArgumentException | InvocationTargetException | NoSuchMethodException ex) {
-                throw new RuntimeException("Unable to initialize DSA Driver: " + def.getName(), ex);
-            }
-        }).collect(Collectors.toList()).toArray(new DSADriver[dsaDrivers.size()]);
-
-        try {
-            assert false;
-            LOGGER.debug(SYS_MARKER, "OpenGL assertions are disabled.");
-        } catch (Throwable ex) {
-            LOGGER.info(SYS_MARKER, "OpenGL assertions are enabled!");
-        }
-    }
+    }    
 }

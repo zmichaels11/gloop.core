@@ -9,4 +9,7 @@ package com.longlinkislong.gloop.impl;
  *
  * @author zmichaels
  */
-public interface VertexArray {}
+public interface VertexArray {
+
+    boolean isValid();
+}

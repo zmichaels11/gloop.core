@@ -25,7 +25,6 @@
  */
 package com.longlinkislong.gloop;
 
-import com.longlinkislong.gloop.dsa.DSADriver;
 import java.util.Objects;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -174,18 +173,16 @@ public class GLDepthTest extends GLObject {
             LOGGER.trace(GLOOP_MARKER, "\tApplying GLDepthTest[{}]", GLDepthTest.this.getName());
             LOGGER.trace(GLOOP_MARKER, "\tEnabled: {} Function: {}", GLDepthTest.this.depthTestEnabled, GLDepthTest.this.depthFunc);                        
 
-            final GLThread thread = GLThread.getCurrent().orElseThrow(GLException::new);
-            final DSADriver dsa = GLTools.getDSAInstance();
+            final GLThread thread = GLThread.getCurrent().orElseThrow(GLException::new);            
 
             thread.currentDepthTest = GLDepthTest.this.withGLThread(thread);
 
             switch (GLDepthTest.this.depthTestEnabled) {
                 case GL_ENABLED:
-                    dsa.glEnable(2929 /* GL_DEPTH_TEST */);
-                    dsa.glDepthFunc(GLDepthTest.this.depthFunc.value);
+                    GLTools.getDriverInstance().depthTestEnable(depthFunc.value);                    
                     break;
                 case GL_DISABLED:
-                    dsa.glDisable(2929 /* GL_DEPTH_TEST */);
+                    GLTools.getDriverInstance().depthTestDisable();                    
                     break;
             }
 

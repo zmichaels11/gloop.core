@@ -32,6 +32,7 @@ import static com.longlinkislong.gloop.GLAsserts.checkBufferIsNative;
 import static com.longlinkislong.gloop.GLAsserts.checkBufferSize;
 import com.longlinkislong.gloop.dsa.DSADriver;
 import com.longlinkislong.gloop.dsa.EXTDSADriver;
+import com.longlinkislong.gloop.impl.Framebuffer;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.nio.IntBuffer;
@@ -55,8 +56,7 @@ public class GLFramebuffer extends GLObject {
     private static final Marker GLOOP_MARKER = MarkerFactory.getMarker("GLOOP");
     private static final Logger LOGGER = LoggerFactory.getLogger("GLFramebuffer");
 
-    private static final int INVALID_FRAMEBUFFER_ID = -1;
-    private volatile transient int framebufferId = INVALID_FRAMEBUFFER_ID;
+    private volatile transient Framebuffer framebuffer;
     private volatile int nextColorAttachment = 36064 /* GL_COLOR_ATTACHMENT0 */;
     private final Map<String, Integer> attachments = new HashMap<>();
     private final boolean isLocked;
@@ -124,9 +124,13 @@ public class GLFramebuffer extends GLObject {
     private GLFramebuffer(final GLThread thread, final int fbId) {
         super(thread);
 
+        if (fbId != 0) {
+            throw new UnsupportedOperationException("Only fb0 is allowed to be initialized this way!");
+        }
+
         this.isLocked = true;
-        this.framebufferId = fbId;
-        this.name = "id=" + fbId;
+        this.framebuffer = GLTools.getDriverInstance().framebufferGetDefault();
+        this.name = "id=" + framebuffer.hashCode();
     }
 
     private static final Map<GLThread, GLFramebuffer> DEFAULT_FRAMEBUFFERS = new HashMap<>();
@@ -169,7 +173,7 @@ public class GLFramebuffer extends GLObject {
      * @since 15.07.06
      */
     public boolean isValid() {
-        return this.framebufferId != INVALID_FRAMEBUFFER_ID;
+        return framebuffer.isValid();
     }
 
     /**
@@ -196,17 +200,7 @@ public class GLFramebuffer extends GLObject {
 
             checkThread();
 
-            final DSADriver dsa = GLTools.getDSAInstance();
-            final int currentFB = dsa.glGetInteger(36006 /* GL_FRAMEBUFFER_BINDING */);
-
-            dsa.glBindFramebuffer(
-                    36160 /* GL_FRAMEBUFFER */,
-                    GLFramebuffer.this.framebufferId);
-
-            final int complete = dsa.glCheckFramebufferStatus(36160 /* GL_FRAMEBUFFER */);
-            final boolean res = complete == 36053 /* GL_FRAMEBUFFER_COMPLETE */;
-
-            dsa.glBindFramebuffer(36160 /* GL_FRAMEBUFFER */, currentFB);
+            final boolean res = GLTools.getDriverInstance().framebufferIsComplete(framebuffer);
 
             if (!res) {
                 LOGGER.warn(GLOOP_MARKER, "GLFramebuffer[{}] is not complete!", GLFramebuffer.this.getName());
@@ -246,14 +240,10 @@ public class GLFramebuffer extends GLObject {
                 throw new GLException("GLFramebuffer already initialized!");
             }
 
-            GLFramebuffer.this.framebufferId = GLTools
-                    .getDSAInstance()
-                    .glCreateFramebuffers();
-
-            GLFramebuffer.this.name = "id=" + GLFramebuffer.this.framebufferId;
+            framebuffer = GLTools.getDriverInstance().framebufferCreate();
+            GLFramebuffer.this.name = "id=" + framebuffer.hashCode();
 
             LOGGER.trace(GLOOP_MARKER, "Initialized GLFramebuffer[{}]!", GLFramebuffer.this.name);
-
             LOGGER.trace(GLOOP_MARKER, "############### End GLFramebuffer Init Task ###############");
         }
 
@@ -288,10 +278,8 @@ public class GLFramebuffer extends GLObject {
                 throw new GLException("GLFramebuffer is not valid!");
             }
 
-            GLTools.getDSAInstance().glDeleteFramebuffers(
-                    GLFramebuffer.this.framebufferId);
-
-            GLFramebuffer.this.framebufferId = INVALID_FRAMEBUFFER_ID;
+            GLTools.getDriverInstance().framebufferDelete(framebuffer);
+            framebuffer = null;
             GLFramebuffer.this.attachments.clear();
             GLFramebuffer.this.nextColorAttachment = 36064 /* GL_COLOR_ATTACHMENT0 */;
 
@@ -392,19 +380,8 @@ public class GLFramebuffer extends GLObject {
                 throw new GLException("Invalid GLFramebuffer!");
             }
 
-            final DSADriver dsa = GLTools.getDSAInstance();
-
-            dsa.glBindFramebuffer(
-                    36160 /* GL_FRAMEBUFFER */,
-                    GLFramebuffer.this.framebufferId);
-
-            if (this.attachments != null) {
-                dsa.glDrawBuffers(this.attachments);
-            }
-
-            LOGGER.trace(
-                    GLOOP_MARKER,
-                    "############### End GLFramebuffer Bind Task ###############");
+            GLTools.getDriverInstance().framebufferBind(framebuffer, attachments);
+            LOGGER.trace(GLOOP_MARKER, "############### End GLFramebuffer Bind Task ###############");
         }
     }
 
@@ -495,41 +472,7 @@ public class GLFramebuffer extends GLObject {
                 throw new GLException("Invalid GLFramebuffer!");
             }
 
-            final DSADriver dsa = GLTools.getDSAInstance();
-
-            if (dsa instanceof EXTDSADriver) {
-                final EXTDSADriver patch = (EXTDSADriver) dsa;
-                final GLTextureTarget target = this.depthStencilAttachment.getTarget();
-
-                switch (target) {
-                    case GL_TEXTURE_1D:
-                        patch.glNamedFramebufferTexture1D(
-                                GLFramebuffer.this.framebufferId,
-                                33306 /* GL_DEPTH_STENCIL_ATTACHMENT */,
-                                target.value,
-                                this.depthStencilAttachment.textureId,
-                                this.level);
-                        break;
-                    case GL_TEXTURE_2D:
-                        patch.glNamedFramebufferTexture2D(
-                                GLFramebuffer.this.framebufferId,
-                                33306 /* GL_DEPTH_STENCIL_ATTACHMENT */,
-                                target.value,
-                                this.depthStencilAttachment.textureId,
-                                this.level);
-                        break;
-                    default:
-                        throw new GLException("Texture target type: ["
-                                + target
-                                + "] is currently not supported.");
-                }
-            } else {
-                dsa.glNamedFramebufferTexture(
-                        GLFramebuffer.this.framebufferId,
-                        33306 /* GL_DEPTH_STENCIL_ATTACHMENT */,
-                        this.depthStencilAttachment.textureId, level);
-            }
-
+            GLTools.getDriverInstance().framebufferAddDepthStencilAttachment(framebuffer, depthStencilAttachment.texture, level);
             LOGGER.trace(GLOOP_MARKER, "############### End GLFramebuffer Add Depth Stencil Attachment Task ###############");
         }
     }
@@ -618,42 +561,7 @@ public class GLFramebuffer extends GLObject {
                 throw new GLException("Invalid GLFramebuffer!");
             }
 
-            final DSADriver dsa = GLTools.getDSAInstance();
-
-            if (dsa instanceof EXTDSADriver) {
-                final EXTDSADriver patch = (EXTDSADriver) dsa;
-                final GLTextureTarget target = this.depthAttachment.getTarget();
-
-                switch (target) {
-                    case GL_TEXTURE_1D:
-                        patch.glNamedFramebufferTexture1D(
-                                GLFramebuffer.this.framebufferId,
-                                36096 /* GL_DEPTH_ATTACHMENT */,
-                                target.value,
-                                this.depthAttachment.textureId,
-                                this.level);
-                        break;
-                    case GL_TEXTURE_2D:
-                        patch.glNamedFramebufferTexture2D(
-                                GLFramebuffer.this.framebufferId,
-                                36096 /* GL_DEPTH_ATTACHMENT */,
-                                target.value,
-                                this.depthAttachment.textureId,
-                                this.level);
-                        break;
-                    default:
-                        throw new GLException("Texture target type: "
-                                + target
-                                + " is currently not supported!");
-                }
-            } else {
-                dsa.glNamedFramebufferTexture(
-                        GLFramebuffer.this.framebufferId,
-                        36096 /* GL_DEPTH_ATTACHMENT */,
-                        this.depthAttachment.textureId,
-                        this.level);
-            }
-
+            GLTools.getDriverInstance().framebufferAddDepthAttachment(framebuffer, depthAttachment.texture, level);
             LOGGER.trace(GLOOP_MARKER, "############### End GLFramebuffer Add Depth Attachment Task ###############");
         }
     }
@@ -756,42 +664,7 @@ public class GLFramebuffer extends GLObject {
                 throw new GLException("Invalid GLFramebuffer!");
             }
 
-            final DSADriver dsa = GLTools.getDSAInstance();
-
-            if (dsa instanceof EXTDSADriver) {
-                final EXTDSADriver patch = (EXTDSADriver) dsa;
-                final GLTextureTarget target = this.colorAttachment.getTarget();
-
-                switch (target) {
-                    case GL_TEXTURE_1D:
-                        patch.glNamedFramebufferTexture1D(
-                                GLFramebuffer.this.framebufferId,
-                                this.attachmentId,
-                                target.value,
-                                this.colorAttachment.textureId,
-                                this.level);
-                        break;
-                    case GL_TEXTURE_2D:
-                        patch.glNamedFramebufferTexture2D(
-                                GLFramebuffer.this.framebufferId,
-                                this.attachmentId,
-                                target.value,
-                                this.colorAttachment.textureId,
-                                this.level);
-                        break;
-                    default:
-                        throw new GLException("Texture target type: ["
-                                + target
-                                + "] is not supported!");
-                }
-            } else {
-                dsa.glNamedFramebufferTexture(
-                        GLFramebuffer.this.framebufferId,
-                        this.attachmentId,
-                        this.colorAttachment.textureId,
-                        this.level);
-            }
-
+            GLTools.getDriverInstance().framebufferAddAttachment(framebuffer, attachmentId, colorAttachment.texture, level);
             LOGGER.trace(GLOOP_MARKER, "############### End GLFramebuffer Add Color Attachment Task ###############");
         }
     }
@@ -904,12 +777,7 @@ public class GLFramebuffer extends GLObject {
                 throw new GLException("Write framebuffer is not valid!");
             }
 
-            GLTools.getDSAInstance().glBlitNamedFramebuffer(
-                    this.readFB.framebufferId, this.writeFB.framebufferId,
-                    srcX0, srcY0, srcX1, srcY1,
-                    dstX0, dstY0, dstX1, dstY1,
-                    this.bitfield, this.filter.value);
-
+            GLTools.getDriverInstance().framebufferBlit(readFB.framebuffer, srcX0, srcY0, srcX1, srcY1, writeFB.framebuffer, dstX0, dstY0, dstX1, dstY1, bitfield, dstX0);
             LOGGER.trace(GLOOP_MARKER, "############### End GLFramebuffer Blit task ###############");
         }
     }
@@ -1029,45 +897,15 @@ public class GLFramebuffer extends GLObject {
 
             checkThread();
 
-            final DSADriver dsa = GLTools.getDSAInstance();
-            final int currentFb = dsa.glGetInteger(36006 /* GL_FRAMEBUFFER_BINDING */);
-
-            boolean undoFBBind = false;
-
-            if (currentFb != GLFramebuffer.this.framebufferId) {
-                dsa.glBindFramebuffer(36160 /* GL30.GL_FRAMEBUFFER */, framebufferId);
-                undoFBBind = true;
-            }
-
-            if (this.pixels == null) {
-                final int currentPixelPackBuffer = dsa.glGetInteger(35053 /* GL_PIXEL_PACK_BUFFER_BINDING */);
-
-                boolean undoBufferBind = false;
-
-                if (this.pixelPackBuffer.bufferId != currentPixelPackBuffer) {
-                    dsa.glBindBuffer(35051 /* GL_PIXEL_PACK_BUFFER */, this.pixelPackBuffer.bufferId);
-
-                    undoBufferBind = true;
-                }
-
-                // read into pixel pack buffer                
-                dsa.glReadPixels(this.x, this.y, this.width, this.height, this.format.value, this.type.value, 0L);
-
-                if (undoBufferBind) {
-                    dsa.glBindBuffer(35051 /* GL_PIXEL_PACK_BUFFER */, this.pixelPackBuffer.bufferId);
-                }
+            if (pixels != null) {
+                GLTools.getDriverInstance().framebufferGetPixels(framebuffer, x, y, width, height, height, y, pixels);
             } else {
-                // read into a ByteBuffer
-                dsa.glReadPixels(this.x, this.y, this.width, this.height, this.format.value, this.type.value, this.pixels);
+                GLTools.getDriverInstance().framebufferGetPixels(framebuffer, x, y, width, height, height, y, pixelPackBuffer.buffer);
             }
-
-            if (undoFBBind) {
-                dsa.glBindFramebuffer(36160 /* GL30.GL_FRAMEBUFFER */, currentFb);
-            }
-
+            
             LOGGER.trace(GLOOP_MARKER, "############### End GLFramebuffer Read Pixels Task ###############");
         }
-    }        
+    }
 
     @Override
     public final boolean isShareable() {

@@ -233,7 +233,7 @@ public class GLMask extends GLObject {
             LOGGER.trace(GLOOP_MARKER, "\tRed: {} Green: {}, Blue: {}", red, green, blue);
             LOGGER.trace(GLOOP_MARKER, "\tAlpha: {}", alpha);
             LOGGER.trace(GLOOP_MARKER, "\tDepth: {}", depth);
-            LOGGER.trace("\tStencil bitfield: {}", stencil);            
+            LOGGER.trace("\tStencil bitfield: {}", stencil);
 
             final GLThread thread = GLThread.getCurrent().orElseThrow(GLException::new);
 
@@ -243,13 +243,8 @@ public class GLMask extends GLObject {
                 thread.currentMask = GLMask.this.withGLThread(thread);
             }
 
-            final DSADriver dsa = GLTools.getDSAInstance();
-
-            dsa.glColorMask(GLMask.this.red, GLMask.this.green, GLMask.this.blue, GLMask.this.alpha);
-            dsa.glDepthMask(GLMask.this.depth);
-            dsa.glStencilMask(GLMask.this.stencil);
-
-            LOGGER.trace(GLOOP_MARKER,"############### End GLMask Apply Task ###############");
+            GLTools.getDriverInstance().maskApply(red, green, blue, alpha, depth, stencil);
+            LOGGER.trace(GLOOP_MARKER, "############### End GLMask Apply Task ###############");
         }
     }
 }

@@ -13,4 +13,9 @@ import com.longlinkislong.gloop.impl.Framebuffer;
  */
 public class GL45Framebuffer implements Framebuffer{
     int framebufferId = -1;
+    
+    @Override
+    public boolean isValid() {
+        return framebufferId != -1;
+    }
 }

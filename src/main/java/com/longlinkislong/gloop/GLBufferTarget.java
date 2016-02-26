@@ -45,7 +45,7 @@ public enum GLBufferTarget {
     GL_EXTERNAL_VIRTUAL_MEMORY_BUFFER(37216) {
         @Override
         public boolean isSupported() {
-            return GLTools.isGPUAmd() && hasOpenGLVersion(41);
+            return hasOpenGLVersion(41);
         }
     },
     /**

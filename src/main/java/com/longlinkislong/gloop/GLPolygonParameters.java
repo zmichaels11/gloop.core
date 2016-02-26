@@ -25,6 +25,7 @@
  */
 package com.longlinkislong.gloop;
 
+import static com.longlinkislong.gloop.GLEnableStatus.GL_ENABLED;
 import com.longlinkislong.gloop.dsa.DSADriver;
 import java.util.Objects;
 import org.slf4j.Logger;
@@ -320,31 +321,14 @@ public class GLPolygonParameters extends GLObject {
                         .withGLThread(thread);
             }
 
-            final DSADriver dsa = GLTools.getDSAInstance();
-
-            dsa.glPointSize(GLPolygonParameters.this.pointSize);
-            dsa.glLineWidth(GLPolygonParameters.this.lineSize);
-            dsa.glFrontFace(GLPolygonParameters.this.frontFace.value);
-
-            switch (GLPolygonParameters.this.cullEnabled) {
-                case GL_ENABLED:
-                    dsa.glEnable(2884 /* GL_CULL_FACE */);
-                    dsa.glCullFace(GLPolygonParameters.this.cullMode.value);
-                    break;
-                case GL_DISABLED:
-                    dsa.glDisable(2884 /* GL_CULL_FACE */);
-                    break;
-                default:
-                    throw new GLException("Unknown GLBoolean: " + GLPolygonParameters.this.cullEnabled);
-            }
-
-            dsa.glPolygonMode(
-                    1032 /* GL_FRONT_AND_BACK */,
-                    GLPolygonParameters.this.mode.value);
-
-            dsa.glPolygonOffset(
-                    GLPolygonParameters.this.polygonOffsetFactor,
-                    GLPolygonParameters.this.polygonOffsetUnits);
+                                    
+            GLTools.getDriverInstance().polygonSetParameters(
+                    pointSize, 
+                    lineSize, 
+                    frontFace.value,
+                    cullEnabled == GL_ENABLED ? cullMode.value : 0L,
+                    mode.value,
+                    polygonOffsetFactor, polygonOffsetUnits);            
 
             LOGGER.trace(GLOOP_MARKER, "############### End GLPolygonParameters Apply Polygon Parameters Task ###############");
         }

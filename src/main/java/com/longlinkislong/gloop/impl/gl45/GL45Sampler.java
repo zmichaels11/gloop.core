@@ -13,4 +13,9 @@ import com.longlinkislong.gloop.impl.Sampler;
  */
 public final class GL45Sampler implements Sampler {
     int samplerId = -1;
+    
+    @Override
+    public boolean isValid() {
+        return samplerId != -1;
+    }
 }

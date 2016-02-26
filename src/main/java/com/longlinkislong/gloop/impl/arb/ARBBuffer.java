@@ -13,4 +13,9 @@ import com.longlinkislong.gloop.impl.Buffer;
  */
 public final class ARBBuffer implements Buffer {
     int bufferId = -1;
+    
+    @Override
+    public boolean isValid() {
+        return bufferId != -1;
+    }
 }

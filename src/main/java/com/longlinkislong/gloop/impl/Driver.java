@@ -70,6 +70,8 @@ public interface Driver <BufferT extends Buffer,
     void depthTestDisable();
 
     // framebuffer
+    FramebufferT framebufferGetDefault();
+    
     boolean framebufferIsComplete(FramebufferT framebuffer);
 
     FramebufferT framebufferCreate();
@@ -113,7 +115,7 @@ public interface Driver <BufferT extends Buffer,
 
     void programSetUniformI(ProgramT program, long uLoc, int[] value);
 
-    void programLinkShaders(ProgramT program, ShaderT[] shaders);
+    void programLinkShaders(ProgramT program, Shader[] shaders);
 
     ProgramT programCreate();
 
@@ -126,11 +128,15 @@ public interface Driver <BufferT extends Buffer,
     void programDispatchCompute(ProgramT program, long numX, long numY, long numZ);
 
     void programSetFeedbackBuffer(ProgramT program, long varyingLoc, BufferT buffer);
+    
+    long programGetUniformLocation(ProgramT program, String name);   
 
     //sampler
     SamplerT samplerCreate();
 
     void samplerSetParameter(SamplerT sampler, long param, long value);
+    
+    void samplerSetParameter(SamplerT sampler, long param, double value);
 
     void samplerDelete(SamplerT sampler);
 
@@ -170,6 +176,12 @@ public interface Driver <BufferT extends Buffer,
     long textureGetMaxSize();        
 
     long textureGetMaxBoundTextures();
+    
+    long textureGetPageWidth(TextureT texture);
+    
+    long textureGetPageHeight(TextureT texture);
+    
+    long textureGetPageDepth(TextureT texture);
 
     long textureGetPreferredFormat(long internalFormat);
 
@@ -180,10 +192,10 @@ public interface Driver <BufferT extends Buffer,
     void textureAllocatePage(TextureT texture, long level, long xOffset, long yOffset, long zOffset, long width, long height, long depth);
     
     void textureDeallocatePage(TextureT texture, long level, long xOffset, long yOffset, long zOffset, long width, long height, long depth);
+    
+    long textureGetMaxAnisotropy();
 
     // vertexArray
-    void vertexArrayBind(VertexArrayT vao);
-
     VertexArrayT vertexArrayCreate();
     
     void vertexArrayDrawElementsIndirect(VertexArrayT vao, BufferT cmdBuffer, long drawMode, long indexType, long offset);
@@ -206,7 +218,7 @@ public interface Driver <BufferT extends Buffer,
     
     void vertexArrayAttachIndexBuffer(VertexArrayT vao, BufferT buffer);
     
-    void vertexArrayAttachBuffer(VertexArrayT vao, long index, BufferT buffer, long type, long size, long offset, long stride, long divisor);
+    void vertexArrayAttachBuffer(VertexArrayT vao, long index, BufferT buffer, long size, long type, long stride, long offset, long divisor);
     
     //viewport
     void viewportApply(long x, long y, long width, long height);

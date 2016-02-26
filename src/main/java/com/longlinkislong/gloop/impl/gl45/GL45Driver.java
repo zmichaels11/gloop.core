@@ -7,6 +7,7 @@ package com.longlinkislong.gloop.impl.gl45;
 
 import com.longlinkislong.gloop.GLException;
 import com.longlinkislong.gloop.impl.Driver;
+import com.longlinkislong.gloop.impl.Shader;
 import java.nio.ByteBuffer;
 import java.nio.DoubleBuffer;
 import java.nio.FloatBuffer;
@@ -24,6 +25,7 @@ import org.lwjgl.opengl.GL31;
 import org.lwjgl.opengl.GL33;
 import org.lwjgl.opengl.GL40;
 import org.lwjgl.opengl.GL41;
+import org.lwjgl.opengl.GL42;
 import org.lwjgl.opengl.GL43;
 import org.lwjgl.opengl.GL45;
 import org.lwjgl.opengl.GLCapabilities;
@@ -33,8 +35,7 @@ import org.lwjgl.opengl.GLCapabilities;
  * @author zmichaels
  */
 public final class GL45Driver implements Driver<
-        GL45Buffer, GL45Framebuffer, GL45Texture, GL45Shader, GL45Program, 
-        GL45Sampler, GL45VertexArray, GL45DrawQuery> {
+        GL45Buffer, GL45Framebuffer, GL45Texture, GL45Shader, GL45Program, GL45Sampler, GL45VertexArray, GL45DrawQuery> {
 
     @Override
     public void blendingEnable(long rgbEq, long aEq, long rgbFuncSrc, long rgbFuncDst, long aFuncSrc, long aFuncDst) {
@@ -143,6 +144,13 @@ public final class GL45Driver implements Driver<
         GL30.glBindFramebuffer(GL30.GL_FRAMEBUFFER, currentFB);
 
         return res;
+    }
+
+    @Override
+    public GL45Framebuffer framebufferGetDefault() {
+        final GL45Framebuffer fb = new GL45Framebuffer();
+        fb.framebufferId = 0;
+        return fb;
     }
 
     @Override
@@ -264,12 +272,7 @@ public final class GL45Driver implements Driver<
 
     @Override
     public void programUse(GL45Program program) {
-        final Thread currentThread = Thread.currentThread();
-
-        if (GL45Program.CURRENT_PROGRAM.get(currentThread) != program.programId) {
-            GL20.glUseProgram(program.programId);
-            GL45Program.CURRENT_PROGRAM.put(currentThread, program.programId);
-        }
+        GL20.glUseProgram(program.programId);
     }
 
     @Override
@@ -300,7 +303,7 @@ public final class GL45Driver implements Driver<
     }
 
     @Override
-    public void programSetUniformMatF(GL45Program program, long uLoc, FloatBuffer mat) {
+    public void programSetUniformMatF(GL45Program program, long uLoc, FloatBuffer mat) {        
         switch (mat.limit()) {
             case 4:
                 GL41.glProgramUniformMatrix2fv(program.programId, (int) uLoc, false, mat);
@@ -377,15 +380,15 @@ public final class GL45Driver implements Driver<
     }
 
     @Override
-    public void programLinkShaders(GL45Program program, GL45Shader[] shaders) {
-        for (GL45Shader shader : shaders) {
-            GL20.glAttachShader(program.programId, shader.shaderId);
+    public void programLinkShaders(GL45Program program, Shader[] shaders) {
+        for (Shader shader : shaders) {
+            GL20.glAttachShader(program.programId, ((GL45Shader) shader).shaderId);
         }
 
         GL20.glLinkProgram(program.programId);
 
-        for (GL45Shader shader : shaders) {
-            GL20.glDetachShader(program.programId, shader.shaderId);
+        for (Shader shader : shaders) {
+            GL20.glDetachShader(program.programId, ((GL45Shader) shader).shaderId);
         }
     }
 
@@ -421,15 +424,11 @@ public final class GL45Driver implements Driver<
 
     @Override
     public void programDispatchCompute(GL45Program program, long numX, long numY, long numZ) {
-        if (GL45Program.CURRENT_PROGRAM.get(Thread.currentThread()) == program.programId) {
-            GL43.glDispatchCompute((int) numX, (int) numY, (int) numZ);
-        } else {
-            final int currentProgram = GL11.glGetInteger(GL20.GL_CURRENT_PROGRAM);
+        final int currentProgram = GL11.glGetInteger(GL20.GL_CURRENT_PROGRAM);
 
-            GL20.glUseProgram(program.programId);
-            GL43.glDispatchCompute((int) numX, (int) numY, (int) numZ);
-            GL20.glUseProgram(currentProgram);
-        }
+        GL20.glUseProgram(program.programId);
+        GL43.glDispatchCompute((int) numX, (int) numY, (int) numZ);
+        GL20.glUseProgram(currentProgram);
     }
 
     @Override
@@ -477,6 +476,7 @@ public final class GL45Driver implements Driver<
 
         shader.shaderId = GL20.glCreateShader((int) type);
         GL20.glShaderSource(shader.shaderId, source);
+        GL20.glCompileShader(shader.shaderId);
 
         return shader;
     }
@@ -517,6 +517,7 @@ public final class GL45Driver implements Driver<
 
         texture.textureId = GL45.glCreateTextures(target);
         texture.target = target;
+        texture.internalFormat = (int) internalFormat;
 
         switch (target) {
             case GL11.GL_TEXTURE_1D:
@@ -639,8 +640,18 @@ public final class GL45Driver implements Driver<
     }
 
     @Override
-    public void vertexArrayBind(GL45VertexArray vao) {
-        GL30.glBindVertexArray(vao.vertexArrayId);
+    public long textureGetPageWidth(GL45Texture texture) {
+        return GL42.glGetInternalformati(texture.target, texture.internalFormat, ARBSparseTexture.GL_VIRTUAL_PAGE_SIZE_X_ARB);
+    }
+
+    @Override
+    public long textureGetPageHeight(GL45Texture texture) {
+        return GL42.glGetInternalformati(texture.target, texture.internalFormat, ARBSparseTexture.GL_VIRTUAL_PAGE_SIZE_Y_ARB);
+    }
+
+    @Override
+    public long textureGetPageDepth(GL45Texture texture) {
+        return GL42.glGetInternalformati(texture.target, texture.internalFormat, ARBSparseTexture.GL_VIRTUAL_PAGE_SIZE_Z_ARB);
     }
 
     @Override
@@ -713,7 +724,6 @@ public final class GL45Driver implements Driver<
     @Override
     public void vertexArrayDrawArrays(GL45VertexArray vao, long drawMode, long start, long count) {
         final int currentVao = GL11.glGetInteger(GL30.GL_VERTEX_ARRAY_BINDING);
-
         GL30.glBindVertexArray(vao.vertexArrayId);
         GL11.glDrawArrays((int) drawMode, (int) start, (int) count);
         GL30.glBindVertexArray(currentVao);
@@ -740,34 +750,31 @@ public final class GL45Driver implements Driver<
 
     @Override
     public void vertexArrayAttachIndexBuffer(GL45VertexArray vao, GL45Buffer buffer) {
-        final int currentVao = GL11.glGetInteger(GL30.GL_VERTEX_ARRAY_BINDING);        
+        final int currentVao = GL11.glGetInteger(GL30.GL_VERTEX_ARRAY_BINDING);
 
         if (currentVao != vao.vertexArrayId) {
             //TODO: can this be stateless?
             GL30.glBindVertexArray(vao.vertexArrayId);
         }
-        
+
         GL15.glBindBuffer(GL15.GL_ELEMENT_ARRAY_BUFFER, buffer.bufferId);
     }
 
     @Override
-    public void vertexArrayAttachBuffer(GL45VertexArray vao, long index, GL45Buffer buffer, long type, long size, long offset, long stride, long divisor) {
-        final int currentVao = GL11.glGetInteger(GL30.GL_VERTEX_ARRAY_BINDING);
-        
-        if(currentVao != vao.vertexArrayId) {
-            GL30.glBindVertexArray(vao.vertexArrayId);
-        }
-        
+    public void vertexArrayAttachBuffer(GL45VertexArray vao, long index, GL45Buffer buffer, long size, long type, long stride, long offset, long divisor) {
+
+        GL30.glBindVertexArray(vao.vertexArrayId);
+
         GL15.glBindBuffer(GL15.GL_ARRAY_BUFFER, buffer.bufferId);
         GL20.glEnableVertexAttribArray((int) index);
-        
-        if(type == GL11.GL_DOUBLE) {
+
+        if (type == GL11.GL_DOUBLE) {
             GL41.glVertexAttribLPointer((int) index, (int) size, (int) type, (int) stride, offset);
         } else {
             GL20.glVertexAttribPointer((int) index, (int) size, (int) type, false, (int) stride, offset);
         }
-        
-        if(divisor > 0) {
+
+        if (divisor > 0) {
             GL33.glVertexAttribDivisor((int) index, (int) divisor);
         }
     }
@@ -807,12 +814,34 @@ public final class GL45Driver implements Driver<
         throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
     }
 
-    private GL45Driver() {}
-    
+    private GL45Driver() {
+    }
+
+    @Override
+    public long programGetUniformLocation(GL45Program program, String name) {
+        final int currentProgram = GL11.glGetInteger(GL20.GL_CURRENT_PROGRAM);
+
+        GL20.glUseProgram(program.programId);
+        final int res = GL20.glGetUniformLocation(program.programId, name);
+        GL20.glUseProgram(currentProgram);        
+        return res;
+    }
+
+    @Override
+    public void samplerSetParameter(GL45Sampler sampler, long param, double value) {
+        GL33.glSamplerParameterf(sampler.samplerId, (int) param, (float) value);
+    }
+
+    @Override
+    public long textureGetMaxAnisotropy() {
+        return GL11.glGetInteger(org.lwjgl.opengl.EXTTextureFilterAnisotropic.GL_MAX_TEXTURE_MAX_ANISOTROPY_EXT);
+    }
+
     private static final class Holder {
+
         private static final GL45Driver INSTANCE = new GL45Driver();
     }
-    
+
     public static GL45Driver getInstance() {
         return Holder.INSTANCE;
     }

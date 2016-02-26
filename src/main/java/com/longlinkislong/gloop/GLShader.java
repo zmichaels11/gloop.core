@@ -25,7 +25,8 @@
  */
 package com.longlinkislong.gloop;
 
-import com.longlinkislong.gloop.dsa.DSADriver;
+import com.longlinkislong.gloop.impl.Driver;
+import com.longlinkislong.gloop.impl.Shader;
 import java.util.Objects;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -43,12 +44,11 @@ public class GLShader extends GLObject {
     private static final Marker GLOOP_MARKER = MarkerFactory.getMarker("GLOOP");
     private static final Logger LOGGER = LoggerFactory.getLogger("GLShader");
 
-    private static final int INVALID_SHADER_ID = -1;
     private final String src;
     private final GLShaderType type;
     private String name = "";
 
-    volatile transient int shaderId = INVALID_SHADER_ID;
+    volatile transient Shader shader;
 
     /**
      * Sets the name of the GLShader.
@@ -192,7 +192,7 @@ public class GLShader extends GLObject {
      * @since 15.05.27
      */
     public boolean isValid() {
-        return this.shaderId != INVALID_SHADER_ID;
+        return shader != null && shader.isValid();
     }
 
     @Override
@@ -231,24 +231,15 @@ public class GLShader extends GLObject {
             LOGGER.trace(GLOOP_MARKER, "############### Start GLShader Compile Task ###############");
             LOGGER.trace(GLOOP_MARKER, "\tShader Type: {}", GLShader.this.type);
 
+            final Driver driver = GLTools.getDriverInstance();
+
             if (!GLShader.this.isValid()) {
-                final DSADriver dsa = GLTools.getDSAInstance();
-
-                GLShader.this.shaderId = dsa.glCreateShader(GLShader.this.type.value);
-                GLShader.this.name = "id=" + GLShader.this.shaderId;
-                LOGGER.trace(
-                        GLOOP_MARKER,
-                        "Initialized GLShader[{}]!",
-                        GLShader.this.name);
-
-                dsa.glShaderSource(GLShader.this.shaderId, GLShader.this.src);
-                dsa.glCompileShader(GLShader.this.shaderId);
-
-                final int status = dsa.glGetShaderi(GLShader.this.shaderId, GLShaderParameterName.GL_COMPILE_STATUS.value);
+                shader = driver.shaderCompile(type.value, src);
+                final int status = (int) driver.shaderGetParameter(shader, GLShaderParameterName.GL_COMPILE_STATUS.value);
 
                 if (status == 0) {
                     final String info = GLShader.this.getInfoLog();
-
+                    
                     throw new GLException(info);
                 }
 
@@ -281,14 +272,11 @@ public class GLShader extends GLObject {
             LOGGER.trace(GLOOP_MARKER, "\tDeleting GLShader[{}]", GLShader.this.getName());
 
             if (GLShader.this.isValid()) {
-                GLTools.getDSAInstance().glDeleteShader(GLShader.this.shaderId);
-
-                GLShader.this.shaderId = INVALID_SHADER_ID;
+                GLTools.getDriverInstance().shaderDelete(shader);
+                shader = null;
             }
 
-            LOGGER.trace(
-                    GLOOP_MARKER,
-                    "############### End GLShader Delete Task ###############");
+            LOGGER.trace(GLOOP_MARKER, "############### End GLShader Delete Task ###############");
         }
     }
 
@@ -327,9 +315,7 @@ public class GLShader extends GLObject {
                 throw new GLException("Invalid GLShader!");
             }
 
-            final int res = GLTools.getDSAInstance().glGetShaderi(
-                    GLShader.this.shaderId,
-                    pName.value);
+            final int res = (int) GLTools.getDriverInstance().shaderGetParameter(shader, pName.value);
 
             LOGGER.trace(
                     GLOOP_MARKER,
@@ -372,10 +358,7 @@ public class GLShader extends GLObject {
                 throw new GLException("Invalid GLShader!");
             }
 
-            final DSADriver dsa = GLTools.getDSAInstance();
-            final int length = dsa.glGetShaderi(GLShader.this.shaderId, GLShaderParameterName.GL_INFO_LOG_LENGTH.value);
-
-            final String infoLog = dsa.glGetShaderInfoLog(GLShader.this.shaderId, length);
+            final String infoLog = GLTools.getDriverInstance().shaderGetInfoLog(shader);
 
             LOGGER.trace(
                     GLOOP_MARKER,
@@ -383,9 +366,7 @@ public class GLShader extends GLObject {
                     GLShader.this.getName(),
                     infoLog);
 
-            LOGGER.trace(
-                    GLOOP_MARKER,
-                    "############### End GLShader Info Log Query ###############");
+            LOGGER.trace(GLOOP_MARKER, "############### End GLShader Info Log Query ###############");
             return infoLog;
         }
     }

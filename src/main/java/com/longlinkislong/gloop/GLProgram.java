@@ -30,6 +30,9 @@ import static com.longlinkislong.gloop.Vectors.X;
 import static com.longlinkislong.gloop.Vectors.Y;
 import static com.longlinkislong.gloop.Vectors.Z;
 import com.longlinkislong.gloop.dsa.DSADriver;
+import com.longlinkislong.gloop.impl.Driver;
+import com.longlinkislong.gloop.impl.Program;
+import com.longlinkislong.gloop.impl.Shader;
 import java.nio.ByteOrder;
 import java.nio.DoubleBuffer;
 import java.nio.FloatBuffer;
@@ -39,6 +42,7 @@ import java.util.Iterator;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
+import java.util.stream.Collectors;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.slf4j.Marker;
@@ -55,11 +59,7 @@ public class GLProgram extends GLObject {
     private static final Marker GLOOP_MARKER = MarkerFactory.getMarker("GLOOP");
     private static final Logger LOGGER = LoggerFactory.getLogger("GLProgram");
 
-    private static final Map<Thread, GLProgram> CURRENT = new HashMap<>();
-    private static final int INVALID_PROGRAM_ID = -1;
-
-    volatile transient int programId = INVALID_PROGRAM_ID;
-
+    private transient volatile Program program;
     private final Map<String, Integer> uniforms = new HashMap<>();
     private String name = "";
 
@@ -126,17 +126,7 @@ public class GLProgram extends GLObject {
      * @since 15.05.27
      */
     public boolean isValid() {
-        return this.programId != INVALID_PROGRAM_ID;
-    }
-
-    /**
-     * Checks if the GLProgram is currently bound on the current thraed.
-     *
-     * @return true if the GLProgram is currently being used.
-     * @since 15.05.27
-     */
-    public boolean isCurrent() {
-        return CURRENT.get(Thread.currentThread()) == this;
+        return program != null && program.isValid();
     }
 
     /**
@@ -164,36 +154,16 @@ public class GLProgram extends GLObject {
                 throw new GLException("Invalid GLProgram!");
             }
 
-            if (GLProgram.this.isCurrent()) {
-                LOGGER.trace(
-                        GLOOP_MARKER,
-                        "GLProgram[{}] is already being used!",
-                        GLProgram.this.getName());
-
-                LOGGER.trace(
-                        GLOOP_MARKER,
-                        "############### END GLProgram Use Task ###############");
-                return;
-            }
-
-            GLTools.getDSAInstance().glUseProgram(GLProgram.this.programId);
-
-            CURRENT.put(Thread.currentThread(), GLProgram.this);
-
-            LOGGER.trace(
-                    GLOOP_MARKER,
-                    "############### End GLProgram Use Task ###############");
+            GLTools.getDriverInstance().programUse(program);
+            LOGGER.trace(GLOOP_MARKER, "############### End GLProgram Use Task ###############");
         }
-
     }
 
     private int getUniformLoc(final String uName) {
         if (this.uniforms.containsKey(uName)) {
             return this.uniforms.get(uName);
         } else {
-            final int uLoc = GLTools
-                    .getDSAInstance()
-                    .glGetUniformLocation(programId, uName);
+            final int uLoc = (int) GLTools.getDriverInstance().programGetUniformLocation(program, uName);
 
             this.uniforms.put(uName, uLoc);
 
@@ -238,7 +208,7 @@ public class GLProgram extends GLObject {
             LOGGER.trace(GLOOP_MARKER, "\tSetting attributes for GLProgram[{}]", getName());
             LOGGER.trace(GLOOP_MARKER, "\tAttributes: GLVertexAttributes[{}]", attribs.getName());
 
-            final DSADriver dsa = GLTools.getDSAInstance();
+            final Driver driver = GLTools.getDriverInstance();
 
             if (!GLProgram.this.isValid()) {
                 throw new GLException("Invalid GLProgram!");
@@ -251,16 +221,13 @@ public class GLProgram extends GLObject {
                             index,
                             name);
 
-                    dsa.glBindAttribLocation(
-                            GLProgram.this.programId,
-                            index,
-                            name);
+                    driver.programSetAttribLocation(program, index, name);
                 });
 
                 final Set<String> varyingSet = this.attribs.feedbackVaryings;
 
                 if (!varyingSet.isEmpty()) {
-                    final CharSequence[] varyings = new CharSequence[varyingSet.size()];
+                    final String[] varyings = new String[varyingSet.size()];
                     final Iterator<String> it = varyingSet.iterator();
 
                     for (int i = 0; i < varyingSet.size(); i++) {
@@ -273,10 +240,7 @@ public class GLProgram extends GLObject {
                                 varyings[i]);
                     }
 
-                    dsa.glTransformFeedbackVaryings(
-                            GLProgram.this.programId,
-                            varyings,
-                            35981 /* GL_SEPARATE_ATTRIBS */);
+                    driver.programSetFeedbackVaryings(program, varyings);
                 }
             }
 
@@ -442,35 +406,8 @@ public class GLProgram extends GLObject {
 
             buffer.put(this.values).flip();
 
-            final DSADriver dsa = GLTools.getDSAInstance();
-
-            switch (this.count) {
-                case 4:
-                    dsa.glProgramUniformMatrix2d(
-                            GLProgram.this.programId,
-                            uLoc,
-                            false,
-                            buffer);
-                    break;
-                case 9:
-                    dsa.glProgramUniformMatrix3d(
-                            GLProgram.this.programId,
-                            uLoc,
-                            false,
-                            buffer);
-                    break;
-                case 16:
-                    dsa.glProgramUniformMatrix4d(
-                            GLProgram.this.programId,
-                            uLoc,
-                            false,
-                            buffer);
-                    break;
-            }
-
-            LOGGER.trace(
-                    GLOOP_MARKER,
-                    "############### End GLProgram Set Uniform MatrixD Task ###############");
+            GLTools.getDriverInstance().programSetUniformMatD(program, uLoc, buffer);
+            LOGGER.trace(GLOOP_MARKER, "############### End GLProgram Set Uniform MatrixD Task ###############");
         }
     }
 
@@ -604,35 +541,8 @@ public class GLProgram extends GLObject {
 
             buffer.put(this.values).flip();
 
-            final DSADriver dsa = GLTools.getDSAInstance();
-
-            switch (this.count) {
-                case 4:
-                    dsa.glProgramUniformMatrix2f(
-                            GLProgram.this.programId,
-                            uLoc,
-                            false,
-                            buffer);
-                    break;
-                case 9:
-                    dsa.glProgramUniformMatrix3f(
-                            GLProgram.this.programId,
-                            uLoc,
-                            false,
-                            buffer);
-                    break;
-                case 16:
-                    dsa.glProgramUniformMatrix4f(
-                            GLProgram.this.programId,
-                            uLoc,
-                            false,
-                            buffer);
-                    break;
-            }
-
-            LOGGER.trace(
-                    GLOOP_MARKER,
-                    "############### End GLProgram Set Uniform MatrixF Task ###############");
+            GLTools.getDriverInstance().programSetUniformMatF(program, uLoc, buffer);
+            LOGGER.trace(GLOOP_MARKER, "############### End GLProgram Set Uniform MatrixF Task ###############");
         }
     }
 
@@ -807,44 +717,9 @@ public class GLProgram extends GLObject {
             }
 
             final int uLoc = GLProgram.this.getUniformLoc(this.uName);
-            final DSADriver dsa = GLTools.getDSAInstance();
 
-            switch (this.count) {
-                case 1:
-                    dsa.glProgramUniform1d(
-                            GLProgram.this.programId,
-                            uLoc,
-                            this.values[X]);
-                    break;
-                case 2:
-                    dsa.glProgramUniform2d(
-                            GLProgram.this.programId,
-                            uLoc,
-                            this.values[X],
-                            this.values[Y]);
-                    break;
-                case 3:
-                    dsa.glProgramUniform3d(
-                            GLProgram.this.programId,
-                            uLoc,
-                            this.values[X],
-                            this.values[Y],
-                            this.values[Z]);
-                    break;
-                case 4:
-                    dsa.glProgramUniform4d(
-                            GLProgram.this.programId,
-                            uLoc,
-                            this.values[X],
-                            this.values[Y],
-                            this.values[Z],
-                            this.values[W]);
-                    break;
-            }
-
-            LOGGER.trace(
-                    GLOOP_MARKER,
-                    "############### End GLProgram Set UniformF Task ###############");
+            GLTools.getDriverInstance().programSetUniformD(program, uLoc, values);
+            LOGGER.trace(GLOOP_MARKER, "############### End GLProgram Set UniformF Task ###############");
         }
     }
 
@@ -965,44 +840,9 @@ public class GLProgram extends GLObject {
             }
 
             final int uLoc = GLProgram.this.getUniformLoc(this.uName);
-            final DSADriver dsa = GLTools.getDSAInstance();
 
-            switch (this.count) {
-                case 1:
-                    dsa.glProgramUniform1i(
-                            GLProgram.this.programId,
-                            uLoc,
-                            this.values[X]);
-                    break;
-                case 2:
-                    dsa.glProgramUniform2i(
-                            GLProgram.this.programId,
-                            uLoc,
-                            this.values[X],
-                            this.values[Y]);
-                    break;
-                case 3:
-                    dsa.glProgramUniform3i(
-                            GLProgram.this.programId,
-                            uLoc,
-                            this.values[X],
-                            this.values[Y],
-                            this.values[Z]);
-                    break;
-                case 4:
-                    dsa.glProgramUniform4i(
-                            GLProgram.this.programId,
-                            uLoc,
-                            this.values[X],
-                            this.values[Y],
-                            this.values[Z],
-                            this.values[W]);
-                    break;
-            }
-
-            LOGGER.trace(
-                    GLOOP_MARKER,
-                    "############### End GLProgram Set UniformI Task ###############");
+            GLTools.getDriverInstance().programSetUniformI(program, uLoc, values);
+            LOGGER.trace(GLOOP_MARKER, "############### End GLProgram Set UniformI Task ###############");
         }
     }
 
@@ -1174,46 +1014,9 @@ public class GLProgram extends GLObject {
             }
 
             final int uLoc = GLProgram.this.getUniformLoc(this.uName);
-            final DSADriver dsa = GLTools.getDSAInstance();
 
-            switch (this.count) {
-                case 1:
-                    dsa.glProgramUniform1f(
-                            GLProgram.this.programId,
-                            uLoc,
-                            this.values[X]);
-                    break;
-                case 2:
-                    dsa.glProgramUniform2f(
-                            GLProgram.this.programId,
-                            uLoc,
-                            this.values[X],
-                            this.values[Y]);
-                    break;
-                case 3:
-                    dsa.glProgramUniform3f(
-                            GLProgram.this.programId,
-                            uLoc,
-                            this.values[X],
-                            this.values[Y],
-                            this.values[Z]);
-                    break;
-                case 4:
-                    dsa.glProgramUniform4f(
-                            GLProgram.this.programId,
-                            uLoc,
-                            this.values[X],
-                            this.values[Y],
-                            this.values[Z],
-                            this.values[W]);
-                    break;
-                default:
-                    throw new GLException("Illegal uniform size: " + this.count);
-            }
-
-            LOGGER.trace(
-                    GLOOP_MARKER,
-                    "############### End GLProgram Set UniformF Task ###############");
+            GLTools.getDriverInstance().programSetUniformF(program, uLoc, values);
+            LOGGER.trace(GLOOP_MARKER, "############### End GLProgram Set UniformF Task ###############");
         }
 
         @Override
@@ -1311,55 +1114,16 @@ public class GLProgram extends GLObject {
                 throw new GLException("GLProgram is not valid!");
             }
 
-            final DSADriver dsa = GLTools.getDSAInstance();
+            final Driver driver = GLTools.getDriverInstance();
 
-            for (GLShader shader : this.shaders) {
-                if (!shader.isValid()) {
-                    throw new GLException("GLShader is not valid!");
-                }
+            driver.programLinkShaders(
+                    program,
+                    Arrays.stream(shaders)
+                    .map(shader -> shader.shader)
+                    .collect(Collectors.toList())
+                    .toArray(new Shader[shaders.length]));
 
-                LOGGER.trace(
-                        GLOOP_MARKER,
-                        "Attaching GLShader[{}] to GLProgram[{}]!",
-                        shader.getName(),
-                        GLProgram.this.getName());
-
-                dsa.glAttachShader(GLProgram.this.programId, shader.shaderId);
-            }
-
-            LOGGER.trace(
-                    GLOOP_MARKER,
-                    "Linking shaders for GLProgram[{}]!",
-                    GLProgram.this.getName());
-
-            dsa.glLinkProgram(GLProgram.this.programId);
-
-            final int isLinked = dsa.glGetProgrami(
-                    GLProgram.this.programId,
-                    35714 /* GL_LINK_STATUS */);
-
-            if (isLinked == 0) {
-                final int length = dsa.glGetProgrami(
-                        GLProgram.this.programId,
-                        35716 /* GL_INFO_LOG_LENGTH */);
-
-                final String msg = dsa.glGetProgramInfoLog(
-                        GLProgram.this.programId,
-                        length);
-
-                throw new GLException(msg);
-            } else {
-                for (GLShader shader : this.shaders) {
-                    LOGGER.trace(
-                            GLOOP_MARKER,
-                            "Detaching GLShader[{}] from GLProgram[{}]!",
-                            shader.getName(),
-                            GLProgram.this.getName());
-
-                    dsa.glDetachShader(GLProgram.this.programId, shader.shaderId);
-                }
-            }
-
+            LOGGER.trace(GLOOP_MARKER, "Linked shaders for GLProgram[{}]!", GLProgram.this.getName());
             LOGGER.trace(GLOOP_MARKER, "############### End GLProgram Link Shaders Task ###############");
         }
     }
@@ -1390,11 +1154,10 @@ public class GLProgram extends GLObject {
                 throw new GLException("Cannot reinit GLProgram!");
             }
 
-            GLProgram.this.programId = GLTools.getDSAInstance().glCreateProgram();
-            GLProgram.this.name = "id=" + GLProgram.this.programId;
+            program = GLTools.getDriverInstance().programCreate();
+            GLProgram.this.name = "id=" + program.hashCode();
 
             LOGGER.trace(GLOOP_MARKER, "Initialized GLProgram[{}]!", GLProgram.this.name);
-
             LOGGER.trace(GLOOP_MARKER, "############### End GLProgram Init Task ###############");
         }
     }
@@ -1424,57 +1187,8 @@ public class GLProgram extends GLObject {
                 throw new GLException("Cannot delete invalid GLProgram!");
             }
 
-            GLTools.getDSAInstance().glDeleteProgram(GLProgram.this.programId);
-
+            GLTools.getDriverInstance().programDelete(program);
             LOGGER.trace(GLOOP_MARKER, "############### End GLProgram Delete Task ###############");
-        }
-    }
-
-    /**
-     * A GLTask that sets a uniform sampler.
-     *
-     * @since 15.05.27
-     */
-    public final class SetUniformSamplerTask extends GLTask {
-
-        private final GLTexture.BindTask bindTask;
-        private final String uName;
-
-        /**
-         * Constructs a new SetUniformSamplerTask with the specified GLTexture
-         * BindTask.
-         *
-         * @param uName the name of the uniform to set.
-         * @param bindTask the use task to associate the uniform to.
-         * @since 15.05.27
-         */
-        public SetUniformSamplerTask(
-                final CharSequence uName, final GLTexture.BindTask bindTask) {
-
-            this.bindTask = Objects.requireNonNull(bindTask);
-            this.uName = uName.toString();
-        }
-
-        @Override
-        public void run() {
-            LOGGER.trace(GLOOP_MARKER, "############### Start GLProgram Set Uniform Sampler Task ###############");
-            LOGGER.trace(GLOOP_MARKER, "\tSetting sampler for GLProgram[{}]", getName());
-            LOGGER.trace(GLOOP_MARKER, "\tSampler name: {}", this.uName);
-
-            if (!GLProgram.this.isValid()) {
-                throw new GLException("GLProgram is invalid!");
-            }
-
-            final int uLoc = GLProgram.this.getUniformLoc(uName);
-
-            GLTools.getDSAInstance().glProgramUniform1i(
-                    GLProgram.this.programId,
-                    uLoc,
-                    this.bindTask.activeTexture);
-
-            LOGGER.trace(
-                    GLOOP_MARKER,
-                    "############### End GLProgram Set Uniform Sampler Task ###############");
         }
     }
 
@@ -1543,22 +1257,7 @@ public class GLProgram extends GLObject {
                 throw new GLException("Invalid GLBuffer object!");
             }
 
-            final DSADriver dsa = GLTools.getDSAInstance();
-            final int sBlock = dsa.glGetProgramResourceLocation(
-                    GLProgram.this.programId,
-                    37606 /* GL_SHADER_STORAGE_BLOCK */,
-                    this.storageName);
-
-            dsa.glBindBufferBase(
-                    GLBufferTarget.GL_SHADER_STORAGE_BUFFER.value,
-                    this.bindingPoint,
-                    this.buffer.bufferId);
-
-            dsa.glShaderStorageBlockBinding(
-                    GLProgram.this.programId,
-                    sBlock,
-                    this.bindingPoint);
-
+            GLTools.getDriverInstance().programSetStorage(program, storageName, buffer.buffer, bindingPoint);
             LOGGER.trace(GLOOP_MARKER, "############### End GLProgram Set Shader Storage Task ###############");
         }
     }
@@ -1629,24 +1328,8 @@ public class GLProgram extends GLObject {
                 throw new GLException("Invalid GLBuffer object!");
             }
 
-            final DSADriver dsa = GLTools.getDSAInstance();
-            final int uBlock = dsa.glGetUniformBlockIndex(
-                    GLProgram.this.programId,
-                    this.blockName);
-
-            dsa.glBindBufferBase(
-                    GLBufferTarget.GL_UNIFORM_BUFFER.value,
-                    this.bindingPoint,
-                    this.buffer.bufferId);
-
-            dsa.glUniformBlockBinding(
-                    GLProgram.this.programId,
-                    uBlock,
-                    this.bindingPoint);
-
-            LOGGER.trace(
-                    GLOOP_MARKER,
-                    "############### End GLProgram Set Uniform Block Task ###############");
+            GLTools.getDriverInstance().programSetUniformBlock(program, blockName, buffer.buffer, bindingPoint);
+            LOGGER.trace(GLOOP_MARKER, "############### End GLProgram Set Uniform Block Task ###############");
         }
     }
 
@@ -1757,11 +1440,7 @@ public class GLProgram extends GLObject {
                 throw new GLException("Invalid GLProgram!");
             }
 
-            GLProgram.this.use();
-
-            GLTools.getDSAInstance().glDispatchCompute(
-                    this.numX, this.numY, this.numZ);
-
+            GLTools.getDriverInstance().programDispatchCompute(program, numX, numY, numZ);            
             LOGGER.trace(GLOOP_MARKER, "############### End GLProgram Compute Task ###############");
         }
     }
@@ -1815,11 +1494,7 @@ public class GLProgram extends GLObject {
                 throw new GLException("Invalid GLBuffer!");
             }
 
-            GLTools.getDSAInstance().glBindBufferBase(
-                    35982 /* G_TRANSFORM_FEEDBACK_BUFFER */,
-                    this.varyingLoc,
-                    this.fbBuffer.bufferId);
-
+            GLTools.getDriverInstance().programSetFeedbackBuffer(program, varyingLoc, fbBuffer.buffer);            
             LOGGER.trace(GLOOP_MARKER, "############### End GLProgram Set Feedback Buffer Task ###############");
         }
     }

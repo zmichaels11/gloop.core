@@ -25,7 +25,8 @@
  */
 package com.longlinkislong.gloop;
 
-import com.longlinkislong.gloop.dsa.DSADriver;
+import com.longlinkislong.gloop.impl.Driver;
+import com.longlinkislong.gloop.impl.Sampler;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Objects;
@@ -46,8 +47,7 @@ public class GLSampler extends GLObject {
     private static final Marker GLOOP_MARKER = MarkerFactory.getMarker("GLOOP");
     private static final Logger LOGGER = LoggerFactory.getLogger("GLSampler");
 
-    private static final int INVALID_SAMPLER_ID = -1;
-    private volatile transient int samplerId = INVALID_SAMPLER_ID;
+    private volatile transient Sampler sampler;
     private final GLTextureParameters parameters;
     private final boolean isLocked;
 
@@ -87,7 +87,6 @@ public class GLSampler extends GLObject {
 
     private GLSampler(final GLThread thread) {
         super(thread);
-        this.samplerId = 0;
         this.parameters = null;
         this.isLocked = true;
     }
@@ -159,7 +158,7 @@ public class GLSampler extends GLObject {
      * @since 15.07.06
      */
     public boolean isValid() {
-        return this.samplerId != INVALID_SAMPLER_ID;
+        return sampler != null && sampler.isValid();
     }
 
     /**
@@ -188,18 +187,18 @@ public class GLSampler extends GLObject {
                 throw new GLException("GLSampler is already initialized!");
             }
 
-            final DSADriver dsa = GLTools.getDSAInstance();
+            final Driver driver = GLTools.getDriverInstance();
 
-            GLSampler.this.samplerId = dsa.glGenSamplers();
+            sampler = driver.samplerCreate();
 
-            dsa.glSamplerParameteri(10242 /* GL_TEXTURE_WRAP_S */, GLSampler.this.samplerId, GLSampler.this.parameters.wrapS.value);
-            dsa.glSamplerParameteri(10243 /* GL_TEXTURE_WRAP_T */, GLSampler.this.samplerId, GLSampler.this.parameters.wrapT.value);
-            dsa.glSamplerParameteri(32882 /* GL_TEXTURE_WRAP_R */, GLSampler.this.samplerId, GLSampler.this.parameters.wrapR.value);
-            dsa.glSamplerParameterf(33082 /* GL_TEXTURE_MIN_LOD */, GLSampler.this.samplerId, GLSampler.this.parameters.minLOD);
-            dsa.glSamplerParameterf(33083 /* GL_TEXTURE_MAX_LOD */, GLSampler.this.samplerId, GLSampler.this.parameters.maxLOD);
-            dsa.glSamplerParameteri(10241 /* GL_TEXTURE_MIN_FILTER */, GLSampler.this.samplerId, GLSampler.this.parameters.minFilter.value);
-            dsa.glSamplerParameteri(10240 /* GL_TEXTURE_MAG_FILTER */, GLSampler.this.samplerId, GLSampler.this.parameters.magFilter.value);
-            dsa.glSamplerParameterf(34046 /* GL_TEXTURE_MAX_ANISOTROPY_EXT */, GLSampler.this.samplerId, GLSampler.this.parameters.anisotropicLevel);
+            driver.samplerSetParameter(sampler, 10242 /* GL_TEXTURE_WRAP_S */, GLSampler.this.parameters.wrapS.value);
+            driver.samplerSetParameter(sampler, 10243 /* GL_TEXTURE_WRAP_T */, GLSampler.this.parameters.wrapT.value);
+            driver.samplerSetParameter(sampler, 32882 /* GL_TEXTURE_WRAP_R */, GLSampler.this.parameters.wrapR.value);
+            driver.samplerSetParameter(sampler, 33082 /* GL_TEXTURE_MIN_LOD */, GLSampler.this.parameters.minLOD);
+            driver.samplerSetParameter(sampler, 33083 /* GL_TEXTURE_MAX_LOD */, GLSampler.this.parameters.maxLOD);
+            driver.samplerSetParameter(sampler, 10241 /* GL_TEXTURE_MIN_FILTER */, GLSampler.this.parameters.minFilter.value);
+            driver.samplerSetParameter(sampler, 10240 /* GL_TEXTURE_MAG_FILTER */, GLSampler.this.parameters.magFilter.value);
+            driver.samplerSetParameter(sampler, 34046 /* GL_TEXTURE_MAX_ANISOTROPY_EXT */, GLSampler.this.parameters.anisotropicLevel);
 
             LOGGER.trace(
                     GLOOP_MARKER,
@@ -252,11 +251,8 @@ public class GLSampler extends GLObject {
                 throw new GLException("Invalid GLSampler!");
             }
 
-            GLTools.getDSAInstance().glBindSampler(unit, GLSampler.this.samplerId);
-
-            LOGGER.trace(
-                    GLOOP_MARKER,
-                    "############### End GLSampler Bind Task ###############");
+            GLTools.getDriverInstance().samplerBind(unit, sampler);
+            LOGGER.trace(GLOOP_MARKER, "############### End GLSampler Bind Task ###############");
         }
     }
 
@@ -288,11 +284,9 @@ public class GLSampler extends GLObject {
                 throw new GLException("Cannot delete default GLSampler!");
             }
 
-            GLTools.getDSAInstance().glDeleteSamplers(GLSampler.this.samplerId);
-            GLSampler.this.samplerId = INVALID_SAMPLER_ID;
-
-            LOGGER.trace(
-                    GLOOP_MARKER, "############### End GLSampler Delete Task ###############");
+            GLTools.getDriverInstance().samplerDelete(sampler);
+            sampler = null;
+            LOGGER.trace(GLOOP_MARKER, "############### End GLSampler Delete Task ###############");
         }
     }
 

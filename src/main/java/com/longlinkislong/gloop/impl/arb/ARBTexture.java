@@ -13,4 +13,9 @@ import com.longlinkislong.gloop.impl.Texture;
  */
 public final class ARBTexture implements Texture {
     int textureId = -1;
+    
+    @Override
+    public boolean isValid() {
+        return textureId != -1;
+    }
 }

@@ -13,4 +13,9 @@ import com.longlinkislong.gloop.impl.VertexArray;
  */
 public final class ARBVertexArray implements VertexArray {
     int vertexArray = -1;
+    
+    @Override
+    public boolean isValid() {
+        return vertexArray != -1;
+    }
 }

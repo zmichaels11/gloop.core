@@ -190,11 +190,8 @@ public class GLViewport extends GLObject {
                 thread.currentViewport = GLViewport.this.withGLThread(thread);
             }
 
-            GLTools.getDSAInstance().glViewport(GLViewport.this.x, GLViewport.this.y, GLViewport.this.width, GLViewport.this.height);
-
-            LOGGER.trace(
-                    GLOOP_MARKER,
-                    "############### End GLViewport Apply Viewport Task ##############");
+            GLTools.getDriverInstance().viewportApply(x, y, width, height);            
+            LOGGER.trace(GLOOP_MARKER, "############### End GLViewport Apply Viewport Task ##############");
         }
     }
 }

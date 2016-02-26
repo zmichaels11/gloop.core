@@ -12,5 +12,11 @@ import com.longlinkislong.gloop.impl.DrawQuery;
  * @author zmichaels
  */
 public final class ARBDrawQuery implements DrawQuery {
+
     int drawQueryId = -1;
+
+    @Override
+    public boolean isValid() {
+        return drawQueryId != -1;
+    }
 }

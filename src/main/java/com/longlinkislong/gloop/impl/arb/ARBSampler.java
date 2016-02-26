@@ -12,5 +12,11 @@ import com.longlinkislong.gloop.impl.Sampler;
  * @author zmichaels
  */
 public final class ARBSampler implements Sampler {
+
     int samplerId = -1;
+
+    @Override
+    public boolean isValid() {
+        return samplerId != -1;
+    }
 }

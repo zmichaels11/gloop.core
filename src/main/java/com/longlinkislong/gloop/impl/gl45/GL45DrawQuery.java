@@ -13,4 +13,9 @@ import com.longlinkislong.gloop.impl.DrawQuery;
  */
 public final class GL45DrawQuery implements DrawQuery {
     int drawQueryId = -1;
+    
+    @Override
+    public boolean isValid() {
+        return drawQueryId != -1;
+    }
 }

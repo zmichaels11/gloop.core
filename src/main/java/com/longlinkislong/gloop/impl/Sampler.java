@@ -9,5 +9,7 @@ package com.longlinkislong.gloop.impl;
  *
  * @author zmichaels
  */
-public interface Sampler {    
+public interface Sampler {
+
+    boolean isValid();
 }

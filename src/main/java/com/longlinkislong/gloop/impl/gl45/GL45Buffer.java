@@ -15,4 +15,9 @@ import java.nio.ByteBuffer;
 public final class GL45Buffer implements Buffer{
     int bufferId = -1;
     ByteBuffer mapBuffer;
+    
+    @Override
+    public boolean isValid() {
+        return bufferId != -1;
+    }
 }

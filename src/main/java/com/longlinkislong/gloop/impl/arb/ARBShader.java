@@ -13,4 +13,9 @@ import com.longlinkislong.gloop.impl.Shader;
  */
 public final class ARBShader implements Shader {
     int shaderId = -1;
+    
+    @Override
+    public boolean isValid() {
+        return shaderId != -1;
+    }
 }

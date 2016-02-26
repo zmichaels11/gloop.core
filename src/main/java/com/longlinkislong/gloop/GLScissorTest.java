@@ -144,18 +144,8 @@ public class GLScissorTest extends GLObject {
             LOGGER.trace(GLOOP_MARKER, "############### Start GLScissorTest Begin Scissor Test Task ###############");
             LOGGER.trace("\tAppying GLScissorTest[{}]", GLScissorTest.this.getName());
 
-            final DSADriver dsa = GLTools.getDSAInstance();
-
-            dsa.glEnable(3089 /* GL_SCISSOR_TEST */);
-            dsa.glScissor(
-                    GLScissorTest.this.left,
-                    GLScissorTest.this.bottom,
-                    GLScissorTest.this.width,
-                    GLScissorTest.this.height);
-
-            LOGGER.trace(
-                    GLOOP_MARKER,
-                    "############### End GLScissorTest Begin Scissor Test Task ###############");
+            GLTools.getDriverInstance().scissorTestEnable(left, bottom, width, height);
+            LOGGER.trace(GLOOP_MARKER, "############### End GLScissorTest Begin Scissor Test Task ###############");
         }
     }
 
@@ -179,12 +169,8 @@ public class GLScissorTest extends GLObject {
         public void run() {
             LOGGER.trace(GLOOP_MARKER, "############### Start GLScissorTest End Scissor Test Task ###############");
             LOGGER.trace(GLOOP_MARKER, "\tApplying GLScissorTest[{}]", GLScissorTest.this.getName());
-
-            GLTools.getDSAInstance().glDisable(3089 /* GL_SCISSOR_TEST */);
-
-            LOGGER.trace(
-                    GLOOP_MARKER,
-                    "############### End GLScissorTest End Scissor Test Task ###############");
+            GLTools.getDriverInstance().scissorTestDisable();
+            LOGGER.trace(GLOOP_MARKER, "############### End GLScissorTest End Scissor Test Task ###############");
         }
     }
 }

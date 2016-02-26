@@ -294,14 +294,14 @@ public class GLClear extends GLObject {
      */
     public GLClear withClearDepth(final double depth) {
         return new GLClear(this.getThread(), this.red, this.green, this.blue, this.alpha, depth, this.clearBits);
-    }    
+    }
 
     /**
      * Performs the OpenGL clear operation.
      *
      * @since 15.07.01
      */
-    public void clear() {        
+    public void clear() {
         new ClearTask().glRun(this.getThread());
     }
 
@@ -318,10 +318,9 @@ public class GLClear extends GLObject {
             LOGGER.trace(GLOOP_MARKER, "\tApplying GLClear[{}]", GLClear.this.getName());
             LOGGER.trace(GLOOP_MARKER, "\t<red={}, green={}, blue={}, alpha={}>", GLClear.this.red, GLClear.this.green, GLClear.this.blue, GLClear.this.alpha);
             LOGGER.trace(GLOOP_MARKER, "\tdepth={}", GLClear.this.depth);
-            LOGGER.trace(GLOOP_MARKER, "\tClear bitfield: {}", GLClear.this.clearBitField);                    
+            LOGGER.trace(GLOOP_MARKER, "\tClear bitfield: {}", GLClear.this.clearBitField);
 
             final GLThread thread = GLThread.getCurrent().orElseThrow(GLException::new);
-            final DSADriver dsa = GLTools.getDSAInstance();
 
             if (thread == GLClear.this.getThread()) {
                 thread.currentClear = GLClear.this;
@@ -329,10 +328,7 @@ public class GLClear extends GLObject {
                 thread.currentClear = GLClear.this.withGLThread(thread);
             }
 
-            dsa.glClearColor(GLClear.this.red, GLClear.this.green, GLClear.this.blue, GLClear.this.alpha);
-            dsa.glClearDepth(GLClear.this.depth);
-            dsa.glClear(GLClear.this.clearBitField);
-
+            GLTools.getDriverInstance().clear(clearBitField, red, green, blue, alpha, depth);
             LOGGER.trace(GLOOP_MARKER, "############### End GLClear Clear Task ###############");
         }
 

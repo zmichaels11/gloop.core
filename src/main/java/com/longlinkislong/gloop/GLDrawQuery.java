@@ -26,6 +26,8 @@
 package com.longlinkislong.gloop;
 
 import com.longlinkislong.gloop.dsa.DSADriver;
+import com.longlinkislong.gloop.impl.DrawQuery;
+import com.longlinkislong.gloop.impl.Driver;
 import java.util.Objects;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -44,8 +46,7 @@ public class GLDrawQuery extends GLObject {
     private static final Marker GLOOP_MARKER = MarkerFactory.getMarker("GLOOP");
     private static final Logger LOGGER = LoggerFactory.getLogger("GLDrawQuery");
 
-    private static final int INVALID_QUERY_ID = -1;
-    private transient volatile int queryId = INVALID_QUERY_ID;
+    private transient volatile DrawQuery query;
     private transient volatile String name = "";
 
     /**
@@ -107,7 +108,7 @@ public class GLDrawQuery extends GLObject {
      * @since 15.06.18
      */
     public boolean isValid() {
-        return this.queryId != INVALID_QUERY_ID;
+        return query.isValid();
     }
 
     /**
@@ -168,14 +169,12 @@ public class GLDrawQuery extends GLObject {
                 throw new GLException("Invalid GLDrawQuery!");
             }
 
-            final DSADriver dsa = GLTools.getDSAInstance();
+            final Driver driver = GLTools.getDriverInstance();
+            
 
-            dsa.glBeginQuery(this.condition.value, GLDrawQuery.this.queryId);
-
+            driver.drawQueryEnable(condition.value, query);            
             this.testDraw.run();
-
-            dsa.glEndQuery(this.condition.value);
-
+            driver.drawQueryDisable(condition.value);            
             LOGGER.trace(GLOOP_MARKER, "############### End DrawQueryTask ###############");
         }
     }
@@ -230,12 +229,11 @@ public class GLDrawQuery extends GLObject {
                 throw new GLException("Invalid GLDrawQuery!");
             }
 
-            final DSADriver dsa = GLTools.getDSAInstance();
+            final Driver driver = GLTools.getDriverInstance();            
 
-            dsa.glBeginConditionalRender(GLDrawQuery.this.queryId, this.mode.value);
+            driver.drawQueryBeginConditionalRender(query, mode.value);            
             this.fullDraw.run();
-            dsa.glEndConditionalRender();
-
+            driver.drawQueryEndConditionRender();            
             LOGGER.trace(GLOOP_MARKER, "############### End GLDrawQuery Condition Task ###############");
         }
     }
@@ -250,13 +248,11 @@ public class GLDrawQuery extends GLObject {
                 throw new GLException("Invalid GLDrawQuery!");
             }
 
-            final int id = GLTools.getDSAInstance().glGenQueries();
-
-            GLDrawQuery.this.queryId = id;
-            GLDrawQuery.this.name = "id=" + id;
+            query = GLTools.getDriverInstance().drawQueryCreate();            
+            
+            GLDrawQuery.this.name = "id=" + query.hashCode();
 
             LOGGER.trace(GLOOP_MARKER, "Initialized GLDrawQuery[{}]", GLDrawQuery.this.name);
-
             LOGGER.trace(GLOOP_MARKER, "############### End GLDrawQuery Init Task ###############");
         }
     }
@@ -272,8 +268,8 @@ public class GLDrawQuery extends GLObject {
                 throw new GLException("Invalid GLDrawQuery!");
             }
 
-            GLTools.getDSAInstance().glDeleteQueries(GLDrawQuery.this.queryId);
-
+            GLTools.getDriverInstance().drawQueryDelete(query);
+            query = null;
             LOGGER.trace(GLOOP_MARKER, "############### End GLDrawQuery Delete Task ###############");
         }
     }

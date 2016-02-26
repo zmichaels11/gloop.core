@@ -9,5 +9,7 @@ package com.longlinkislong.gloop.impl;
  *
  * @author zmichaels
  */
-public interface Program {    
+public interface Program {
+
+    boolean isValid();
 }

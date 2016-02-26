@@ -14,4 +14,10 @@ import com.longlinkislong.gloop.impl.Texture;
 public class GL45Texture implements Texture{
     int textureId = -1;
     int target = -1;
+    int internalFormat = -1;
+    
+    @Override
+    public boolean isValid() {
+        return textureId != -1;
+    }
 }

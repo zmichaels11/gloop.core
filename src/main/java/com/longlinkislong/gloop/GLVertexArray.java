@@ -26,6 +26,7 @@
 package com.longlinkislong.gloop;
 
 import com.longlinkislong.gloop.dsa.DSADriver;
+import com.longlinkislong.gloop.impl.VertexArray;
 import java.nio.IntBuffer;
 import java.util.HashMap;
 import java.util.Map;
@@ -46,11 +47,7 @@ public class GLVertexArray extends GLObject {
 
     private static final Marker GLOOP_MARKER = MarkerFactory.getMarker("GLOOP");
     private static final Logger LOGGER = LoggerFactory.getLogger("GLVertexArray");
-
-    private static final Map<Thread, GLVertexArray> CURRENT = new HashMap<>();
-    private static final int INVALID_VERTEX_ARRAY_ID = -1;
-
-    private transient volatile int vaoId = INVALID_VERTEX_ARRAY_ID;
+    private transient volatile VertexArray vao = null;
     private String name = "";
 
     /**
@@ -113,18 +110,7 @@ public class GLVertexArray extends GLObject {
      * @since 15.06.05
      */
     public boolean isValid() {
-        return this.vaoId != INVALID_VERTEX_ARRAY_ID;
-    }
-
-    private boolean isCurrent() {
-        return CURRENT.get(Thread.currentThread()) == this;
-    }
-
-    private void bind() {
-        if (!this.isCurrent()) {
-            GLTools.getDSAInstance().glBindVertexArray(vaoId);
-            CURRENT.put(Thread.currentThread(), this);
-        }
+        return vao != null && vao.isValid();
     }
 
     /**
@@ -156,17 +142,11 @@ public class GLVertexArray extends GLObject {
                 throw new GLException("GLVertexArray is already initialized!");
             }
 
-            GLVertexArray.this.vaoId = GLTools.getDSAInstance().glGenVertexArrays();
-            GLVertexArray.this.name = "id=" + GLVertexArray.this.vaoId;
+            vao = GLTools.getDriverInstance().vertexArrayCreate();
+            GLVertexArray.this.name = "id=" + vao.hashCode();
 
-            LOGGER.trace(
-                    GLOOP_MARKER,
-                    "Initialized GLVertexArray[{}]",
-                    GLVertexArray.this.name);
-
-            LOGGER.trace(
-                    GLOOP_MARKER,
-                    "############## End GLVertexArray Init Task ###############");
+            LOGGER.trace(GLOOP_MARKER, "Initialized GLVertexArray[{}]", GLVertexArray.this.name);
+            LOGGER.trace(GLOOP_MARKER, "############## End GLVertexArray Init Task ###############");
         }
     }
 
@@ -258,16 +238,8 @@ public class GLVertexArray extends GLObject {
                 throw new GLException("Invalid GLBuffer!");
             }
 
-            final DSADriver dsa = GLTools.getDSAInstance();
-
-            GLVertexArray.this.bind();
-
-            dsa.glBindBuffer(GLBufferTarget.GL_DRAW_INDIRECT_BUFFER.value, this.indirectCommandBuffer.bufferId);
-            dsa.glDrawElementsIndirect(this.drawMode.value, this.indexType.value, this.offset);
-
-            LOGGER.trace(
-                    GLOOP_MARKER,
-                    "############ End GLVertexArray Draw Elements Indirect Task ###########");
+            GLTools.getDriverInstance().vertexArrayDrawElementsIndirect(vao, indirectCommandBuffer.buffer, drawMode.value, indexType.value, offset);
+            LOGGER.trace(GLOOP_MARKER, "############ End GLVertexArray Draw Elements Indirect Task ###########");
         }
     }
 
@@ -338,16 +310,8 @@ public class GLVertexArray extends GLObject {
                 throw new GLException("Invalid GLBuffer!");
             }
 
-            GLVertexArray.this.bind();
-
-            final DSADriver dsa = GLTools.getDSAInstance();
-
-            dsa.glBindBuffer(GLBufferTarget.GL_DRAW_INDIRECT_BUFFER.value, this.indirectCommandBuffer.bufferId);
-            dsa.glDrawArraysIndirect(this.drawMode.value, this.offset);
-
-            LOGGER.trace(
-                    GLOOP_MARKER,
-                    "############### End GLVertexArray Draw Arrays Indirect Task ###############");
+            GLTools.getDriverInstance().vertexArrayDrawArraysIndirect(vao, indirectCommandBuffer.buffer, drawMode.value, offset);
+            LOGGER.trace(GLOOP_MARKER, "############### End GLVertexArray Draw Arrays Indirect Task ###############");
         }
     }
 
@@ -396,9 +360,9 @@ public class GLVertexArray extends GLObject {
 
         @Override
         public void run() {
-            LOGGER.trace(GLOOP_MARKER,"############### Start GLVertexArray Multi Draw Arrays Task ###############");
+            LOGGER.trace(GLOOP_MARKER, "############### Start GLVertexArray Multi Draw Arrays Task ###############");
             LOGGER.trace(GLOOP_MARKER, "\tDrawing GLVertexArray[{}]", getName());
-            LOGGER.trace(GLOOP_MARKER, "\tDraw mode: {}",this.drawMode);
+            LOGGER.trace(GLOOP_MARKER, "\tDraw mode: {}", this.drawMode);
 
             checkThread();
 
@@ -406,12 +370,8 @@ public class GLVertexArray extends GLObject {
                 throw new GLException("Invalid GLVertexArray!");
             }
 
-            GLVertexArray.this.bind();
-            GLTools.getDSAInstance().glMultiDrawArrays(this.drawMode.value, this.first, this.count);
-
-            LOGGER.trace(
-                    GLOOP_MARKER,
-                    "############### End GLVertexArray Multi Draw Arrays Task ###############");
+            GLTools.getDriverInstance().vertexArrayMultiDrawArrays(vao, drawMode.value, first, count);
+            LOGGER.trace(GLOOP_MARKER, "############### End GLVertexArray Multi Draw Arrays Task ###############");
         }
     }
 
@@ -492,19 +452,9 @@ public class GLVertexArray extends GLObject {
             if (!GLVertexArray.this.isValid()) {
                 throw new GLException("Invalid GLVertexArray!");
             }
-
-            GLVertexArray.this.bind();
-
-            GLTools.getDSAInstance().glDrawElementsInstanced(
-                    this.drawMode.value,
-                    this.count,
-                    this.type.value,
-                    this.offset,
-                    this.instanceCount);
-
-            LOGGER.trace(
-                    GLOOP_MARKER,
-                    "############### End GLVertexArray Draw Elements Instanced Task ###############");
+            
+            GLTools.getDriverInstance().vertexArrayDrawElementsInstanced(vao, drawMode.value, count, type.value, offset, instanceCount);            
+            LOGGER.trace(GLOOP_MARKER, "############### End GLVertexArray Draw Elements Instanced Task ###############");
         }
 
     }
@@ -584,17 +534,8 @@ public class GLVertexArray extends GLObject {
                 throw new GLException("GLVertexArray is not valid!");
             }
 
-            GLVertexArray.this.bind();
-
-            GLTools.getDSAInstance().glDrawArraysInstanced(
-                    this.mode.value,
-                    this.first,
-                    this.count,
-                    this.instanceCount);
-
-            LOGGER.trace(
-                    GLOOP_MARKER,
-                    "############### End GLVertexArray Draw Arrays Instanced Task ###############");
+            GLTools.getDriverInstance().vertexArrayDrawArraysInstanced(vao, mode.value, first, count, instanceCount);            
+            LOGGER.trace(GLOOP_MARKER, "############### End GLVertexArray Draw Arrays Instanced Task ###############");
         }
     }
 
@@ -667,17 +608,8 @@ public class GLVertexArray extends GLObject {
                 throw new GLException("Invalid GLVertex!");
             }
 
-            GLVertexArray.this.bind();
-
-            GLTools.getDSAInstance().glDrawElements(
-                    this.mode.value,
-                    this.count,
-                    this.type.value,
-                    this.offset);
-
-            LOGGER.trace(
-                    GLOOP_MARKER,
-                    "############### End GLVertexArray Draw Elements Task ###############");
+            GLTools.getDriverInstance().vertexArrayDrawElements(vao, mode.value, count, type.value, offset);
+            LOGGER.trace(GLOOP_MARKER, "############### End GLVertexArray Draw Elements Task ###############");
         }
     }
 
@@ -761,19 +693,8 @@ public class GLVertexArray extends GLObject {
                 throw new GLException("GLVertexArray is not valid!");
             }
 
-            GLVertexArray.this.bind();
-
-            final DSADriver dsa = GLTools.getDSAInstance();
-
-            dsa.glEnable(35977 /* GL_RASTERIZER_DISCARD */);
-            dsa.glBeginTransformFeedback(this.mode.value);
-            dsa.glDrawArrays(this.mode.value, this.start, this.count);
-            dsa.glEndTransformFeedback();
-            dsa.glDisable(35977 /* GL_RASTERIZER_DISCARD */);
-
-            LOGGER.trace(
-                    GLOOP_MARKER,
-                    "############### End GLVertexArray Draw Transform Feedback Task ###############");
+            GLTools.getDriverInstance().vertexArrayDrawTransformFeedback(vao, mode.value, start, count);            
+            LOGGER.trace(GLOOP_MARKER, "############### End GLVertexArray Draw Transform Feedback Task ###############");
         }
     }
 
@@ -819,17 +740,9 @@ public class GLVertexArray extends GLObject {
             if (!GLVertexArray.this.isValid()) {
                 throw new GLException("GLVertexArray is not valid!");
             }
-
-            GLVertexArray.this.bind();
-
-            GLTools.getDSAInstance().glDrawArrays(
-                    this.mode.value,
-                    this.start,
-                    this.count);
-
-            LOGGER.trace(
-                    GLOOP_MARKER,
-                    "############### End GLVertexArray Draw Arrays Task ###############");
+            
+            GLTools.getDriverInstance().vertexArrayDrawArrays(vao, mode.value, start, count);
+            LOGGER.trace(GLOOP_MARKER, "############### End GLVertexArray Draw Arrays Task ###############");
         }
 
     }
@@ -858,13 +771,11 @@ public class GLVertexArray extends GLObject {
             checkThread();
 
             if (GLVertexArray.this.isValid()) {
-                GLTools.getDSAInstance().glDeleteVertexArrays(GLVertexArray.this.vaoId);
-                GLVertexArray.this.vaoId = INVALID_VERTEX_ARRAY_ID;
+                GLTools.getDriverInstance().vertexArrayDelete(vao);
+                vao = null;
             }
 
-            LOGGER.trace(
-                    GLOOP_MARKER,
-                    "############### End GLVertexArray Delete Task ###############");
+            LOGGER.trace(GLOOP_MARKER, "############### End GLVertexArray Delete Task ###############");
         }
     }
 
@@ -903,15 +814,8 @@ public class GLVertexArray extends GLObject {
                 throw new GLException("Invalid GLBuffer!");
             }
 
-            GLVertexArray.this.bind();
-
-            GLTools.getDSAInstance().glBindBuffer(
-                    GLBufferTarget.GL_ELEMENT_ARRAY_BUFFER.value,
-                    this.buffer.bufferId);
-
-            LOGGER.trace(
-                    GLOOP_MARKER,
-                    "############### End GLVertexArray Attach Index Buffer Task ###############");
+            GLTools.getDriverInstance().vertexArrayAttachIndexBuffer(vao, buffer.buffer);            
+            LOGGER.trace(GLOOP_MARKER, "############### End GLVertexArray Attach Index Buffer Task ###############");
         }
     }
 
@@ -1115,27 +1019,8 @@ public class GLVertexArray extends GLObject {
                 throw new GLException("Invalid GLBuffer!");
             }
 
-            // bind the VAO if it isn't bound already.
-            GLVertexArray.this.bind();
-
-            final DSADriver dsa = GLTools.getDSAInstance();
-
-            dsa.glBindBuffer(GLBufferTarget.GL_ARRAY_BUFFER.value, this.buffer.bufferId);
-            dsa.glEnableVertexAttribArray(this.index);
-
-            if (this.type == GLVertexAttributeType.GL_DOUBLE) {
-                dsa.glVertexAttribLPointer(this.index, this.size.value, this.type.value, this.stride, this.offset);
-            } else {
-                dsa.glVertexAttribPointer(this.index, this.size.value, this.type.value, this.normalized, this.stride, this.offset);
-            }
-
-            if (this.divisor > 0) {
-                dsa.glVertexAttribDivisor(this.index, this.divisor);
-            }
-
-            LOGGER.trace(
-                    GLOOP_MARKER,
-                    "############### End GLVertexArray Attach Buffer Task ###############");
+            GLTools.getDriverInstance().vertexArrayAttachBuffer(vao, index, buffer.buffer, size.value, type.value, stride, offset, divisor);                        
+            LOGGER.trace(GLOOP_MARKER, "############### End GLVertexArray Attach Buffer Task ###############");
         }
     }
 

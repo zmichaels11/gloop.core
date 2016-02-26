@@ -25,6 +25,7 @@
  */
 package com.longlinkislong.gloop;
 
+import com.longlinkislong.gloop.impl.Buffer;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.util.Objects;
@@ -45,11 +46,7 @@ public class GLBuffer extends GLObject {
     private static final Marker GLOOP_MARKER = MarkerFactory.getMarker("GLOOP");
     private static final Logger LOGGER = LoggerFactory.getLogger("GLBuffer");
 
-    private static final int INVALID_BUFFER_ID = -1;
-
-    transient volatile int bufferId = INVALID_BUFFER_ID;
-
-    private transient volatile ByteBuffer mappedBuffer = null;
+    transient volatile Buffer buffer;
     private volatile int accessFlags = GLBufferAccess.GL_MAP_WRITE.value | GLBufferAccess.GL_MAP_READ.value;
     private String name = "";
 
@@ -118,8 +115,7 @@ public class GLBuffer extends GLObject {
      * @since 15.05.13
      */
     public boolean isValid() {
-        
-        return this.bufferId != INVALID_BUFFER_ID;
+        return buffer != null && buffer.isValid();
     }
 
     /**
@@ -148,8 +144,8 @@ public class GLBuffer extends GLObject {
             LOGGER.trace(GLOOP_MARKER, "############### Start GLBuffer Init Task ###############");
 
             if (!GLBuffer.this.isValid()) {
-                GLBuffer.this.bufferId = GLTools.getDSAInstance().glCreateBuffers();
-                GLBuffer.this.name = "id=" + GLBuffer.this.bufferId;
+                buffer = GLTools.getDriverInstance().bufferCreate();
+                GLBuffer.this.name = "id=" + buffer.hashCode();
 
                 LOGGER.trace(GLOOP_MARKER, "Initialized GLBuffer[{}]!", GLBuffer.this.getName());
             } else {
@@ -202,12 +198,12 @@ public class GLBuffer extends GLObject {
                 throw new GLException("Invalid GLBuffer!");
             }
 
-            final int result = GLTools.getDSAInstance().glGetNamedBufferParameteri(GLBuffer.this.bufferId, this.pName.value);
+            final long result = GLTools.getDriverInstance().bufferGetParameter(buffer, this.pName.value);
 
             LOGGER.trace(GLOOP_MARKER, "GLBuffer[{}].{} = {}!", GLBuffer.this.getName(), this.pName, result);
             LOGGER.trace(GLOOP_MARKER, "############### End GLBuffer Parameter Query ###############");
 
-            return result;
+            return (int) result;
         }
 
         @Override
@@ -241,8 +237,8 @@ public class GLBuffer extends GLObject {
             LOGGER.trace(GLOOP_MARKER, "\tDeleting GLBuffer[{}]", GLBuffer.this.getName());
 
             if (GLBuffer.this.isValid()) {
-                GLTools.getDSAInstance().glDeleteBuffers(GLBuffer.this.bufferId);
-                GLBuffer.this.bufferId = INVALID_BUFFER_ID;
+                GLTools.getDriverInstance().bufferDelete(buffer);
+                buffer = null;
             }
 
             LOGGER.trace(GLOOP_MARKER, "############### End GLBuffer Delete Task ###############");
@@ -326,7 +322,7 @@ public class GLBuffer extends GLObject {
                 throw new GLException("GLBuffer is invalid!");
             }
 
-            GLTools.getDSAInstance().glNamedBufferData(GLBuffer.this.bufferId, this.data, this.usage.value);
+            GLTools.getDriverInstance().bufferSetData(buffer, data, this.usage.value);
 
             LOGGER.trace(GLOOP_MARKER, "############### End GLBuffer Upload Task ###############");
         }
@@ -427,11 +423,7 @@ public class GLBuffer extends GLObject {
                 throw new GLException("Invalid GLBuffer!");
             }
 
-            GLTools.getDSAInstance().glNamedBufferStorage(
-                    GLBuffer.this.bufferId,
-                    this.size,
-                    this.flags);
-
+            GLTools.getDriverInstance().bufferAllocateImmutable(buffer, size, this.flags);
             GLBuffer.this.accessFlags = this.flags;
 
             LOGGER.trace(GLOOP_MARKER, "############# End GLBuffer Allocate Immutable Task ##############");
@@ -488,8 +480,7 @@ public class GLBuffer extends GLObject {
                 throw new GLException("Invalid GLBuffer!");
             }
 
-            GLTools.getDSAInstance().glNamedBufferData(GLBuffer.this.bufferId, this.size, this.usage.value);
-
+            GLTools.getDriverInstance().bufferAllocate(buffer, size, this.usage.value);
             LOGGER.trace(GLOOP_MARKER, "############### End GLBuffer Allocate Task ###############");
         }
 
@@ -602,7 +593,7 @@ public class GLBuffer extends GLObject {
             final ByteBuffer out;
 
             if (this.writeBuffer == null) {
-                final int size = GLTools.getDSAInstance().glGetNamedBufferParameteri(GLBuffer.this.bufferId, GLBufferParameterName.GL_BUFFER_SIZE.value);
+                final int size = (int) GLTools.getDriverInstance().bufferGetParameter(buffer, GLBufferParameterName.GL_BUFFER_SIZE.value);
 
                 out = ByteBuffer.allocateDirect(size).order(ByteOrder.nativeOrder());
             } else {
@@ -610,9 +601,7 @@ public class GLBuffer extends GLObject {
             }
 
             LOGGER.trace(GLOOP_MARKER, "GLBuffer[{}]: download {} bytes", GLBuffer.this.name, out.capacity());
-
-            GLTools.getDSAInstance().glGetNamedBufferSubData(GLBuffer.this.bufferId, this.offset, out);
-
+            GLTools.getDriverInstance().bufferGetData(buffer, offset, out);
             LOGGER.trace(GLOOP_MARKER, "############### End GLBuffer Download Query ###############");
 
             return out;
@@ -677,18 +666,11 @@ public class GLBuffer extends GLObject {
                 throw new GLException("Invalid GLBuffer!");
             }
 
-            final ByteBuffer oldBuffer = GLBuffer.this.mappedBuffer;
-            final ByteBuffer newBuffer = GLTools.getDSAInstance()
-                    .glMapNamedBufferRange(
-                            GLBuffer.this.bufferId,
-                            this.offset, this.length,
-                            GLBuffer.this.accessFlags, oldBuffer);
-
-            GLBuffer.this.mappedBuffer = newBuffer;
+            final ByteBuffer out = GLTools.getDriverInstance().bufferMapData(buffer, offset, length, accessFlags);
 
             LOGGER.trace(GLOOP_MARKER, "############### End GLBuffer Map Query ###############");
 
-            return newBuffer;
+            return out;
         }
 
         @Override
@@ -726,8 +708,7 @@ public class GLBuffer extends GLObject {
                 throw new GLException("Invalid GLBuffer!");
             }
 
-            GLTools.getDSAInstance().glUnmapNamedBuffer(GLBuffer.this.bufferId);
-
+            GLTools.getDriverInstance().bufferUnmapData(buffer);
             LOGGER.trace(GLOOP_MARKER, "############### End GLBuffer Unmap Task ###############");
         }
     }
@@ -799,10 +780,7 @@ public class GLBuffer extends GLObject {
                 throw new GLException("Invalid GLBuffer!");
             }
 
-            GLTools.getDSAInstance().glCopyNamedBufferSubData(
-                    src.bufferId, dest.bufferId,
-                    srcOffset, destOffset, size);
-
+            GLTools.getDriverInstance().bufferCopyData(src.buffer, srcOffset, dest.buffer, destOffset, size);
             LOGGER.trace(GLOOP_MARKER, "############### End GLBuffer Copy Task ###############");
         }
     }
@@ -874,11 +852,7 @@ public class GLBuffer extends GLObject {
                 throw new GLException("Invalid GLBuffer!");
             }
 
-            GLTools.getDSAInstance().glInvalidateBufferSubData(
-                    GLBuffer.this.bufferId,
-                    this.offset,
-                    this.length);
-
+            GLTools.getDriverInstance().bufferInvalidateRange(buffer, offset, length);            
             LOGGER.trace(GLOOP_MARKER, "############### End GLBuffer InvalidateSubData Task ###############");
         }
     }
@@ -906,9 +880,8 @@ public class GLBuffer extends GLObject {
             if (!GLBuffer.this.isValid()) {
                 throw new GLException("Invalid GLBuffer!");
             }
-            
-            GLTools.getDSAInstance().glInvalidateBufferData(GLBuffer.this.bufferId);
 
+            GLTools.getDriverInstance().bufferInvalidateData(buffer);            
             LOGGER.trace(GLOOP_MARKER, "############### End GLBuffer Invalidate Task ###############");
         }
     }

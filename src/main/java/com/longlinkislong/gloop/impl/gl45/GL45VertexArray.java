@@ -13,4 +13,9 @@ import com.longlinkislong.gloop.impl.VertexArray;
  */
 public final class GL45VertexArray implements VertexArray {
     int vertexArrayId = -1;
+    
+    @Override
+    public boolean isValid() {
+        return vertexArrayId != -1;
+    }
 }

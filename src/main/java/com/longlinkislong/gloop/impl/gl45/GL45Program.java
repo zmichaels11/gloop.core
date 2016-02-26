@@ -13,8 +13,11 @@ import java.util.WeakHashMap;
  *
  * @author zmichaels
  */
-public final class GL45Program implements Program {
-    static final Map<Thread, Integer> CURRENT_PROGRAM = new WeakHashMap<>();
-    
+public final class GL45Program implements Program {        
     int programId = -1;
+    
+    @Override
+    public boolean isValid() {
+        return programId != -1;
+    }
 }
