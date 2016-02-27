@@ -10,6 +10,6 @@ package com.longlinkislong.gloop.impl;
  * @author zmichaels
  */
 public interface VertexArray {
-
+    
     boolean isValid();
 }

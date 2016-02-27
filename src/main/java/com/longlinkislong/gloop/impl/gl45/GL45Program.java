@@ -6,8 +6,6 @@
 package com.longlinkislong.gloop.impl.gl45;
 
 import com.longlinkislong.gloop.impl.Program;
-import java.util.Map;
-import java.util.WeakHashMap;
 
 /**
  *

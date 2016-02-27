@@ -12,10 +12,10 @@ import com.longlinkislong.gloop.impl.VertexArray;
  * @author zmichaels
  */
 public final class ARBVertexArray implements VertexArray {
-    int vertexArray = -1;
+    int vertexArrayId = -1;
     
     @Override
     public boolean isValid() {
-        return vertexArray != -1;
+        return vertexArrayId != -1;
     }
 }

@@ -5,10 +5,13 @@
  */
 package com.longlinkislong.gloop.impl;
 
+import com.longlinkislong.gloop.GLTextureInternalFormat;
 import java.nio.ByteBuffer;
 import java.nio.DoubleBuffer;
 import java.nio.FloatBuffer;
 import java.nio.IntBuffer;
+import org.lwjgl.opengl.GL11;
+import org.lwjgl.opengl.GL30;
 
 /**
  *
@@ -31,6 +34,28 @@ public interface Driver <BufferT extends Buffer,
         VertexArrayT extends VertexArray,
         QueryT extends DrawQuery>{
 
+    boolean isBufferSupported();
+    
+    boolean isImmutableBufferSupported();
+    
+    boolean isDrawQuerySupported();
+    
+    boolean isFramebufferSupported();
+    
+    boolean isProgramSupported();
+    
+    boolean isSamplerSupported();
+    
+    boolean isShaderSupported();
+    
+    boolean isSparseTextureSupported();
+    
+    boolean isDrawIndirectSupported();
+    
+    boolean isDrawInstancedSupported();
+    
+    boolean isSupported();        
+    
     // blending
     void blendingEnable(long rgbEq, long aEq, long rgbFuncSrc, long rgbFuncDst, long aFuncSrc, long aFuncDst);
 
@@ -235,4 +260,104 @@ public interface Driver <BufferT extends Buffer,
     QueryT drawQueryCreate();
     
     void drawQueryDelete(QueryT query);
+    
+    default int guessFormat(int internalFormat) {                
+        switch (GLTextureInternalFormat.of(internalFormat).orElseThrow(NullPointerException::new)) {
+            case GL_COMPRESSED_RGB_S3TC_DXT1:
+            case GL_RGB:
+            case GL_COMPRESSED_RGB:
+            case GL_COMPRESSED_SRGB:
+            case GL_R3_G3_B2:
+            case GL_RGB4:
+            case GL_RGB5:
+            case GL_RGB8:
+            case GL_RGB8_SNORM:
+            case GL_RGB10:
+            case GL_RGB12:
+            case GL_RGB16:
+            case GL_RGB16_SNORM:
+            case GL_SRGB8:
+            case GL_RGB16F:
+            case GL_RGB32F:
+            case GL_RGB8I:
+            case GL_RGB8UI:
+            case GL_RGB16I:
+            case GL_RGB16UI:
+            case GL_RGB32I:
+            case GL_RGB32UI:
+                return GL11.GL_RGB;
+            case GL_COMPRESSED_RGBA_S3TC_DXT1:
+            case GL_COMPRESSED_RGBA_S3TC_DXT3:
+            case GL_COMPRESSED_RGBA_S3TC_DXT5:
+            case GL_RGBA:
+            case GL_COMPRESSED_RGBA:
+            case GL_COMPRESSED_SRGB_ALPHA:
+            case GL_RGBA2:
+            case GL_RGBA4:
+            case GL_RGBA16_SNORM:
+            case GL_RGB5_A1:
+            case GL_RGBA8:
+            case GL_RGBA8_SNORM:
+            case GL_RGB10_A2:
+            case GL_RGB10_A2UI:
+            case GL_RGBA12:
+            case GL_RGBA16:
+            case GL_SRGB8_ALPHA8:
+            case GL_RGBA16F:
+            case GL_RGBA32F:
+            case GL_R11F_G11F_B10F:
+            case GL_RGBA8I:
+            case GL_RGBA8UI:
+            case GL_RGBA16I:
+            case GL_RGBA16UI:
+            case GL_RGBA32I:
+            case GL_RGBA32UI:
+                return GL11.GL_RGBA;
+            case GL_STENCIL_INDEX:
+                return GL11.GL_STENCIL;
+            case GL_RED:
+            case GL_R8:
+            case GL_R8_SNORM:
+            case GL_R16_SNORM:
+            case GL_COMPRESSED_RED:
+            case GL_R16:
+            case GL_R16F:
+            case GL_R32F:
+            case GL_R8I:
+            case GL_R8UI:
+            case GL_R16I:
+            case GL_R16UI:
+            case GL_R32I:
+            case GL_R32UI:
+                return GL11.GL_RED;
+            case GL_DEPTH_COMPONENT:
+                return GL11.GL_DEPTH_COMPONENT;
+            case GL_DEPTH_STENCIL:
+            case GL_DEPTH24_STENCIL8:
+            case GL_DEPTH32F_STENCIL8:
+                return GL30.GL_DEPTH_STENCIL;
+            case GL_RG:
+            case GL_COMPRESSED_RG:
+            case GL_RG8:
+            case GL_RG8_SNORM:
+            case GL_RG16:
+            case GL_RG16_SNORM:
+            case GL_RG16F:
+            case GL_RG32F:
+            case GL_RG8I:
+            case GL_RG8UI:
+            case GL_RG16I:
+            case GL_RG16UI:
+            case GL_RG32I:
+            case GL_RG32UI:
+                return GL30.GL_RG;
+            case GL_DEPTH_COMPONENT16:
+            case GL_DEPTH_COMPONENT24:
+            case GL_DEPTH_COMPONENT32:
+            case GL_DEPTH_COMPONENT32F:
+                return GL11.GL_DEPTH_COMPONENT;
+            default:
+                return GL11.GL_RGBA;
+        }
+    }
 }

@@ -6,6 +6,7 @@
 package com.longlinkislong.gloop.impl.arb;
 
 import com.longlinkislong.gloop.impl.Buffer;
+import java.nio.ByteBuffer;
 
 /**
  *
@@ -13,6 +14,7 @@ import com.longlinkislong.gloop.impl.Buffer;
  */
 public final class ARBBuffer implements Buffer {
     int bufferId = -1;
+    ByteBuffer mapBuffer;
     
     @Override
     public boolean isValid() {
