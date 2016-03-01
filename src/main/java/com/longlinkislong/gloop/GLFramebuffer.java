@@ -898,9 +898,9 @@ public class GLFramebuffer extends GLObject {
             checkThread();
 
             if (pixels != null) {
-                GLTools.getDriverInstance().framebufferGetPixels(framebuffer, x, y, width, height, height, y, pixels);
+                GLTools.getDriverInstance().framebufferGetPixels(framebuffer, x, y, width, height, format.value, type.value, pixels);
             } else {
-                GLTools.getDriverInstance().framebufferGetPixels(framebuffer, x, y, width, height, height, y, pixelPackBuffer.buffer);
+                GLTools.getDriverInstance().framebufferGetPixels(framebuffer, x, y, width, height, format.value, type.value, pixelPackBuffer.buffer);
             }
             
             LOGGER.trace(GLOOP_MARKER, "############### End GLFramebuffer Read Pixels Task ###############");
