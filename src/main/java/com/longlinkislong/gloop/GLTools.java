@@ -26,7 +26,11 @@
 package com.longlinkislong.gloop;
 
 import com.longlinkislong.gloop.impl.Driver;
+import com.longlinkislong.gloop.impl.arb.ARBDriver;
+import com.longlinkislong.gloop.impl.gl2x.GL2XDriver;
+import com.longlinkislong.gloop.impl.gl3x.GL3XDriver;
 import com.longlinkislong.gloop.impl.gl45.GL45Driver;
+import com.longlinkislong.gloop.impl.gl4x.GL4XDriver;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStream;
@@ -35,6 +39,7 @@ import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.nio.FloatBuffer;
 import java.nio.IntBuffer;
+import java.util.Arrays;
 import java.util.List;
 import java.util.ListIterator;
 import java.util.Optional;
@@ -1488,9 +1493,19 @@ public class GLTools {
             return 1;
         }
     }
-
+    
     private static final class DriverHolder {
-        private static final Driver INSTANCE = GL45Driver.getInstance();
+        private static final Driver INSTANCE;
+        
+        static {
+            final Driver[] order = {GL45Driver.getInstance(), ARBDriver.getInstance(), GL4XDriver.getInstance(), GL3XDriver.getInstance(), GL2XDriver.getInstance()};
+            
+            INSTANCE = Arrays.stream(order)
+                    .filter(Driver::isSupported)                    
+                    .findFirst().orElseThrow(() -> new GLException("Minimum OpenGL spec is not met!"));
+            
+            LOGGER.info(GLOOP_MARKER, "Selected OpenGL Driver: {}", INSTANCE.getClass().getName());
+        }
     }
     
     public static Driver getDriverInstance() {

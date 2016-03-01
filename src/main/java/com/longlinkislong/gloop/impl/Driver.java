@@ -25,37 +25,58 @@ import org.lwjgl.opengl.GL30;
  * @param <VertexArrayT>
  * @param <QueryT>
  */
-public interface Driver <BufferT extends Buffer, 
-        FramebufferT extends Framebuffer, 
-        TextureT extends Texture,
-        ShaderT extends Shader,
-        ProgramT extends Program,
-        SamplerT extends Sampler,
-        VertexArrayT extends VertexArray,
-        QueryT extends DrawQuery>{
+public interface Driver<BufferT extends Buffer, FramebufferT extends Framebuffer, TextureT extends Texture, ShaderT extends Shader, ProgramT extends Program, SamplerT extends Sampler, VertexArrayT extends VertexArray, QueryT extends DrawQuery> {
 
     boolean isBufferSupported();
-    
+
     boolean isImmutableBufferSupported();
-    
+
     boolean isDrawQuerySupported();
-    
+
     boolean isFramebufferSupported();
-    
+
     boolean isProgramSupported();
-    
+
     boolean isSamplerSupported();
-    
-    boolean isShaderSupported();
-    
+
+    boolean isComputeShaderSupported();
+
     boolean isSparseTextureSupported();
-    
+
     boolean isDrawIndirectSupported();
-    
+
     boolean isDrawInstancedSupported();
-    
-    boolean isSupported();        
-    
+
+    boolean isInvalidateSubdataSupported();
+
+    boolean isSeparateShaderObjectsSupported();
+
+    boolean is64bitUniformsSupported();
+
+    boolean isVertexArraySupported();
+
+    boolean isSupported();
+
+    default double getSupportRating() {
+        double rating = 0.0;
+        rating += isBufferSupported() ? 1.0 : 0.0;
+        rating += isImmutableBufferSupported() ? 1.0 : 0.0;
+        rating += isDrawQuerySupported() ? 1.0 : 0.0;
+        rating += isFramebufferSupported() ? 1.0 : 0.0;
+        rating += isProgramSupported() ? 1.0 : 0.0;
+        rating += isSamplerSupported() ? 1.0 : 0.0;
+        rating += isComputeShaderSupported() ? 1.0 : 0.0;
+        rating += isSparseTextureSupported() ? 1.0 : 0.0;
+        rating += isDrawIndirectSupported() ? 1.0 : 0.0;
+        rating += isDrawInstancedSupported() ? 1.0 : 0.0;
+        rating += isInvalidateSubdataSupported() ? 1.0 : 0.0;
+        rating += isSeparateShaderObjectsSupported() ? 1.0 : 0.0;
+        rating += is64bitUniformsSupported() ? 1.0 : 0.0;
+        rating += isVertexArraySupported() ? 1.0 : 0.0;
+        
+        return rating / 14.0;
+    }
+
     // blending
     void blendingEnable(long rgbEq, long aEq, long rgbFuncSrc, long rgbFuncDst, long aFuncSrc, long aFuncDst);
 
@@ -96,7 +117,7 @@ public interface Driver <BufferT extends Buffer,
 
     // framebuffer
     FramebufferT framebufferGetDefault();
-    
+
     boolean framebufferIsComplete(FramebufferT framebuffer);
 
     FramebufferT framebufferCreate();
@@ -153,14 +174,14 @@ public interface Driver <BufferT extends Buffer,
     void programDispatchCompute(ProgramT program, long numX, long numY, long numZ);
 
     void programSetFeedbackBuffer(ProgramT program, long varyingLoc, BufferT buffer);
-    
-    long programGetUniformLocation(ProgramT program, String name);   
+
+    long programGetUniformLocation(ProgramT program, String name);
 
     //sampler
     SamplerT samplerCreate();
 
     void samplerSetParameter(SamplerT sampler, long param, long value);
-    
+
     void samplerSetParameter(SamplerT sampler, long param, double value);
 
     void samplerDelete(SamplerT sampler);
@@ -197,15 +218,15 @@ public interface Driver <BufferT extends Buffer,
     void textureInvalidateRange(TextureT texture, long level, long xOffset, long yOffset, long zOffset, long width, long height, long depth);
 
     void textureGenerateMipmap(TextureT texture);
-    
-    long textureGetMaxSize();        
+
+    long textureGetMaxSize();
 
     long textureGetMaxBoundTextures();
-    
+
     long textureGetPageWidth(TextureT texture);
-    
+
     long textureGetPageHeight(TextureT texture);
-    
+
     long textureGetPageDepth(TextureT texture);
 
     long textureGetPreferredFormat(long internalFormat);
@@ -213,55 +234,55 @@ public interface Driver <BufferT extends Buffer,
     void textureSetParameter(TextureT texture, long param, long value);
 
     void textureSetParameter(TextureT texture, long param, double value);
-    
+
     void textureAllocatePage(TextureT texture, long level, long xOffset, long yOffset, long zOffset, long width, long height, long depth);
-    
+
     void textureDeallocatePage(TextureT texture, long level, long xOffset, long yOffset, long zOffset, long width, long height, long depth);
-    
+
     long textureGetMaxAnisotropy();
 
     // vertexArray
     VertexArrayT vertexArrayCreate();
-    
+
     void vertexArrayDrawElementsIndirect(VertexArrayT vao, BufferT cmdBuffer, long drawMode, long indexType, long offset);
-    
+
     void vertexArrayDrawArraysIndirect(VertexArrayT vao, BufferT cmdBuffer, long drawMode, long offset);
-    
+
     void vertexArrayMultiDrawArrays(VertexArrayT vao, long drawMode, IntBuffer first, IntBuffer count);
-    
+
     void vertexArrayDrawElementsInstanced(VertexArrayT vao, long drawMode, long count, long type, long offset, long instanceCount);
-    
+
     void vertexArrayDrawArraysInstanced(VertexArrayT vao, long drawMode, long first, long count, long instanceCount);
-    
+
     void vertexArrayDrawElements(VertexArrayT vao, long drawMode, long count, long type, long offset);
-    
+
     void vertexArrayDrawArrays(VertexArrayT vao, long drawMode, long start, long count);
-    
+
     void vertexArrayDrawTransformFeedback(VertexArrayT vao, long drawMode, long start, long count);
-    
+
     void vertexArrayDelete(VertexArrayT vao);
-    
+
     void vertexArrayAttachIndexBuffer(VertexArrayT vao, BufferT buffer);
-    
+
     void vertexArrayAttachBuffer(VertexArrayT vao, long index, BufferT buffer, long size, long type, long stride, long offset, long divisor);
-    
+
     //viewport
     void viewportApply(long x, long y, long width, long height);
-    
+
     // draw query
     void drawQueryEnable(long condition, QueryT query);
-    
+
     void drawQueryDisable(long condition);
-    
+
     void drawQueryBeginConditionalRender(QueryT query, long mode);
-    
+
     void drawQueryEndConditionRender();
-    
+
     QueryT drawQueryCreate();
-    
+
     void drawQueryDelete(QueryT query);
-    
-    default int guessFormat(int internalFormat) {                
+
+    default int guessFormat(int internalFormat) {
         switch (GLTextureInternalFormat.of(internalFormat).orElseThrow(NullPointerException::new)) {
             case GL_COMPRESSED_RGB_S3TC_DXT1:
             case GL_RGB:
