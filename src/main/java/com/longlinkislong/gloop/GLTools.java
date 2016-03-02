@@ -35,6 +35,7 @@ import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
+import java.lang.reflect.InvocationTargetException;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.nio.FloatBuffer;
@@ -1399,7 +1400,7 @@ public class GLTools {
         final double scale = uint8 / (double) 0xFF;
         return (int) (0x3 * scale) & 0x3;
     }
-    
+
     /**
      * Constant for describing an AMD GPU.
      *
@@ -1458,7 +1459,7 @@ public class GLTools {
 
     private static boolean _hasOpenGLVersion(final int version) {
         return true;
-    }            
+    }
 
     /**
      * Checks if the given value is a power of 2.
@@ -1493,27 +1494,45 @@ public class GLTools {
             return 1;
         }
     }
-    
+
     private static final class DriverHolder {
+
         private static final Driver INSTANCE;
-        
+
         static {
-            final Driver[] order = {GL45Driver.getInstance(), ARBDriver.getInstance(), GL4XDriver.getInstance(), GL3XDriver.getInstance(), GL2XDriver.getInstance()};
+            Driver selectedDriver = null;
+
+            try {
+                final String override = System.getProperty("com.longlinkislong.gloop.driver", "");
+
+                if (override.isEmpty()) {
+                    selectedDriver = null;
+                } else {
+                    Class<?> driver = Class.forName(override);
+                    selectedDriver = (Driver) driver.getMethod("getInstance").invoke(null);
+                }
+            } catch (ClassNotFoundException | NoSuchMethodException | SecurityException | IllegalAccessException | IllegalArgumentException | InvocationTargetException ex) {
+                selectedDriver = null;
+                ex.printStackTrace();
+            }
+
+            if (selectedDriver != null) {
+                final Driver[] order = {GL45Driver.getInstance(), ARBDriver.getInstance(), GL4XDriver.getInstance(), GL3XDriver.getInstance(), GL2XDriver.getInstance()};
+
+                selectedDriver = Arrays.stream(order)
+                        .filter(Driver::isSupported)
+                        .findFirst().orElseThrow(() -> new GLException("Minimum OpenGL spec is not met!"));
+            }
             
-            INSTANCE = Arrays.stream(order)
-                    .filter(Driver::isSupported)                    
-                    .findFirst().orElseThrow(() -> new GLException("Minimum OpenGL spec is not met!"));
-            
+            INSTANCE = selectedDriver;
+
             LOGGER.info(GLOOP_MARKER, "Selected OpenGL Driver: {}", INSTANCE.getClass().getName());
         }
     }
-    
+
     public static Driver getDriverInstance() {
         return DriverHolder.INSTANCE;
     }
-    
-    
-        
 
     /**
      * Calculates an estimate on how many bytes are needed for a volume of
@@ -1571,5 +1590,5 @@ public class GLTools {
         }
 
         return (width * height * depth) * fSize * tSize;
-    }    
+    }
 }
