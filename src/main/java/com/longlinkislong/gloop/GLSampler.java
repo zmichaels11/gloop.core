@@ -177,6 +177,7 @@ public class GLSampler extends GLObject {
      */
     public class InitTask extends GLTask {
 
+        @SuppressWarnings({"rawtypes", "unchecked"})
         @Override
         public void run() {
             LOGGER.trace(GLOOP_MARKER, "############### Start GLSampler Init Task ###############");
@@ -241,6 +242,7 @@ public class GLSampler extends GLObject {
             }
         }
 
+        @SuppressWarnings("unchecked")
         @Override
         public void run() {
             LOGGER.trace(GLOOP_MARKER, "############### Start GLSampler Bind Task ###############");
@@ -273,6 +275,7 @@ public class GLSampler extends GLObject {
      */
     public class DeleteTask extends GLTask {
 
+        @SuppressWarnings("unchecked")
         @Override
         public void run() {
             LOGGER.trace(GLOOP_MARKER, "############### Start GLSampler Delete Task ###############");

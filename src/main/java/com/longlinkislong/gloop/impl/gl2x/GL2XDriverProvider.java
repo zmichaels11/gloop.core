@@ -22,6 +22,7 @@ public final class GL2XDriverProvider implements DriverProvider {
 
     }
 
+    @SuppressWarnings("rawtypes")
     @Override
     public Driver getDriverInstance() {
         return Holder.INSTANCE;

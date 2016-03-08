@@ -21,12 +21,13 @@ public final class ARBDriverProvider implements DriverProvider {
     
     private static final class Holder {
 
-        private static final ARBDriver driver = new ARBDriver();
+        private static final ARBDriver INSTANCE = new ARBDriver();
     }
 
+    @SuppressWarnings("rawtypes")
     @Override
     public Driver getDriverInstance() {
-        return Holder.driver;
+        return Holder.INSTANCE;
     }
 
     @Override

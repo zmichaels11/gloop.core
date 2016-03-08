@@ -226,6 +226,7 @@ public class GLShader extends GLObject {
      */
     public class CompileTask extends GLTask {
 
+        @SuppressWarnings({"rawtypes", "unchecked"})
         @Override
         public void run() {
             LOGGER.trace(GLOOP_MARKER, "############### Start GLShader Compile Task ###############");
@@ -266,6 +267,7 @@ public class GLShader extends GLObject {
      */
     public class DeleteTask extends GLTask {
 
+        @SuppressWarnings("unchecked")
         @Override
         public void run() {
             LOGGER.trace(GLOOP_MARKER, "############### Start GLShader Delete Task ###############");
@@ -305,6 +307,7 @@ public class GLShader extends GLObject {
             this.pName = Objects.requireNonNull(pName);
         }
 
+        @SuppressWarnings("unchecked")
         @Override
         public Integer call() throws Exception {
             LOGGER.trace(GLOOP_MARKER, "############### Start GLShader Parameter Query ###############");
@@ -349,6 +352,7 @@ public class GLShader extends GLObject {
      */
     public class InfoLogQuery extends GLQuery<String> {
 
+        @SuppressWarnings("unchecked")
         @Override
         public String call() throws Exception {
             LOGGER.trace(GLOOP_MARKER, "############### Start GLShader Info Log Query ###############");

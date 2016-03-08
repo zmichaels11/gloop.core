@@ -20,6 +20,7 @@ public final class GL3XDriverProvider implements DriverProvider {
         private static final GL3XDriver INSTANCE = new GL3XDriver();        
     }
     
+    @SuppressWarnings("rawtypes")
     @Override
     public Driver getDriverInstance() {
         return Holder.INSTANCE;

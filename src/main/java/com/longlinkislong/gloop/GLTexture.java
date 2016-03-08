@@ -701,6 +701,7 @@ public class GLTexture extends GLObject {
             }
         }
 
+        @SuppressWarnings("unchecked")
         @Override
         public void run() {
             LOGGER.trace(GLOOP_MARKER, "############### Start GLTexture Update Image 2D Task ###############");
@@ -821,6 +822,7 @@ public class GLTexture extends GLObject {
             this.data = GLTools.checkBuffer(data.asReadOnlyBuffer().order(ByteOrder.nativeOrder()));
         }
 
+        @SuppressWarnings("unchecked")
         @Override
         public void run() {
             LOGGER.trace(GLOOP_MARKER, "############### Start GLTexture Update 1D Task ###############");
@@ -1109,6 +1111,7 @@ public class GLTexture extends GLObject {
      */
     public final class GenerateMipmapTask extends GLTask {
 
+        @SuppressWarnings("unchecked")
         @Override
         public void run() {
             LOGGER.trace(GLOOP_MARKER, "############### Start GLTexture Generate Mipmap Task ###############");
@@ -1307,6 +1310,7 @@ public class GLTexture extends GLObject {
             this.params = Objects.requireNonNull(params);
         }
 
+        @SuppressWarnings({"rawtypes", "unchecked"})
         @Override
         public void run() {
             LOGGER.trace(GLOOP_MARKER, "############### Start GLTexture Set Attributes Task ###############");
@@ -1587,6 +1591,7 @@ public class GLTexture extends GLObject {
             this.bufferSize = buffer.limit();
         }
 
+        @SuppressWarnings("unchecked")
         @Override
         public ByteBuffer call() throws Exception {
             LOGGER.trace(GLOOP_MARKER, "############### Start GLTexture Download Image Query ###############");
@@ -1639,6 +1644,7 @@ public class GLTexture extends GLObject {
             }
         }
 
+        @SuppressWarnings("unchecked")
         @Override
         public void run() {
             LOGGER.trace(GLOOP_MARKER,
@@ -1723,6 +1729,7 @@ public class GLTexture extends GLObject {
             }
         }
 
+        @SuppressWarnings("unchecked")
         @Override
         public void run() {
             if (!GLTexture.this.isValid()) {
@@ -1813,6 +1820,7 @@ public class GLTexture extends GLObject {
             }
         }
 
+        @SuppressWarnings("unchecked")
         @Override
         public void run() {
             if (!GLTexture.this.isValid()) {
@@ -1903,6 +1911,7 @@ public class GLTexture extends GLObject {
             }
         }
 
+        @SuppressWarnings("unchecked")
         @Override
         public void run() {
             if (!GLTexture.this.isValid()) {
@@ -1926,6 +1935,6 @@ public class GLTexture extends GLObject {
      * @since 16.01.05
      */
     public int[] getVirtualPageSize() {
-        return new int[] {this.vpageWidth, this.vpageHeight, this.vpageDepth};
+        return new int[]{this.vpageWidth, this.vpageHeight, this.vpageDepth};
     }
 }

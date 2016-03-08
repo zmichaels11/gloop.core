@@ -18,6 +18,7 @@ public final class GL4XDriverProvider implements DriverProvider {
         private static final GL4XDriver INSTANCE = new GL4XDriver();
     }
     
+    @SuppressWarnings("rawtypes")
     @Override
     public Driver getDriverInstance() {
         return Holder.INSTANCE;

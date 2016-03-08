@@ -145,6 +145,7 @@ public class GLProgram extends GLObject {
      */
     public class UseTask extends GLTask {
 
+        @SuppressWarnings("unchecked")
         @Override
         public void run() {
             LOGGER.trace(GLOOP_MARKER, "############### Start GLProgram Use Task ###############");
@@ -159,6 +160,7 @@ public class GLProgram extends GLObject {
         }
     }
 
+    @SuppressWarnings("unchecked")
     private int getUniformLoc(final String uName) {
         if (this.uniforms.containsKey(uName)) {
             return this.uniforms.get(uName);
@@ -202,6 +204,7 @@ public class GLProgram extends GLObject {
             this.attribs = Objects.requireNonNull(attrib);
         }
 
+        @SuppressWarnings({"rawtypes", "unchecked"})
         @Override
         public void run() {
             LOGGER.trace(GLOOP_MARKER, "############### Start GLProgram Set Vertex Attributes Task ###############");
@@ -388,6 +391,7 @@ public class GLProgram extends GLObject {
             System.arraycopy(data, offset, this.values, 0, length);
         }
 
+        @SuppressWarnings("unchecked")
         @Override
         public void run() {
             LOGGER.trace(GLOOP_MARKER, "############### Start GLProgram Set Uniform MatrixD Task ###############");
@@ -523,6 +527,7 @@ public class GLProgram extends GLObject {
             System.arraycopy(values, offset, this.values, 0, length);
         }
 
+        @SuppressWarnings("unchecked")
         @Override
         public void run() {
             LOGGER.trace(GLOOP_MARKER, "############### Start GLProgram Set Uniform MatrixF Task ###############");
@@ -706,6 +711,7 @@ public class GLProgram extends GLObject {
             this.count = length;
         }
 
+        @SuppressWarnings("unchecked")
         @Override
         public void run() {
             LOGGER.trace(GLOOP_MARKER, "############### Start GLProgram Set UniformF Task ###############");
@@ -829,6 +835,7 @@ public class GLProgram extends GLObject {
             this.uName = uName.toString();
         }
 
+        @SuppressWarnings("unchecked")
         @Override
         public void run() {
             LOGGER.trace(GLOOP_MARKER, "############### Start GLProgram Set UniformI Task ###############");
@@ -1003,6 +1010,7 @@ public class GLProgram extends GLObject {
             this.count = length;
         }
 
+        @SuppressWarnings("unchecked")
         @Override
         public void run() {
             LOGGER.trace(GLOOP_MARKER, "############### Start GLProgram Set UniformF Task ###############");
@@ -1105,6 +1113,7 @@ public class GLProgram extends GLObject {
             System.arraycopy(shaders, offset, this.shaders, 0, length);
         }
 
+        @SuppressWarnings({"rawtypes", "unchecked"})
         @Override
         public void run() {
             LOGGER.trace(GLOOP_MARKER, "############### Start GLProgram Link Shaders Task ###############");
@@ -1178,6 +1187,7 @@ public class GLProgram extends GLObject {
      */
     public class DeleteTask extends GLTask {
 
+        @SuppressWarnings("unchecked")
         @Override
         public void run() {
             LOGGER.trace(GLOOP_MARKER, "############### Start GLProgram Delete Task ###############");
@@ -1243,6 +1253,7 @@ public class GLProgram extends GLObject {
             }
         }
 
+        @SuppressWarnings("unchecked")
         @Override
         public void run() {
             LOGGER.trace(GLOOP_MARKER, "############### Start GLProgram Set Shader Storage Task ###############");
@@ -1314,6 +1325,7 @@ public class GLProgram extends GLObject {
             }
         }
 
+        @SuppressWarnings("unchecked")
         @Override
         public void run() {
             LOGGER.trace(GLOOP_MARKER, "############### Start GLProgram Set Uniform Block Task ###############");
@@ -1430,6 +1442,7 @@ public class GLProgram extends GLObject {
             }
         }
 
+        @SuppressWarnings("unchecked")
         @Override
         public void run() {
             LOGGER.trace(GLOOP_MARKER, "############### Start GLProgram Compute Task ###############");
@@ -1481,6 +1494,7 @@ public class GLProgram extends GLObject {
             this.fbBuffer = Objects.requireNonNull(fbBuffer);
         }
 
+        @SuppressWarnings("unchecked")
         @Override
         public void run() {
             LOGGER.trace(GLOOP_MARKER, "############### Start GLProgram Set Feedback Buffer Task ###############");

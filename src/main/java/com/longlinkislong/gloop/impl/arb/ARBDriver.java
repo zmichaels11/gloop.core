@@ -469,6 +469,7 @@ public final class ARBDriver implements Driver<
                     GL20.glUseProgram(program.programId);
                     GL20.glUniform4f((int) uLoc, value[0], value[1], value[2], value[3]);
                     GL20.glUseProgram(currentProgram);
+                    break;
                 default:
                     throw new UnsupportedOperationException("Unsupported vector size: " + value.length);
             }

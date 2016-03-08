@@ -18,6 +18,7 @@ public final class GL45DriverProvider implements DriverProvider {
         private static final GL45Driver INSTANCE = new GL45Driver();
     }
     
+    @SuppressWarnings("rawtypes")
     @Override
     public Driver getDriverInstance() {
         return Holder.INSTANCE;
