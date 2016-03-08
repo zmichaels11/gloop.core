@@ -25,25 +25,21 @@
  */
 package com.longlinkislong.gloop;
 
-import com.longlinkislong.gloop.impl.Driver;
-import com.longlinkislong.gloop.impl.arb.ARBDriver;
-import com.longlinkislong.gloop.impl.gl2x.GL2XDriver;
-import com.longlinkislong.gloop.impl.gl3x.GL3XDriver;
-import com.longlinkislong.gloop.impl.gl45.GL45Driver;
-import com.longlinkislong.gloop.impl.gl4x.GL4XDriver;
+import com.longlinkislong.gloop.spi.Driver;
+import com.longlinkislong.gloop.spi.DriverProvider;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
-import java.lang.reflect.InvocationTargetException;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.nio.FloatBuffer;
 import java.nio.IntBuffer;
-import java.util.Arrays;
+import java.util.Iterator;
 import java.util.List;
 import java.util.ListIterator;
 import java.util.Optional;
+import java.util.ServiceLoader;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.slf4j.Marker;
@@ -1500,33 +1496,32 @@ public class GLTools {
         private static final Driver INSTANCE;
 
         static {
-            Driver selectedDriver = null;
+            final Iterator<DriverProvider> drivers = ServiceLoader.load(DriverProvider.class).iterator();
 
-            try {
-                final String override = System.getProperty("com.longlinkislong.gloop.driver", "");
+            DriverProvider bestDriver = null;
 
-                if (override.isEmpty()) {
-                    selectedDriver = null;
-                } else {
-                    Class<?> driver = Class.forName(override);
-                    selectedDriver = (Driver) driver.getMethod("getInstance").invoke(null);
+            while (drivers.hasNext()) {
+                final DriverProvider testDriver = drivers.next();
+                
+                testDriver.logCapabilities();
+
+                if (bestDriver == null) {
+                    LOGGER.debug(GLOOP_MARKER, "Currently selected: [{}] as best driver", testDriver.getClass().getName());
+                    bestDriver = testDriver;
+                } else if (testDriver.isSupported()) {
+                    if (testDriver.getSupportRating() > bestDriver.getSupportRating()) {
+                        LOGGER.debug(GLOOP_MARKER, "Selecting [{}] over [{}] as best driver", testDriver.getClass().getName(), bestDriver.getClass().getName());
+                        bestDriver = testDriver;
+                    }
                 }
-            } catch (ClassNotFoundException | NoSuchMethodException | SecurityException | IllegalAccessException | IllegalArgumentException | InvocationTargetException ex) {
-                selectedDriver = null;
-                ex.printStackTrace();
             }
 
-            if (selectedDriver != null) {
-                final Driver[] order = {GL45Driver.getInstance(), ARBDriver.getInstance(), GL4XDriver.getInstance(), GL3XDriver.getInstance(), GL2XDriver.getInstance()};
-
-                selectedDriver = Arrays.stream(order)
-                        .filter(Driver::isSupported)
-                        .findFirst().orElseThrow(() -> new GLException("Minimum OpenGL spec is not met!"));
+            if (bestDriver == null) {
+                throw new RuntimeException("No suitable drivers detected!");
+            } else {
+                INSTANCE = bestDriver.getDriverInstance();
+                LOGGER.info(GLOOP_MARKER, "Selected OpenGL Driver: {}", INSTANCE.getClass().getName());
             }
-            
-            INSTANCE = selectedDriver;
-
-            LOGGER.info(GLOOP_MARKER, "Selected OpenGL Driver: {}", INSTANCE.getClass().getName());
         }
     }
 

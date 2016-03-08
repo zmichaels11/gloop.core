@@ -25,8 +25,8 @@
  */
 package com.longlinkislong.gloop;
 
-import com.longlinkislong.gloop.impl.Driver;
-import com.longlinkislong.gloop.impl.Sampler;
+import com.longlinkislong.gloop.spi.Driver;
+import com.longlinkislong.gloop.spi.Sampler;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Objects;

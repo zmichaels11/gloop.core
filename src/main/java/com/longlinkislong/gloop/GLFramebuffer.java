@@ -32,7 +32,7 @@ import static com.longlinkislong.gloop.GLAsserts.checkBufferIsNative;
 import static com.longlinkislong.gloop.GLAsserts.checkBufferSize;
 import com.longlinkislong.gloop.dsa.DSADriver;
 import com.longlinkislong.gloop.dsa.EXTDSADriver;
-import com.longlinkislong.gloop.impl.Framebuffer;
+import com.longlinkislong.gloop.spi.Framebuffer;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.nio.IntBuffer;

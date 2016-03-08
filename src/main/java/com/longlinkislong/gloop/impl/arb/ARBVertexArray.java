@@ -5,7 +5,7 @@
  */
 package com.longlinkislong.gloop.impl.arb;
 
-import com.longlinkislong.gloop.impl.VertexArray;
+import com.longlinkislong.gloop.spi.VertexArray;
 
 /**
  *

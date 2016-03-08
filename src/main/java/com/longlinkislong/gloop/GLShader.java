@@ -25,8 +25,8 @@
  */
 package com.longlinkislong.gloop;
 
-import com.longlinkislong.gloop.impl.Driver;
-import com.longlinkislong.gloop.impl.Shader;
+import com.longlinkislong.gloop.spi.Driver;
+import com.longlinkislong.gloop.spi.Shader;
 import java.util.Objects;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;

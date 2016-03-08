@@ -5,8 +5,8 @@
  */
 package com.longlinkislong.gloop.impl.gl3x;
 
-import com.longlinkislong.gloop.impl.Driver;
-import com.longlinkislong.gloop.impl.Shader;
+import com.longlinkislong.gloop.spi.Driver;
+import com.longlinkislong.gloop.spi.Shader;
 import java.nio.ByteBuffer;
 import java.nio.DoubleBuffer;
 import java.nio.FloatBuffer;
@@ -41,11 +41,7 @@ import org.lwjgl.opengl.GLCapabilities;
  * @author zmichaels
  */
 public final class GL3XDriver implements Driver<
-        GL3XBuffer, GL3XFramebuffer, GL3XTexture, GL3XShader, GL3XProgram, GL3XSampler, GL3XVertexArray, GL3XDrawQuery> {
-
-    public static GL3XDriver getInstance() {
-        return Holder.INSTANCE;
-    }
+        GL3XBuffer, GL3XFramebuffer, GL3XTexture, GL3XShader, GL3XProgram, GL3XSampler, GL3XVertexArray, GL3XDrawQuery> {   
 
     @Override
     public void blendingDisable() {
@@ -351,85 +347,6 @@ public final class GL3XDriver implements Driver<
     }
 
     @Override
-    public boolean is64bitUniformsSupported() {
-        return GL.getCapabilities().GL_ARB_gpu_shader_fp64;
-    }
-
-    @Override
-    public boolean isBufferSupported() {
-        return true;
-    }
-
-    @Override
-    public boolean isComputeShaderSupported() {
-        return false;
-    }
-
-    @Override
-    public boolean isDrawIndirectSupported() {
-        return GL.getCapabilities().GL_ARB_draw_indirect;
-    }
-
-    @Override
-    public boolean isDrawInstancedSupported() {
-        return GL.getCapabilities().OpenGL31;
-    }
-
-    @Override
-    public boolean isDrawQuerySupported() {
-        return true;
-    }
-
-    @Override
-    public boolean isFramebufferSupported() {
-        return true;
-    }
-
-    @Override
-    public boolean isImmutableBufferSupported() {
-        return GL.getCapabilities().GL_ARB_buffer_storage;
-    }
-
-    @Override
-    public boolean isInvalidateSubdataSupported() {
-        return GL.getCapabilities().GL_ARB_invalidate_subdata;
-    }
-
-    @Override
-    public boolean isProgramSupported() {
-        return true;
-    }
-
-    @Override
-    public boolean isSamplerSupported() {
-        final GLCapabilities cap = GL.getCapabilities();
-
-        return cap.OpenGL31 || cap.GL_ARB_sampler_objects;
-    }
-
-    @Override
-    public boolean isSeparateShaderObjectsSupported() {
-        return GL.getCapabilities().GL_ARB_separate_shader_objects;
-    }
-
-    @Override
-    public boolean isSparseTextureSupported() {
-        final GLCapabilities cap = GL.getCapabilities();
-
-        return cap.GL_ARB_sparse_texture && cap.GL_ARB_internalformat_query;
-    }
-
-    @Override
-    public boolean isSupported() {
-        return GL.getCapabilities().OpenGL30;
-    }
-
-    @Override
-    public boolean isVertexArraySupported() {
-        return true;
-    }
-
-    @Override
     public void maskApply(boolean red, boolean green, boolean blue, boolean alpha, boolean depth, long stencil) {
         GL11.glColorMask(red, green, blue, alpha);
         GL11.glDepthMask(depth);
@@ -524,7 +441,13 @@ public final class GL3XDriver implements Driver<
 
     @Override
     public void programSetUniformD(GL3XProgram program, long uLoc, double[] value) {
-        if (this.isSeparateShaderObjectsSupported()) {
+        final GLCapabilities cap = GL.getCapabilities();
+        
+        if(!(cap.GL_ARB_gpu_shader_fp64 && cap.GL_ARB_gpu_shader_int64)) {
+            throw new UnsupportedOperationException("64bit uniforms are not supported!");
+        }
+        
+        if (cap.GL_ARB_separate_shader_objects) {
             switch (value.length) {
                 case 1:
                     ARBSeparateShaderObjects.glProgramUniform1d(program.programId, (int) uLoc, value[0]);
@@ -570,8 +493,8 @@ public final class GL3XDriver implements Driver<
     }
 
     @Override
-    public void programSetUniformF(GL3XProgram program, long uLoc, float[] value) {
-        if (this.isSeparateShaderObjectsSupported()) {
+    public void programSetUniformF(GL3XProgram program, long uLoc, float[] value) {        
+        if (GL.getCapabilities().GL_ARB_separate_shader_objects) {
             switch (value.length) {
                 case 1:
                     ARBSeparateShaderObjects.glProgramUniform1f(program.programId, (int) uLoc, value[0]);
@@ -617,7 +540,7 @@ public final class GL3XDriver implements Driver<
 
     @Override
     public void programSetUniformI(GL3XProgram program, long uLoc, int[] value) {
-        if (this.isSeparateShaderObjectsSupported()) {
+        if (GL.getCapabilities().GL_ARB_separate_shader_objects) {
             switch (value.length) {
                 case 1:
                     ARBSeparateShaderObjects.glProgramUniform1i(program.programId, (int) uLoc, value[0]);
@@ -666,7 +589,13 @@ public final class GL3XDriver implements Driver<
 
     @Override
     public void programSetUniformMatD(GL3XProgram program, long uLoc, DoubleBuffer mat) {
-        if (this.isSeparateShaderObjectsSupported()) {
+        final GLCapabilities cap = GL.getCapabilities();
+        
+        if(!(cap.GL_ARB_gpu_shader_fp64 && cap.GL_ARB_gpu_shader_int64)) {
+            throw new UnsupportedOperationException("64bit uniforms are not supported!");
+        }
+        
+        if (cap.GL_ARB_separate_shader_objects) {
             switch (mat.limit()) {
                 case 4:
                     ARBSeparateShaderObjects.glProgramUniformMatrix2dv(program.programId, (int) uLoc, false, mat);
@@ -707,7 +636,7 @@ public final class GL3XDriver implements Driver<
 
     @Override
     public void programSetUniformMatF(GL3XProgram program, long uLoc, FloatBuffer mat) {
-        if (this.isSeparateShaderObjectsSupported()) {
+        if (GL.getCapabilities().GL_ARB_separate_shader_objects) {
             switch (mat.limit()) {
                 case 4:
                     ARBSeparateShaderObjects.glProgramUniformMatrix2fv(program.programId, (int) uLoc, false, mat);
@@ -1216,11 +1145,5 @@ public final class GL3XDriver implements Driver<
     @Override
     public void viewportApply(long x, long y, long width, long height) {
         GL11.glViewport((int) x, (int) y, (int) width, (int) height);
-    }
-
-    private static final class Holder {
-
-        private static final GL3XDriver INSTANCE = new GL3XDriver();
-    }
-
+    }   
 }

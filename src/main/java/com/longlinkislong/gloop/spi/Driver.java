@@ -3,7 +3,7 @@
  * To change this template file, choose Tools | Templates
  * and open the template in the editor.
  */
-package com.longlinkislong.gloop.impl;
+package com.longlinkislong.gloop.spi;
 
 import com.longlinkislong.gloop.GLTextureInternalFormat;
 import java.nio.ByteBuffer;
@@ -26,56 +26,6 @@ import org.lwjgl.opengl.GL30;
  * @param <QueryT>
  */
 public interface Driver<BufferT extends Buffer, FramebufferT extends Framebuffer, TextureT extends Texture, ShaderT extends Shader, ProgramT extends Program, SamplerT extends Sampler, VertexArrayT extends VertexArray, QueryT extends DrawQuery> {
-
-    boolean isBufferSupported();
-
-    boolean isImmutableBufferSupported();
-
-    boolean isDrawQuerySupported();
-
-    boolean isFramebufferSupported();
-
-    boolean isProgramSupported();
-
-    boolean isSamplerSupported();
-
-    boolean isComputeShaderSupported();
-
-    boolean isSparseTextureSupported();
-
-    boolean isDrawIndirectSupported();
-
-    boolean isDrawInstancedSupported();
-
-    boolean isInvalidateSubdataSupported();
-
-    boolean isSeparateShaderObjectsSupported();
-
-    boolean is64bitUniformsSupported();
-
-    boolean isVertexArraySupported();
-
-    boolean isSupported();
-
-    default double getSupportRating() {
-        double rating = 0.0;
-        rating += isBufferSupported() ? 1.0 : 0.0;
-        rating += isImmutableBufferSupported() ? 1.0 : 0.0;
-        rating += isDrawQuerySupported() ? 1.0 : 0.0;
-        rating += isFramebufferSupported() ? 1.0 : 0.0;
-        rating += isProgramSupported() ? 1.0 : 0.0;
-        rating += isSamplerSupported() ? 1.0 : 0.0;
-        rating += isComputeShaderSupported() ? 1.0 : 0.0;
-        rating += isSparseTextureSupported() ? 1.0 : 0.0;
-        rating += isDrawIndirectSupported() ? 1.0 : 0.0;
-        rating += isDrawInstancedSupported() ? 1.0 : 0.0;
-        rating += isInvalidateSubdataSupported() ? 1.0 : 0.0;
-        rating += isSeparateShaderObjectsSupported() ? 1.0 : 0.0;
-        rating += is64bitUniformsSupported() ? 1.0 : 0.0;
-        rating += isVertexArraySupported() ? 1.0 : 0.0;
-        
-        return rating / 14.0;
-    }
 
     // blending
     void blendingEnable(long rgbEq, long aEq, long rgbFuncSrc, long rgbFuncDst, long aFuncSrc, long aFuncDst);

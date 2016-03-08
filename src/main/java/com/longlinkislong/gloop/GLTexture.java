@@ -25,8 +25,8 @@
  */
 package com.longlinkislong.gloop;
 
-import com.longlinkislong.gloop.impl.Driver;
-import com.longlinkislong.gloop.impl.Texture;
+import com.longlinkislong.gloop.spi.Driver;
+import com.longlinkislong.gloop.spi.Texture;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.util.HashMap;

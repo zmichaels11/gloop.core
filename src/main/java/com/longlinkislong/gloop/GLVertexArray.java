@@ -26,7 +26,7 @@
 package com.longlinkislong.gloop;
 
 import com.longlinkislong.gloop.dsa.DSADriver;
-import com.longlinkislong.gloop.impl.VertexArray;
+import com.longlinkislong.gloop.spi.VertexArray;
 import java.nio.IntBuffer;
 import java.util.HashMap;
 import java.util.Map;

@@ -5,7 +5,7 @@
  */
 package com.longlinkislong.gloop.impl.arb;
 
-import com.longlinkislong.gloop.impl.Framebuffer;
+import com.longlinkislong.gloop.spi.Framebuffer;
 
 /**
  *

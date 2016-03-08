@@ -25,7 +25,7 @@
  */
 package com.longlinkislong.gloop;
 
-import com.longlinkislong.gloop.impl.Buffer;
+import com.longlinkislong.gloop.spi.Buffer;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.util.Objects;

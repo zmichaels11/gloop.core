@@ -5,7 +5,7 @@
  */
 package com.longlinkislong.gloop.impl.gl45;
 
-import com.longlinkislong.gloop.impl.Program;
+import com.longlinkislong.gloop.spi.Program;
 
 /**
  *

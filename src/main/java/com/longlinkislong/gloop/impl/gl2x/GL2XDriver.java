@@ -5,8 +5,8 @@
  */
 package com.longlinkislong.gloop.impl.gl2x;
 
-import com.longlinkislong.gloop.impl.Driver;
-import com.longlinkislong.gloop.impl.Shader;
+import com.longlinkislong.gloop.spi.Driver;
+import com.longlinkislong.gloop.spi.Shader;
 import java.nio.ByteBuffer;
 import java.nio.DoubleBuffer;
 import java.nio.FloatBuffer;
@@ -40,11 +40,7 @@ import org.lwjgl.opengl.GLCapabilities;
  */
 public final class GL2XDriver implements Driver<
         GL2XBuffer, GL2XFramebuffer, GL2XTexture, GL2XShader, GL2XProgram, GL2XSampler, GL2XVertexArray, GL2XDrawQuery> {
-
-    public static GL2XDriver getInstance() {
-        return Holder.INSTANCE;
-    }
-
+   
     @Override
     public void blendingDisable() {
         GL11.glDisable(GL11.GL_BLEND);
@@ -347,84 +343,7 @@ public final class GL2XDriver implements Driver<
 
         ARBFramebufferObject.glBindFramebuffer(ARBFramebufferObject.GL_FRAMEBUFFER, currentFb);
         return complete == ARBFramebufferObject.GL_FRAMEBUFFER_COMPLETE;
-    }
-
-    @Override
-    public boolean is64bitUniformsSupported() {
-        return false;
-    }
-
-    @Override
-    public boolean isBufferSupported() {
-        return true;
-    }
-
-    @Override
-    public boolean isComputeShaderSupported() {
-        return false;
-    }
-
-    @Override
-    public boolean isDrawIndirectSupported() {
-        return false;
-    }
-
-    @Override
-    public boolean isDrawInstancedSupported() {
-        return false;
-    }
-
-    @Override
-    public boolean isDrawQuerySupported() {
-        return true;
-    }
-
-    @Override
-    public boolean isFramebufferSupported() {
-        return GL.getCapabilities().GL_ARB_framebuffer_object;
-    }
-
-    @Override
-    public boolean isImmutableBufferSupported() {
-        return GL.getCapabilities().GL_ARB_buffer_storage;
-    }
-
-    @Override
-    public boolean isInvalidateSubdataSupported() {
-        return GL.getCapabilities().GL_ARB_invalidate_subdata;
-    }
-
-    @Override
-    public boolean isProgramSupported() {
-        return true;
-    }
-
-    @Override
-    public boolean isSamplerSupported() {
-        return GL.getCapabilities().GL_ARB_sampler_objects;
-    }
-
-    @Override
-    public boolean isSeparateShaderObjectsSupported() {
-        return GL.getCapabilities().GL_ARB_separate_shader_objects;
-    }
-
-    @Override
-    public boolean isSparseTextureSupported() {
-        final GLCapabilities cap = GL.getCapabilities();
-
-        return cap.GL_ARB_sparse_texture && cap.GL_ARB_internalformat_query && cap.GL_ARB_framebuffer_object;
-    }
-
-    @Override
-    public boolean isSupported() {
-        return GL.getCapabilities().OpenGL20;
-    }
-
-    @Override
-    public boolean isVertexArraySupported() {
-        return GL.getCapabilities().GL_ARB_vertex_array_object;
-    }
+    }    
 
     @Override
     public void maskApply(boolean red, boolean green, boolean blue, boolean alpha, boolean depth, long stencil) {
@@ -525,8 +444,8 @@ public final class GL2XDriver implements Driver<
     }
 
     @Override
-    public void programSetUniformF(GL2XProgram program, long uLoc, float[] value) {
-        if (this.isSeparateShaderObjectsSupported()) {
+    public void programSetUniformF(GL2XProgram program, long uLoc, float[] value) {        
+        if (GL.getCapabilities().GL_ARB_separate_shader_objects) {
             switch (value.length) {
                 case 1:
                     ARBSeparateShaderObjects.glProgramUniform1f(program.programId, (int) uLoc, value[0]);
@@ -572,7 +491,7 @@ public final class GL2XDriver implements Driver<
 
     @Override
     public void programSetUniformI(GL2XProgram program, long uLoc, int[] value) {
-        if (this.isSeparateShaderObjectsSupported()) {
+        if (GL.getCapabilities().GL_ARB_separate_shader_objects) {
             switch (value.length) {
                 case 1:
                     ARBSeparateShaderObjects.glProgramUniform1i(program.programId, (int) uLoc, value[0]);
@@ -626,7 +545,7 @@ public final class GL2XDriver implements Driver<
 
     @Override
     public void programSetUniformMatF(GL2XProgram program, long uLoc, FloatBuffer mat) {
-        if (this.isSeparateShaderObjectsSupported()) {
+        if (GL.getCapabilities().GL_ARB_separate_shader_objects) {
             switch (mat.limit()) {
                 case 4:
                     ARBSeparateShaderObjects.glProgramUniformMatrix2fv(program.programId, (int) uLoc, false, mat);
@@ -1009,7 +928,7 @@ public final class GL2XDriver implements Driver<
 
     @Override
     public void vertexArrayAttachBuffer(GL2XVertexArray vao, long index, GL2XBuffer buffer, long size, long type, long stride, long offset, long divisor) {
-        if (this.isVertexArraySupported()) {
+        if (GL.getCapabilities().GL_ARB_vertex_array_object) {
             final int currentVao = GL11.glGetInteger(ARBVertexArrayObject.GL_VERTEX_ARRAY_BINDING);
 
             ARBVertexArrayObject.glBindVertexArray(vao.vertexArrayId);
@@ -1043,7 +962,7 @@ public final class GL2XDriver implements Driver<
 
     @Override
     public void vertexArrayAttachIndexBuffer(GL2XVertexArray vao, GL2XBuffer buffer) {
-        if (this.isVertexArraySupported()) {
+        if (GL.getCapabilities().GL_ARB_vertex_array_object) {
             final int currentVao = GL11.glGetInteger(ARBVertexArrayObject.GL_VERTEX_ARRAY_BINDING);
 
             ARBVertexArrayObject.glBindVertexArray(vao.vertexArrayId);
@@ -1056,7 +975,7 @@ public final class GL2XDriver implements Driver<
 
     @Override
     public GL2XVertexArray vertexArrayCreate() {
-        if (this.isVertexArraySupported()) {
+        if (GL.getCapabilities().GL_ARB_vertex_array_object) {
             final GL2XVertexArray vao = new GL2XVertexArray();
             vao.vertexArrayId = ARBVertexArrayObject.glGenVertexArrays();
             return vao;
@@ -1078,7 +997,7 @@ public final class GL2XDriver implements Driver<
 
     @Override
     public void vertexArrayDrawArrays(GL2XVertexArray vao, long drawMode, long start, long count) {
-        if (this.isVertexArraySupported()) {
+        if (GL.getCapabilities().GL_ARB_vertex_array_object) {
             final int currentVao = GL11.glGetInteger(ARBVertexArrayObject.GL_VERTEX_ARRAY_BINDING);
             ARBVertexArrayObject.glBindVertexArray(vao.vertexArrayId);
             GL11.glDrawArrays((int) drawMode, (int) start, (int) count);
@@ -1108,7 +1027,7 @@ public final class GL2XDriver implements Driver<
 
     @Override
     public void vertexArrayDrawElements(GL2XVertexArray vao, long drawMode, long count, long type, long offset) {
-        if (this.isVertexArraySupported()) {
+        if (GL.getCapabilities().GL_ARB_vertex_array_object) {
             final int currentVao = GL11.glGetInteger(ARBVertexArrayObject.GL_VERTEX_ARRAY_BINDING);
 
             ARBVertexArrayObject.glBindVertexArray(vao.vertexArrayId);
@@ -1144,7 +1063,7 @@ public final class GL2XDriver implements Driver<
 
     @Override
     public void vertexArrayMultiDrawArrays(GL2XVertexArray vao, long drawMode, IntBuffer first, IntBuffer count) {
-        if (this.isVertexArraySupported()) {
+        if (GL.getCapabilities().GL_ARB_vertex_array_object) {
             final int currentVao = GL11.glGetInteger(ARBVertexArrayObject.GL_VERTEX_ARRAY_BINDING);
 
             ARBVertexArrayObject.glBindVertexArray(vao.vertexArrayId);
@@ -1166,11 +1085,5 @@ public final class GL2XDriver implements Driver<
     @Override
     public void viewportApply(long x, long y, long width, long height) {
         GL11.glViewport((int) x, (int) y, (int) width, (int) height);
-    }
-
-    private static final class Holder {
-
-        private static final GL2XDriver INSTANCE = new GL2XDriver();
-    }
-
+    }    
 }

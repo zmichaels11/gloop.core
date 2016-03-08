@@ -5,7 +5,7 @@
  */
 package com.longlinkislong.gloop.impl.arb;
 
-import com.longlinkislong.gloop.impl.Program;
+import com.longlinkislong.gloop.spi.Program;
 
 /**
  *

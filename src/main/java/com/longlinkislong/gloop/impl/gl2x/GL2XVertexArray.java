@@ -5,7 +5,7 @@
  */
 package com.longlinkislong.gloop.impl.gl2x;
 
-import com.longlinkislong.gloop.impl.VertexArray;
+import com.longlinkislong.gloop.spi.VertexArray;
 import java.util.List;
 
 /**

@@ -3,13 +3,12 @@
  * To change this template file, choose Tools | Templates
  * and open the template in the editor.
  */
-package com.longlinkislong.gloop.impl;
+package com.longlinkislong.gloop.spi;
 
 /**
  *
  * @author zmichaels
  */
-public interface Shader {
-
+public interface Framebuffer {  
     boolean isValid();
 }

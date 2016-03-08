@@ -5,7 +5,7 @@
  */
 package com.longlinkislong.gloop.impl.arb;
 
-import com.longlinkislong.gloop.impl.Buffer;
+import com.longlinkislong.gloop.spi.Buffer;
 import java.nio.ByteBuffer;
 
 /**
