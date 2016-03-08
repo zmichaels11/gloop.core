@@ -25,11 +25,8 @@
  */
 package com.longlinkislong.gloop;
 
-import com.longlinkislong.gloop.dsa.DSADriver;
 import com.longlinkislong.gloop.spi.VertexArray;
 import java.nio.IntBuffer;
-import java.util.HashMap;
-import java.util.Map;
 import java.util.Objects;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;

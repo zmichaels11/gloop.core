@@ -25,7 +25,6 @@
  */
 package com.longlinkislong.gloop;
 
-import com.longlinkislong.gloop.dsa.DSADriver;
 import com.longlinkislong.gloop.spi.DrawQuery;
 import com.longlinkislong.gloop.spi.Driver;
 import java.util.Objects;

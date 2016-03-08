@@ -26,7 +26,6 @@
 package com.longlinkislong.gloop;
 
 import static com.longlinkislong.gloop.GLEnableStatus.GL_ENABLED;
-import com.longlinkislong.gloop.dsa.DSADriver;
 import java.util.Objects;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;

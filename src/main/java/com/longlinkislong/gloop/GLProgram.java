@@ -25,11 +25,6 @@
  */
 package com.longlinkislong.gloop;
 
-import static com.longlinkislong.gloop.Vectors.W;
-import static com.longlinkislong.gloop.Vectors.X;
-import static com.longlinkislong.gloop.Vectors.Y;
-import static com.longlinkislong.gloop.Vectors.Z;
-import com.longlinkislong.gloop.dsa.DSADriver;
 import com.longlinkislong.gloop.spi.Driver;
 import com.longlinkislong.gloop.spi.Program;
 import com.longlinkislong.gloop.spi.Shader;
