@@ -1493,8 +1493,9 @@ public class GLTools {
 
     private static final class DriverHolder {
 
+        @SuppressWarnings("rawtypes")
         private static final Driver INSTANCE;
-
+        
         static {
             final Iterator<DriverProvider> drivers = ServiceLoader.load(DriverProvider.class).iterator();
 
@@ -1505,11 +1506,10 @@ public class GLTools {
                 
                 testDriver.logCapabilities();
 
-                if (bestDriver == null) {
-                    LOGGER.debug(GLOOP_MARKER, "Currently selected: [{}] as best driver", testDriver.getClass().getName());
-                    bestDriver = testDriver;
-                } else if (testDriver.isSupported()) {
-                    if (testDriver.getSupportRating() > bestDriver.getSupportRating()) {
+                if (testDriver.isSupported()) {
+                    if(bestDriver == null) {
+                        bestDriver = testDriver;
+                    } else if (testDriver.getSupportRating() > bestDriver.getSupportRating()) {
                         LOGGER.debug(GLOOP_MARKER, "Selecting [{}] over [{}] as best driver", testDriver.getClass().getName(), bestDriver.getClass().getName());
                         bestDriver = testDriver;
                     }
@@ -1525,6 +1525,7 @@ public class GLTools {
         }
     }
 
+    @SuppressWarnings("rawtypes")
     public static Driver getDriverInstance() {
         return DriverHolder.INSTANCE;
     }

@@ -16,6 +16,7 @@ import org.slf4j.MarkerFactory;
  */
 public interface DriverProvider {
 
+    @SuppressWarnings("rawtypes")
     Driver getDriverInstance();
 
     default String getDriverName() {
@@ -80,21 +81,21 @@ public interface DriverProvider {
         final Logger logger = this.getLogger();
         final Marker marker = MarkerFactory.getMarker("gloop-spi");
 
-        logger.info(marker, "Driver Capabilities [{}]", this.getClass().getName());
+        logger.info(marker, "Driver Capabilities [{}]", this.getClass().getSimpleName());
         logger.info(marker, "Driver supported:\t\t{}", this.isSupported());
         logger.info(marker, "64bit uniform:\t\t{}", this.is64bitUniformsSupported());
         logger.info(marker, "Buffer object:\t\t{}", this.isBufferObjectSupported());
         logger.info(marker, "Compute shader:\t\t{}", this.isComputeShaderSupported());
         logger.info(marker, "Draw indirect:\t\t{}", this.isDrawIndirectSupported());
         logger.info(marker, "Draw instanced:\t\t{}", this.isDrawInstancedSupported());
-        logger.info(marker, "Framebuffer object:\t\t{}", this.isFramebufferObjectSupported());
-        logger.info(marker, "Immutable buffer storage:\t\t{}", this.isImmutableBufferStorageSupported());
-        logger.info(marker, "Invalidate subdata:\t\t{}", this.isInvalidateSubdataSupported());
+        logger.info(marker, "Framebuffer object:\t{}", this.isFramebufferObjectSupported());
+        logger.info(marker, "Immutable buffer storage:\t{}", this.isImmutableBufferStorageSupported());
+        logger.info(marker, "Invalidate subdata:\t{}", this.isInvalidateSubdataSupported());
         logger.info(marker, "Shader program:\t\t{}", this.isProgramSupported());
         logger.info(marker, "Sampler object:\t\t{}", this.isSamplerSupported());
-        logger.info(marker, "Separate shader objects:\t\t{}", this.isSeparateShaderObjectsSupported());
+        logger.info(marker, "Separate shader objects:\t{}", this.isSeparateShaderObjectsSupported());
         logger.info(marker, "Sparse texture:\t\t{}", this.isSparseTextureSupported());
-        logger.info(marker, "Vertex array object:\t\t{}", this.isVertexArrayObjectSupported());
+        logger.info(marker, "Vertex array object:\t{}", this.isVertexArrayObjectSupported());
         logger.info(marker, "Support rating:\t\t{}", this.getSupportRating());
 
     }

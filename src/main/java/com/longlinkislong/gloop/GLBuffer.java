@@ -188,6 +188,7 @@ public class GLBuffer extends GLObject {
             Objects.requireNonNull(this.pName = pName);
         }
 
+        @SuppressWarnings("unchecked")
         @Override
         public Integer call() throws Exception {
             LOGGER.trace(GLOOP_MARKER, "############### Start GLBuffer Parameter Query ###############");
@@ -231,6 +232,7 @@ public class GLBuffer extends GLObject {
      */
     public class DeleteTask extends GLTask {
 
+        @SuppressWarnings("unchecked")
         @Override
         public void run() {
             LOGGER.trace(GLOOP_MARKER, "############### Start GLBuffer Delete Task ###############");
@@ -311,6 +313,7 @@ public class GLBuffer extends GLObject {
             this.data = data;
         }
 
+        @SuppressWarnings("unchecked")
         @Override
         public void run() {
             LOGGER.trace(GLOOP_MARKER, "############### Start GLBuffer Upload Task ###############");
@@ -412,6 +415,7 @@ public class GLBuffer extends GLObject {
             this.flags = access;
         }
 
+        @SuppressWarnings("unchecked")
         @Override
         public void run() {
             LOGGER.trace(GLOOP_MARKER, "############### Start GLBuffer Allocate Immutable Task ###############");
@@ -469,6 +473,7 @@ public class GLBuffer extends GLObject {
             }
         }
 
+        @SuppressWarnings("unchecked")
         @Override
         public void run() {
             LOGGER.trace(GLOOP_MARKER, "############### Start GLBuffer Allocate Task ###############");
@@ -580,6 +585,7 @@ public class GLBuffer extends GLObject {
             this.writeBuffer = writeBuffer;
         }
 
+        @SuppressWarnings("unchecked")
         @Override
         public ByteBuffer call() throws Exception {
             LOGGER.trace(GLOOP_MARKER, "############### Start GLBuffer Download Query ###############");
@@ -655,6 +661,7 @@ public class GLBuffer extends GLObject {
             this.length = length;
         }
 
+        @SuppressWarnings("unchecked")
         @Override
         public ByteBuffer call() throws Exception {
             LOGGER.trace(GLOOP_MARKER, "############### Start GLBuffer Map Query ###############");
@@ -699,6 +706,7 @@ public class GLBuffer extends GLObject {
      */
     public class UnmapTask extends GLTask {
 
+        @SuppressWarnings("unchecked")
         @Override
         public void run() {
             LOGGER.trace(GLOOP_MARKER, "############### Start GLBuffer Unmap Task ###############");
@@ -767,6 +775,7 @@ public class GLBuffer extends GLObject {
             this.size = size;
         }
 
+        @SuppressWarnings("unchecked")
         @Override
         public void run() {
             LOGGER.trace(GLOOP_MARKER, "############### Start GLBuffer Copy Task ###############");
@@ -845,6 +854,7 @@ public class GLBuffer extends GLObject {
             }
         }
 
+        @SuppressWarnings("unchecked")
         @Override
         public void run() {
             LOGGER.trace(GLOOP_MARKER, "############### Start GLBuffer InvalidateSubData Task ###############");
@@ -873,6 +883,7 @@ public class GLBuffer extends GLObject {
      */
     public final class InvalidateTask extends GLTask {
 
+        @SuppressWarnings("unchecked")
         @Override
         public void run() {
             LOGGER.trace(GLOOP_MARKER, "############### Start GLBuffer Invalidate Task ###############");

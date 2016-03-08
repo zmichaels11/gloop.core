@@ -221,6 +221,7 @@ public class GLVertexArray extends GLObject {
             }
         }
 
+        @SuppressWarnings("unchecked")
         @Override
         public void run() {
             LOGGER.trace(GLOOP_MARKER, "############### Start GLVertexArray Draw Elements Indirect Task ##############");
@@ -295,6 +296,7 @@ public class GLVertexArray extends GLObject {
             }
         }
 
+        @SuppressWarnings("unchecked")
         @Override
         public void run() {
             LOGGER.trace(GLOOP_MARKER, "############### Start GLVertexArray Draw Arrays Indirect Task ###############");
@@ -358,6 +360,7 @@ public class GLVertexArray extends GLObject {
             Objects.requireNonNull(this.drawMode = drawMode);
         }
 
+        @SuppressWarnings("unchecked")
         @Override
         public void run() {
             LOGGER.trace(GLOOP_MARKER, "############### Start GLVertexArray Multi Draw Arrays Task ###############");
@@ -436,6 +439,7 @@ public class GLVertexArray extends GLObject {
             }
         }
 
+        @SuppressWarnings("unchecked")
         @Override
         public void run() {
             LOGGER.trace(GLOOP_MARKER, "############### Start GLVertexArray Draw Elements Instanced Task ###############");
@@ -519,6 +523,7 @@ public class GLVertexArray extends GLObject {
             }
         }
 
+        @SuppressWarnings("unchecked")
         @Override
         public void run() {
             LOGGER.trace(GLOOP_MARKER, "############### Start GLVertexArray Draw Arrays Instanced Task ###############");
@@ -593,6 +598,7 @@ public class GLVertexArray extends GLObject {
             }
         }
 
+        @SuppressWarnings("unchecked")
         @Override
         public void run() {
             LOGGER.trace(GLOOP_MARKER, "############### Start GLVertexArray Draw Elements Task ###############");
@@ -679,6 +685,7 @@ public class GLVertexArray extends GLObject {
             }
         }
 
+        @SuppressWarnings("unchecked")
         @Override
         public void run() {
             LOGGER.trace(GLOOP_MARKER, "############### Start GLVertexArray Draw Transform Feedback Task ###############");
@@ -727,6 +734,7 @@ public class GLVertexArray extends GLObject {
             }
         }
 
+        @SuppressWarnings("unchecked")
         @Override
         public void run() {
             LOGGER.trace(GLOOP_MARKER, "############### Start GLVertexArray Draw Arrays Task ###############");
@@ -763,6 +771,7 @@ public class GLVertexArray extends GLObject {
      */
     public final class DeleteTask extends GLTask {
 
+        @SuppressWarnings("unchecked")
         @Override
         public void run() {
             LOGGER.trace(GLOOP_MARKER, "############### Start GLVertexArray Delete Task ###############");
@@ -802,6 +811,7 @@ public class GLVertexArray extends GLObject {
             this.buffer = Objects.requireNonNull(buffer);
         }
 
+        @SuppressWarnings("unchecked")
         @Override
         public void run() {
             LOGGER.trace(GLOOP_MARKER, "############### Start GLVertexArray Attach Index Buffer Task ###############");
@@ -996,6 +1006,7 @@ public class GLVertexArray extends GLObject {
             }
         }
 
+        @SuppressWarnings("unchecked")
         @Override
         public void run() {
             LOGGER.trace(GLOOP_MARKER, "############### Start GLVertexArray Attach Buffer Task ###############");

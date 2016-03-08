@@ -158,6 +158,7 @@ public class GLDrawQuery extends GLObject {
             this.condition = Objects.requireNonNull(condition);
         }
 
+        @SuppressWarnings({"rawtypes", "unchecked"})
         @Override
         public void run() {
             LOGGER.trace(GLOOP_MARKER, "############### Start DrawQueryTask ###############");
@@ -218,6 +219,7 @@ public class GLDrawQuery extends GLObject {
             this.mode = Objects.requireNonNull(mode);
         }
 
+        @SuppressWarnings({"rawtypes", "unchecked"})
         @Override
         public void run() {
             LOGGER.trace(GLOOP_MARKER, "############### Start GLDrawQuery ConditionTask ###############");
@@ -259,6 +261,7 @@ public class GLDrawQuery extends GLObject {
 
     public class DeleteTask extends GLTask {
 
+        @SuppressWarnings("unchecked")
         @Override
         public void run() {
             LOGGER.trace(GLOOP_MARKER, "############### Start GLDrawQuery Delete Task ###############");

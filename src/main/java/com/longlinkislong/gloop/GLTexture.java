@@ -385,6 +385,7 @@ public class GLTexture extends GLObject {
             }
         }
 
+        @SuppressWarnings("unchecked")
         @Override
         public void run() {
             LOGGER.trace(GLOOP_MARKER, "############### Start GLTexture Bind Task ###############");
@@ -418,6 +419,7 @@ public class GLTexture extends GLObject {
      */
     public class DeleteTask extends GLTask {
 
+        @SuppressWarnings("unchecked")
         @Override
         public void run() {
             LOGGER.trace(GLOOP_MARKER, "############### Start GLTexture Delete Task ###############");
@@ -570,6 +572,7 @@ public class GLTexture extends GLObject {
             }
         }
 
+        @SuppressWarnings("unchecked")
         @Override
         public void run() {
             LOGGER.trace(GLOOP_MARKER, "############### Start GLTexture Update Image 3D Task ###############");

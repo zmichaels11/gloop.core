@@ -193,6 +193,7 @@ public class GLFramebuffer extends GLObject {
      */
     public final class IsCompleteQuery extends GLQuery<Boolean> {
 
+        @SuppressWarnings("unchecked")
         @Override
         public Boolean call() throws Exception {
             LOGGER.trace(GLOOP_MARKER, "############### Start GLFramebuffer Is Complete Query ###############");
@@ -265,6 +266,7 @@ public class GLFramebuffer extends GLObject {
      */
     public final class DeleteTask extends GLTask {
 
+        @SuppressWarnings("unchecked")
         @Override
         public void run() {
             LOGGER.trace(GLOOP_MARKER, "############### Start GLFramebuffer Delete Task ###############");
@@ -369,6 +371,7 @@ public class GLFramebuffer extends GLObject {
             }
         }
 
+        @SuppressWarnings("unchecked")
         @Override
         public void run() {
             LOGGER.trace(GLOOP_MARKER, "############### Start GLFramebuffer Bind Task ###############");
@@ -459,6 +462,7 @@ public class GLFramebuffer extends GLObject {
             }
         }
 
+        @SuppressWarnings("unchecked")
         @Override
         public void run() {
             LOGGER.trace(GLOOP_MARKER, "############### Start GLFramebuffer Add Depth Stencil Attachment Task ###############");
@@ -546,6 +550,7 @@ public class GLFramebuffer extends GLObject {
             }
         }
 
+        @SuppressWarnings("unchecked")
         @Override
         public void run() {
             LOGGER.trace(GLOOP_MARKER, "############### Start GLFramebuffer Add Depth Attachment Task ###############");
@@ -648,6 +653,7 @@ public class GLFramebuffer extends GLObject {
                     attachmentId);
         }
 
+        @SuppressWarnings("unchecked")
         @Override
         public void run() {
             LOGGER.trace(GLOOP_MARKER, "############### Start GLFramebuffer Add Color Attachment Task ###############");
@@ -758,6 +764,7 @@ public class GLFramebuffer extends GLObject {
             this.filter = Objects.requireNonNull(filter);
         }
 
+        @SuppressWarnings("unchecked")
         @Override
         public void run() {
             LOGGER.trace(GLOOP_MARKER, "############### Start GLFramebuffer Blit Task ###############");
@@ -887,6 +894,7 @@ public class GLFramebuffer extends GLObject {
             this.pixelPackBuffer = null;
         }
 
+        @SuppressWarnings("unchecked")
         @Override
         public void run() {
             LOGGER.trace(GLOOP_MARKER, "############### Start GLFramebuffer Read Pixels Task ###############");

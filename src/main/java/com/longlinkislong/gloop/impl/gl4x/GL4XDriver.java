@@ -11,7 +11,15 @@ import java.nio.ByteBuffer;
 import java.nio.DoubleBuffer;
 import java.nio.FloatBuffer;
 import java.nio.IntBuffer;
+import org.lwjgl.opengl.ARBBufferStorage;
+import org.lwjgl.opengl.ARBComputeShader;
+import org.lwjgl.opengl.ARBInternalformatQuery;
+import org.lwjgl.opengl.ARBInvalidateSubdata;
+import org.lwjgl.opengl.ARBProgramInterfaceQuery;
+import org.lwjgl.opengl.ARBSeparateShaderObjects;
+import org.lwjgl.opengl.ARBShaderStorageBufferObject;
 import org.lwjgl.opengl.ARBSparseTexture;
+import org.lwjgl.opengl.ARBVertexAttrib64Bit;
 import org.lwjgl.opengl.EXTTextureFilterAnisotropic;
 import org.lwjgl.opengl.GL;
 import org.lwjgl.opengl.GL11;
@@ -25,11 +33,6 @@ import org.lwjgl.opengl.GL30;
 import org.lwjgl.opengl.GL31;
 import org.lwjgl.opengl.GL33;
 import org.lwjgl.opengl.GL40;
-import org.lwjgl.opengl.GL41;
-import org.lwjgl.opengl.GL42;
-import org.lwjgl.opengl.GL43;
-import org.lwjgl.opengl.GL44;
-import org.lwjgl.opengl.GLCapabilities;
 
 /**
  *
@@ -64,7 +67,7 @@ public final class GL4XDriver implements Driver<
         final int currentBuffer = GL11.glGetInteger(GL15.GL_ARRAY_BUFFER);
 
         GL15.glBindBuffer(GL15.GL_ARRAY_BUFFER, buffer.bufferId);
-        GL44.glBufferStorage(GL15.GL_ARRAY_BUFFER, (int) size, (int) bitflags);
+        ARBBufferStorage.glBufferStorage(GL15.GL_ARRAY_BUFFER, (int) size, (int) bitflags);
         GL15.glBindBuffer(GL15.GL_ARRAY_BUFFER, currentBuffer);
     }
 
@@ -113,12 +116,12 @@ public final class GL4XDriver implements Driver<
 
     @Override
     public void bufferInvalidateData(GL4XBuffer buffer) {
-        GL43.glInvalidateBufferData(buffer.bufferId);
+        ARBInvalidateSubdata.glInvalidateBufferData(buffer.bufferId);
     }
 
     @Override
     public void bufferInvalidateRange(GL4XBuffer buffer, long offset, long length) {
-        GL43.glInvalidateBufferSubData(buffer.bufferId, offset, length);
+        ARBInvalidateSubdata.glInvalidateBufferSubData(buffer.bufferId, offset, length);
     }
 
     @Override
@@ -383,7 +386,7 @@ public final class GL4XDriver implements Driver<
         final int currentProgram = GL11.glGetInteger(GL20.GL_CURRENT_PROGRAM);
 
         GL20.glUseProgram(program.programId);
-        GL43.glDispatchCompute((int) numX, (int) numY, (int) numZ);
+        ARBComputeShader.glDispatchCompute((int) numX, (int) numY, (int) numZ);
         GL20.glUseProgram(currentProgram);
     }
 
@@ -427,10 +430,10 @@ public final class GL4XDriver implements Driver<
 
     @Override
     public void programSetStorage(GL4XProgram program, String storageName, GL4XBuffer buffer, long bindingPoint) {
-        final int sBlock = GL43.glGetProgramResourceLocation(program.programId, GL43.GL_SHADER_STORAGE_BLOCK, storageName);
+        final int sBlock = ARBProgramInterfaceQuery.glGetProgramResourceLocation(program.programId, ARBProgramInterfaceQuery.GL_SHADER_STORAGE_BLOCK, storageName);
 
-        GL30.glBindBufferBase(GL43.GL_SHADER_STORAGE_BUFFER, (int) bindingPoint, buffer.bufferId);
-        GL43.glShaderStorageBlockBinding(program.programId, sBlock, (int) bindingPoint);
+        GL30.glBindBufferBase(ARBShaderStorageBufferObject.GL_SHADER_STORAGE_BUFFER, (int) bindingPoint, buffer.bufferId);
+        ARBShaderStorageBufferObject.glShaderStorageBlockBinding(program.programId, sBlock, (int) bindingPoint);
     }
 
     @Override
@@ -446,16 +449,16 @@ public final class GL4XDriver implements Driver<
         if (GL.getCapabilities().GL_ARB_separate_shader_objects) {
             switch (value.length) {
                 case 1:
-                    GL41.glProgramUniform1d(program.programId, (int) uLoc, value[0]);
+                    ARBSeparateShaderObjects.glProgramUniform1d(program.programId, (int) uLoc, value[0]);
                     break;
                 case 2:
-                    GL41.glProgramUniform2d(program.programId, (int) uLoc, value[0], value[1]);
+                    ARBSeparateShaderObjects.glProgramUniform2d(program.programId, (int) uLoc, value[0], value[1]);
                     break;
                 case 3:
-                    GL41.glProgramUniform3d(program.programId, (int) uLoc, value[0], value[1], value[2]);
+                    ARBSeparateShaderObjects.glProgramUniform3d(program.programId, (int) uLoc, value[0], value[1], value[2]);
                     break;
                 case 4:
-                    GL41.glProgramUniform4d(program.programId, (int) uLoc, value[0], value[1], value[2], value[3]);
+                    ARBSeparateShaderObjects.glProgramUniform4d(program.programId, (int) uLoc, value[0], value[1], value[2], value[3]);
                     break;
                 default:
                     throw new UnsupportedOperationException("Unsupported vector size: " + value.length);
@@ -493,16 +496,16 @@ public final class GL4XDriver implements Driver<
         if (GL.getCapabilities().GL_ARB_separate_shader_objects) {
             switch (value.length) {
                 case 1:
-                    GL41.glProgramUniform1f(program.programId, (int) uLoc, value[0]);
+                    ARBSeparateShaderObjects.glProgramUniform1f(program.programId, (int) uLoc, value[0]);
                     break;
                 case 2:
-                    GL41.glProgramUniform2f(program.programId, (int) uLoc, value[0], value[1]);
+                    ARBSeparateShaderObjects.glProgramUniform2f(program.programId, (int) uLoc, value[0], value[1]);
                     break;
                 case 3:
-                    GL41.glProgramUniform3f(program.programId, (int) uLoc, value[0], value[1], value[2]);
+                    ARBSeparateShaderObjects.glProgramUniform3f(program.programId, (int) uLoc, value[0], value[1], value[2]);
                     break;
                 case 4:
-                    GL41.glProgramUniform4f(program.programId, (int) uLoc, value[0], value[1], value[2], value[3]);
+                    ARBSeparateShaderObjects.glProgramUniform4f(program.programId, (int) uLoc, value[0], value[1], value[2], value[3]);
                     break;
             }
         } else {
@@ -539,16 +542,16 @@ public final class GL4XDriver implements Driver<
         if (GL.getCapabilities().GL_ARB_separate_shader_objects) {
             switch (value.length) {
                 case 1:
-                    GL41.glProgramUniform1i(program.programId, (int) uLoc, value[0]);
+                    ARBSeparateShaderObjects.glProgramUniform1i(program.programId, (int) uLoc, value[0]);
                     break;
                 case 2:
-                    GL41.glProgramUniform2i(program.programId, (int) uLoc, value[0], value[1]);
+                    ARBSeparateShaderObjects.glProgramUniform2i(program.programId, (int) uLoc, value[0], value[1]);
                     break;
                 case 3:
-                    GL41.glProgramUniform3i(program.programId, (int) uLoc, value[0], value[1], value[2]);
+                    ARBSeparateShaderObjects.glProgramUniform3i(program.programId, (int) uLoc, value[0], value[1], value[2]);
                     break;
                 case 4:
-                    GL41.glProgramUniform4i(program.programId, (int) uLoc, value[0], value[1], value[2], value[3]);
+                    ARBSeparateShaderObjects.glProgramUniform4i(program.programId, (int) uLoc, value[0], value[1], value[2], value[3]);
                     break;
                 default:
                     throw new UnsupportedOperationException("Unsupported uniform vector size: " + value.length);
@@ -588,13 +591,13 @@ public final class GL4XDriver implements Driver<
         if (GL.getCapabilities().GL_ARB_separate_shader_objects) {
             switch (mat.limit()) {
                 case 4:
-                    GL41.glProgramUniformMatrix2dv(program.programId, (int) uLoc, false, mat);
+                    ARBSeparateShaderObjects.glProgramUniformMatrix2dv(program.programId, (int) uLoc, false, mat);
                     break;
                 case 9:
-                    GL41.glProgramUniformMatrix3dv(program.programId, (int) uLoc, false, mat);
+                    ARBSeparateShaderObjects.glProgramUniformMatrix3dv(program.programId, (int) uLoc, false, mat);
                     break;
                 case 16:
-                    GL41.glProgramUniformMatrix4dv(program.programId, (int) uLoc, false, mat);
+                    ARBSeparateShaderObjects.glProgramUniformMatrix4dv(program.programId, (int) uLoc, false, mat);
                     break;
                 default:
                     throw new UnsupportedOperationException("Unsupported matrix size: " + mat.limit());
@@ -629,13 +632,13 @@ public final class GL4XDriver implements Driver<
         if (GL.getCapabilities().GL_ARB_separate_shader_objects) {
             switch (mat.limit()) {
                 case 4:
-                    GL41.glProgramUniformMatrix2fv(program.programId, (int) uLoc, false, mat);
+                    ARBSeparateShaderObjects.glProgramUniformMatrix2fv(program.programId, (int) uLoc, false, mat);
                     break;
                 case 9:
-                    GL41.glProgramUniformMatrix3fv(program.programId, (int) uLoc, false, mat);
+                    ARBSeparateShaderObjects.glProgramUniformMatrix3fv(program.programId, (int) uLoc, false, mat);
                     break;
                 case 16:
-                    GL41.glProgramUniformMatrix4fv(program.programId, (int) uLoc, false, mat);
+                    ARBSeparateShaderObjects.glProgramUniformMatrix4fv(program.programId, (int) uLoc, false, mat);
                     break;
                 default:
                     throw new UnsupportedOperationException("Unsupported matrix size: " + mat.limit());
@@ -902,17 +905,17 @@ public final class GL4XDriver implements Driver<
 
     @Override
     public long textureGetPageDepth(GL4XTexture texture) {
-        return GL42.glGetInternalformati(texture.target, texture.internalFormat, ARBSparseTexture.GL_VIRTUAL_PAGE_SIZE_Z_ARB);
+        return ARBInternalformatQuery.glGetInternalformati(texture.target, texture.internalFormat, ARBSparseTexture.GL_VIRTUAL_PAGE_SIZE_Z_ARB);
     }
 
     @Override
     public long textureGetPageHeight(GL4XTexture texture) {
-        return GL42.glGetInternalformati(texture.target, texture.internalFormat, ARBSparseTexture.GL_VIRTUAL_PAGE_SIZE_Y_ARB);
+        return ARBInternalformatQuery.glGetInternalformati(texture.target, texture.internalFormat, ARBSparseTexture.GL_VIRTUAL_PAGE_SIZE_Y_ARB);
     }
 
     @Override
     public long textureGetPageWidth(GL4XTexture texture) {
-        return GL42.glGetInternalformati(texture.target, texture.internalFormat, ARBSparseTexture.GL_VIRTUAL_PAGE_SIZE_X_ARB);
+        return ARBInternalformatQuery.glGetInternalformati(texture.target, texture.internalFormat, ARBSparseTexture.GL_VIRTUAL_PAGE_SIZE_X_ARB);
     }
 
     @Override
@@ -922,12 +925,12 @@ public final class GL4XDriver implements Driver<
 
     @Override
     public void textureInvalidateData(GL4XTexture texture, long level) {
-        GL43.glInvalidateTexImage(texture.target, (int) level);
+        ARBInvalidateSubdata.glInvalidateTexImage(texture.target, (int) level);
     }
 
     @Override
     public void textureInvalidateRange(GL4XTexture texture, long level, long xOffset, long yOffset, long zOffset, long width, long height, long depth) {
-        GL43.glInvalidateTexSubImage(texture.textureId, (int) level, (int) xOffset, (int) yOffset, (int) zOffset, (int) width, (int) height, (int) depth);
+        ARBInvalidateSubdata.glInvalidateTexSubImage(texture.textureId, (int) level, (int) xOffset, (int) yOffset, (int) zOffset, (int) width, (int) height, (int) depth);
     }
 
     @Override
@@ -1017,7 +1020,7 @@ public final class GL4XDriver implements Driver<
         GL20.glEnableVertexAttribArray((int) index);
 
         if (type == GL11.GL_DOUBLE) {
-            GL41.glVertexAttribLPointer((int) index, (int) size, (int) type, (int) stride, offset);
+            ARBVertexAttrib64Bit.glVertexAttribLPointer((int) index, (int) size, (int) type, (int) stride, offset);
         } else {
             GL20.glVertexAttribPointer((int) index, (int) size, (int) type, false, (int) stride, offset);
         }
