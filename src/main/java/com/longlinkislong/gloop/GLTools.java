@@ -26,7 +26,7 @@
 package com.longlinkislong.gloop;
 
 import com.longlinkislong.gloop.spi.Driver;
-import com.longlinkislong.gloop.spi.DriverProvider;
+import com.longlinkislong.gloop.spi.DriverFactory;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStream;
@@ -35,11 +35,9 @@ import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.nio.FloatBuffer;
 import java.nio.IntBuffer;
-import java.util.Iterator;
 import java.util.List;
 import java.util.ListIterator;
 import java.util.Optional;
-import java.util.ServiceLoader;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.slf4j.Marker;
@@ -1497,30 +1495,14 @@ public class GLTools {
         private static final Driver INSTANCE;
         
         static {
-            final Iterator<DriverProvider> drivers = ServiceLoader.load(DriverProvider.class).iterator();
-
-            DriverProvider bestDriver = null;
-
-            while (drivers.hasNext()) {
-                final DriverProvider testDriver = drivers.next();
-                
-                testDriver.logCapabilities();
-
-                if (testDriver.isSupported()) {
-                    if(bestDriver == null) {
-                        bestDriver = testDriver;
-                    } else if (testDriver.getSupportRating() > bestDriver.getSupportRating()) {
-                        LOGGER.debug(GLOOP_MARKER, "Selecting [{}] over [{}] as best driver", testDriver.getClass().getName(), bestDriver.getClass().getName());
-                        bestDriver = testDriver;
-                    }
-                }
-            }
-
-            if (bestDriver == null) {
-                throw new RuntimeException("No suitable drivers detected!");
+            final DriverFactory driverFactory = new DriverFactory();
+            final String preferredDriverName = System.getProperty("com.longlinkislong.gloop.driver");
+            final Optional<Driver> preferredDriver = driverFactory.selectDriver(preferredDriverName);
+            
+            if(preferredDriver.isPresent()) {
+                INSTANCE = preferredDriver.get();
             } else {
-                INSTANCE = bestDriver.getDriverInstance();
-                LOGGER.info(GLOOP_MARKER, "Selected OpenGL Driver: {}", INSTANCE.getClass().getName());
+                INSTANCE = driverFactory.selectBestDriver().orElseThrow(() -> new RuntimeException("No supported drivers found!"));
             }
         }
     }
