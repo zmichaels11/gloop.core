@@ -40,7 +40,7 @@ import org.lwjgl.opengl.GLCapabilities;
  */
 public final class GL2XDriver implements Driver<
         GL2XBuffer, GL2XFramebuffer, GL2XTexture, GL2XShader, GL2XProgram, GL2XSampler, GL2XVertexArray, GL2XDrawQuery> {
-   
+
     @Override
     public void blendingDisable() {
         GL11.glDisable(GL11.GL_BLEND);
@@ -73,13 +73,25 @@ public final class GL2XDriver implements Driver<
 
     @Override
     public void bufferCopyData(GL2XBuffer srcBuffer, long srcOffset, GL2XBuffer dstBuffer, long dstOffset, long size) {
-        GL15.glBindBuffer(ARBCopyBuffer.GL_COPY_READ_BUFFER, srcBuffer.bufferId);
-        GL15.glBindBuffer(ARBCopyBuffer.GL_COPY_WRITE_BUFFER, dstBuffer.bufferId);
+        if (GL.getCapabilities().GL_ARB_copy_buffer) {
+            GL15.glBindBuffer(ARBCopyBuffer.GL_COPY_READ_BUFFER, srcBuffer.bufferId);
+            GL15.glBindBuffer(ARBCopyBuffer.GL_COPY_WRITE_BUFFER, dstBuffer.bufferId);
+            
+            ARBCopyBuffer.glCopyBufferSubData(ARBCopyBuffer.GL_COPY_READ_BUFFER, ARBCopyBuffer.GL_COPY_WRITE_BUFFER, srcOffset, dstOffset, size);
 
-        ARBCopyBuffer.glCopyBufferSubData(ARBCopyBuffer.GL_COPY_READ_BUFFER, ARBCopyBuffer.GL_COPY_WRITE_BUFFER, srcOffset, dstOffset, size);
-
-        GL15.glBindBuffer(ARBCopyBuffer.GL_COPY_READ_BUFFER, 0);
-        GL15.glBindBuffer(ARBCopyBuffer.GL_COPY_WRITE_BUFFER, 0);
+            GL15.glBindBuffer(ARBCopyBuffer.GL_COPY_READ_BUFFER, 0);
+            GL15.glBindBuffer(ARBCopyBuffer.GL_COPY_WRITE_BUFFER, 0);
+        } else {
+            final ByteBuffer src = this.bufferMapData(srcBuffer, srcOffset, size, ARBMapBufferRange.GL_MAP_READ_BIT);
+            final ByteBuffer dst = this.bufferMapData(dstBuffer, dstOffset, size, ARBMapBufferRange.GL_MAP_WRITE_BIT);
+            
+            for(int i = 0; i < size; i++) {
+                dst.put(i, src.get(i));
+            }
+            
+            this.bufferUnmapData(dstBuffer);
+            this.bufferUnmapData(srcBuffer);
+        }
     }
 
     @Override
@@ -343,7 +355,7 @@ public final class GL2XDriver implements Driver<
 
         ARBFramebufferObject.glBindFramebuffer(ARBFramebufferObject.GL_FRAMEBUFFER, currentFb);
         return complete == ARBFramebufferObject.GL_FRAMEBUFFER_COMPLETE;
-    }    
+    }
 
     @Override
     public void maskApply(boolean red, boolean green, boolean blue, boolean alpha, boolean depth, long stencil) {
@@ -433,7 +445,7 @@ public final class GL2XDriver implements Driver<
     @Override
     public void programSetUniformBlock(GL2XProgram program, String uniformName, GL2XBuffer buffer, long bindingPoint) {
         final int uBlock = ARBUniformBufferObject.glGetUniformBlockIndex(program.programId, uniformName);
-        
+
         ARBUniformBufferObject.glBindBufferBase(ARBUniformBufferObject.GL_UNIFORM_BUFFER, (int) bindingPoint, buffer.bufferId);
         ARBUniformBufferObject.glUniformBlockBinding(program.programId, uBlock, (int) bindingPoint);
     }
@@ -444,7 +456,7 @@ public final class GL2XDriver implements Driver<
     }
 
     @Override
-    public void programSetUniformF(GL2XProgram program, long uLoc, float[] value) {        
+    public void programSetUniformF(GL2XProgram program, long uLoc, float[] value) {
         if (GL.getCapabilities().GL_ARB_separate_shader_objects) {
             switch (value.length) {
                 case 1:
@@ -1076,9 +1088,9 @@ public final class GL2XDriver implements Driver<
                 GL20.glEnableVertexAttribArray(attrib.index);
                 GL20.glVertexAttribPointer(attrib.index, attrib.size, attrib.type, false, attrib.stride, attrib.offset);
             });
-            
+
             GL14.glMultiDrawArrays((int) drawMode, first, count);
-            
+
             vao.attribs.forEach(attrib -> GL20.glDisableVertexAttribArray(attrib.index));
         }
     }
@@ -1086,5 +1098,5 @@ public final class GL2XDriver implements Driver<
     @Override
     public void viewportApply(long x, long y, long width, long height) {
         GL11.glViewport((int) x, (int) y, (int) width, (int) height);
-    }    
+    }
 }

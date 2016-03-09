@@ -5,13 +5,20 @@
  */
 package com.longlinkislong.gloop.spi;
 
-import com.longlinkislong.gloop.GLTextureInternalFormat;
 import java.nio.ByteBuffer;
 import java.nio.DoubleBuffer;
 import java.nio.FloatBuffer;
 import java.nio.IntBuffer;
+import static org.lwjgl.opengl.EXTTextureCompressionS3TC.*;
 import org.lwjgl.opengl.GL11;
+import static org.lwjgl.opengl.GL11.*;
+import static org.lwjgl.opengl.GL13.*;
+import static org.lwjgl.opengl.GL14.*;
+import static org.lwjgl.opengl.GL21.*;
 import org.lwjgl.opengl.GL30;
+import static org.lwjgl.opengl.GL30.*;
+import static org.lwjgl.opengl.GL31.*;
+import static org.lwjgl.opengl.GL33.*;
 
 /**
  *
@@ -232,9 +239,10 @@ public interface Driver<BufferT extends Buffer, FramebufferT extends Framebuffer
 
     void drawQueryDelete(QueryT query);
 
-    default int guessFormat(int internalFormat) {
-        switch (GLTextureInternalFormat.of(internalFormat).orElseThrow(NullPointerException::new)) {
-            case GL_COMPRESSED_RGB_S3TC_DXT1:
+    default int guessFormat(int internalFormat) {        
+        switch (internalFormat) {
+            
+            case GL_COMPRESSED_RGB_S3TC_DXT1_EXT:
             case GL_RGB:
             case GL_COMPRESSED_RGB:
             case GL_COMPRESSED_SRGB:
@@ -257,9 +265,9 @@ public interface Driver<BufferT extends Buffer, FramebufferT extends Framebuffer
             case GL_RGB32I:
             case GL_RGB32UI:
                 return GL11.GL_RGB;
-            case GL_COMPRESSED_RGBA_S3TC_DXT1:
-            case GL_COMPRESSED_RGBA_S3TC_DXT3:
-            case GL_COMPRESSED_RGBA_S3TC_DXT5:
+            case GL_COMPRESSED_RGBA_S3TC_DXT1_EXT:
+            case GL_COMPRESSED_RGBA_S3TC_DXT3_EXT:
+            case GL_COMPRESSED_RGBA_S3TC_DXT5_EXT:
             case GL_RGBA:
             case GL_COMPRESSED_RGBA:
             case GL_COMPRESSED_SRGB_ALPHA:

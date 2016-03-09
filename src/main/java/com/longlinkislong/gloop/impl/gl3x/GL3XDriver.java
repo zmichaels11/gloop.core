@@ -41,7 +41,7 @@ import org.lwjgl.opengl.GLCapabilities;
  * @author zmichaels
  */
 public final class GL3XDriver implements Driver<
-        GL3XBuffer, GL3XFramebuffer, GL3XTexture, GL3XShader, GL3XProgram, GL3XSampler, GL3XVertexArray, GL3XDrawQuery> {   
+        GL3XBuffer, GL3XFramebuffer, GL3XTexture, GL3XShader, GL3XProgram, GL3XSampler, GL3XVertexArray, GL3XDrawQuery> {
 
     @Override
     public void blendingDisable() {
@@ -75,13 +75,25 @@ public final class GL3XDriver implements Driver<
 
     @Override
     public void bufferCopyData(GL3XBuffer srcBuffer, long srcOffset, GL3XBuffer dstBuffer, long dstOffset, long size) {
-        GL15.glBindBuffer(ARBCopyBuffer.GL_COPY_READ_BUFFER, srcBuffer.bufferId);
-        GL15.glBindBuffer(ARBCopyBuffer.GL_COPY_WRITE_BUFFER, dstBuffer.bufferId);
+        if (GL.getCapabilities().GL_ARB_copy_buffer) {
+            GL15.glBindBuffer(ARBCopyBuffer.GL_COPY_READ_BUFFER, srcBuffer.bufferId);
+            GL15.glBindBuffer(ARBCopyBuffer.GL_COPY_WRITE_BUFFER, dstBuffer.bufferId);
 
-        ARBCopyBuffer.glCopyBufferSubData(ARBCopyBuffer.GL_COPY_READ_BUFFER, ARBCopyBuffer.GL_COPY_WRITE_BUFFER, srcOffset, dstOffset, size);
+            ARBCopyBuffer.glCopyBufferSubData(ARBCopyBuffer.GL_COPY_READ_BUFFER, ARBCopyBuffer.GL_COPY_WRITE_BUFFER, srcOffset, dstOffset, size);
 
-        GL15.glBindBuffer(ARBCopyBuffer.GL_COPY_READ_BUFFER, 0);
-        GL15.glBindBuffer(ARBCopyBuffer.GL_COPY_WRITE_BUFFER, 0);
+            GL15.glBindBuffer(ARBCopyBuffer.GL_COPY_READ_BUFFER, 0);
+            GL15.glBindBuffer(ARBCopyBuffer.GL_COPY_WRITE_BUFFER, 0);
+        } else {
+            final ByteBuffer src = this.bufferMapData(srcBuffer, srcOffset, size, GL30.GL_MAP_READ_BIT);
+            final ByteBuffer dst = this.bufferMapData(dstBuffer, dstOffset, size, GL30.GL_MAP_WRITE_BIT);
+            
+            for(int i = 0; i < size; i++) {
+                dst.put(i, src.get(i));
+            }
+            
+            this.bufferUnmapData(dstBuffer);
+            this.bufferUnmapData(srcBuffer);
+        }
     }
 
     @Override
@@ -442,11 +454,11 @@ public final class GL3XDriver implements Driver<
     @Override
     public void programSetUniformD(GL3XProgram program, long uLoc, double[] value) {
         final GLCapabilities cap = GL.getCapabilities();
-        
-        if(!(cap.GL_ARB_gpu_shader_fp64 && cap.GL_ARB_gpu_shader_int64)) {
+
+        if (!(cap.GL_ARB_gpu_shader_fp64 && cap.GL_ARB_gpu_shader_int64)) {
             throw new UnsupportedOperationException("64bit uniforms are not supported!");
         }
-        
+
         if (cap.GL_ARB_separate_shader_objects) {
             switch (value.length) {
                 case 1:
@@ -493,7 +505,7 @@ public final class GL3XDriver implements Driver<
     }
 
     @Override
-    public void programSetUniformF(GL3XProgram program, long uLoc, float[] value) {        
+    public void programSetUniformF(GL3XProgram program, long uLoc, float[] value) {
         if (GL.getCapabilities().GL_ARB_separate_shader_objects) {
             switch (value.length) {
                 case 1:
@@ -591,11 +603,11 @@ public final class GL3XDriver implements Driver<
     @Override
     public void programSetUniformMatD(GL3XProgram program, long uLoc, DoubleBuffer mat) {
         final GLCapabilities cap = GL.getCapabilities();
-        
-        if(!(cap.GL_ARB_gpu_shader_fp64 && cap.GL_ARB_gpu_shader_int64)) {
+
+        if (!(cap.GL_ARB_gpu_shader_fp64 && cap.GL_ARB_gpu_shader_int64)) {
             throw new UnsupportedOperationException("64bit uniforms are not supported!");
         }
-        
+
         if (cap.GL_ARB_separate_shader_objects) {
             switch (mat.limit()) {
                 case 4:
@@ -1146,5 +1158,5 @@ public final class GL3XDriver implements Driver<
     @Override
     public void viewportApply(long x, long y, long width, long height) {
         GL11.glViewport((int) x, (int) y, (int) width, (int) height);
-    }   
+    }
 }
