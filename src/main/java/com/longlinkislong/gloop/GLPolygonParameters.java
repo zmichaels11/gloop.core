@@ -325,7 +325,7 @@ public class GLPolygonParameters extends GLObject {
                     pointSize, 
                     lineSize, 
                     frontFace.value,
-                    cullEnabled == GL_ENABLED ? cullMode.value : 0L,
+                    cullEnabled == GL_ENABLED ? cullMode.value : 0,
                     mode.value,
                     polygonOffsetFactor, polygonOffsetUnits);            
 

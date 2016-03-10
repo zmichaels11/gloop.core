@@ -199,12 +199,12 @@ public class GLBuffer extends GLObject {
                 throw new GLException("Invalid GLBuffer!");
             }
 
-            final long result = GLTools.getDriverInstance().bufferGetParameter(buffer, this.pName.value);
+            final int result = GLTools.getDriverInstance().bufferGetParameterI(buffer, this.pName.value);
 
             LOGGER.trace(GLOOP_MARKER, "GLBuffer[{}].{} = {}!", GLBuffer.this.getName(), this.pName, result);
             LOGGER.trace(GLOOP_MARKER, "############### End GLBuffer Parameter Query ###############");
 
-            return (int) result;
+            return result;
         }
 
         @Override
@@ -599,7 +599,7 @@ public class GLBuffer extends GLObject {
             final ByteBuffer out;
 
             if (this.writeBuffer == null) {
-                final int size = (int) GLTools.getDriverInstance().bufferGetParameter(buffer, GLBufferParameterName.GL_BUFFER_SIZE.value);
+                final int size = GLTools.getDriverInstance().bufferGetParameterI(buffer, GLBufferParameterName.GL_BUFFER_SIZE.value);
 
                 out = ByteBuffer.allocateDirect(size).order(ByteOrder.nativeOrder());
             } else {

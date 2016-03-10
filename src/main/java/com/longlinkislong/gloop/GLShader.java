@@ -236,7 +236,7 @@ public class GLShader extends GLObject {
 
             if (!GLShader.this.isValid()) {
                 shader = driver.shaderCompile(type.value, src);
-                final int status = (int) driver.shaderGetParameter(shader, GLShaderParameterName.GL_COMPILE_STATUS.value);
+                final int status = driver.shaderGetParameterI(shader, GLShaderParameterName.GL_COMPILE_STATUS.value);
 
                 if (status == 0) {
                     final String info = GLShader.this.getInfoLog();
@@ -318,7 +318,7 @@ public class GLShader extends GLObject {
                 throw new GLException("Invalid GLShader!");
             }
 
-            final int res = (int) GLTools.getDriverInstance().shaderGetParameter(shader, pName.value);
+            final int res = GLTools.getDriverInstance().shaderGetParameterI(shader, pName.value);
 
             LOGGER.trace(
                     GLOOP_MARKER,
