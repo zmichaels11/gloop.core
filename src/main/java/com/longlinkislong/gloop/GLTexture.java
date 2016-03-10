@@ -1335,8 +1335,6 @@ public class GLTexture extends GLObject {
             if (params.isSparse) {
                 driver.textureSetParameter(texture, 37286 /* GL_SPARSE_TEXTURE_ARB */, 1);
                 isSparse = true;
-            } else {
-                LOGGER.warn(GL_MARKER, "Attempted to allocate sparse texture but ARB_sparse_texture is not supported!");
             }
 
             if (GLTexture.this.isSparse) {
