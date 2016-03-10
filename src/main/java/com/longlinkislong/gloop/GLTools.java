@@ -26,7 +26,7 @@
 package com.longlinkislong.gloop;
 
 import com.longlinkislong.gloop.spi.Driver;
-import com.longlinkislong.gloop.spi.DriverFactory;
+import com.longlinkislong.gloop.spi.DriverManager;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStream;
@@ -1495,14 +1495,14 @@ public class GLTools {
         private static final Driver INSTANCE;
         
         static {
-            final DriverFactory driverFactory = new DriverFactory();
-            final String preferredDriverName = System.getProperty("com.longlinkislong.gloop.driver");
-            final Optional<Driver> preferredDriver = driverFactory.selectDriver(preferredDriverName);
+            final DriverManager driverManager = new DriverManager();
+            final String preferredDriverName = System.getProperty("com.longlinkislong.gloop.driver");                        
+            final Optional<Driver> preferredDriver = driverManager.selectDriverByName(preferredDriverName);
             
             if(preferredDriver.isPresent()) {
                 INSTANCE = preferredDriver.get();
-            } else {
-                INSTANCE = driverFactory.selectBestDriver().orElseThrow(() -> new RuntimeException("No supported drivers found!"));
+            } else {                
+                INSTANCE = driverManager.selectBestDriver().orElseThrow(() -> new RuntimeException("No supported drivers found!"));
             }
         }
     }
