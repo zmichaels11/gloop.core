@@ -38,17 +38,29 @@ publishing {
             groupId = "${group}"
             
             // get version number for outputting to artifactory
-            version = "${versionUrl}?name=${project.name}".toURL().text.trim()
+            if(project.hasProperty('versionOverride')) {
+                version = versionOverride
+            } else {
+                version = "${versionUrl}?name=${project.name}".toURL().text.trim()            
+            }
         }    
     }
 }
+
 task incrementBuild << {        
-    def version = "${versionUrl}?name=${project.name}&increment=1".toURL().text.trim()
+    if(project.hasProperty('versionOverride')) {
+        System.err.println 'incrementBuild ignored: using version override!'
+    } else {
+        def version = "${versionUrl}?name=${project.name}&increment=1".toURL().text.trim()
     
-    println "incremented build to $version"
+        println "incremented build to $version"
+    }
 }
 
 task version << {
-    def version = "${versionUrl}?name=${project.name}".toURL().text.trim()
-    println version
+    if(project.hasProperty('versionOverride')) {
+        println "$versionOverride (version override)"
+    } else {
+        println "${versionUrl}?name=${project.name}".toURL().text.trim()    
+    }
 }
