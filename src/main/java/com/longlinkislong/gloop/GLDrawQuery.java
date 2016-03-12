@@ -25,8 +25,8 @@
  */
 package com.longlinkislong.gloop;
 
-import com.longlinkislong.gloop.spi.DrawQuery;
-import com.longlinkislong.gloop.spi.Driver;
+import com.longlinkislong.gloop.glspi.DrawQuery;
+import com.longlinkislong.gloop.glspi.Driver;
 import java.util.Objects;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;

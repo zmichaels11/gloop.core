@@ -25,8 +25,8 @@
  */
 package com.longlinkislong.gloop;
 
-import com.longlinkislong.gloop.spi.Driver;
-import com.longlinkislong.gloop.spi.DriverManager;
+import com.longlinkislong.gloop.glspi.Driver;
+import com.longlinkislong.gloop.glspi.DriverManager;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStream;

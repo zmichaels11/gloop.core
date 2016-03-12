@@ -25,9 +25,9 @@
  */
 package com.longlinkislong.gloop;
 
-import com.longlinkislong.gloop.spi.Driver;
-import com.longlinkislong.gloop.spi.Program;
-import com.longlinkislong.gloop.spi.Shader;
+import com.longlinkislong.gloop.glspi.Driver;
+import com.longlinkislong.gloop.glspi.Program;
+import com.longlinkislong.gloop.glspi.Shader;
 import java.nio.ByteOrder;
 import java.nio.DoubleBuffer;
 import java.nio.FloatBuffer;
@@ -1263,6 +1263,7 @@ public class GLProgram extends GLObject {
                 throw new GLException("Invalid GLBuffer object!");
             }
 
+            
             GLTools.getDriverInstance().programSetStorage(program, storageName, buffer.buffer, bindingPoint);
             LOGGER.trace(GLOOP_MARKER, "############### End GLProgram Set Shader Storage Task ###############");
         }

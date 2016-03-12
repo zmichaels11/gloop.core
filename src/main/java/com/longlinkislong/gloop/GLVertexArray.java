@@ -25,7 +25,7 @@
  */
 package com.longlinkislong.gloop;
 
-import com.longlinkislong.gloop.spi.VertexArray;
+import com.longlinkislong.gloop.glspi.VertexArray;
 import java.nio.IntBuffer;
 import java.util.Objects;
 import org.slf4j.Logger;
