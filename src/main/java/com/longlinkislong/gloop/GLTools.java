@@ -1496,7 +1496,7 @@ public class GLTools {
         
         static {
             final DriverManager driverManager = new DriverManager();
-            final String preferredDriverName = System.getProperty("com.longlinkislong.gloop.driver");                        
+            final String preferredDriverName = System.getProperty("com.longlinkislong.gloop.gldriver");                        
             final Optional<Driver> preferredDriver = driverManager.selectDriverByName(preferredDriverName);
             
             if(preferredDriver.isPresent()) {
