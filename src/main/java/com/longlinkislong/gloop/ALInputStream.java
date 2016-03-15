@@ -15,6 +15,7 @@ import javax.sound.sampled.AudioFormat;
 import javax.sound.sampled.AudioInputStream;
 import javax.sound.sampled.AudioSystem;
 import javax.sound.sampled.UnsupportedAudioFileException;
+import org.lwjgl.system.MemoryUtil;
 
 /**
  *
@@ -23,9 +24,7 @@ import javax.sound.sampled.UnsupportedAudioFileException;
 public class ALInputStream implements Closeable {
 
     private final AudioInputStream ain;
-    public final ALSoundFormat format;
-    private final ByteBuffer outBuffer;
-    private final byte[] inBuffer;
+    public final ALSoundFormat format;  
     private final boolean is16bit;
     public final int sampleRate;
     public final ByteOrder byteOrder;
@@ -36,8 +35,7 @@ public class ALInputStream implements Closeable {
     }
 
     public ALInputStream(final InputStream in, final int bufferSize) throws UnsupportedAudioFileException, IOException {
-        this.bufferSize = bufferSize;
-        this.inBuffer = new byte[bufferSize];
+        this.bufferSize = bufferSize;        
         this.ain = AudioSystem.getAudioInputStream(in);
 
         final AudioFormat fmt = this.ain.getFormat();
@@ -77,8 +75,7 @@ public class ALInputStream implements Closeable {
                 throw new UnsupportedOperationException("Unsupported channel count: " + channels);
         }
 
-        this.byteOrder = fmt.isBigEndian() ? ByteOrder.BIG_ENDIAN : ByteOrder.LITTLE_ENDIAN;
-        this.outBuffer = ByteBuffer.allocateDirect(this.bufferSize).order(ByteOrder.nativeOrder());
+        this.byteOrder = fmt.isBigEndian() ? ByteOrder.BIG_ENDIAN : ByteOrder.LITTLE_ENDIAN;        
         this.sampleRate = (int) fmt.getSampleRate();
     }
 
@@ -88,7 +85,10 @@ public class ALInputStream implements Closeable {
     }        
 
     public void stream(final ALBuffer buffer) throws IOException {
-        final int readCount = this.ain.read(this.inBuffer, 0, this.bufferSize);
+        final ByteBuffer outBuffer = MemoryUtil.memAlloc(this.bufferSize).order(ByteOrder.nativeOrder());
+        
+        final byte[] inBuffer = new byte[bufferSize];
+        final int readCount = this.ain.read(inBuffer, 0, this.bufferSize);
         
         if(readCount == -1) {
             throw new IOException("End of stream reached!");
@@ -107,5 +107,6 @@ public class ALInputStream implements Closeable {
         
         outBuffer.position(0).limit(readCount);
         buffer.upload(this.format, outBuffer, this.sampleRate);
+        ALTask.create(() -> MemoryUtil.memFree(outBuffer)); // free on the OpenAL thread
     }
 }
