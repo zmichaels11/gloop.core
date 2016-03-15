@@ -331,4 +331,26 @@ public class ALSource {
             }
         }
     }        
+    
+    @Override
+    public boolean equals(Object other) {        
+        if(other instanceof ALSource) {
+            final ALSource oSource = (ALSource) other;
+            
+            if(this.isValid() && oSource.isValid()) {
+                return oSource.source.equals(oSource.source);
+            } else {
+                return false;
+            }
+        } else {
+            return false;
+        }
+    }
+
+    @Override
+    public int hashCode() {
+        int hash = 5;
+        hash = 79 * hash + Objects.hashCode(this.source);
+        return hash;
+    }
 }
