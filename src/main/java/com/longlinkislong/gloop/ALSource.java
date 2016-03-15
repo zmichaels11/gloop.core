@@ -77,8 +77,8 @@ public class ALSource {
         @Override
         public void run() {
             if (isValid()) {
-                if(buffer.isValid()) {
-                ALTools.getDriverInstance().sourceSetBuffer(source, buffer.buffer);
+                if (buffer.isValid()) {
+                    ALTools.getDriverInstance().sourceSetBuffer(source, buffer.buffer);
                 } else {
                     throw new ALException("Invalid buffer!");
                 }
@@ -87,7 +87,7 @@ public class ALSource {
             }
         }
     }
-    
+
     public float getPitch() {
         return ALSource.this.pitch;
     }
@@ -114,6 +114,7 @@ public class ALSource {
             }
         }
     }
+
     public float getGain() {
         return ALSource.this.gain;
     }
@@ -140,7 +141,7 @@ public class ALSource {
             }
         }
     }
-    
+
     public GLVec3F getPosition() {
         return ALSource.this.position.copyTo();
     }
@@ -183,7 +184,7 @@ public class ALSource {
             }
         }
     }
-    
+
     public GLVec3F getVelocity() {
         return ALSource.this.velocity.copyTo();
     }
@@ -226,7 +227,7 @@ public class ALSource {
             }
         }
     }
-    
+
     public boolean isLooping() {
         return ALSource.this.isLooping;
     }
@@ -253,7 +254,7 @@ public class ALSource {
             }
         }
     }
-    
+
     public boolean isPlaying() {
         return ALSource.this.isPlaying;
     }
@@ -302,18 +303,18 @@ public class ALSource {
     public void enqueueBuffers(final ALBuffer... buffers) {
         this.enqueueBuffers(buffers, 0, buffers.length);
     }
-    
+
     public void enqueueBuffers(final ALBuffer[] buffers, final int offset, final int length) {
         new EnqueueBuffersTask(buffers, offset, length).alRun();
     }
-    
+
     public final class EnqueueBuffersTask extends ALTask {
 
         private final ALBuffer[] buffers;
 
         public EnqueueBuffersTask(final ALBuffer[] buffers, final int offset, final int length) {
             this.buffers = new ALBuffer[length];
-            System.arraycopy(buffers, offset, this.buffers, 0, length);            
+            System.arraycopy(buffers, offset, this.buffers, 0, length);
         }
 
         @Override
@@ -330,14 +331,14 @@ public class ALSource {
                 throw new ALException("Invalid ALSource!");
             }
         }
-    }        
-    
+    }
+
     @Override
-    public boolean equals(Object other) {        
-        if(other instanceof ALSource) {
+    public boolean equals(Object other) {
+        if (other instanceof ALSource) {
             final ALSource oSource = (ALSource) other;
-            
-            if(this.isValid() && oSource.isValid()) {
+
+            if (this.isValid() && oSource.isValid()) {
                 return oSource.source.equals(oSource.source);
             } else {
                 return false;
@@ -349,8 +350,12 @@ public class ALSource {
 
     @Override
     public int hashCode() {
-        int hash = 5;
-        hash = 79 * hash + Objects.hashCode(this.source);
-        return hash;
+        if (this.source == null) {
+            return 0;
+        } else {
+            int hash = 5;
+            hash = 79 * hash + Objects.hashCode(this.source);
+            return hash;
+        }
     }
 }

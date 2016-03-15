@@ -85,7 +85,7 @@ public class ALInputStream implements Closeable {
     @Override
     public void close() throws IOException {
         this.ain.close();
-    }
+    }        
 
     public void stream(final ALBuffer buffer) throws IOException {
         final int readCount = this.ain.read(this.inBuffer, 0, this.bufferSize);
@@ -102,9 +102,7 @@ public class ALInputStream implements Closeable {
 
             dst.put(src);
         } else {
-            while (readBuffer.hasRemaining()) {
-                outBuffer.put(readBuffer.get());
-            }
+            outBuffer.put(readBuffer);
         }
         
         outBuffer.position(0).limit(readCount);
