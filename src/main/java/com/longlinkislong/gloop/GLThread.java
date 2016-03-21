@@ -769,4 +769,13 @@ public class GLThread implements ExecutorService {
             return this.getThread().getName();
         }
     }
+
+    /**
+     * Syncs the current thread with this OpenGL thread.
+     *
+     * @since 16.03.21
+     */
+    public void sync() {
+        GLQuery.create(() -> null).glCall(this);
+    }
 }

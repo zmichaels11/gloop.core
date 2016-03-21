@@ -32,12 +32,44 @@ package com.longlinkislong.gloop;
  */
 /**
  * A task that should run on a GLThread. Tasks do not return values.
+ *
  * @author zmichaels
  */
 public abstract class GLTask implements Runnable {
 
     /**
+     * Executes the task after at least [code]frames[/code] frames have passed.
+     *
+     * @param frames the minimum number of frames to delay the task by.
+     * @since 16.03.21
+     */
+    public final void delay(final int frames) {
+        this.delay(frames, GLThread.getDefaultInstance());
+    }
+
+    /**
+     * Executes the task after at least [code]frames[/code] frames have passed.
+     *
+     * @param frames the minimum number of frames to delay the task by.
+     * @param thread the GLThread to run the task on.
+     * @since 16.03.21
+     */
+    public final void delay(final int frames, final GLThread thread) {
+        thread.submitGLTask(new GLTask() {
+            @Override
+            public void run() {
+                if (frames <= 0) {
+                    GLTask.this.run();
+                } else {
+                    GLTask.this.delay(frames - 1, thread);
+                }
+            }
+        });
+    }
+
+    /**
      * Runs the GLTask now without checking for thread safety.
+     *
      * @since 15.05.27
      */
     @Override
@@ -54,12 +86,10 @@ public abstract class GLTask implements Runnable {
     public final void glRun(final GLThread thread) {
         if (thread == null) {
             this.glRun(GLThread.getDefaultInstance());
+        } else if (thread.isCurrent()) {
+            this.run();
         } else {
-            if (thread.isCurrent()) {
-                this.run();
-            } else {
-                thread.submitGLTask(this);
-            }
+            thread.submitGLTask(this);
         }
     }
 
@@ -67,7 +97,7 @@ public abstract class GLTask implements Runnable {
      * Runs the task on the default GLThread. If the current thread is the
      * default GLThread, the task will run instantly. Otherwise it will be
      * deferred.
-     * 
+     *
      * @since 15.05.12
      */
     public final void glRun() {
@@ -78,7 +108,7 @@ public abstract class GLTask implements Runnable {
         } else {
             thread.submitGLTask(this);
         }
-    }        
+    }
 
     /**
      * Combines this GLTask and another GLTask into a single GLTask. The order

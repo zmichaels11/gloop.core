@@ -389,7 +389,7 @@ public class GLTextureParameters {
                 return this.maxLevel;
             }
 
-            this.maxLevel = (float) GLTools.getDriverInstance().textureGetMaxAnisotropy();            
+            this.maxLevel = GLTools.getDriverInstance().textureGetMaxAnisotropy();            
             this.checked = true;
 
             LOGGER.trace(

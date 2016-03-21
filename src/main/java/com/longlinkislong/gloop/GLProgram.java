@@ -160,7 +160,7 @@ public class GLProgram extends GLObject {
         if (this.uniforms.containsKey(uName)) {
             return this.uniforms.get(uName);
         } else {
-            final int uLoc = (int) GLTools.getDriverInstance().programGetUniformLocation(program, uName);
+            final int uLoc = GLTools.getDriverInstance().programGetUniformLocation(program, uName);
 
             this.uniforms.put(uName, uLoc);
 

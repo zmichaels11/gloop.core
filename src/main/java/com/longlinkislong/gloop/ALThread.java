@@ -1,7 +1,27 @@
-/*
- * To change this license header, choose License Headers in Project Properties.
- * To change this template file, choose Tools | Templates
- * and open the template in the editor.
+/* 
+ * Copyright (c) 2016, longlinkislong.com
+ * All rights reserved.
+ *
+ * Redistribution and use in source and binary forms, with or without
+ * modification, are permitted provided that the following conditions are met:
+ *
+ * * Redistributions of source code must retain the above copyright notice, this
+ *   list of conditions and the following disclaimer.
+ * * Redistributions in binary form must reproduce the above copyright notice,
+ *   this list of conditions and the following disclaimer in the documentation
+ *   and/or other materials provided with the distribution.
+ *
+ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+ * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+ * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+ * ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE
+ * LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
+ * CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
+ * SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
+ * INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
+ * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
+ * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
+ * POSSIBILITY OF SUCH DAMAGE.
  */
 package com.longlinkislong.gloop;
 
@@ -23,8 +43,11 @@ import org.slf4j.Marker;
 import org.slf4j.MarkerFactory;
 
 /**
+ * A representation of the thread that executes OpenAL calls. Currently only one
+ * OpenAL thread with a single task queue is supported.
  *
  * @author zmichaels
+ * @since 16.03.21
  */
 public final class ALThread {
 
@@ -88,13 +111,20 @@ public final class ALThread {
         THREAD_MAP.put(internalThread, this);
     }
 
+    /**
+     * Sets the ALThread to shutdown. All resources will be freed. The task
+     * queue will also be closed.
+     *
+     * @since 16.03.21
+     */
+    @SuppressWarnings("unchecked")
     public void shutdown() {
         if (isKill) {
             throw new IllegalStateException("ALThread has already shutdown!");
         }
 
         try {
-            internalExecutor.submit(() -> {
+            internalExecutor.submit(() -> {                
                 ALTools.getDriverInstance().deviceDelete(device);
                 device = null;
                 THREAD_MAP.remove(internalThread);
@@ -110,12 +140,27 @@ public final class ALThread {
         internalExecutor.shutdown();
     }
 
+    /**
+     * Submits an ALTask to run on the OpenAL thread.
+     *
+     * @param task the OpenAL task to run.
+     * @since 16.03.21
+     */
     public void submitALTask(final ALTask task) {
         if (!this.isKill) {
             this.internalExecutor.execute(Objects.requireNonNull(task));
         }
     }
 
+    /**
+     * Submits an ALQuery object and retrieves the result wrapped in a Future
+     * object.
+     *
+     * @param <ReturnType> the return type to expect.
+     * @param query the ALQuery object.
+     * @return the result wrapped in an ALFuture object.
+     * @since 16.03.21
+     */
     public <ReturnType> ALFuture<ReturnType> submitALQuery(final ALQuery<ReturnType> query) {
         if (!this.isKill) {
             final Future<ReturnType> raw = this.internalExecutor.submit(Objects.requireNonNull(query));
@@ -126,6 +171,12 @@ public final class ALThread {
         }
     }
 
+    /**
+     * Checks if the current thread is this OpenAL thread.
+     *
+     * @return true if the current thread is this OpenAL thread.
+     * @since 16.03.21
+     */
     public boolean isCurrent() {
         return Thread.currentThread() == this.internalThread;
     }
@@ -135,7 +186,22 @@ public final class ALThread {
         private static final ALThread INSTANCE = new ALThread();
     }
 
+    /**
+     * Retrieves the default OpenAL thread.
+     *
+     * @return the OpenAL thread.
+     * @since 16.03.21
+     */
     public static ALThread getDefaultInstance() {
         return DefaultHolder.INSTANCE;
+    }
+
+    /**
+     * Syncs the current thread with this OpenAL thread.
+     *
+     * @since 16.03.21
+     */
+    public void sync() {
+        ALQuery.create(() -> null).alCall(this);
     }
 }

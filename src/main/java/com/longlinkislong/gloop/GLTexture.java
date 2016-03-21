@@ -1338,9 +1338,9 @@ public class GLTexture extends GLObject {
             }
 
             if (GLTexture.this.isSparse) {
-                GLTexture.this.vpageWidth = (int) driver.textureGetPageWidth(texture);
-                GLTexture.this.vpageHeight = (int) driver.textureGetPageHeight(texture);
-                GLTexture.this.vpageDepth = (int) driver.textureGetPageDepth(texture);
+                GLTexture.this.vpageWidth = driver.textureGetPageWidth(texture);
+                GLTexture.this.vpageHeight = driver.textureGetPageHeight(texture);
+                GLTexture.this.vpageDepth = driver.textureGetPageDepth(texture);
             }
 
             LOGGER.trace(GLOOP_MARKER, "############### End GLTexture Set Attributes Task ###############");
@@ -1377,7 +1377,7 @@ public class GLTexture extends GLObject {
                 return this.maxUnits;
             }
 
-            this.maxUnits = (int) GLTools.getDriverInstance().textureGetMaxBoundTextures();
+            this.maxUnits = GLTools.getDriverInstance().textureGetMaxBoundTextures();
 
             assert this.maxUnits > 0;
 
@@ -1423,7 +1423,7 @@ public class GLTexture extends GLObject {
                 return this.maxSize;
             }
 
-            this.maxSize = (int) GLTools.getDriverInstance().textureGetMaxSize();
+            this.maxSize = GLTools.getDriverInstance().textureGetMaxSize();
 
             LOGGER.trace(GLOOP_MARKER, "############### End GLTexture Max Texture Size Query ###############");
 

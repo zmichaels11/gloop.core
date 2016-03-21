@@ -17,11 +17,13 @@ public final class ALTools {
     private ALTools() {}        
     
     private static final class DriverHolder {
+        @SuppressWarnings("rawtypes")
         private static final Driver DRIVER_INSTANCE;
-        
+                
         static {
             final DriverManager driverManager = new DriverManager();
             final String preferredDriverName = System.getProperty("com.longlinkislong.gloop.aldriver");
+            @SuppressWarnings("rawtypes")
             final Optional<Driver> preferredDriver = driverManager.selectDriverByName(preferredDriverName);
             
             if(preferredDriver.isPresent()) {
@@ -32,6 +34,7 @@ public final class ALTools {
         }
     }
     
+    @SuppressWarnings("rawtypes")
     public static final Driver getDriverInstance() {
         return DriverHolder.DRIVER_INSTANCE;
     }
