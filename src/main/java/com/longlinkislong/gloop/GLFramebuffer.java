@@ -171,7 +171,7 @@ public class GLFramebuffer extends GLObject {
      * @since 15.07.06
      */
     public boolean isValid() {
-        return framebuffer.isValid();
+        return framebuffer != null &&  framebuffer.isValid();
     }
 
     /**
