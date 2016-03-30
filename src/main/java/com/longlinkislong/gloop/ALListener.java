@@ -252,13 +252,10 @@ public final class ALListener {
 
         public SetGainTask(final float gain) {
             if (!Float.isFinite(gain)) {
-                throw new ALException("Gain must be finite on range [0.0, 1.0]!");
+                throw new ALException("Gain must be finite on range [0.0, \u221E)!");
             } else if (gain < 0.0F) {
                 LOGGER.warn("Attempted to set gain less than 0.0!");
                 this.gain = 0.0F;
-            } else if (gain > 1.0F) {
-                LOGGER.warn("Attempted to set gain above 1.0!");
-                this.gain = 1.0F;
             } else {
                 this.gain = gain;
             }

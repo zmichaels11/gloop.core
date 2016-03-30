@@ -209,12 +209,9 @@ public class ALSource {
          */
         public SetPitchTask(final float pitch) {
             if (!Float.isFinite(pitch)) {
-                throw new ALException("Pitch must be a finite value on the range [0.0, 1.0]!");
-            } else if (pitch > 1.0F) {
-                LOGGER.warn("Attempted to set pitch above 1.0!");
-                this.pitch = 1.0F;
-            } else if (pitch < 0.0F) {
-                LOGGER.warn("Attempted to set pitch below 0.0!");
+                throw new ALException("Pitch must be a finite value on the range [0.0, \u221E)!");
+            } else if (pitch <= 0.0F) {
+                LOGGER.warn("Attempted to set pitch less than or equal to 0.0!");
                 this.pitch = 0.0F;
             } else {
                 this.pitch = pitch;
@@ -265,13 +262,10 @@ public class ALSource {
 
         public SetGainTask(final float gain) {
             if (!Float.isFinite(gain)) {
-                throw new ALException("Gain must be finite on the range [0.0, 1.0]!");
+                throw new ALException("Gain must be finite on the range [0.0, \u221E)!");
             } else if (gain < 0.0F) {
                 LOGGER.warn("Attempted to set gain below 0.0!");
                 this.gain = 0.0F;
-            } else if (gain > 1.0F) {
-                LOGGER.warn("Attempted to set gain above 1.0!");
-                this.gain = 1.0F;
             } else {
                 this.gain = gain;
             }
