@@ -161,6 +161,6 @@ public class ALInputStream implements Closeable {
 
         outBuffer.position(0).limit(readCount);
         buffer.upload(this.format, outBuffer, this.sampleRate);
-        ALTask.create(() -> MemoryUtil.memFree(outBuffer)); // free on the OpenAL thread
+        ALTask.create(() -> MemoryUtil.memFree(outBuffer)).alRun(); // free on the OpenAL thread
     }
 }
