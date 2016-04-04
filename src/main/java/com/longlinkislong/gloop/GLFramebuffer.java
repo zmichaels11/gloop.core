@@ -38,6 +38,7 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
+import org.lwjgl.opengl.GL30;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.slf4j.Marker;
@@ -56,7 +57,7 @@ public class GLFramebuffer extends GLObject {
 
     private volatile transient Framebuffer framebuffer;
     private volatile int nextColorAttachment = 36064 /* GL_COLOR_ATTACHMENT0 */;
-    private final Map<String, Integer> attachments = new HashMap<>();
+    private final Map<String, Integer> colorAttachments = new HashMap<>();
     private final boolean isLocked;
     private String name = "";
 
@@ -75,7 +76,7 @@ public class GLFramebuffer extends GLObject {
                     name);
 
             this.name = name.toString();
-        });
+        }).glRun(this.getThread());
     }
 
     /**
@@ -171,7 +172,7 @@ public class GLFramebuffer extends GLObject {
      * @since 15.07.06
      */
     public boolean isValid() {
-        return framebuffer != null &&  framebuffer.isValid();
+        return framebuffer != null && framebuffer.isValid();
     }
 
     /**
@@ -280,7 +281,7 @@ public class GLFramebuffer extends GLObject {
 
             GLTools.getDriverInstance().framebufferDelete(framebuffer);
             framebuffer = null;
-            GLFramebuffer.this.attachments.clear();
+            GLFramebuffer.this.colorAttachments.clear();
             GLFramebuffer.this.nextColorAttachment = 36064 /* GL_COLOR_ATTACHMENT0 */;
 
             LOGGER.trace(GLOOP_MARKER, "############### End GLFramebuffer Delete Task ###############");
@@ -353,11 +354,11 @@ public class GLFramebuffer extends GLObject {
                 for (int i = offset; i < length; i++) {
                     final String name = attachments[i].toString();
 
-                    if (!GLFramebuffer.this.attachments.containsKey(name)) {
+                    if (!GLFramebuffer.this.colorAttachments.containsKey(name)) {
                         throw new GLException("Invalid attachment [" + name + "]!");
                     }
 
-                    final int attachId = GLFramebuffer.this.attachments.get(name);
+                    final int attachId = GLFramebuffer.this.colorAttachments.get(name);
 
                     this.attachments.put(attachId);
                     this.attachmentNames[i - offset] = name;
@@ -474,7 +475,7 @@ public class GLFramebuffer extends GLObject {
                 throw new GLException("Invalid GLFramebuffer!");
             }
 
-            GLTools.getDriverInstance().framebufferAddDepthStencilAttachment(framebuffer, depthStencilAttachment.texture, level);
+            GLTools.getDriverInstance().framebufferAddAttachment(framebuffer, GL30.GL_DEPTH_STENCIL_ATTACHMENT, depthStencilAttachment.texture, level);
             LOGGER.trace(GLOOP_MARKER, "############### End GLFramebuffer Add Depth Stencil Attachment Task ###############");
         }
     }
@@ -564,7 +565,7 @@ public class GLFramebuffer extends GLObject {
                 throw new GLException("Invalid GLFramebuffer!");
             }
 
-            GLTools.getDriverInstance().framebufferAddDepthAttachment(framebuffer, depthAttachment.texture, level);
+            GLTools.getDriverInstance().framebufferAddAttachment(framebuffer, GL30.GL_DEPTH_ATTACHMENT, depthAttachment.texture, level);
             LOGGER.trace(GLOOP_MARKER, "############### End GLFramebuffer Add Depth Attachment Task ###############");
         }
     }
@@ -599,6 +600,99 @@ public class GLFramebuffer extends GLObject {
 
         new AddColorAttachmentTask(name, attachment, level).glRun(this.getThread());
         return this;
+    }
+
+    /**
+     * Adds a renderbuffer attachment to the framebuffer. This method will fail
+     * if the renderbuffer is a color attachment.
+     *
+     * @param renderbuffer the renderbuffer object.
+     * @return self reference
+     * @since 16.04.04
+     */
+    public GLFramebuffer addRenderbufferAttachment(final GLRenderbuffer renderbuffer) {
+        new AddRenderbufferAttachmentTask(null, renderbuffer).glRun(this.getThread());
+        return this;
+    }
+
+    /**
+     * Adds a renderbuffer attachment to the framebuffer. Name is ignored if the
+     * renderbuffer is not a color attachment.
+     *
+     * @param name the name of the renderbuffer. Only makes sense for color
+     * renderbuffer objects.
+     * @param renderbuffer the renderbuffer object.
+     * @return self reference.
+     * @since 16.04.04
+     */
+    public GLFramebuffer addRenderbufferAttachment(final CharSequence name, final GLRenderbuffer renderbuffer) {
+        new AddRenderbufferAttachmentTask(name, renderbuffer).glRun(this.getThread());
+        return this;
+    }
+
+    /**
+     * GLTask that adds a GLRenderbuffer as an attachment.
+     *
+     * @since 16.04.04
+     */
+    public class AddRenderbufferAttachmentTask extends GLTask {
+
+        private final String name;
+        private final GLRenderbuffer renderbuffer;
+        private final int attachmentId;
+
+        public AddRenderbufferAttachmentTask(
+                final CharSequence name,
+                final GLRenderbuffer renderbuffer) {
+
+            this.renderbuffer = Objects.requireNonNull(renderbuffer);
+
+            switch (renderbuffer.target) {
+                case COLOR_ATTACHMENT:
+                    this.name = name.toString();
+                    this.attachmentId = GLFramebuffer.this.nextColorAttachment;
+                    GLFramebuffer.this.nextColorAttachment++;
+                    break;
+                case DEPTH_ATTACHMENT:
+                    this.name = "depth";
+                    this.attachmentId = GL30.GL_DEPTH_ATTACHMENT;
+                    break;
+                case STENCIL_ATTACHMENT:
+                    this.name = "stencil";
+                    this.attachmentId = GL30.GL_STENCIL_ATTACHMENT;
+                    break;
+                case DEPTH_STENCIL_ATTACHMENT:
+                    this.name = "depth-stencil";
+                    this.attachmentId = GL30.GL_DEPTH_STENCIL_ATTACHMENT;
+                    break;
+                default:
+                    throw new GLException("Unsupported renderbuffer attachment!");
+            }
+        }
+
+        @Override
+        public void run() {
+            LOGGER.trace(GLOOP_MARKER, "############### Start GLFramebuffer AddRenderbufferAttachment Task ###############");
+            LOGGER.trace(GLOOP_MARKER, "\tGLFramebuffer: {}", GLFramebuffer.this.getName());
+            LOGGER.trace(GLOOP_MARKER, "\tGLRenderbuffer: {}", this.renderbuffer.getName());
+            LOGGER.trace(GLOOP_MARKER, "\tAttachment type: {}", this.renderbuffer.target);
+
+            if (GLFramebuffer.this.isLocked) {
+                throw new GLException("Cannot add attachment to locked GLFramebuffer!");
+            } else if (!GLFramebuffer.this.isValid()) {
+                throw new GLException("GLFramebuffer is not valid!");
+            } else if (!this.renderbuffer.isValid()) {
+                throw new GLException("GLRenderbuffer is not valid!");
+            }
+
+            GLTools.getDriverInstance().framebufferAddRenderbuffer(framebuffer, attachmentId, this.renderbuffer.renderbuffer);
+
+            if (this.renderbuffer.target == GLRenderbuffer.TargetType.COLOR_ATTACHMENT) {
+                GLFramebuffer.this.colorAttachments.put(this.name, this.attachmentId);
+            }
+
+            LOGGER.trace(GLOOP_MARKER, "############### End GLFramebuffer AddRenderbufferAttachment Task ###############");
+        }
     }
 
     /**
@@ -646,7 +740,7 @@ public class GLFramebuffer extends GLObject {
             this.attachmentId = GLFramebuffer.this.nextColorAttachment;
 
             GLFramebuffer.this.nextColorAttachment++;
-            GLFramebuffer.this.attachments.put(
+            GLFramebuffer.this.colorAttachments.put(
                     this.attachmentName = name.toString(),
                     attachmentId);
         }
@@ -908,7 +1002,7 @@ public class GLFramebuffer extends GLObject {
             } else {
                 GLTools.getDriverInstance().framebufferGetPixels(framebuffer, x, y, width, height, format.value, type.value, pixelPackBuffer.buffer);
             }
-            
+
             LOGGER.trace(GLOOP_MARKER, "############### End GLFramebuffer Read Pixels Task ###############");
         }
     }
