@@ -53,6 +53,13 @@ public class ALSource {
     private final GLVec3F velocity = GLVec3F.create().asStaticVec();
     private boolean isLooping = false;
     private boolean isPlaying = false;
+    private float referenceDistance = 1f;
+    private float rolloffFactor = 1f;
+    private float maxDistance = Float.MAX_VALUE;
+    private float coneInnerAngle = 360f;
+    private float coneOuterAngle = 360f;
+    private float coneOuterGain = 0f;
+    
 
     /**
      * Constructs a new ALSource object. This will initialize the OpenAL
@@ -73,6 +80,116 @@ public class ALSource {
      */
     public boolean isValid() {
         return source != null && source.isValid();
+    }
+    
+    public ALSource setDistance(final float referenceDistance, final float rolloffFactor, final float maxDistance) {
+        new SetDistanceTask(referenceDistance, rolloffFactor, maxDistance).alRun();
+        return this;
+    }
+    
+    public final class SetDistanceTask extends ALTask {
+        private final float referenceDistance;
+        private final float maxDistance;
+        private final float rolloffFactor;
+        
+        public SetDistanceTask(final float referenceDistance, final float rolloffFactor, final float maxDistance) {
+            if(!Float.isFinite(referenceDistance)) {
+                throw new ALException("Reference distance must be a number!");
+            } else if(Float.isFinite(rolloffFactor)) {
+                throw new ALException("Rolloff factor must be a number!");
+            } else if(Float.isFinite(maxDistance)) {
+                throw new ALException("Max distance must be a number!");
+            } else if(referenceDistance < 0) {
+                throw new ALException("Reference distance cannot be less than 0!");
+            } else if(rolloffFactor < 0F) {
+                throw new ALException("Rolloff factor cannot be less than 0!");
+            } else if(maxDistance < 0F) {
+                throw new ALException("Max distance cannot be less than 0!");
+            } else {
+                this.referenceDistance = referenceDistance;
+                this.rolloffFactor = rolloffFactor;
+                this.maxDistance = maxDistance;
+            }
+        }
+
+        @Override
+        public void run() {
+            if(!isValid()) {
+                throw new ALException("ALSource is not valid!");
+            } else {                
+                ALTools.getDriverInstance().sourceSetDistance(
+                                source, 
+                                this.referenceDistance, 
+                                this.rolloffFactor, 
+                                this.maxDistance);
+                ALSource.this.referenceDistance = this.referenceDistance;
+                ALSource.this.rolloffFactor = this.rolloffFactor;
+                ALSource.this.maxDistance = this.maxDistance;
+            }
+        }
+    }
+    
+    public float getReferenceDistance() {
+        return this.referenceDistance;
+    }
+    
+    public float getRolloffFactor() {
+        return this.rolloffFactor;
+    }
+    
+    public float getMaxDistance() {
+        return this.maxDistance;
+    }
+    
+    public float getInnerConeAngle() {
+        return this.coneInnerAngle;
+    }
+    
+    public float getOuterConeAngle() {
+        return this.coneOuterAngle;
+    }
+    
+    public float getOuterConeGain() {
+        return this.coneOuterGain;
+    }
+    
+    public ALSource setCone(final float innerAngle, final float outerAngle, final float outerGain) {
+        new SetConeTask(innerAngle, outerAngle, outerGain).alRun();
+        return this;
+    }
+    
+    public final class SetConeTask extends ALTask {
+        private final float innerConeAngle;
+        private final float outerConeAngle;
+        private final float outerConeGain;
+        
+        public SetConeTask(final float innerAngle, final float outerAngle, final float outerGain) {
+            if(!Float.isNaN(innerAngle)) {
+                throw new ALException("Inner angle cannot be NaN!");
+            } else if(!Float.isNaN(outerAngle)) {
+                throw new ALException("Outer angle cannot be NaN!");
+            } else if(outerGain < 0F) {
+                throw new ALException("Outer gain cannot be less than 0.0!");
+            } else if(outerGain > 1F) {
+                throw new ALException("Outer gain cannot be greater than 1.0!");
+            } else {
+                this.innerConeAngle = innerAngle;
+                this.outerConeAngle = outerAngle;
+                this.outerConeGain = outerGain;
+            }
+        }
+
+        @Override
+        public void run() {
+            if(!isValid()) {
+                throw new ALException("ALSource is not valid!");
+            }
+            
+            ALTools.getDriverInstance().sourceSetCone(source, innerConeAngle, outerConeAngle, outerConeGain);
+            ALSource.this.coneInnerAngle = this.innerConeAngle;
+            ALSource.this.coneOuterAngle = this.outerConeAngle;
+            ALSource.this.coneOuterGain = this.outerConeGain;
+        }
     }
 
     /**
