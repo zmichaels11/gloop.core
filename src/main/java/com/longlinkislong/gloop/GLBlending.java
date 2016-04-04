@@ -127,7 +127,8 @@ public class GLBlending extends GLObject {
     /**
      * Sets the name of the GLBlending object
      *
-     * @param newName
+     * @param newName sets the name of the blending object.
+     * @since 16.04.04
      */
     public final void setName(final CharSequence newName) {
         GLTask.create(() -> {
