@@ -80,6 +80,8 @@ public class GLRenderbuffer extends GLObject {
                 this.target = TargetType.COLOR_ATTACHMENT;
                 break;
         }
+        
+        this.init();
     }
 
     public boolean isValid() {
