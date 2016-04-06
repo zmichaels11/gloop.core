@@ -82,9 +82,8 @@ public class ALSource {
         return source != null && source.isValid();
     }
     
-    public ALSource setDistance(final float referenceDistance, final float rolloffFactor, final float maxDistance) {
-        new SetDistanceTask(referenceDistance, rolloffFactor, maxDistance).alRun();
-        return this;
+    public void setDistance(final float referenceDistance, final float rolloffFactor, final float maxDistance) {
+        new SetDistanceTask(referenceDistance, rolloffFactor, maxDistance).alRun();        
     }
     
     public final class SetDistanceTask extends ALTask {
@@ -95,9 +94,9 @@ public class ALSource {
         public SetDistanceTask(final float referenceDistance, final float rolloffFactor, final float maxDistance) {
             if(!Float.isFinite(referenceDistance)) {
                 throw new ALException("Reference distance must be a number!");
-            } else if(Float.isFinite(rolloffFactor)) {
+            } else if(!Float.isFinite(rolloffFactor)) {
                 throw new ALException("Rolloff factor must be a number!");
-            } else if(Float.isFinite(maxDistance)) {
+            } else if(!Float.isFinite(maxDistance)) {
                 throw new ALException("Max distance must be a number!");
             } else if(referenceDistance < 0) {
                 throw new ALException("Reference distance cannot be less than 0!");
@@ -153,9 +152,8 @@ public class ALSource {
         return this.coneOuterGain;
     }
     
-    public ALSource setCone(final float innerAngle, final float outerAngle, final float outerGain) {
-        new SetConeTask(innerAngle, outerAngle, outerGain).alRun();
-        return this;
+    public void setCone(final float innerAngle, final float outerAngle, final float outerGain) {
+        new SetConeTask(innerAngle, outerAngle, outerGain).alRun();        
     }
     
     public final class SetConeTask extends ALTask {
