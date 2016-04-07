@@ -72,10 +72,12 @@ public final class ALListener {
      * Sets the position of the listener.
      *
      * @param pos the position vector.
+     * @return self reference
      * @since 16.03.21
      */
-    public void setPosition(final GLVec3 pos) {
+    public ALListener setPosition(final GLVec3 pos) {
         new SetPositionTask(Objects.requireNonNull(pos)).alRun();
+        return this;
     }
 
     /**
@@ -84,10 +86,12 @@ public final class ALListener {
      * @param x the x-position.
      * @param y the y-position.
      * @param z the z-position.
+     * @return self reference
      * @since 16.03.21
      */
-    public void setPosition(final float x, final float y, final float z) {
+    public ALListener setPosition(final float x, final float y, final float z) {
         new SetPositionTask(x, y, z).alRun();
+        return this;
     }
 
     /**
@@ -156,10 +160,12 @@ public final class ALListener {
      * Sets the velocity of the ALListener.
      *
      * @param velocity the velocity vector.
+     * @return self reference
      * @since 16.03.21
      */
-    public void setVelocity(final GLVec3 velocity) {
+    public ALListener setVelocity(final GLVec3 velocity) {
         new SetVelocityTask(velocity).alRun();
+        return this;
     }
 
     /**
@@ -168,10 +174,12 @@ public final class ALListener {
      * @param x the x-component of the velocity.
      * @param y the y-component of the velocity.
      * @param z the z-component of the velocity.
+     * @return self reference
      * @since 16.03.21
      */
-    public void setVelocity(final float x, final float y, final float z) {
+    public ALListener setVelocity(final float x, final float y, final float z) {
         new SetVelocityTask(x, y, z).alRun();
+        return this;
     }
 
     /**
@@ -240,10 +248,12 @@ public final class ALListener {
      * Sets the gain of the ALListener.
      *
      * @param gain the gain.
+     * @return self reference
      * @since 16.03.21
      */
-    public void setGain(final float gain) {
+    public ALListener setGain(final float gain) {
         new SetGainTask(gain).alRun();
+        return this;
     }
 
     public final class SetGainTask extends ALTask {
@@ -298,9 +308,11 @@ public final class ALListener {
      *
      * @param at the at-vector.
      * @param up the up-vector.
+     * @return self reference
      */
-    public void setOrientation(final GLVec3 at, final GLVec3 up) {
+    public ALListener setOrientation(final GLVec3 at, final GLVec3 up) {
         new SetOrientationTask(at, up).alRun();
+        return this;
     }
 
     /**
@@ -312,10 +324,12 @@ public final class ALListener {
      * @param upX the x-component of the up-vector.
      * @param upY the y-component of the up-vector.
      * @param upZ the z-component of the up-vector.
+     * @return self reference
      * @since 16.03.21
      */
-    public void setOrientation(final float atX, final float atY, final float atZ, final float upX, final float upY, final float upZ) {
+    public ALListener setOrientation(final float atX, final float atY, final float atZ, final float upX, final float upY, final float upZ) {
         new SetOrientationTask(atX, atY, atZ, upX, upY, upZ).alRun();
+        return this;
     }
 
     /**

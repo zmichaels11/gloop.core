@@ -27,7 +27,9 @@ package com.longlinkislong.gloop;
 
 import com.longlinkislong.gloop.alspi.Source;
 import com.longlinkislong.gloop.alspi.Driver;
+import java.util.Map;
 import java.util.Objects;
+import java.util.WeakHashMap;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -59,7 +61,6 @@ public class ALSource {
     private float coneInnerAngle = 360f;
     private float coneOuterAngle = 360f;
     private float coneOuterGain = 0f;
-    
 
     /**
      * Constructs a new ALSource object. This will initialize the OpenAL
@@ -81,28 +82,30 @@ public class ALSource {
     public boolean isValid() {
         return source != null && source.isValid();
     }
-    
-    public void setDistance(final float referenceDistance, final float rolloffFactor, final float maxDistance) {
-        new SetDistanceTask(referenceDistance, rolloffFactor, maxDistance).alRun();        
+
+    public ALSource setDistance(final float referenceDistance, final float rolloffFactor, final float maxDistance) {
+        new SetDistanceTask(referenceDistance, rolloffFactor, maxDistance).alRun();
+        return this;
     }
-    
+
     public final class SetDistanceTask extends ALTask {
+
         private final float referenceDistance;
         private final float maxDistance;
         private final float rolloffFactor;
-        
+
         public SetDistanceTask(final float referenceDistance, final float rolloffFactor, final float maxDistance) {
-            if(!Float.isFinite(referenceDistance)) {
+            if (!Float.isFinite(referenceDistance)) {
                 throw new ALException("Reference distance must be a number!");
-            } else if(!Float.isFinite(rolloffFactor)) {
+            } else if (!Float.isFinite(rolloffFactor)) {
                 throw new ALException("Rolloff factor must be a number!");
-            } else if(!Float.isFinite(maxDistance)) {
+            } else if (!Float.isFinite(maxDistance)) {
                 throw new ALException("Max distance must be a number!");
-            } else if(referenceDistance < 0) {
+            } else if (referenceDistance < 0) {
                 throw new ALException("Reference distance cannot be less than 0!");
-            } else if(rolloffFactor < 0F) {
+            } else if (rolloffFactor < 0F) {
                 throw new ALException("Rolloff factor cannot be less than 0!");
-            } else if(maxDistance < 0F) {
+            } else if (maxDistance < 0F) {
                 throw new ALException("Max distance cannot be less than 0!");
             } else {
                 this.referenceDistance = referenceDistance;
@@ -113,62 +116,64 @@ public class ALSource {
 
         @Override
         public void run() {
-            if(!isValid()) {
+            if (!isValid()) {
                 throw new ALException("ALSource is not valid!");
-            } else {                
+            } else {
                 ALTools.getDriverInstance().sourceSetDistance(
-                                source, 
-                                this.referenceDistance, 
-                                this.rolloffFactor, 
-                                this.maxDistance);
+                        source,
+                        this.referenceDistance,
+                        this.rolloffFactor,
+                        this.maxDistance);
                 ALSource.this.referenceDistance = this.referenceDistance;
                 ALSource.this.rolloffFactor = this.rolloffFactor;
                 ALSource.this.maxDistance = this.maxDistance;
             }
         }
     }
-    
+
     public float getReferenceDistance() {
         return this.referenceDistance;
     }
-    
+
     public float getRolloffFactor() {
         return this.rolloffFactor;
     }
-    
+
     public float getMaxDistance() {
         return this.maxDistance;
     }
-    
+
     public float getInnerConeAngle() {
         return this.coneInnerAngle;
     }
-    
+
     public float getOuterConeAngle() {
         return this.coneOuterAngle;
     }
-    
+
     public float getOuterConeGain() {
         return this.coneOuterGain;
     }
-    
-    public void setCone(final float innerAngle, final float outerAngle, final float outerGain) {
-        new SetConeTask(innerAngle, outerAngle, outerGain).alRun();        
+
+    public ALSource setCone(final float innerAngle, final float outerAngle, final float outerGain) {
+        new SetConeTask(innerAngle, outerAngle, outerGain).alRun();
+        return this;
     }
-    
+
     public final class SetConeTask extends ALTask {
+
         private final float innerConeAngle;
         private final float outerConeAngle;
         private final float outerConeGain;
-        
+
         public SetConeTask(final float innerAngle, final float outerAngle, final float outerGain) {
-            if(!Float.isNaN(innerAngle)) {
+            if (!Float.isNaN(innerAngle)) {
                 throw new ALException("Inner angle cannot be NaN!");
-            } else if(!Float.isNaN(outerAngle)) {
+            } else if (!Float.isNaN(outerAngle)) {
                 throw new ALException("Outer angle cannot be NaN!");
-            } else if(outerGain < 0F) {
+            } else if (outerGain < 0F) {
                 throw new ALException("Outer gain cannot be less than 0.0!");
-            } else if(outerGain > 1F) {
+            } else if (outerGain > 1F) {
                 throw new ALException("Outer gain cannot be greater than 1.0!");
             } else {
                 this.innerConeAngle = innerAngle;
@@ -179,10 +184,10 @@ public class ALSource {
 
         @Override
         public void run() {
-            if(!isValid()) {
+            if (!isValid()) {
                 throw new ALException("ALSource is not valid!");
             }
-            
+
             ALTools.getDriverInstance().sourceSetCone(source, innerConeAngle, outerConeAngle, outerConeGain);
             ALSource.this.coneInnerAngle = this.innerConeAngle;
             ALSource.this.coneOuterAngle = this.outerConeAngle;
@@ -246,10 +251,12 @@ public class ALSource {
      * Sets the current buffer for the ALSource object.
      *
      * @param buffer the buffer object.
+     * @return self reference
      * @since 16.03.21
      */
-    public void setBuffer(final ALBuffer buffer) {
+    public ALSource setBuffer(final ALBuffer buffer) {
         new SetBufferTask(buffer).alRun();
+        return this;
     }
 
     /**
@@ -301,10 +308,12 @@ public class ALSource {
      * Sets the pitch for the ALSource object.
      *
      * @param pitch the pitch value.
+     * @return self reference
      * @since 16.03.21
      */
-    public void setPitch(final float pitch) {
+    public ALSource setPitch(final float pitch) {
         new SetPitchTask(pitch).alRun();
+        return this;
     }
 
     /**
@@ -360,10 +369,12 @@ public class ALSource {
      * Sets the gain for the ALSource object.
      *
      * @param gain the gain.
+     * @return self reference
      * @since 16.03.21
      */
-    public void setGain(final float gain) {
+    public ALSource setGain(final float gain) {
         new SetGainTask(gain).alRun();
+        return this;
     }
 
     /**
@@ -415,20 +426,24 @@ public class ALSource {
      * @param x the x-position of the source.
      * @param y the y-position of the source.
      * @param z the z-position of the source.
+     * @return self reference
      * @since 16.03.21
      */
-    public void setPosition(final float x, final float y, final float z) {
+    public ALSource setPosition(final float x, final float y, final float z) {
         new SetPositionTask(x, y, z).alRun();
+        return this;
     }
 
     /**
      * Sets the position of the ALSource object.
      *
      * @param pos the vector position of the source.
+     * @return self reference
      * @since 16.03.21
      */
-    public void setPosition(final GLVec3 pos) {
+    public ALSource setPosition(final GLVec3 pos) {
         new SetPositionTask(Objects.requireNonNull(pos)).alRun();
+        return this;
     }
 
     /**
@@ -499,20 +514,24 @@ public class ALSource {
      * @param x the x-position of the velocity.
      * @param y the y-position of the velocity.
      * @param z the z-position of the velocity.
+     * @return self reference
      * @since 16.03.21
      */
-    public void setVelocity(final float x, final float y, final float z) {
+    public ALSource setVelocity(final float x, final float y, final float z) {
         new SetVelocityTask(x, y, z).alRun();
+        return this;
     }
 
     /**
      * Sets the velocity of the ALSource object.
      *
      * @param vec the velocity vector.
+     * @return self reference
      * @since 16.03.21
      */
-    public void setVelocity(final GLVec3 vec) {
+    public ALSource setVelocity(final GLVec3 vec) {
         new SetVelocityTask(Objects.requireNonNull(vec)).alRun();
+        return this;
     }
 
     /**
@@ -580,10 +599,12 @@ public class ALSource {
      * Sets the ALSource to loop the ALBuffer object assigned to it.
      *
      * @param shouldLoop true if the ALSource should loop.
+     * @return self reference
      * @since 16.03.21
      */
-    public void setLooping(final boolean shouldLoop) {
+    public ALSource setLooping(final boolean shouldLoop) {
         new SetLoopingTask(shouldLoop).alRun();
+        return this;
     }
 
     /**
@@ -696,10 +717,11 @@ public class ALSource {
      * Queues a set of buffers for processing.
      *
      * @param buffers the buffers to process.
+     * @return self reference
      * @since 16.03.21
      */
-    public void enqueueBuffers(final ALBuffer... buffers) {
-        this.enqueueBuffers(buffers, 0, buffers.length);
+    public ALSource enqueueBuffers(final ALBuffer... buffers) {
+        return this.enqueueBuffers(buffers, 0, buffers.length);
     }
 
     /**
@@ -708,10 +730,12 @@ public class ALSource {
      * @param buffers the array of buffers to read the buffers from.
      * @param offset the offset to begin reading from the array.
      * @param length the number of buffers to read.
+     * @return self reference
      * @since 16.03.21
      */
-    public void enqueueBuffers(final ALBuffer[] buffers, final int offset, final int length) {
+    public ALSource enqueueBuffers(final ALBuffer[] buffers, final int offset, final int length) {
         new EnqueueBuffersTask(buffers, offset, length).alRun();
+        return this;
     }
 
     /**
@@ -776,6 +800,161 @@ public class ALSource {
             int hash = 5;
             hash = 79 * hash + Objects.hashCode(this.source);
             return hash;
+        }
+    }
+
+    private int nextSend = 0;
+    private final Map<ALAuxiliaryEffectSlot, Integer> usedSends = new WeakHashMap<>();
+
+    public ALSource attachAuxiliaryEffectSlotSend(final ALAuxiliaryEffectSlot effectSlot) {
+        return this.attachAuxiliaryEffectSlotSend(effectSlot, null);
+    }
+    
+    public ALSource attachAuxiliaryEffectSlotSend(final ALAuxiliaryEffectSlot effectSlot, final ALFilter filter) {
+        new AttachAuxiliaryEffectSlotSendTask(effectSlot, filter).alRun();
+        return this;
+    }
+
+    public final class AttachAuxiliaryEffectSlotSendTask extends ALTask {
+
+        final ALAuxiliaryEffectSlot effectSlot;
+        final ALFilter filter;
+
+        public AttachAuxiliaryEffectSlotSendTask(final ALAuxiliaryEffectSlot effectSlot) {
+            this(effectSlot, null);
+        }
+
+        public AttachAuxiliaryEffectSlotSendTask(final ALAuxiliaryEffectSlot effectSlot, final ALFilter filter) {
+            this.effectSlot = Objects.requireNonNull(effectSlot);
+            this.filter = filter;
+        }
+
+        @Override
+        public void run() {
+            if (!isValid()) {
+                throw new ALException("Source is not valid!");
+            } else if (!effectSlot.isValid()) {
+                throw new ALException("Effect slot is not valid!");
+            } else if (this.filter == null) {
+                ALTools.getDriverInstance().sourceSendAuxiliaryEffectSlot(source, effectSlot.effectSlot, nextSend);
+                usedSends.put(effectSlot, nextSend);
+                nextSend++;
+            } else if (this.filter.isValid()) {
+                ALTools.getDriverInstance().sourceSendAuxiliaryEffectSlot(source, effectSlot.effectSlot, nextSend, filter.filter);
+                usedSends.put(effectSlot, nextSend);
+                nextSend++;
+            } else {
+                throw new ALException("Filter is not valid!");
+            }
+        }
+    }
+
+    /**
+     * Removes an attached auxiliary effect slot.
+     *
+     * @param effectSlot the effect slot to remove.
+     * @return self reference.
+     * @since 16.04.07
+     */
+    public ALSource removeAuxiliaryEffectSlotSend(final ALAuxiliaryEffectSlot effectSlot) {
+        new RemoveAuxilaryEffectSlotSendTask(effectSlot).alRun();
+        return this;
+    }
+
+    public final class RemoveAuxilaryEffectSlotSendTask extends ALTask {
+
+        final ALAuxiliaryEffectSlot effectSlot;
+
+        public RemoveAuxilaryEffectSlotSendTask(final ALAuxiliaryEffectSlot effectSlot) {
+            this.effectSlot = Objects.requireNonNull(effectSlot);
+        }
+
+        @Override
+        public void run() {
+            if (!isValid()) {
+                throw new ALException("ALSource is not valid!");
+            } else {
+                final int send = usedSends.get(this.effectSlot);
+
+                ALTools.getDriverInstance().sourceSendDisable(source, send);
+                usedSends.remove(this.effectSlot);
+            }
+        }
+    }
+
+    /**
+     * Attaches a direct filter.
+     *
+     * @param filter the filter to attach. Null will remove any attached filter.
+     * @return self reference.
+     * @since 16.04.07
+     */
+    public ALSource attachDirectFilter(final ALFilter filter) {
+        new AttachDirectFilterTask(filter).alRun();
+        return this;
+    }
+
+    /**
+     * An ALTask that attaches a direct filter.
+     *
+     * @since 16.04.07
+     */
+    public final class AttachDirectFilterTask extends ALTask {
+
+        final ALFilter filter;
+
+        /**
+         * Constructs a new AttachDirectFilterTask.
+         *
+         * @param filter the filter to attach. If null, this task will behave
+         * like RemoveDirectFilterTask.
+         * @since 16.04.07
+         */
+        public AttachDirectFilterTask(final ALFilter filter) {
+            this.filter = filter;
+        }
+
+        @Override
+        public void run() {
+            if (!isValid()) {
+                throw new ALException("ALSource is not valid!");
+            } else if (filter == null) {
+                ALTools.getDriverInstance().sourceRemoveDirectFilter(source);
+            } else if (!filter.isValid()) {
+                throw new ALException("ALFilter is not valid!");
+            } else {
+                ALTools.getDriverInstance().sourceAttachDirectFilter(source, filter.filter);
+            }
+        }
+    }
+
+    /**
+     * Removes any attached direct filter. This operation does nothing if no
+     * direct filter is attached.
+     *
+     * @return self reference.
+     * @since 16.04.07
+     */
+    public ALSource removeDirectFilter() {
+        new RemoveDirectFilterTask().alRun();
+        return this;
+    }
+
+    /**
+     * An ALTask that removes any attached direct filter. This task does nothing
+     * if no direct filter is attached.
+     *
+     * @since 16.04.07
+     */
+    public final class RemoveDirectFilterTask extends ALTask {
+
+        @Override
+        public void run() {
+            if (!isValid()) {
+                throw new ALException("ALSource is not valid!");
+            } else {
+                ALTools.getDriverInstance().sourceRemoveDirectFilter(source);
+            }
         }
     }
 }
