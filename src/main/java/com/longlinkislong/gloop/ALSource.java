@@ -29,6 +29,8 @@ import com.longlinkislong.gloop.alspi.Source;
 import com.longlinkislong.gloop.alspi.Driver;
 import java.util.Map;
 import java.util.Objects;
+import java.util.PriorityQueue;
+import java.util.Queue;
 import java.util.WeakHashMap;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -211,6 +213,12 @@ public class ALSource {
                 throw new ALException("ALSource is already initialized!");
             } else {
                 source = ALTools.getDriverInstance().sourceCreate();
+                
+                final int auxSends = ALTools.getDriverInstance().sourceGetMaxAuxiliaryEffectSlotSends();
+                
+                for(int i = 0; i < auxSends; i++) {
+                    sends.add(i);
+                }
             }
         }
     }
@@ -803,7 +811,7 @@ public class ALSource {
         }
     }
 
-    private int nextSend = 0;
+    private final Queue<Integer> sends = new PriorityQueue<>();
     private final Map<ALAuxiliaryEffectSlot, Integer> usedSends = new WeakHashMap<>();
 
     public ALSource attachAuxiliaryEffectSlotSend(final ALAuxiliaryEffectSlot effectSlot) {
@@ -835,14 +843,18 @@ public class ALSource {
                 throw new ALException("Source is not valid!");
             } else if (!effectSlot.isValid()) {
                 throw new ALException("Effect slot is not valid!");
+            } else if(sends.isEmpty()) {
+                throw new ALException("Unable to attach Auxiliary Effect Slot to ALSource! No more sends!");
             } else if (this.filter == null) {
-                ALTools.getDriverInstance().sourceSendAuxiliaryEffectSlot(source, effectSlot.effectSlot, nextSend);
-                usedSends.put(effectSlot, nextSend);
-                nextSend++;
+                final int send = sends.poll();
+                
+                ALTools.getDriverInstance().sourceSendAuxiliaryEffectSlot(source, effectSlot.effectSlot, send);
+                usedSends.put(effectSlot, send);                
             } else if (this.filter.isValid()) {
-                ALTools.getDriverInstance().sourceSendAuxiliaryEffectSlot(source, effectSlot.effectSlot, nextSend, filter.filter);
-                usedSends.put(effectSlot, nextSend);
-                nextSend++;
+                final int send = sends.poll();
+                
+                ALTools.getDriverInstance().sourceSendAuxiliaryEffectSlot(source, effectSlot.effectSlot, send, filter.filter);
+                usedSends.put(effectSlot, send);                
             } else {
                 throw new ALException("Filter is not valid!");
             }
@@ -878,6 +890,7 @@ public class ALSource {
 
                 ALTools.getDriverInstance().sourceSendDisable(source, send);
                 usedSends.remove(this.effectSlot);
+                sends.add(send); // requeue the send
             }
         }
     }
