@@ -11,7 +11,7 @@ import org.lwjgl.openal.EXTEfx;
  *
  * @author zmichaels
  */
-public final class ALHighpassFilter extends ALFilter {
+public final class ALFilterHighpass extends ALFilter {
 
     public static final float DEFAULT_GAIN = 1.0f;
     public static final float DEFAULT_GAINLF = 1.0f;
@@ -19,7 +19,7 @@ public final class ALHighpassFilter extends ALFilter {
     private float gain = DEFAULT_GAIN;
     private float gainLF = DEFAULT_GAINLF;
 
-    public ALHighpassFilter() {
+    public ALFilterHighpass() {
         super(ALFilterType.AL_FILTER_HIGHPASS);
 
     }
@@ -35,7 +35,7 @@ public final class ALHighpassFilter extends ALFilter {
         return this.gain;
     }
 
-    public ALHighpassFilter setGain(final float gain) {
+    public ALFilterHighpass setGain(final float gain) {
         new SetGainTask(gain).alRun();
         return this;
     }
@@ -52,7 +52,7 @@ public final class ALHighpassFilter extends ALFilter {
         @Override
         public void run() {
             super.run();
-            ALHighpassFilter.this.gain = this.gain;
+            ALFilterHighpass.this.gain = this.gain;
         }
     }
 
@@ -60,7 +60,7 @@ public final class ALHighpassFilter extends ALFilter {
         return this.gainLF;
     }
     
-    public ALHighpassFilter setGainLF(final float gainLF) {
+    public ALFilterHighpass setGainLF(final float gainLF) {
         new SetGainLFTask(gainLF).alRun();
         return this;
     }
@@ -77,7 +77,7 @@ public final class ALHighpassFilter extends ALFilter {
         @Override
         public void run() {
             super.run();
-            ALHighpassFilter.this.gainLF = this.gainLF;
+            ALFilterHighpass.this.gainLF = this.gainLF;
         }
     }
 }

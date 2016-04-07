@@ -11,7 +11,7 @@ import org.lwjgl.openal.EXTEfx;
  *
  * @author zmichaels
  */
-public final class ALLowpassFilter extends ALFilter {
+public final class ALFilterLowpass extends ALFilter {
 
     public static final float DEFAULT_GAIN = 1.0f;
     public static final float DEFAULT_GAINHF = 1.0f;
@@ -26,7 +26,7 @@ public final class ALLowpassFilter extends ALFilter {
         this.gainHF = DEFAULT_GAINHF;
     }
 
-    public ALLowpassFilter() {
+    public ALFilterLowpass() {
         super(ALFilterType.AL_FILTER_LOWPASS);
     }
 
@@ -38,7 +38,7 @@ public final class ALLowpassFilter extends ALFilter {
         return this.gainHF;
     }
 
-    public ALLowpassFilter setGain(final float gain) {
+    public ALFilterLowpass setGain(final float gain) {
         new SetGainTask(gain).alRun();
         return this;
     }
@@ -55,11 +55,11 @@ public final class ALLowpassFilter extends ALFilter {
         @Override
         public void run() {
             super.run();
-            ALLowpassFilter.this.gain = this.gain;
+            ALFilterLowpass.this.gain = this.gain;
         }
     }
 
-    public ALLowpassFilter setGainHF(final float gainHF) {
+    public ALFilterLowpass setGainHF(final float gainHF) {
         new SetGainHFTask(gainHF).alRun();
         return this;
     }
@@ -76,7 +76,7 @@ public final class ALLowpassFilter extends ALFilter {
         @Override
         public void run() {
             super.run();
-            ALLowpassFilter.this.gainHF = this.gainHF;
+            ALFilterLowpass.this.gainHF = this.gainHF;
         }
     }
 }

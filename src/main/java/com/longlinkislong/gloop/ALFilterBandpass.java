@@ -11,7 +11,7 @@ import org.lwjgl.openal.EXTEfx;
  *
  * @author zmichaels
  */
-public class ALBandpassFilter extends ALFilter {
+public class ALFilterBandpass extends ALFilter {
 
     public static final float DEFAULT_GAIN = 1.0f;
     public static final float DEFAULT_GAINLF = 1.0f;
@@ -21,7 +21,7 @@ public class ALBandpassFilter extends ALFilter {
     private float gainLF = DEFAULT_GAINLF;
     private float gainHF = DEFAULT_GAINHF;
 
-    public ALBandpassFilter() {
+    public ALFilterBandpass() {
         super(ALFilterType.AL_FILTER_BANDPASS);
     }
 
@@ -44,7 +44,7 @@ public class ALBandpassFilter extends ALFilter {
         return this.gainHF;
     }
 
-    public ALBandpassFilter setGain(final float gain) {
+    public ALFilterBandpass setGain(final float gain) {
         new SetGainTask(gain).alRun();
         return this;
     }
@@ -61,11 +61,11 @@ public class ALBandpassFilter extends ALFilter {
         @Override
         public void run() {
             super.run();
-            ALBandpassFilter.this.gain = this.gain;
+            ALFilterBandpass.this.gain = this.gain;
         }
     }
     
-    public ALBandpassFilter setGainLF(final float gainLF) {
+    public ALFilterBandpass setGainLF(final float gainLF) {
         new SetGainLFTask(gainLF).alRun();
         return this;
     }
@@ -82,11 +82,11 @@ public class ALBandpassFilter extends ALFilter {
         @Override
         public void run() {
             super.run();
-            ALBandpassFilter.this.gainLF = this.gainLF;
+            ALFilterBandpass.this.gainLF = this.gainLF;
         }
     }
 
-    public ALBandpassFilter setGainHF(final float gainHF) {
+    public ALFilterBandpass setGainHF(final float gainHF) {
         new SetGainHFTask(gainHF).alRun();
         return this;
     }
@@ -103,7 +103,7 @@ public class ALBandpassFilter extends ALFilter {
         @Override
         public void run() {
             super.run();
-            ALBandpassFilter.this.gainHF = this.gainHF;
+            ALFilterBandpass.this.gainHF = this.gainHF;
         }
     }
 }
