@@ -77,6 +77,11 @@ public final class ALEffectDistortion extends ALEffect {
         return this;
     }       
     
+    public ALEffectDistortion setEqBandwidth(final float eqBandwidth) {
+        new SetEqBandwidthTask(eqBandwidth).alRun();
+        return this;
+    }
+    
     public final class SetEdgeTask extends SetPropertyFTask {
         private final float edge;
         
