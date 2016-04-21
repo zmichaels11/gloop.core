@@ -779,6 +779,8 @@ public class GLVertexArray extends GLObject {
             if (GLVertexArray.this.isValid()) {
                 GLTools.getDriverInstance().vertexArrayDelete(vao);
                 vao = null;
+            } else {
+                LOGGER.warn(GLOOP_MARKER, "Attempted to delete invalid GLVertexArray!");
             }
 
             LOGGER.trace(GLOOP_MARKER, "############### End GLVertexArray Delete Task ###############");

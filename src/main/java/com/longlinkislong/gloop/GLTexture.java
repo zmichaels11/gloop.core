@@ -433,7 +433,7 @@ public class GLTexture extends GLObject {
                 GLTexture.this.isSparse = false;
                 GLTexture.this.name = "";
             } else {
-                throw new GLException("GLTexture is not valid! Cannot delete a texture if it does not exist.");
+                LOGGER.warn(GLOOP_MARKER, "Attempted to delete invalid GLTexture!");
             }
 
             LOGGER.trace(

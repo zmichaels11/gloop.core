@@ -30,6 +30,8 @@ import java.nio.ByteBuffer;
 import java.util.Objects;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.slf4j.Marker;
+import org.slf4j.MarkerFactory;
 
 /**
  * ALBuffer represents data that can be sent to an OpenAL device.
@@ -38,7 +40,7 @@ import org.slf4j.LoggerFactory;
  * @since 16.03.21
  */
 public class ALBuffer {
-
+    private static final Marker GL_MARKER = MarkerFactory.getMarker("GLOOP");
     private static final Logger LOGGER = LoggerFactory.getLogger("ALBuffer");
 
     static {
@@ -165,7 +167,7 @@ public class ALBuffer {
                 ALTools.getDriverInstance().bufferDelete(buffer);
                 buffer = null;
             } else {
-                LOGGER.warn("Attempted to delete invalid ALBuffer!");
+                LOGGER.warn(GL_MARKER, "Attempted to delete invalid ALBuffer!");
             }
         }
     }

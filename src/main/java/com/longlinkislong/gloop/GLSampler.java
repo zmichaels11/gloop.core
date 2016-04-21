@@ -44,7 +44,7 @@ import org.slf4j.MarkerFactory;
  */
 public class GLSampler extends GLObject {
 
-    private static final Marker GLOOP_MARKER = MarkerFactory.getMarker("GLOOP");
+    private static final Marker GL_MARKER = MarkerFactory.getMarker("GLOOP");
     private static final Logger LOGGER = LoggerFactory.getLogger("GLSampler");
 
     private volatile transient Sampler sampler;
@@ -62,7 +62,7 @@ public class GLSampler extends GLObject {
     public final void setName(final CharSequence newName) {
         GLTask.create(() -> {
             LOGGER.trace(
-                    GLOOP_MARKER,
+                    GL_MARKER,
                     "Renamed GLSampler[{}] to GLSampler[{}]!",
                     this.name,
                     newName);
@@ -180,7 +180,7 @@ public class GLSampler extends GLObject {
         @SuppressWarnings({"rawtypes", "unchecked"})
         @Override
         public void run() {
-            LOGGER.trace(GLOOP_MARKER, "############### Start GLSampler Init Task ###############");
+            LOGGER.trace(GL_MARKER, "############### Start GLSampler Init Task ###############");
 
             if (GLSampler.this.isLocked) {
                 throw new GLException("Cannot initialize the null instance of the GLSampler object!");
@@ -202,11 +202,11 @@ public class GLSampler extends GLObject {
             driver.samplerSetParameter(sampler, 34046 /* GL_TEXTURE_MAX_ANISOTROPY_EXT */, GLSampler.this.parameters.anisotropicLevel);
 
             LOGGER.trace(
-                    GLOOP_MARKER,
+                    GL_MARKER,
                     "Initialized GLSampler[{}]!",
                     GLSampler.this.getName());
 
-            LOGGER.trace(GLOOP_MARKER, "############### End GLSampler Init Task ###############");
+            LOGGER.trace(GL_MARKER, "############### End GLSampler Init Task ###############");
         }
     }
 
@@ -245,16 +245,16 @@ public class GLSampler extends GLObject {
         @SuppressWarnings("unchecked")
         @Override
         public void run() {
-            LOGGER.trace(GLOOP_MARKER, "############### Start GLSampler Bind Task ###############");
-            LOGGER.trace(GLOOP_MARKER, "\tBinding GLSampler[{}]", getName());
-            LOGGER.trace(GLOOP_MARKER, "\tTexture unit: {}", this.unit);
+            LOGGER.trace(GL_MARKER, "############### Start GLSampler Bind Task ###############");
+            LOGGER.trace(GL_MARKER, "\tBinding GLSampler[{}]", getName());
+            LOGGER.trace(GL_MARKER, "\tTexture unit: {}", this.unit);
 
             if (!GLSampler.this.isValid()) {
                 throw new GLException("Invalid GLSampler!");
             }
 
             GLTools.getDriverInstance().samplerBind(unit, sampler);
-            LOGGER.trace(GLOOP_MARKER, "############### End GLSampler Bind Task ###############");
+            LOGGER.trace(GL_MARKER, "############### End GLSampler Bind Task ###############");
         }
     }
 
@@ -278,18 +278,19 @@ public class GLSampler extends GLObject {
         @SuppressWarnings("unchecked")
         @Override
         public void run() {
-            LOGGER.trace(GLOOP_MARKER, "############### Start GLSampler Delete Task ###############");
-            LOGGER.trace(GLOOP_MARKER, "\tDeleting GLSampler[{}]", GLSampler.this.getName());
+            LOGGER.trace(GL_MARKER, "############### Start GLSampler Delete Task ###############");
+            LOGGER.trace(GL_MARKER, "\tDeleting GLSampler[{}]", GLSampler.this.getName());
 
             if (!GLSampler.this.isValid()) {
-                throw new GLException("GLSampler is invalid!");
+                LOGGER.warn(GL_MARKER, "Attempted to delete invalid GLSampler!");
             } else if (GLSampler.this.isLocked) {
-                throw new GLException("Cannot delete default GLSampler!");
+                LOGGER.error(GL_MARKER, "Attempted to delete locked GLSampler!");
+            } else {
+                GLTools.getDriverInstance().samplerDelete(sampler);
+                sampler = null;
             }
-
-            GLTools.getDriverInstance().samplerDelete(sampler);
-            sampler = null;
-            LOGGER.trace(GLOOP_MARKER, "############### End GLSampler Delete Task ###############");
+            
+            LOGGER.trace(GL_MARKER, "############### End GLSampler Delete Task ###############");
         }
     }
 

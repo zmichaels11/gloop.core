@@ -24,9 +24,8 @@ public class GLRenderbuffer extends GLObject {
         STENCIL_ATTACHMENT,
         DEPTH_STENCIL_ATTACHMENT
     }
-    
-    
-    private static final Marker GLOOP_MARKER = MarkerFactory.getMarker("GLOOP");
+
+    private static final Marker GL_MARKER = MarkerFactory.getMarker("GLOOP");
     private static final Logger LOGGER = LoggerFactory.getLogger("GLRenderbuffer");
 
     volatile transient Renderbuffer renderbuffer = null;
@@ -34,11 +33,11 @@ public class GLRenderbuffer extends GLObject {
     private final int width;
     private final int height;
     final TargetType target;
-    private String name = "";    
+    private String name = "";
 
     public final void setName(final CharSequence name) {
         GLTask.create(() -> {
-            LOGGER.trace(GLOOP_MARKER, "Renamed GLRenderbuffer[{}] to GLRenderbuffer[{}]",
+            LOGGER.trace(GL_MARKER, "Renamed GLRenderbuffer[{}] to GLRenderbuffer[{}]",
                     this.name,
                     name);
 
@@ -64,8 +63,8 @@ public class GLRenderbuffer extends GLObject {
         } else if ((this.height = height) < 1) {
             throw new IllegalArgumentException("Height cannot be less than 1!");
         }
-        
-        switch(internalFormat) {
+
+        switch (internalFormat) {
             case GL_DEPTH_COMPONENT16:
             case GL_DEPTH_COMPONENT24:
             case GL_DEPTH_COMPONENT32:
@@ -80,7 +79,7 @@ public class GLRenderbuffer extends GLObject {
                 this.target = TargetType.COLOR_ATTACHMENT;
                 break;
         }
-        
+
         this.init();
     }
 
@@ -100,7 +99,7 @@ public class GLRenderbuffer extends GLObject {
 
         @Override
         public void run() {
-            LOGGER.trace(GLOOP_MARKER, "############### Start GLRenderbuffer Init Task ###############");
+            LOGGER.trace(GL_MARKER, "############### Start GLRenderbuffer Init Task ###############");
 
             if (GLRenderbuffer.this.isValid()) {
                 throw new GLException("GLRenderbuffer already initialized!");
@@ -113,8 +112,8 @@ public class GLRenderbuffer extends GLObject {
 
             GLRenderbuffer.this.name = "id=" + renderbuffer.hashCode();
 
-            LOGGER.trace(GLOOP_MARKER, "Initialized GLRenderbuffer[{}]!", GLRenderbuffer.this.name);
-            LOGGER.trace(GLOOP_MARKER, "############### End GLRenderer Init Task ###############");
+            LOGGER.trace(GL_MARKER, "Initialized GLRenderbuffer[{}]!", GLRenderbuffer.this.name);
+            LOGGER.trace(GL_MARKER, "############### End GLRenderer Init Task ###############");
         }
     }
 
@@ -122,17 +121,17 @@ public class GLRenderbuffer extends GLObject {
 
         @Override
         public void run() {
-            LOGGER.trace(GLOOP_MARKER, "############### Start GLRenderbuffer Delete Task ###############");
-            LOGGER.trace(GLOOP_MARKER, "\tDeleting GLRenderbuffer[{}]", GLRenderbuffer.this.getName());
+            LOGGER.trace(GL_MARKER, "############### Start GLRenderbuffer Delete Task ###############");
+            LOGGER.trace(GL_MARKER, "\tDeleting GLRenderbuffer[{}]", GLRenderbuffer.this.getName());
 
             if (!GLRenderbuffer.this.isValid()) {
-                throw new GLException("GLRenderbuffer is not valid!");
+                LOGGER.warn(GL_MARKER, "Attempted to delete invalid GLRenderbuffer!");
+            } else {
+                GLTools.getDriverInstance().renderbufferDelete(GLRenderbuffer.this.renderbuffer);
+                GLRenderbuffer.this.renderbuffer = null;
             }
 
-            GLTools.getDriverInstance().renderbufferDelete(GLRenderbuffer.this.renderbuffer);
-            GLRenderbuffer.this.renderbuffer = null;
-
-            LOGGER.trace(GLOOP_MARKER, "############### End GLRendebruffer Delete Task ###############");
+            LOGGER.trace(GL_MARKER, "############### End GLRendebruffer Delete Task ###############");
         }
     }
 }

@@ -34,6 +34,8 @@ import java.util.Queue;
 import java.util.WeakHashMap;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.slf4j.Marker;
+import org.slf4j.MarkerFactory;
 
 /**
  * An object that wraps the OpenAL source object. A source object represents
@@ -43,7 +45,7 @@ import org.slf4j.LoggerFactory;
  * @since 16.03.21
  */
 public class ALSource {
-
+    private static final Marker GL_MARKER = MarkerFactory.getMarker("GLOOP");
     private static final Logger LOGGER = LoggerFactory.getLogger("ALSource");
 
     static {
@@ -250,7 +252,7 @@ public class ALSource {
                 ALTools.getDriverInstance().sourceDelete(source);
                 source = null;
             } else {
-                LOGGER.warn("ALSource.DeleteTask called when ALSource object is not valid!");
+                LOGGER.warn(GL_MARKER, "Attempted to delete invalid ALSource!");
             }
         }
     }

@@ -276,6 +276,8 @@ public class GLShader extends GLObject {
             if (GLShader.this.isValid()) {
                 GLTools.getDriverInstance().shaderDelete(shader);
                 shader = null;
+            } else {
+                LOGGER.warn(GLOOP_MARKER, "Attempted to delete invalid GLShader!");
             }
 
             LOGGER.trace(GLOOP_MARKER, "############### End GLShader Delete Task ###############");

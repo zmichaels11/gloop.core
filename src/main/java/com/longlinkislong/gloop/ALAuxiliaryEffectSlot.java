@@ -7,6 +7,10 @@ package com.longlinkislong.gloop;
 
 import com.longlinkislong.gloop.alspi.AuxiliaryEffectSlot;
 import java.util.Objects;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.slf4j.Marker;
+import org.slf4j.MarkerFactory;
 
 /**
  *
@@ -14,16 +18,18 @@ import java.util.Objects;
  */
 public class ALAuxiliaryEffectSlot {
 
+    private static final Logger LOGGER = LoggerFactory.getLogger("ALAuxiliaryEffectSlot");
+    private static final Marker GL_MARKER = MarkerFactory.getMarker("GLOOP");
     protected transient volatile AuxiliaryEffectSlot effectSlot;
 
     public ALAuxiliaryEffectSlot() {
         this.init();
     }
-    
+
     public final void init() {
         new InitTask().alRun();
     }
-    
+
     public boolean isValid() {
         return this.effectSlot != null && this.effectSlot.isValid();
     }
@@ -39,7 +45,7 @@ public class ALAuxiliaryEffectSlot {
             ALAuxiliaryEffectSlot.this.effectSlot = ALTools.getDriverInstance().auxiliaryEffectSlotCreate();
         }
     }
-    
+
     public void delete() {
         new DeleteTask().alRun();
     }
@@ -49,13 +55,14 @@ public class ALAuxiliaryEffectSlot {
         @Override
         public void run() {
             if (!isValid()) {
-                throw new ALException("ALEffectSlot is not valid!");
+                LOGGER.warn(GL_MARKER, "Attempted to delete invalid ALAuxiliaryEffectSlot!");                
+            } else {                
+                ALTools.getDriverInstance().auxiliaryEffectSlotDelete(effectSlot);
+                effectSlot = null;
             }
-
-            ALTools.getDriverInstance().auxiliaryEffectSlotDelete(effectSlot);
         }
     }
-    
+
     public void attachEffect(final ALEffect effect) {
         new AttachEffectTask(effect).alRun();
     }

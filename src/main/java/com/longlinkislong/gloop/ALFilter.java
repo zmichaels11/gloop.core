@@ -7,12 +7,19 @@ package com.longlinkislong.gloop;
 
 import com.longlinkislong.gloop.alspi.Filter;
 import java.util.Objects;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.slf4j.Marker;
+import org.slf4j.MarkerFactory;
 
 /**
  *
  * @author zmichaels
  */
 public class ALFilter {
+
+    private static final Logger LOGGER = LoggerFactory.getLogger("ALFilter");
+    private static final Marker GL_MARKER = MarkerFactory.getMarker("GLOOP");
 
     protected volatile transient Filter filter;
     private final ALFilterType type;
@@ -25,9 +32,9 @@ public class ALFilter {
     public final boolean isValid() {
         return this.filter != null && this.filter.isValid();
     }
-    
+
     protected void resetValues() {
-        
+
     }
 
     public final void init() {
@@ -55,11 +62,12 @@ public class ALFilter {
         @Override
         public void run() {
             if (!isValid()) {
-                throw new ALException("ALFilter is not valid!");
+                LOGGER.warn(GL_MARKER, "Attempted to delete invalid ALFilter!");
+            } else {
+                ALTools.getDriverInstance().filterDelete(ALFilter.this.filter);
+                ALFilter.this.filter = null;
+                ALFilter.this.resetValues();
             }
-
-            ALTools.getDriverInstance().filterDelete(filter);
-            filter = null;            
         }
     }
 
@@ -82,22 +90,23 @@ public class ALFilter {
             ALTools.getDriverInstance().filterSetProperty(filter, name, value);
         }
     }
-    
+
     protected class SetPropertyFTask extends ALTask {
+
         private final int name;
         private final float value;
-        
+
         protected SetPropertyFTask(final int name, final float value) {
             this.name = name;
             this.value = value;
         }
-        
+
         @Override
         public void run() {
-            if(!isValid()) {
+            if (!isValid()) {
                 throw new ALException("ALFilter is not valid!");
             }
-            
+
             ALTools.getDriverInstance().filterSetProperty(filter, name, name);
         }
     }

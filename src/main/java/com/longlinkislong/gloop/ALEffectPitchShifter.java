@@ -50,7 +50,7 @@ public final class ALEffectPitchShifter extends ALEffect {
         
         @Override
         public void run() {
-            super.run();
+            super.run();            
             ALEffectPitchShifter.this.coarseTune = this.coarseTune;
         }
     }

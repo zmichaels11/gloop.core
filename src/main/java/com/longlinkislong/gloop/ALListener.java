@@ -29,6 +29,8 @@ import com.longlinkislong.gloop.alspi.Listener;
 import java.util.Objects;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.slf4j.Marker;
+import org.slf4j.MarkerFactory;
 
 /**
  * ALListener represents a listener device. OpenAL has a single listener device
@@ -38,7 +40,7 @@ import org.slf4j.LoggerFactory;
  * @since 16.03.21
  */
 public final class ALListener {
-
+    private static final Marker GL_MARKER = MarkerFactory.getMarker("GLOOP");
     private static final Logger LOGGER = LoggerFactory.getLogger("ALListener");
 
     static {
@@ -264,7 +266,7 @@ public final class ALListener {
             if (!Float.isFinite(gain)) {
                 throw new ALException("Gain must be finite on range [0.0, \u221E)!");
             } else if (gain < 0.0F) {
-                LOGGER.warn("Attempted to set gain less than 0.0!");
+                LOGGER.warn(GL_MARKER, "Attempted to set gain less than 0.0!");
                 this.gain = 0.0F;
             } else {
                 this.gain = gain;

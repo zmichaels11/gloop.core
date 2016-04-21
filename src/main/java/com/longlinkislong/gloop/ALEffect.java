@@ -7,12 +7,19 @@ package com.longlinkislong.gloop;
 
 import com.longlinkislong.gloop.alspi.Effect;
 import java.util.Objects;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.slf4j.Marker;
+import org.slf4j.MarkerFactory;
 
 /**
  *
  * @author zmichaels
  */
 public abstract class ALEffect {
+
+    private static final Marker GL_MARKER = MarkerFactory.getMarker("GLOOP");
+    private static final Logger LOGGER = LoggerFactory.getLogger("ALEffect");
 
     private final ALEffectType type;
     protected Effect effect;
@@ -25,7 +32,7 @@ public abstract class ALEffect {
     public final boolean isValid() {
         return this.effect != null && this.effect.isValid();
     }
-    
+
     public final ALEffect init() {
         new InitTask().alRun();
         return this;
@@ -42,27 +49,27 @@ public abstract class ALEffect {
             ALEffect.this.effect = ALTools.getDriverInstance().effectCreate(ALEffect.this.type.value);
         }
     }
-    
+
     public final ALEffect delete() {
         new DeleteTask().alRun();
         return this;
     }
 
     protected void resetValues() {
-        
+
     }
-    
+
     public final class DeleteTask extends ALTask {
 
         @Override
         public void run() {
             if (!isValid()) {
-                throw new ALException("ALEffect is not valid!");
+                LOGGER.warn(GL_MARKER, "Attempted to delete invalid ALEffect!");
+            } else {
+                ALTools.getDriverInstance().effectDelete(effect);
+                ALEffect.this.effect = null;
+                ALEffect.this.resetValues();
             }
-
-            ALTools.getDriverInstance().effectDelete(effect);
-            ALEffect.this.effect = null;
-            ALEffect.this.resetValues();
         }
     }
 
