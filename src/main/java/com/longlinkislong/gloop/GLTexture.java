@@ -930,6 +930,7 @@ public class GLTexture extends GLObject {
             }
 
             texture = GLTools.getDriverInstance().textureAllocate(mipmaps, internalFormat.value, width, height, depth);
+            GLTexture.this.setAttributes(GLTextureParameters.DEFAULT_PARAMETERS);
             GLTexture.this.name = "id=" + texture.hashCode();
 
             LOGGER.trace(GLOOP_MARKER, "Initialized GLTexture[{}]!", GLTexture.this.name);
@@ -1011,7 +1012,7 @@ public class GLTexture extends GLObject {
             }
 
             texture = GLTools.getDriverInstance().textureAllocate(mipmaps, internalFormat.value, width, height, 1);
-
+            GLTexture.this.setAttributes(GLTextureParameters.DEFAULT_PARAMETERS);
             GLTexture.this.name = "id=" + texture.hashCode();
 
             LOGGER.trace(GLOOP_MARKER, "Initialized GLTexture[{}]!", GLTexture.this.getName());
@@ -1086,6 +1087,7 @@ public class GLTexture extends GLObject {
             }
 
             texture = GLTools.getDriverInstance().textureAllocate(mipmaps, internalFormat.value, width, 1, 1);
+            GLTexture.this.setAttributes(GLTextureParameters.DEFAULT_PARAMETERS);
             GLTexture.this.name = "id=" + texture.hashCode();
 
             LOGGER.trace(GLOOP_MARKER, "Initialized GLTexture[{}]!", GLTexture.this.getName());

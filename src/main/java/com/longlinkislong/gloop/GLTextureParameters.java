@@ -40,6 +40,7 @@ import org.slf4j.MarkerFactory;
  */
 public class GLTextureParameters {
 
+    public static final GLTextureParameters DEFAULT_PARAMETERS = new GLTextureParameters();
     private static final Marker GLOOP_MARKER = MarkerFactory.getMarker("GLOOP");
     private static final Logger LOGGER = LoggerFactory.getLogger("GLTextureParameters");
 
