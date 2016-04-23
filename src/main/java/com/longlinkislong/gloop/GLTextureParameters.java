@@ -38,9 +38,7 @@ import org.slf4j.MarkerFactory;
  * @author zmichaels
  * @since 15.12.18
  */
-public class GLTextureParameters {
-
-    public static final GLTextureParameters DEFAULT_PARAMETERS = new GLTextureParameters();
+public class GLTextureParameters {    
     private static final Marker GLOOP_MARKER = MarkerFactory.getMarker("GLOOP");
     private static final Logger LOGGER = LoggerFactory.getLogger("GLTextureParameters");
 
@@ -403,6 +401,7 @@ public class GLTextureParameters {
 
             return this.maxLevel;
         }
-
     }
+    
+    public static final GLTextureParameters DEFAULT_PARAMETERS = new GLTextureParameters();
 }
