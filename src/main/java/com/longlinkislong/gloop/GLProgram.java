@@ -151,6 +151,7 @@ public class GLProgram extends GLObject {
             }
 
             GLTools.getDriverInstance().programUse(program);
+            GLProgram.this.program.updateTime();
             LOGGER.trace(GL_MARKER, "############### End GLProgram Use Task ###############");
         }
     }
@@ -242,6 +243,8 @@ public class GLProgram extends GLObject {
                 }
             }
 
+            GLProgram.this.program.updateTime();
+            
             LOGGER.trace(
                     GL_MARKER,
                     "############### End GLProgram Set Vertex Attributes Task ###############");
@@ -406,6 +409,7 @@ public class GLProgram extends GLObject {
             buffer.put(this.values).flip();
 
             GLTools.getDriverInstance().programSetUniformMatD(program, uLoc, buffer);
+            GLProgram.this.program.updateTime();
             LOGGER.trace(GL_MARKER, "############### End GLProgram Set Uniform MatrixD Task ###############");
         }
     }
@@ -542,6 +546,7 @@ public class GLProgram extends GLObject {
             buffer.put(this.values).flip();
 
             GLTools.getDriverInstance().programSetUniformMatF(program, uLoc, buffer);
+            GLProgram.this.program.updateTime();
             LOGGER.trace(GL_MARKER, "############### End GLProgram Set Uniform MatrixF Task ###############");
         }
     }
@@ -719,6 +724,7 @@ public class GLProgram extends GLObject {
 
             final int uLoc = GLProgram.this.getUniformLoc(this.uName);
 
+            GLProgram.this.program.updateTime();
             GLTools.getDriverInstance().programSetUniformD(program, uLoc, values);
             LOGGER.trace(GL_MARKER, "############### End GLProgram Set UniformF Task ###############");
         }
@@ -844,6 +850,7 @@ public class GLProgram extends GLObject {
             final int uLoc = GLProgram.this.getUniformLoc(this.uName);
 
             GLTools.getDriverInstance().programSetUniformI(program, uLoc, values);
+            GLProgram.this.program.updateTime();
             LOGGER.trace(GL_MARKER, "############### End GLProgram Set UniformI Task ###############");
         }
     }
@@ -1018,6 +1025,7 @@ public class GLProgram extends GLObject {
 
             final int uLoc = GLProgram.this.getUniformLoc(this.uName);
 
+            GLProgram.this.program.updateTime();
             GLTools.getDriverInstance().programSetUniformF(program, uLoc, values);
             LOGGER.trace(GL_MARKER, "############### End GLProgram Set UniformF Task ###############");
         }
@@ -1127,6 +1135,7 @@ public class GLProgram extends GLObject {
                     .collect(Collectors.toList())
                     .toArray(new Shader[shaders.length]));
 
+            GLProgram.this.program.updateTime();
             LOGGER.trace(GL_MARKER, "Linked shaders for GLProgram[{}]!", GLProgram.this.getName());
             LOGGER.trace(GL_MARKER, "############### End GLProgram Link Shaders Task ###############");
         }
@@ -1160,6 +1169,7 @@ public class GLProgram extends GLObject {
 
             program = GLTools.getDriverInstance().programCreate();
             GLProgram.this.name = "id=" + program.hashCode();
+            GLProgram.this.program.updateTime();
 
             LOGGER.trace(GL_MARKER, "Initialized GLProgram[{}]!", GLProgram.this.name);
             LOGGER.trace(GL_MARKER, "############### End GLProgram Init Task ###############");
@@ -1192,6 +1202,7 @@ public class GLProgram extends GLObject {
                 LOGGER.warn(GL_MARKER, "Attempted to delete invalid GLProgram!");
             } else {
                 GLTools.getDriverInstance().programDelete(program);
+                GLProgram.this.program.resetTime();
                 program = null;
             }
             LOGGER.trace(GL_MARKER, "############### End GLProgram Delete Task ###############");
@@ -1264,6 +1275,7 @@ public class GLProgram extends GLObject {
                 throw new GLException("Invalid GLBuffer object!");
             }
 
+            GLProgram.this.program.updateTime();
             GLTools.getDriverInstance().programSetStorage(program, storageName, buffer.buffer, bindingPoint);
             LOGGER.trace(GL_MARKER, "############### End GLProgram Set Shader Storage Task ###############");
         }
@@ -1335,7 +1347,8 @@ public class GLProgram extends GLObject {
             } else if (!this.buffer.isValid()) {
                 throw new GLException("Invalid GLBuffer object!");
             }
-
+            
+            GLProgram.this.program.updateTime();
             GLTools.getDriverInstance().programSetUniformBlock(program, blockName, buffer.buffer, bindingPoint);
             LOGGER.trace(GL_MARKER, "############### End GLProgram Set Uniform Block Task ###############");
         }
@@ -1450,6 +1463,7 @@ public class GLProgram extends GLObject {
             }
 
             GLTools.getDriverInstance().programDispatchCompute(program, numX, numY, numZ);
+            GLProgram.this.program.updateTime();
             LOGGER.trace(GL_MARKER, "############### End GLProgram Compute Task ###############");
         }
     }
@@ -1504,8 +1518,17 @@ public class GLProgram extends GLObject {
                 throw new GLException("Invalid GLBuffer!");
             }
 
+            GLProgram.this.program.updateTime();
             GLTools.getDriverInstance().programSetFeedbackBuffer(program, varyingLoc, fbBuffer.buffer);
             LOGGER.trace(GL_MARKER, "############### End GLProgram Set Feedback Buffer Task ###############");
+        }
+    }
+    
+    public long getTimeSinceLastUpdate() {
+        if(this.program != null) {
+            return this.program.getTimeSinceLastUsed();
+        } else {
+            return System.nanoTime();
         }
     }
 }

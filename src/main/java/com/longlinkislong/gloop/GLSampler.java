@@ -201,6 +201,8 @@ public class GLSampler extends GLObject {
             driver.samplerSetParameter(sampler, 10240 /* GL_TEXTURE_MAG_FILTER */, GLSampler.this.parameters.magFilter.value);
             driver.samplerSetParameter(sampler, 34046 /* GL_TEXTURE_MAX_ANISOTROPY_EXT */, GLSampler.this.parameters.anisotropicLevel);
 
+            sampler.updateTime();
+            
             LOGGER.trace(
                     GL_MARKER,
                     "Initialized GLSampler[{}]!",
@@ -254,6 +256,7 @@ public class GLSampler extends GLObject {
             }
 
             GLTools.getDriverInstance().samplerBind(unit, sampler);
+            GLSampler.this.sampler.updateTime();
             LOGGER.trace(GL_MARKER, "############### End GLSampler Bind Task ###############");
         }
     }
@@ -287,6 +290,7 @@ public class GLSampler extends GLObject {
                 LOGGER.error(GL_MARKER, "Attempted to delete locked GLSampler!");
             } else {
                 GLTools.getDriverInstance().samplerDelete(sampler);
+                sampler.resetTime();
                 sampler = null;
             }
             
@@ -294,4 +298,11 @@ public class GLSampler extends GLObject {
         }
     }
 
+    public long getTimeSinceLastUpdate() {
+        if(this.sampler != null) {
+            return this.sampler.getTimeSinceLastUsed();
+        } else {
+            return System.nanoTime();
+        }
+    }
 }

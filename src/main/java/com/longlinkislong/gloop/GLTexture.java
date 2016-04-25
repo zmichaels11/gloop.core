@@ -397,6 +397,7 @@ public class GLTexture extends GLObject {
             }
 
             GLTools.getDriverInstance().textureBind(texture, activeTexture);
+            GLTexture.this.texture.updateTime();
             LOGGER.trace(GLOOP_MARKER, "############### End GLTexture Bind Task ###############");
         }
     }
@@ -427,11 +428,12 @@ public class GLTexture extends GLObject {
 
             if (GLTexture.this.isValid()) {
                 GLTools.getDriverInstance().textureDelete(texture);
+                GLTexture.this.texture.resetTime();
                 texture = null;
 
                 GLTexture.this.width = GLTexture.this.height = GLTexture.this.depth = 0;
                 GLTexture.this.isSparse = false;
-                GLTexture.this.name = "";
+                GLTexture.this.name = "";                
             } else {
                 LOGGER.warn(GLOOP_MARKER, "Attempted to delete invalid GLTexture!");
             }
@@ -594,6 +596,8 @@ public class GLTexture extends GLObject {
                     width, height, depth,
                     format.value, type.value, data);
 
+            GLTexture.this.texture.updateTime();
+            
             LOGGER.trace(GLOOP_MARKER, "############### End GLTexture Update Image 3D Task ###############");
         }
     }
@@ -724,6 +728,8 @@ public class GLTexture extends GLObject {
                     format.value, type.value,
                     data);
 
+            GLTexture.this.texture.updateTime();
+            
             LOGGER.trace(
                     GLOOP_MARKER,
                     "############### End GLTexture Update Image 2D Task ###############");
@@ -844,6 +850,7 @@ public class GLTexture extends GLObject {
                     width, 1, 1,
                     format.value, type.value, data);
 
+            GLTexture.this.texture.updateTime();
             LOGGER.trace(GLOOP_MARKER, "############### End GLTexture Update 1D Task ###############");
         }
     }
@@ -929,9 +936,10 @@ public class GLTexture extends GLObject {
                 throw new GLException("GLTexture is not valid!");
             }
 
-            texture = GLTools.getDriverInstance().textureAllocate(mipmaps, internalFormat.value, width, height, depth);
+            GLTexture.this.texture = GLTools.getDriverInstance().textureAllocate(mipmaps, internalFormat.value, width, height, depth);
             GLTexture.this.setAttributes(GLTextureParameters.DEFAULT_PARAMETERS);
             GLTexture.this.name = "id=" + texture.hashCode();
+            GLTexture.this.texture.updateTime();
 
             LOGGER.trace(GLOOP_MARKER, "Initialized GLTexture[{}]!", GLTexture.this.name);
             LOGGER.trace(GLOOP_MARKER, "############### End GLTexture Allocate Image 3D Task ###############");
@@ -1011,9 +1019,10 @@ public class GLTexture extends GLObject {
                 throw new GLException("GLTexture has already been allocated!");
             }
 
-            texture = GLTools.getDriverInstance().textureAllocate(mipmaps, internalFormat.value, width, height, 1);
+            GLTexture.this.texture = GLTools.getDriverInstance().textureAllocate(mipmaps, internalFormat.value, width, height, 1);
             GLTexture.this.setAttributes(GLTextureParameters.DEFAULT_PARAMETERS);
             GLTexture.this.name = "id=" + texture.hashCode();
+            GLTexture.this.texture.updateTime();
 
             LOGGER.trace(GLOOP_MARKER, "Initialized GLTexture[{}]!", GLTexture.this.getName());
             LOGGER.trace(GLOOP_MARKER, "############### End GLTexture Allocate 2D Task ###############");
@@ -1089,6 +1098,7 @@ public class GLTexture extends GLObject {
             texture = GLTools.getDriverInstance().textureAllocate(mipmaps, internalFormat.value, width, 1, 1);
             GLTexture.this.setAttributes(GLTextureParameters.DEFAULT_PARAMETERS);
             GLTexture.this.name = "id=" + texture.hashCode();
+            GLTexture.this.texture.updateTime();
 
             LOGGER.trace(GLOOP_MARKER, "Initialized GLTexture[{}]!", GLTexture.this.getName());
             LOGGER.trace(GLOOP_MARKER, "############### End GLTexture Allocate Image 1D Task ###############");
@@ -1124,7 +1134,7 @@ public class GLTexture extends GLObject {
             }
 
             GLTools.getDriverInstance().textureGenerateMipmap(texture);
-
+            GLTexture.this.texture.updateTime();
             LOGGER.trace(GLOOP_MARKER, "############### End GLTexture Generate Mipmap Task ###############");
         }
 
@@ -1345,6 +1355,7 @@ public class GLTexture extends GLObject {
                 GLTexture.this.vpageDepth = driver.textureGetPageDepth(texture);
             }
 
+            GLTexture.this.texture.updateTime();
             LOGGER.trace(GLOOP_MARKER, "############### End GLTexture Set Attributes Task ###############");
         }
     }
@@ -1426,7 +1437,7 @@ public class GLTexture extends GLObject {
             }
 
             this.maxSize = GLTools.getDriverInstance().textureGetMaxSize();
-
+            
             LOGGER.trace(GLOOP_MARKER, "############### End GLTexture Max Texture Size Query ###############");
 
             return this.maxSize;
@@ -1606,6 +1617,7 @@ public class GLTexture extends GLObject {
             }
 
             GLTools.getDriverInstance().textureGetData(texture, level, format.value, type.value, buffer);
+            GLTexture.this.texture.updateTime();
             LOGGER.trace(GLOOP_MARKER, "############### End GLTexture Download Image Query ###############");
 
             return this.buffer; // does this need flip?
@@ -1657,6 +1669,7 @@ public class GLTexture extends GLObject {
                 GLTools.getDriverInstance().textureInvalidateData(texture, level);
             }
 
+            GLTexture.this.texture.updateTime();
             LOGGER.trace(GLOOP_MARKER, "############### End GLTexture Invalidate Task ###############");
         }
     }
@@ -1735,6 +1748,7 @@ public class GLTexture extends GLObject {
             if (!GLTexture.this.isValid()) {
                 throw new GLException("Invalid GLTexture!");
             } else {
+                GLTexture.this.texture.updateTime();
                 GLTools.getDriverInstance().textureInvalidateRange(
                         texture, level,
                         this.xOffset, this.yOffset, this.zOffset,
@@ -1830,6 +1844,7 @@ public class GLTexture extends GLObject {
                         texture, level,
                         xOffset, yOffset, zOffset,
                         width, height, depth);
+                GLTexture.this.texture.updateTime();
             }
         }
     }
@@ -1921,6 +1936,7 @@ public class GLTexture extends GLObject {
                         texture, level,
                         xOffset, yOffset, zOffset,
                         width, height, depth);
+                GLTexture.this.texture.updateTime();
             }
         }
 
@@ -1936,5 +1952,13 @@ public class GLTexture extends GLObject {
      */
     public int[] getVirtualPageSize() {
         return new int[]{this.vpageWidth, this.vpageHeight, this.vpageDepth};
+    }
+    
+    public long getTimeSinceLastUsed() {
+        if(this.texture != null) {
+            return this.texture.getTimeSinceLastUsed();
+        } else {
+            return System.nanoTime();
+        }
     }
 }

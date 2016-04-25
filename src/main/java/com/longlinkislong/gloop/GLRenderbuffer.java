@@ -110,7 +110,7 @@ public class GLRenderbuffer extends GLObject {
                     GLRenderbuffer.this.width,
                     GLRenderbuffer.this.height);
 
-            GLRenderbuffer.this.name = "id=" + renderbuffer.hashCode();
+            GLRenderbuffer.this.name = "id=" + renderbuffer.hashCode();            
 
             LOGGER.trace(GL_MARKER, "Initialized GLRenderbuffer[{}]!", GLRenderbuffer.this.name);
             LOGGER.trace(GL_MARKER, "############### End GLRenderer Init Task ###############");

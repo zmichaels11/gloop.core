@@ -40,7 +40,7 @@ public abstract class GLObject {
         NativeTools.getInstance().autoLoad();
     }
 
-    private final GLThread thread;
+    private final GLThread thread;    
 
     /**
      * Constructs a new GLObject associated with the default thread.

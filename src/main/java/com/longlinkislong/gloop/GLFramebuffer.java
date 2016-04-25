@@ -206,6 +206,8 @@ public class GLFramebuffer extends GLObject {
                 LOGGER.warn(GL_MARKER, "GLFramebuffer[{}] is not complete!", GLFramebuffer.this.getName());
             }
 
+            GLFramebuffer.this.framebuffer.updateTime();
+            
             LOGGER.trace(GL_MARKER, "############### End GLFramebuffer Is Complete Query ###############");
 
             return res;
@@ -242,6 +244,7 @@ public class GLFramebuffer extends GLObject {
 
             framebuffer = GLTools.getDriverInstance().framebufferCreate();
             GLFramebuffer.this.name = "id=" + framebuffer.hashCode();
+            GLFramebuffer.this.framebuffer.updateTime();
 
             LOGGER.trace(GL_MARKER, "Initialized GLFramebuffer[{}]!", GLFramebuffer.this.name);
             LOGGER.trace(GL_MARKER, "############### End GLFramebuffer Init Task ###############");
@@ -279,11 +282,12 @@ public class GLFramebuffer extends GLObject {
                 LOGGER.warn(GL_MARKER, "Attempted to delete invalid GLFramebuffer!");
             } else {
                 GLTools.getDriverInstance().framebufferDelete(framebuffer);
+                GLFramebuffer.this.framebuffer.resetTime();
                 framebuffer = null;
                 GLFramebuffer.this.colorAttachments.clear();
                 GLFramebuffer.this.nextColorAttachment = 36064 /* GL_COLOR_ATTACHMENT0 */;
             }
-
+            
             LOGGER.trace(GL_MARKER, "############### End GLFramebuffer Delete Task ###############");
         }
     }
@@ -383,6 +387,7 @@ public class GLFramebuffer extends GLObject {
             }
 
             GLTools.getDriverInstance().framebufferBind(framebuffer, attachments);
+            GLFramebuffer.this.framebuffer.updateTime();
             LOGGER.trace(GL_MARKER, "############### End GLFramebuffer Bind Task ###############");
         }
     }
@@ -475,7 +480,9 @@ public class GLFramebuffer extends GLObject {
                 throw new GLException("Invalid GLFramebuffer!");
             }
 
+            this.depthStencilAttachment.texture.updateTime();
             GLTools.getDriverInstance().framebufferAddAttachment(framebuffer, GL30.GL_DEPTH_STENCIL_ATTACHMENT, depthStencilAttachment.texture, level);
+            GLFramebuffer.this.framebuffer.updateTime();
             LOGGER.trace(GL_MARKER, "############### End GLFramebuffer Add Depth Stencil Attachment Task ###############");
         }
     }
@@ -565,7 +572,9 @@ public class GLFramebuffer extends GLObject {
                 throw new GLException("Invalid GLFramebuffer!");
             }
 
+            this.depthAttachment.texture.updateTime();
             GLTools.getDriverInstance().framebufferAddAttachment(framebuffer, GL30.GL_DEPTH_ATTACHMENT, depthAttachment.texture, level);
+            GLFramebuffer.this.framebuffer.updateTime();
             LOGGER.trace(GL_MARKER, "############### End GLFramebuffer Add Depth Attachment Task ###############");
         }
     }
@@ -691,6 +700,7 @@ public class GLFramebuffer extends GLObject {
                 GLFramebuffer.this.colorAttachments.put(this.name, this.attachmentId);
             }
 
+            GLFramebuffer.this.framebuffer.updateTime();
             LOGGER.trace(GL_MARKER, "############### End GLFramebuffer AddRenderbufferAttachment Task ###############");
         }
     }
@@ -762,7 +772,9 @@ public class GLFramebuffer extends GLObject {
                 throw new GLException("Invalid GLFramebuffer!");
             }
 
+            this.colorAttachment.texture.updateTime();
             GLTools.getDriverInstance().framebufferAddAttachment(framebuffer, attachmentId, colorAttachment.texture, level);
+            GLFramebuffer.this.framebuffer.updateTime();
             LOGGER.trace(GL_MARKER, "############### End GLFramebuffer Add Color Attachment Task ###############");
         }
     }
@@ -877,6 +889,8 @@ public class GLFramebuffer extends GLObject {
             }
 
             GLTools.getDriverInstance().framebufferBlit(readFB.framebuffer, srcX0, srcY0, srcX1, srcY1, writeFB.framebuffer, dstX0, dstY0, dstX1, dstY1, bitfield, dstX0);
+            readFB.framebuffer.updateTime();
+            writeFB.framebuffer.updateTime();
             LOGGER.trace(GL_MARKER, "############### End GLFramebuffer Blit task ###############");
         }
     }
@@ -1002,6 +1016,8 @@ public class GLFramebuffer extends GLObject {
             } else {
                 GLTools.getDriverInstance().framebufferGetPixels(framebuffer, x, y, width, height, format.value, type.value, pixelPackBuffer.buffer);
             }
+            
+            GLFramebuffer.this.framebuffer.updateTime();
 
             LOGGER.trace(GL_MARKER, "############### End GLFramebuffer Read Pixels Task ###############");
         }
@@ -1010,5 +1026,13 @@ public class GLFramebuffer extends GLObject {
     @Override
     public final boolean isShareable() {
         return false;
+    }
+    
+    public long getTimeSinceLastUsed() {
+        if(this.framebuffer != null) {
+            return this.framebuffer.getTimeSinceLastUsed();
+        } else {
+            return System.nanoTime();
+        }
     }
 }
