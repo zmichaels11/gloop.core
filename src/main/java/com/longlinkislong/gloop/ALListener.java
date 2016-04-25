@@ -39,14 +39,10 @@ import org.slf4j.MarkerFactory;
  * @author zmichaels
  * @since 16.03.21
  */
-public final class ALListener {
+public final class ALListener extends ALObject {
     private static final Marker GL_MARKER = MarkerFactory.getMarker("GLOOP");
     private static final Logger LOGGER = LoggerFactory.getLogger("ALListener");
-
-    static {
-        NativeTools.getInstance().loadNatives();
-    }
-
+    
     private final GLVec3F at = GLVec3F.create(0f, 0f, -1f).asStaticVec();
     private final GLVec3F up = GLVec3F.create(0f, 1f, 0f).asStaticVec();
     private final GLVec3F position = GLVec3F.create(0f, 0f, 0f).asStaticVec();

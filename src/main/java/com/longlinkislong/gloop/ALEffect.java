@@ -16,13 +16,13 @@ import org.slf4j.MarkerFactory;
  *
  * @author zmichaels
  */
-public abstract class ALEffect {
+public abstract class ALEffect extends ALObject {
 
     private static final Marker GL_MARKER = MarkerFactory.getMarker("GLOOP");
     private static final Logger LOGGER = LoggerFactory.getLogger("ALEffect");
 
     private final ALEffectType type;
-    protected Effect effect;
+    protected transient volatile Effect effect;
 
     public ALEffect(final ALEffectType type) {
         this.type = Objects.requireNonNull(type);

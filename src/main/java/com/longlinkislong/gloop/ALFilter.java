@@ -16,7 +16,7 @@ import org.slf4j.MarkerFactory;
  *
  * @author zmichaels
  */
-public class ALFilter {
+public class ALFilter extends ALObject {
 
     private static final Logger LOGGER = LoggerFactory.getLogger("ALFilter");
     private static final Marker GL_MARKER = MarkerFactory.getMarker("GLOOP");
@@ -87,7 +87,10 @@ public class ALFilter {
                 throw new ALException("ALFilter is not valid!");
             }
 
-            ALTools.getDriverInstance().filterSetProperty(filter, name, value);
+            ALTools.getDriverInstance().filterSetProperty(
+                    ALFilter.this.filter, 
+                    this.name, 
+                    this.value);
         }
     }
 
@@ -107,7 +110,10 @@ public class ALFilter {
                 throw new ALException("ALFilter is not valid!");
             }
 
-            ALTools.getDriverInstance().filterSetProperty(filter, name, name);
+            ALTools.getDriverInstance().filterSetProperty(
+                    ALFilter.this.filter, 
+                    this.name, 
+                    this.value);
         }
     }
 }

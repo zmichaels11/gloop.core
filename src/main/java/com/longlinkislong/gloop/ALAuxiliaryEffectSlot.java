@@ -16,7 +16,7 @@ import org.slf4j.MarkerFactory;
  *
  * @author zmichaels
  */
-public class ALAuxiliaryEffectSlot {
+public class ALAuxiliaryEffectSlot extends ALObject {
 
     private static final Logger LOGGER = LoggerFactory.getLogger("ALAuxiliaryEffectSlot");
     private static final Marker GL_MARKER = MarkerFactory.getMarker("GLOOP");

@@ -44,15 +44,11 @@ import org.slf4j.MarkerFactory;
  * @author zmichaels
  * @since 16.03.21
  */
-public class ALSource {
+public class ALSource extends ALObject {
     private static final Marker GL_MARKER = MarkerFactory.getMarker("GLOOP");
     private static final Logger LOGGER = LoggerFactory.getLogger("ALSource");
-
-    static {
-        NativeTools.getInstance().loadNatives();
-    }
-
-    private Source source;
+    
+    private transient volatile Source source;
     private float gain = 1f;
     private float pitch = 1f;
     private final GLVec3F position = GLVec3F.create().asStaticVec();
