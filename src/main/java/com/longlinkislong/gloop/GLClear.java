@@ -320,8 +320,7 @@ public class GLClear extends GLObject {
             LOGGER.trace(GLOOP_MARKER, "\tClear bitfield: {}", GLClear.this.clearBitField);
 
             final GLThread thread = GLThread.getCurrent().orElseThrow(GLException::new);
-
-            thread.runOnClearCallback(thread.currentClear, GLClear.this);
+           
             thread.currentClear = GLClear.this.withGLThread(thread);
             GLTools.getDriverInstance().clear(clearBitField, red, green, blue, alpha, depth);
             

@@ -1,5 +1,5 @@
 /* 
- * Copyright (c) 2015, longlinkislong.com
+ * Copyright (c) 2015-2016, longlinkislong.com
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -69,30 +69,32 @@ public class GLThread implements ExecutorService {
     final Deque<GLMask> maskStack = new ArrayDeque<>(4);
     final Deque<GLPolygonParameters> polygonParameterStack = new ArrayDeque<>(4);
     final Deque<GLViewport> viewportStack = new ArrayDeque<>(4);
-    
+
     private BiConsumer<GLBlending, GLBlending> onBlendChange = null;
 
+    /**
+     * Sets a callback for when the blending state changes.
+     *
+     * @param callback the callback.
+     * @since 16.06.09
+     */
     public void setOnBlendChange(final BiConsumer<GLBlending, GLBlending> callback) {
         this.onBlendChange = callback;
     }
 
+    /**
+     * Executes the callback for when the blending state changes. No operations
+     * occur if no callback is set.
+     *
+     * @param oldBlend the old blending state.
+     * @param newBlend the new blending state.
+     * @since 16.06.09
+     */
     void runBlendChangeCallback(final GLBlending oldBlend, final GLBlending newBlend) {
         if (this.onBlendChange != null) {
             this.onBlendChange.accept(oldBlend, newBlend);
         }
-    }
-
-    private BiConsumer<GLClear, GLClear> onClear = null;
-
-    public void setOnClear(final BiConsumer<GLClear, GLClear> callback) {
-        this.onClear = callback;
-    }
-
-    void runOnClearCallback(final GLClear oldClear, final GLClear newClear) {
-        if (this.onClear != null) {
-            this.onClear.accept(oldClear, newClear);
-        }
-    }
+    }   
 
     private BiConsumer<GLDepthTest, GLDepthTest> onDepthTestChange = null;
 
@@ -113,7 +115,7 @@ public class GLThread implements ExecutorService {
     }
 
     void runOnMaskChangeCallback(final GLMask oldMask, final GLMask newMask) {
-        if(this.onMaskChange != null) {
+        if (this.onMaskChange != null) {
             this.onMaskChange.accept(oldMask, newMask);
         }
     }
@@ -125,7 +127,7 @@ public class GLThread implements ExecutorService {
     }
 
     void runOnPolygonParametersChangeCallback(final GLPolygonParameters oldParams, final GLPolygonParameters newParams) {
-        if(this.onPolygonParametersChange != null) {
+        if (this.onPolygonParametersChange != null) {
             this.onPolygonParametersChange.accept(oldParams, newParams);
         }
     }
@@ -137,10 +139,10 @@ public class GLThread implements ExecutorService {
     }
 
     void runOnViewportChangeCallback(final GLViewport oldViewport, final GLViewport newViewport) {
-        if(this.onViewportChange != null) {
+        if (this.onViewportChange != null) {
             this.onViewportChange.accept(oldViewport, newViewport);
         }
-    }    
+    }
 
     GLBlending currentBlend = new GLBlending(this);
     GLClear currentClear = new GLClear(this);
