@@ -75,7 +75,8 @@ public class GLThread implements ExecutorService {
     /**
      * Sets a callback for when the blending state changes.
      *
-     * @param callback the callback.
+     * @param callback the callback. A value of null will remove any bound
+     * callbacks.
      * @since 16.06.09
      */
     public void setOnBlendChange(final BiConsumer<GLBlending, GLBlending> callback) {
@@ -83,7 +84,7 @@ public class GLThread implements ExecutorService {
     }
 
     /**
-     * Executes the callback for when the blending state changes. No operations
+     * Executes the callback linked to the blending state changes. No operations
      * occur if no callback is set.
      *
      * @param oldBlend the old blending state.
@@ -94,14 +95,29 @@ public class GLThread implements ExecutorService {
         if (this.onBlendChange != null) {
             this.onBlendChange.accept(oldBlend, newBlend);
         }
-    }   
+    }
 
     private BiConsumer<GLDepthTest, GLDepthTest> onDepthTestChange = null;
 
+    /**
+     * Sets a callback for when the depth test state changes.
+     *
+     * @param callback the callback. A value of null will remove any bound
+     * callbacks.
+     * @since 16.06.09
+     */
     public void setOnDepthTestChange(final BiConsumer<GLDepthTest, GLDepthTest> callback) {
         this.onDepthTestChange = callback;
     }
 
+    /**
+     * Executes the callback linked to the depth test state. No operations occur
+     * if no callback is set.
+     *
+     * @param oldDepthTest the old depth test state.
+     * @param newDepthTest the new depth test state.
+     * @since 16.06.09
+     */
     void runOnDepthTestChangeCallback(final GLDepthTest oldDepthTest, final GLDepthTest newDepthTest) {
         if (this.onDepthTestChange != null) {
             this.onDepthTestChange.accept(oldDepthTest, newDepthTest);
@@ -110,10 +126,25 @@ public class GLThread implements ExecutorService {
 
     private BiConsumer<GLMask, GLMask> onMaskChange = null;
 
+    /**
+     * Sets a callback for when the mask state changes.
+     *
+     * @param callback the callback. A value of null will remove any bound
+     * callbacks.
+     * @since 16.06.09
+     */
     public void setOnMaskChange(final BiConsumer<GLMask, GLMask> callback) {
         this.onMaskChange = callback;
     }
 
+    /**
+     * Executes the callback linked to the masks state. No operation occurs if
+     * no callback is set.
+     *
+     * @param oldMask the old mask state.
+     * @param newMask the new mask state.
+     * @since 16.06.09
+     */
     void runOnMaskChangeCallback(final GLMask oldMask, final GLMask newMask) {
         if (this.onMaskChange != null) {
             this.onMaskChange.accept(oldMask, newMask);
@@ -122,10 +153,25 @@ public class GLThread implements ExecutorService {
 
     private BiConsumer<GLPolygonParameters, GLPolygonParameters> onPolygonParametersChange = null;
 
+    /**
+     * Sets a callback for when the polygon parameter state changes.
+     *
+     * @param callback the callback. A value of null will remove any bound
+     * callbacks.
+     * @since 16.06.09
+     */
     public void setOnPolygonParametersChange(final BiConsumer<GLPolygonParameters, GLPolygonParameters> callback) {
         this.onPolygonParametersChange = callback;
     }
 
+    /**
+     * Executes the callback linked to the polygon parameters state. No
+     * operation occurs if no callback is set.
+     *
+     * @param oldParams the old polygon parameters state.
+     * @param newParams the new polygon parameters state.
+     * @since 16.06.09
+     */
     void runOnPolygonParametersChangeCallback(final GLPolygonParameters oldParams, final GLPolygonParameters newParams) {
         if (this.onPolygonParametersChange != null) {
             this.onPolygonParametersChange.accept(oldParams, newParams);
@@ -134,10 +180,25 @@ public class GLThread implements ExecutorService {
 
     private BiConsumer<GLViewport, GLViewport> onViewportChange = null;
 
+    /**
+     * Sets a callback for when the viewport state changes.
+     *
+     * @param callback the callback. A value of null will remove any bound
+     * callbacks.
+     * @since 16.06.09
+     */
     public void setOnViewportChange(final BiConsumer<GLViewport, GLViewport> callback) {
         this.onViewportChange = callback;
     }
 
+    /**
+     * Executes the callback linked to the viewport state. No operation occurs
+     * if no callback is set.
+     *
+     * @param oldViewport the old viewport state.
+     * @param newViewport the new viewport state.
+     * @since 16.06.09
+     */
     void runOnViewportChangeCallback(final GLViewport oldViewport, final GLViewport newViewport) {
         if (this.onViewportChange != null) {
             this.onViewportChange.accept(oldViewport, newViewport);
@@ -480,6 +541,13 @@ public class GLThread implements ExecutorService {
 
     }
 
+    /**
+     * Constructs and initializes a new GLThread. This constructor is restricted
+     * since GLThread is supposed to wrap 1-to-1 with thread OpenGL is bound it.
+     * This will usually be done externally.
+     *
+     * @since 15.06.09
+     */
     protected GLThread() {
         this.internalExecutor.execute(new InitTask());
     }
@@ -766,14 +834,33 @@ public class GLThread implements ExecutorService {
             return (this.frameCount / this.totalFrameTime);
         }
 
+        /**
+         * Retrieves the shortest frame time.
+         *
+         * @return the shortest frame time.
+         * @since 15.07.20
+         */
         public double getShortestFrameTime() {
             return this.minFrameTime;
         }
 
+        /**
+         * Retrieves the longest frame time.
+         *
+         * @return the longest frame time.
+         * @since 15.07.20
+         */
         public double getLongestFrameTime() {
             return this.maxFrameTime;
         }
 
+        /**
+         * Retrieves the number of frames elapsed since this object was added to
+         * the task queue.
+         *
+         * @return the number of frames observed.
+         * @since 15.07.20
+         */
         public long getFrameCount() {
             return this.frameCount;
         }
@@ -800,6 +887,8 @@ public class GLThread implements ExecutorService {
 
         private static boolean IS_ASSIGNED = false;
         private final static GLThread INSTANCE = new GLThread();
+
+        private Holder() {}
     }
 
     /**
