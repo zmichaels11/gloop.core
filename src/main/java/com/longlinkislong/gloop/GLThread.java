@@ -69,30 +69,7 @@ public class GLThread implements ExecutorService {
     final Deque<GLMask> maskStack = new ArrayDeque<>(4);
     final Deque<GLPolygonParameters> polygonParameterStack = new ArrayDeque<>(4);
     final Deque<GLViewport> viewportStack = new ArrayDeque<>(4);
-
-    private Runnable onScissorTestStart = null;
-    private Runnable onScissorTestEnd = null;
-
-    void runScissorTestStartCallback() {
-        if (this.onScissorTestStart != null) {
-            this.onScissorTestStart.run();
-        }
-    }
-
-    void runScissorTestEndCallback() {
-        if (this.onScissorTestEnd != null) {
-            this.onScissorTestEnd.run();
-        }
-    }
-
-    public void setOnScissorTestStart(final Runnable callback) {
-        this.onScissorTestStart = callback;
-    }
-
-    public void setOnScissorTestEnd(final Runnable callback) {
-        this.onScissorTestEnd = callback;
-    }
-
+    
     private BiConsumer<GLBlending, GLBlending> onBlendChange = null;
 
     public void setOnBlendChange(final BiConsumer<GLBlending, GLBlending> callback) {
