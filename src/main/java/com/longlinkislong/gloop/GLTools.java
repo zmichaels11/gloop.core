@@ -162,7 +162,7 @@ public class GLTools {
     public static final double DEGREES_TO_RADIANS = Math.PI / 180.0;
 
     public static double getTime() {
-        return GLTools.getTime();
+        return System.nanoTime() * 1e-9;
     }
 
     /**

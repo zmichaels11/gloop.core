@@ -340,9 +340,10 @@ public class GLBlending extends GLObject {
             LOGGER.trace(GLOOP_MARKER, "\talpha func src: {} alpha func dst: {}", GLBlending.this.alphaFuncSrc, GLBlending.this.alphaFuncDst);
 
             final GLThread thread = GLThread.getCurrent().orElseThrow(GLException::new);            
-            
-            thread.currentBlend = GLBlending.this.withGLThread(thread);
 
+            thread.runBlendChangeCallback(thread.currentBlend, GLBlending.this);
+            thread.currentBlend = GLBlending.this.withGLThread(thread);
+            
             switch (GLBlending.this.enabled) {
                 case GL_ENABLED:
                     GLTools.getDriverInstance().blendingEnable(

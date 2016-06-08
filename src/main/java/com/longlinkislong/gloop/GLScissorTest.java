@@ -143,6 +143,7 @@ public class GLScissorTest extends GLObject {
             LOGGER.trace(GLOOP_MARKER, "############### Start GLScissorTest Begin Scissor Test Task ###############");
             LOGGER.trace("\tAppying GLScissorTest[{}]", GLScissorTest.this.getName());
 
+            GLThread.getCurrent().get().runScissorTestStartCallback();
             GLTools.getDriverInstance().scissorTestEnable(left, bottom, width, height);
             LOGGER.trace(GLOOP_MARKER, "############### End GLScissorTest Begin Scissor Test Task ###############");
         }
@@ -168,6 +169,8 @@ public class GLScissorTest extends GLObject {
         public void run() {
             LOGGER.trace(GLOOP_MARKER, "############### Start GLScissorTest End Scissor Test Task ###############");
             LOGGER.trace(GLOOP_MARKER, "\tApplying GLScissorTest[{}]", GLScissorTest.this.getName());
+
+            GLThread.getCurrent().get().runScissorTestEndCallback();
             GLTools.getDriverInstance().scissorTestDisable();
             LOGGER.trace(GLOOP_MARKER, "############### End GLScissorTest End Scissor Test Task ###############");
         }

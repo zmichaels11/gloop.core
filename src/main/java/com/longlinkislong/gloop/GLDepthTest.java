@@ -175,6 +175,7 @@ public class GLDepthTest extends GLObject {
 
             final GLThread thread = GLThread.getCurrent().orElseThrow(GLException::new);            
 
+            thread.runOnDepthTestChangeCallback(thread.currentDepthTest, GLDepthTest.this);
             thread.currentDepthTest = GLDepthTest.this.withGLThread(thread);
 
             switch (GLDepthTest.this.depthTestEnabled) {

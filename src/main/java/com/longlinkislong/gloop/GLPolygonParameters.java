@@ -313,14 +313,8 @@ public class GLPolygonParameters extends GLObject {
                     .getCurrent()
                     .orElseThrow(GLException::new);
 
-            if (GLPolygonParameters.this.getThread() == thread) {
-                thread.currentPolygonParameters = GLPolygonParameters.this;
-            } else {
-                thread.currentPolygonParameters = GLPolygonParameters.this
-                        .withGLThread(thread);
-            }
-
-                                    
+            thread.runOnPolygonParametersChangeCallback(thread.currentPolygonParameters, GLPolygonParameters.this);
+            thread.currentPolygonParameters = GLPolygonParameters.this.withGLThread(thread);
             GLTools.getDriverInstance().polygonSetParameters(
                     pointSize, 
                     lineSize, 

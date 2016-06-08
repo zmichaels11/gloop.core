@@ -321,13 +321,10 @@ public class GLClear extends GLObject {
 
             final GLThread thread = GLThread.getCurrent().orElseThrow(GLException::new);
 
-            if (thread == GLClear.this.getThread()) {
-                thread.currentClear = GLClear.this;
-            } else {
-                thread.currentClear = GLClear.this.withGLThread(thread);
-            }
-
+            thread.runOnClearCallback(thread.currentClear, GLClear.this);
+            thread.currentClear = GLClear.this.withGLThread(thread);
             GLTools.getDriverInstance().clear(clearBitField, red, green, blue, alpha, depth);
+            
             LOGGER.trace(GLOOP_MARKER, "############### End GLClear Clear Task ###############");
         }
 

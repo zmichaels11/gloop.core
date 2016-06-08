@@ -236,13 +236,10 @@ public class GLMask extends GLObject {
 
             final GLThread thread = GLThread.getCurrent().orElseThrow(GLException::new);
 
-            if (thread == GLMask.this.getThread()) {
-                thread.currentMask = GLMask.this;
-            } else {
-                thread.currentMask = GLMask.this.withGLThread(thread);
-            }
-
+            thread.runOnMaskChangeCallback(thread.currentMask, GLMask.this);
+            thread.currentMask = GLMask.this.withGLThread(thread);
             GLTools.getDriverInstance().maskApply(red, green, blue, alpha, depth, stencil);
+            
             LOGGER.trace(GLOOP_MARKER, "############### End GLMask Apply Task ###############");
         }
     }

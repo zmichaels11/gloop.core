@@ -25,10 +25,10 @@
  */
 package com.longlinkislong.gloop;
 
+import java.util.ArrayDeque;
 import java.util.Collection;
 import java.util.Deque;
 import java.util.HashMap;
-import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -42,6 +42,7 @@ import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicLong;
+import java.util.function.BiConsumer;
 import java.util.stream.Collectors;
 import org.lwjgl.glfw.GLFW;
 import org.slf4j.Logger;
@@ -61,13 +62,108 @@ public class GLThread implements ExecutorService {
     private static final Marker GLOOP_MARKER = MarkerFactory.getMarker("GLOOP");
     private static final Logger LOGGER = LoggerFactory.getLogger("GLThread");
 
-    private static final transient Map<Thread, GLThread> THREAD_MAP = new HashMap<>();
-    final Deque<GLBlending> blendStack = new LinkedList<>();
-    final Deque<GLClear> clearStack = new LinkedList<>();
-    final Deque<GLDepthTest> depthTestStack = new LinkedList<>();
-    final Deque<GLMask> maskStack = new LinkedList<>();
-    final Deque<GLPolygonParameters> polygonParameterStack = new LinkedList<>();
-    final Deque<GLViewport> viewportStack = new LinkedList<>();
+    private static final transient Map<Thread, GLThread> THREAD_MAP = new HashMap<>(1);
+    final Deque<GLBlending> blendStack = new ArrayDeque<>(4);
+    final Deque<GLClear> clearStack = new ArrayDeque<>(4);
+    final Deque<GLDepthTest> depthTestStack = new ArrayDeque<>(4);
+    final Deque<GLMask> maskStack = new ArrayDeque<>(4);
+    final Deque<GLPolygonParameters> polygonParameterStack = new ArrayDeque<>(4);
+    final Deque<GLViewport> viewportStack = new ArrayDeque<>(4);
+
+    private Runnable onScissorTestStart = null;
+    private Runnable onScissorTestEnd = null;
+
+    void runScissorTestStartCallback() {
+        if (this.onScissorTestStart != null) {
+            this.onScissorTestStart.run();
+        }
+    }
+
+    void runScissorTestEndCallback() {
+        if (this.onScissorTestEnd != null) {
+            this.onScissorTestEnd.run();
+        }
+    }
+
+    public void setOnScissorTestStart(final Runnable callback) {
+        this.onScissorTestStart = callback;
+    }
+
+    public void setOnScissorTestEnd(final Runnable callback) {
+        this.onScissorTestEnd = callback;
+    }
+
+    private BiConsumer<GLBlending, GLBlending> onBlendChange = null;
+
+    public void setOnBlendChange(final BiConsumer<GLBlending, GLBlending> callback) {
+        this.onBlendChange = callback;
+    }
+
+    void runBlendChangeCallback(final GLBlending oldBlend, final GLBlending newBlend) {
+        if (this.onBlendChange != null) {
+            this.onBlendChange.accept(oldBlend, newBlend);
+        }
+    }
+
+    private BiConsumer<GLClear, GLClear> onClear = null;
+
+    public void setOnClear(final BiConsumer<GLClear, GLClear> callback) {
+        this.onClear = callback;
+    }
+
+    void runOnClearCallback(final GLClear oldClear, final GLClear newClear) {
+        if (this.onClear != null) {
+            this.onClear.accept(oldClear, newClear);
+        }
+    }
+
+    private BiConsumer<GLDepthTest, GLDepthTest> onDepthTestChange = null;
+
+    public void setOnDepthTestChange(final BiConsumer<GLDepthTest, GLDepthTest> callback) {
+        this.onDepthTestChange = callback;
+    }
+
+    void runOnDepthTestChangeCallback(final GLDepthTest oldDepthTest, final GLDepthTest newDepthTest) {
+        if (this.onDepthTestChange != null) {
+            this.onDepthTestChange.accept(oldDepthTest, newDepthTest);
+        }
+    }
+
+    private BiConsumer<GLMask, GLMask> onMaskChange = null;
+
+    public void setOnMaskChange(final BiConsumer<GLMask, GLMask> callback) {
+        this.onMaskChange = callback;
+    }
+
+    void runOnMaskChangeCallback(final GLMask oldMask, final GLMask newMask) {
+        if(this.onMaskChange != null) {
+            this.onMaskChange.accept(oldMask, newMask);
+        }
+    }
+
+    private BiConsumer<GLPolygonParameters, GLPolygonParameters> onPolygonParametersChange = null;
+
+    public void setOnPolygonParametersChange(final BiConsumer<GLPolygonParameters, GLPolygonParameters> callback) {
+        this.onPolygonParametersChange = callback;
+    }
+
+    void runOnPolygonParametersChangeCallback(final GLPolygonParameters oldParams, final GLPolygonParameters newParams) {
+        if(this.onPolygonParametersChange != null) {
+            this.onPolygonParametersChange.accept(oldParams, newParams);
+        }
+    }
+
+    private BiConsumer<GLViewport, GLViewport> onViewportChange = null;
+
+    public void setOnViewportChange(final BiConsumer<GLViewport, GLViewport> callback) {
+        this.onViewportChange = callback;
+    }
+
+    void runOnViewportChangeCallback(final GLViewport oldViewport, final GLViewport newViewport) {
+        if(this.onViewportChange != null) {
+            this.onViewportChange.accept(oldViewport, newViewport);
+        }
+    }    
 
     GLBlending currentBlend = new GLBlending(this);
     GLClear currentClear = new GLClear(this);
