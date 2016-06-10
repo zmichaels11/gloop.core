@@ -48,10 +48,32 @@ public class GLVertexAttributes {
     private static final Marker GLOOP_MARKER = MarkerFactory.getMarker("GLOOP");
     private static final Logger LOGGER = LoggerFactory.getLogger("GLVertexAttributes");
 
+    /**
+     * The location returned when the varying attribute is invalid.
+     *
+     * @since 15.06.24
+     */
     public static final int INVALID_VARYING_LOCATION = -1;
+    /**
+     * The location returned when the vertex attribute is invalid.
+     *
+     * @since 15.06.24
+     */
     public static final int INVALID_ATTRIBUTE_LOCATION = -1;
-    final Map<String, Integer> nameMap = new HashMap<>();
-    final Set<String> feedbackVaryings = new HashSet<>();
+
+    /**
+     * The map of vertex attribute names to locations.
+     *
+     * @since 15.06.24
+     */
+    final Map<String, Integer> nameMap = new HashMap<>(8);
+
+    /**
+     * The set of feedback varyings.
+     *
+     * @since 15.06.24
+     */
+    final Set<String> feedbackVaryings = new HashSet<>(8);
 
     private String name;
 
@@ -72,6 +94,7 @@ public class GLVertexAttributes {
 
     /**
      * Retrieves the name of the GLVertexAttributes.
+     *
      * @return the name.
      */
     public final String getName() {
@@ -88,12 +111,12 @@ public class GLVertexAttributes {
      */
     public void setAttribute(final CharSequence name, final int index) {
         LOGGER.trace(
-                GLOOP_MARKER, 
-                "Set attribute[{}]=[{}] of GLVertexAttributes[{}]", 
-                name, 
-                index, 
+                GLOOP_MARKER,
+                "Set attribute[{}]=[{}] of GLVertexAttributes[{}]",
+                name,
+                index,
                 this.getName());
-        
+
         final String sName = name.toString();
 
         this.nameMap.put(sName, index);
@@ -119,11 +142,11 @@ public class GLVertexAttributes {
      */
     public void registerFeedbackVarying(final CharSequence vName) {
         LOGGER.trace(
-                GLOOP_MARKER, 
-                "Registered feedback varying: [{}] in GLVertexAttributes[{}]!", 
+                GLOOP_MARKER,
+                "Registered feedback varying: [{}] in GLVertexAttributes[{}]!",
                 vName,
                 this.getName());
-        
+
         this.feedbackVaryings.add(vName.toString());
     }
 

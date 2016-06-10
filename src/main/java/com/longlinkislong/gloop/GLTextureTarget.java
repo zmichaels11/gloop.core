@@ -29,16 +29,49 @@ import java.util.Optional;
 
 /**
  * Supported targets for GLTexture.
+ *
  * @author zmichaels
  * @since 15.12.19
  */
 public enum GLTextureTarget {
+    /**
+     * 1-dimensional texture.
+     *
+     * @since 15.12.19
+     */
     GL_TEXTURE_1D(3552),
+    /**
+     * 2-dimensional texture.
+     *
+     * @since 15.12.19
+     */
     GL_TEXTURE_2D(3553),
+    /**
+     * An array of 1-dimensional textures. Internally, this uses the storage of
+     * a 2-dimensional texture.
+     *
+     * @since 15.12.19
+     */
     GL_TEXTURE_1D_ARRAY(35864),
+    /**
+     * An array of 2-dimensional textures. Internally, this uses the storage of
+     * a 3-dimensional texture.
+     *
+     * @since 15.12.19
+     */
     GL_TEXTURE_2D_ARRAY(35866),
+    /**
+     * 3-dimensional texture.
+     *
+     * @since 15.12.19
+     */
     GL_TEXTURE_3D(32879),
     GL_TEXTURE_RECTANGLE(34037),
+    /**
+     * A 1-dimensional texture that shares storage with a buffer object.
+     *
+     * @since 15.12.19
+     */
     GL_TEXTURE_BUFFER(35882),
     GL_TEXTURE_CUBE_MAP(34067),
     GL_TEXTURE_CUBE_MAP_ARRAY(36873),

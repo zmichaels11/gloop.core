@@ -55,7 +55,7 @@ public class GLProgram extends GLObject {
     private static final Logger LOGGER = LoggerFactory.getLogger("GLProgram");
 
     private transient volatile Program program;
-    private final Map<String, Integer> uniforms = new HashMap<>();
+    private final Map<String, Integer> uniforms = new HashMap<>(32);
     private String name = "";
 
     /**
@@ -912,7 +912,7 @@ public class GLProgram extends GLObject {
          * @return self reference.
          * @since 15.12.18
          */
-        public final SetUniformFTask set(final GLVec<?> vec) {
+        public SetUniformFTask set(final GLVec<?> vec) {
             if (vec.size() != this.count) {
                 throw new ArrayIndexOutOfBoundsException("Invalid vector size!");
             }
@@ -929,7 +929,7 @@ public class GLProgram extends GLObject {
          * @return self reference.
          * @since 15.12.18
          */
-        public final SetUniformFTask set(final float... data) {
+        public SetUniformFTask set(final float... data) {
             return this.set(data, 0, data.length);
         }
 
@@ -942,7 +942,7 @@ public class GLProgram extends GLObject {
          * @return self reference.
          * @since 15.12.18
          */
-        public final SetUniformFTask set(
+        public SetUniformFTask set(
                 final float[] data, final int offset, final int length) {
 
             if (this.count != length) {
@@ -1032,7 +1032,7 @@ public class GLProgram extends GLObject {
 
         @Override
         public String toString() {
-            final StringBuilder out = new StringBuilder();
+            final StringBuilder out = new StringBuilder(128);
 
             out.append("glUniform");
 

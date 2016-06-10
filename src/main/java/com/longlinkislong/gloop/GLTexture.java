@@ -46,7 +46,6 @@ import org.slf4j.MarkerFactory;
  */
 public class GLTexture extends GLObject {
 
-    private static final Marker GL_MARKER = MarkerFactory.getMarker("OPENGL");
     private static final Marker GLOOP_MARKER = MarkerFactory.getMarker("GLOOP");
     private static final Logger LOGGER = LoggerFactory.getLogger("GLTexture");
 
@@ -433,7 +432,7 @@ public class GLTexture extends GLObject {
 
                 GLTexture.this.width = GLTexture.this.height = GLTexture.this.depth = 0;
                 GLTexture.this.isSparse = false;
-                GLTexture.this.name = "";                
+                GLTexture.this.name = "";
             } else {
                 LOGGER.warn(GLOOP_MARKER, "Attempted to delete invalid GLTexture!");
             }
@@ -597,7 +596,7 @@ public class GLTexture extends GLObject {
                     format.value, type.value, data);
 
             GLTexture.this.texture.updateTime();
-            
+
             LOGGER.trace(GLOOP_MARKER, "############### End GLTexture Update Image 3D Task ###############");
         }
     }
@@ -729,7 +728,7 @@ public class GLTexture extends GLObject {
                     data);
 
             GLTexture.this.texture.updateTime();
-            
+
             LOGGER.trace(
                     GLOOP_MARKER,
                     "############### End GLTexture Update Image 2D Task ###############");
@@ -1437,7 +1436,7 @@ public class GLTexture extends GLObject {
             }
 
             this.maxSize = GLTools.getDriverInstance().textureGetMaxSize();
-            
+
             LOGGER.trace(GLOOP_MARKER, "############### End GLTexture Max Texture Size Query ###############");
 
             return this.maxSize;
@@ -1450,8 +1449,6 @@ public class GLTexture extends GLObject {
         }
     }
 
-    private static Map<GLTextureInternalFormat, GLTextureFormat> MEM_PREFERRED_FORMATS = new HashMap<>();
-
     /**
      * Retrieves the preferred GLTextureFormat for the specified
      * GLTextureInternalFormat.
@@ -1461,25 +1458,19 @@ public class GLTexture extends GLObject {
      * @since 15.07.20
      */
     public static GLTextureFormat getPreferredTextureFormat(final GLTextureInternalFormat format) {
-        if (MEM_PREFERRED_FORMATS.containsKey(format)) {
-            return MEM_PREFERRED_FORMATS.get(format);
-        } else {
-            final GLTextureFormat res = new PreferredInternalFormatQuery(format).glCall();
-
-            MEM_PREFERRED_FORMATS.put(format, res);
-            return res;
-        }
+        return new PreferredInternalFormatQuery(format).glCall();
     }
 
     /**
      * A GLQuery that checks the preferred texture format for the specified
-     * GLTextureInternalFormat.
+     * GLTextureInternalFormat. This query values returning a compatible format
+     * over the true preferred format.
      *
      * @since 15.07.20
      */
     public static final class PreferredInternalFormatQuery extends GLQuery<GLTextureFormat> {
 
-        final static Map<GLTextureInternalFormat, GLTextureFormat> MEM_QUERIES = new HashMap<>();
+        final static Map<GLTextureInternalFormat, GLTextureFormat> MEM_QUERIES = new HashMap<>(GLTextureInternalFormat.values().length);
         final GLTextureInternalFormat testFormat;
 
         /**
@@ -1494,7 +1485,26 @@ public class GLTexture extends GLObject {
 
         @Override
         public GLTextureFormat call() throws Exception {
-            return GLTextureFormat.GL_RGBA;
+            return MEM_QUERIES.computeIfAbsent(testFormat, fmt -> {
+                //TODO: use the OpenGL call to actually check.
+                switch (fmt) {
+                    case GL_COMPRESSED_RGB_S3TC_DXT1:
+                    case GL_RGB:
+                    case GL_R3_G3_B2:
+                    case GL_RGB4:
+                    case GL_RGB5:
+                    case GL_RGB8:
+                    case GL_RGB10:
+                    case GL_RGB16:
+                    case GL_RGB16F:
+                    case GL_RGB32F:
+                    case GL_R11F_G11F_B10F:
+                        return GLTextureFormat.GL_RGB;
+                    default:
+                        return GLTextureFormat.GL_RGBA;
+                }
+
+            });
         }
 
         @Override
@@ -1504,14 +1514,39 @@ public class GLTexture extends GLObject {
         }
     }
 
+    /**
+     * Copies the data from a GLTexture object into a ByteBuffer.
+     *
+     * @param level the mipmap level to copy.
+     * @param format the texture format to read as.
+     * @param type the data type to store the pixels as.
+     * @return the ByteBuffer.
+     * @since 16.06.10
+     */
     public ByteBuffer downloadImage(final int level, final GLTextureFormat format, final GLType type) {
         return new DownloadImageQuery(level, format, type).glCall(this.getThread());
     }
 
+    /**
+     * Copies the data from a GLTexture object into the supplied ByteBuffer.
+     *
+     * @param level the mipmap level to copy.
+     * @param format the texture format to read as.
+     * @param type the data type to store the pixels as.
+     * @param buffer the ByteBuffer to write the data to.
+     * @return the ByteBuffer containing the data. It may be a new ByteBuffer if
+     * the supplied ByteBuffer could not hold all of the data.
+     * @since 16.06.10
+     */
     public ByteBuffer downloadImage(final int level, final GLTextureFormat format, final GLType type, final ByteBuffer buffer) {
         return new DownloadImageQuery(level, format, type, buffer).glCall(this.getThread());
     }
 
+    /**
+     * A GLQuery that copies the data of a GLTexture into a ByteBuffer.
+     *
+     * @since 16.06.10
+     */
     public final class DownloadImageQuery extends GLQuery<ByteBuffer> {
 
         private final int level;
@@ -1520,6 +1555,19 @@ public class GLTexture extends GLObject {
         private final int bufferSize;
         private final ByteBuffer buffer;
 
+        /**
+         * Constructs a new DownloadImageQuery. The storage ByteBuffer will be
+         * allocated based on the needed size.
+         *
+         * @param level the mipmap level.
+         * @param format the texture format.
+         * @param type the data type.
+         * @throws NullPointerException if format is null.
+         * @throws NullPointerException if type is null.
+         * @throws GLException if an unsupported GLTextureFormat is supplied.
+         * @throws GLException if an unsupported GLType is supplied.
+         * @since 16.06.10
+         */
         public DownloadImageQuery(final int level, final GLTextureFormat format, final GLType type) {
             if ((this.level = level) < 0) {
                 throw new GLException("Level cannot be less than 0!");
@@ -1591,6 +1639,16 @@ public class GLTexture extends GLObject {
             this.buffer = ByteBuffer.allocateDirect(this.bufferSize).order(ByteOrder.nativeOrder());
         }
 
+        /**
+         * Constructs a new GLDownloadImageQuery. The output ByteBuffer is
+         * supplied.
+         *
+         * @param level the mipmap level to read.
+         * @param format the format of the texture.
+         * @param type the pixel data type.
+         * @param buffer the buffer to copy the data to.
+         * @since 16.06.10
+         */
         public DownloadImageQuery(final int level, final GLTextureFormat format, final GLType type, final ByteBuffer buffer) {
             if ((this.level = level) < 0) {
                 throw new GLException("Level cannot be less than 0!");
@@ -1953,9 +2011,9 @@ public class GLTexture extends GLObject {
     public int[] getVirtualPageSize() {
         return new int[]{this.vpageWidth, this.vpageHeight, this.vpageDepth};
     }
-    
+
     public long getTimeSinceLastUsed() {
-        if(this.texture != null) {
+        if (this.texture != null) {
             return this.texture.getTimeSinceLastUsed();
         } else {
             return System.nanoTime();

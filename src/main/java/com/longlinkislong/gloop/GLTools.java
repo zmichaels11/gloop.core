@@ -49,11 +49,14 @@ import org.slf4j.MarkerFactory;
  * @author zmichaels
  * @since 15.05.27
  */
-public class GLTools {
+public final class GLTools {
 
     private static final Logger LOGGER = LoggerFactory.getLogger("GLTools");
     private static final Marker GLOOP_MARKER = MarkerFactory.getMarker("GLOOP");
     private static final Marker SYS_MARKER = MarkerFactory.getMarker("SYSTEM");
+
+    private GLTools() {
+    }
 
     /**
      * Red component offset for vectors
@@ -161,6 +164,13 @@ public class GLTools {
      */
     public static final double DEGREES_TO_RADIANS = Math.PI / 180.0;
 
+    /**
+     * Retrieves the current system time in seconds. Precision is in the
+     * nanosecond scale.
+     *
+     * @return the time in seconds.
+     * @since 15.06.13
+     */
     public static double getTime() {
         return System.nanoTime() * 1e-9;
     }
@@ -1100,7 +1110,7 @@ public class GLTools {
      * @since 15.07.08
      */
     public static String readAll(final InputStream src) throws IOException {
-        final StringBuilder out = new StringBuilder();
+        final StringBuilder out = new StringBuilder(1024);
 
         try (final InputStream lSrc = src;
                 final InputStreamReader srcReader = new InputStreamReader(lSrc);
@@ -1182,7 +1192,7 @@ public class GLTools {
      * @since 15.07.06
      */
     public static String FloatBufferToString(final FloatBuffer buffer) {
-        final StringBuilder out = new StringBuilder();
+        final StringBuilder out = new StringBuilder(512);
 
         if (buffer == null) {
             out.append("FloatBuffer: [null]");
@@ -1221,7 +1231,7 @@ public class GLTools {
      * @since 15.07.06
      */
     public static String IntBufferToString(final IntBuffer buffer) {
-        final StringBuilder out = new StringBuilder();
+        final StringBuilder out = new StringBuilder(512);
 
         if (buffer == null) {
             out.append("IntBuffer: [null]");
@@ -1493,16 +1503,16 @@ public class GLTools {
 
         @SuppressWarnings("rawtypes")
         private static final Driver INSTANCE;
-        
+
         static {
             final DriverManager driverManager = new DriverManager();
-            final String preferredDriverName = System.getProperty("com.longlinkislong.gloop.gldriver");   
+            final String preferredDriverName = System.getProperty("com.longlinkislong.gloop.gldriver");
             @SuppressWarnings("rawtypes")
             final Optional<Driver> preferredDriver = driverManager.selectDriverByName(preferredDriverName);
-            
-            if(preferredDriver.isPresent()) {
+
+            if (preferredDriver.isPresent()) {
                 INSTANCE = preferredDriver.get();
-            } else {                
+            } else {
                 INSTANCE = driverManager.selectBestDriver().orElseThrow(() -> new RuntimeException("No supported drivers found!"));
             }
         }

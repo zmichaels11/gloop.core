@@ -25,8 +25,13 @@
  */
 package com.longlinkislong.gloop;
 
+import java.util.Optional;
+import org.lwjgl.opengl.GL11;
+
 /**
- * The status of an OpenGL state.
+ * The status of an OpenGL state. This mostly corresponds to GL_TRUE and
+ * GL_FALSE, however it is exclusively in reference to OpenGL states that may be
+ * enabled or disabled.
  *
  * @author zmichaels
  * @since 15.08.05
@@ -38,11 +43,36 @@ public enum GLEnableStatus {
      *
      * @since 15.08.05
      */
-    GL_ENABLED,
+    GL_ENABLED(GL11.GL_TRUE),
     /**
      * The state or feature is disabled.
      *
      * @since 15.08.05
      */
-    GL_DISABLED
+    GL_DISABLED(GL11.GL_FALSE);
+
+    final int value;
+
+    GLEnableStatus(final int value) {
+        this.value = value;
+    }
+
+    /**
+     * Translates a GLenum value to the corresponding GLEnableStatus.
+     *
+     * @param glEnum the value.
+     * @return the corresponding type. An empty Optional is returned when the
+     * glEnum is an invalid value.
+     * @since 16.06.10
+     */
+    public static Optional<GLEnableStatus> of(final int glEnum) {
+        switch (glEnum) {
+            case GL11.GL_TRUE:
+                return Optional.of(GL_ENABLED);
+            case GL11.GL_FALSE:
+                return Optional.of(GL_DISABLED);
+            default:
+                return Optional.empty();
+        }
+    }
 }

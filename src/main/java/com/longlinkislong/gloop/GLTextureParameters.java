@@ -38,7 +38,8 @@ import org.slf4j.MarkerFactory;
  * @author zmichaels
  * @since 15.12.18
  */
-public class GLTextureParameters {    
+public class GLTextureParameters {
+
     private static final Marker GLOOP_MARKER = MarkerFactory.getMarker("GLOOP");
     private static final Logger LOGGER = LoggerFactory.getLogger("GLTextureParameters");
 
@@ -388,7 +389,7 @@ public class GLTextureParameters {
                 return this.maxLevel;
             }
 
-            this.maxLevel = GLTools.getDriverInstance().textureGetMaxAnisotropy();            
+            this.maxLevel = GLTools.getDriverInstance().textureGetMaxAnisotropy();
             this.checked = true;
 
             LOGGER.trace(
@@ -402,6 +403,11 @@ public class GLTextureParameters {
             return this.maxLevel;
         }
     }
-    
+
+    /**
+     * An instance of GLTextureParameters that contains only the default values.
+     *
+     * @since 15.05.28
+     */
     public static final GLTextureParameters DEFAULT_PARAMETERS = new GLTextureParameters();
 }

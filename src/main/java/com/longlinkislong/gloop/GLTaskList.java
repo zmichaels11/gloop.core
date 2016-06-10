@@ -38,7 +38,7 @@ import java.util.RandomAccess;
  * @since 15.05.27
  */
 public class GLTaskList extends GLTask implements List<GLTask>, RandomAccess{
-    private final List<GLTask> tasks = new ArrayList<>();        
+    private final List<GLTask> tasks = new ArrayList<>(0);
     
     @Override
     public void run() {

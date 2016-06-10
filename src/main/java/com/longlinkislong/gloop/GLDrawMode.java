@@ -89,17 +89,18 @@ public enum GLDrawMode {
 
     /**
      * Translates the GLenum to the corresponding GLDrawMode.
+     *
      * @param glEnum the GLenum value.
      * @return the GLDrawMode wrapped in an Optional.
      * @since 15.12.18
      */
     public static Optional<GLDrawMode> of(final int glEnum) {
-        for(GLDrawMode mode : values()) {
-            if(mode.value == glEnum) {
+        for (GLDrawMode mode : values()) {
+            if (mode.value == glEnum) {
                 return Optional.of(mode);
             }
         }
-        
+
         return Optional.empty();
     }
 }

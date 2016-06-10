@@ -33,26 +33,91 @@ import org.slf4j.Marker;
 import org.slf4j.MarkerFactory;
 
 /**
+ * GLPolygonParameters is a wrapper class for all OpenGL states that refer to
+ * how polygons are drawn.
  *
  * @author zmichaels
+ * @since 15.12.18
  */
 public class GLPolygonParameters extends GLObject {
 
     private static final Marker GLOOP_MARKER = MarkerFactory.getMarker("GLOOP");
     private static final Logger LOGGER = LoggerFactory.getLogger("GLPolygonParameters");
 
+    /**
+     * Default point size is 1.0.
+     *
+     * @since 15.12.18
+     */
     public static final float DEFAULT_POINT_SIZE = 1f;
+    /**
+     * Default line thickness is 1.0.
+     *
+     * @since 15.12.18
+     */
     public static final float DEFAULT_LINE_SIZE = 1f;
+
+    /**
+     * Default is that points define a polygon in counter-clockwise order.
+     *
+     * @since 15.12.18
+     */
     public static final GLFrontFaceMode DEFAULT_FRONT_FACE = GLFrontFaceMode.GL_CCW;
+
+    /**
+     * Default method of drawing polygons is to fill it in.
+     *
+     * @since 15.12.18
+     */
     public static final GLPolygonMode DEFAULT_MODE = GLPolygonMode.GL_FILL;
+
     public static final float DEFAULT_POLYGON_OFFSET_FACTOR = 0f;
     public static final float DEFAULT_POLYGON_OFFSET_UNITS = 0f;
+
+    /**
+     * Default culling is to not draw the back face.
+     *
+     * @since 15.12.18
+     */
     public static final GLCullMode DEFAULT_CULL_MODE = GLCullMode.GL_BACK;
 
+    /**
+     * The culling status. Culling is enabled by default.
+     *
+     * @since 15.12.18
+     */
     public final GLEnableStatus cullEnabled;
+    /**
+     * The polygon face(s) not to draw.
+     *
+     * @since 15.12.18
+     */
     public final GLCullMode cullMode;
-    public final float pointSize, lineSize;
+
+    /**
+     * The diameter of drawn points.
+     *
+     * @since 15.12.18
+     */
+    public final float pointSize;
+    /**
+     * The thickness of drawn lines.
+     *
+     * @since 15.12.18
+     */
+    public final float lineSize;
+
+    /**
+     * The order of points that defines the front face.
+     *
+     * @since 15.12.18
+     */
     public final GLFrontFaceMode frontFace;
+    /**
+     * How the polygons are drawn.
+     *
+     * @since 15.12.18
+     */
     public final GLPolygonMode mode;
     public final float polygonOffsetFactor, polygonOffsetUnits;
 
@@ -296,6 +361,11 @@ public class GLPolygonParameters extends GLObject {
         new ApplyPolygonParametersTask().glRun(this.getThread());
     }
 
+    /**
+     * A GLTask that applies all settings of GLPolygonParameters.
+     *
+     * @since 15.12.18
+     */
     public class ApplyPolygonParametersTask extends GLTask {
 
         @Override
@@ -316,12 +386,12 @@ public class GLPolygonParameters extends GLObject {
             thread.runOnPolygonParametersChangeCallback(thread.currentPolygonParameters, GLPolygonParameters.this);
             thread.currentPolygonParameters = GLPolygonParameters.this.withGLThread(thread);
             GLTools.getDriverInstance().polygonSetParameters(
-                    pointSize, 
-                    lineSize, 
+                    pointSize,
+                    lineSize,
                     frontFace.value,
                     cullEnabled == GL_ENABLED ? cullMode.value : 0,
                     mode.value,
-                    polygonOffsetFactor, polygonOffsetUnits);            
+                    polygonOffsetFactor, polygonOffsetUnits);
 
             LOGGER.trace(GLOOP_MARKER, "############### End GLPolygonParameters Apply Polygon Parameters Task ###############");
         }

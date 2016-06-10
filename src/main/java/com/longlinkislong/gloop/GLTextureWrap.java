@@ -34,8 +34,24 @@ import java.util.Optional;
  * @since 15.12.18
  */
 public enum GLTextureWrap {
+    /**
+     * Indicates that attempting to sample passed the edge will instead sample
+     * the edge.
+     *
+     * @since 15.12.18
+     */
     GL_CLAMP_TO_EDGE(33071),
+    /**
+     * Indicates that attempting to sample passed the edge will instead begin
+     * sampling in the opposite direction.
+     *
+     * @since 15.12.18
+     */
     GL_MIRRORED_REPEAT(33648),
+    /**
+     * Indicates that attempting to sample passed the edge will instead begin
+     * sampling from the beginning.
+     */
     GL_REPEAT(10497),
     GL_MIRROR_CLAMP_TO_EDGE(33648);
 

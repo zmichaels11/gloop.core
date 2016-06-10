@@ -28,16 +28,58 @@ package com.longlinkislong.gloop;
 import java.util.Optional;
 
 /**
+ * Collection of possible errors that may be reported by OpenGL.
  *
  * @author zmichaels
+ * @since 16.06.10
  */
 public enum GLErrorType {
+    /**
+     * The wrong enumeration type was supplied to an OpenGL function.
+     *
+     * @since 16.06.10
+     */
     GL_INVALID_ENUM(1280, "An unacceptable value is specified for an enumerated argument."),
+    /**
+     * The wrong enumeration value was supplied to an OpenGL function.
+     *
+     * @since 16.06.10
+     */
     GL_INVALID_VALUE(1281, "A numeric argument is out of range."),
+    /**
+     * An OpenGL function was called in an invalid state.
+     *
+     * @since 16.06.10
+     */
     GL_INVALID_OPERATION(1282, "The specified operation is not allowed in the current state."),
+    /**
+     * An operation on a framebuffer object was attempted when the framebuffer
+     * is not complete. This may also apply to attempting to perform operations
+     * on the default framebuffer.
+     *
+     * @since 16.06.10
+     */
     GL_INVALID_FRAMEBUFFER_OPERATION(1286, "The framebuffer object is not complete."),
+    /**
+     * OpenGL ran out of accessible memory.
+     *
+     * @since 16.06.10
+     */
     GL_OUT_OF_MEMORY(1285, "There is not enough memory left to execute the command."),
+    /**
+     * An operation on a stack held by OpenGL has experienced undeflow.
+     *
+     * @deprecated the stacks held by OpenGL are only accessible via legacy
+     * functions.
+     * @since 16.06.10
+     */
     GL_STACK_UNDERFLOW(1284, "An attempt has been made to perform an operation that would cause an internal stack to underflow."),
+    /**
+     * An operation on a stack held by OpenGL has experienced overflow.
+     *
+     * @deprecated the stacks held by OpenGL are only accessible via legacy
+     * functions.
+     */
     GL_STACK_OVERFLOW(1283, "An attempt has been made to perform an operation that would cause an internal stack to overflow.");
 
     final int value;

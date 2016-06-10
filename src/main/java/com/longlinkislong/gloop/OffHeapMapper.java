@@ -45,7 +45,7 @@ public final class OffHeapMapper implements ObjectMapper {
 
     private static final Marker LWJGL_MARKER = MarkerFactory.getMarker("LWJGL");
     private static final Logger LOGGER = LoggerFactory.getLogger("OffHeapMapper");
-    private static final int MAX_REFS;    
+    private static final int MAX_REFS;
 
     static {
         NativeTools.getInstance().loadNatives();
@@ -55,6 +55,11 @@ public final class OffHeapMapper implements ObjectMapper {
 
     private final Reference<LongBuffer> sRefs;
 
+    /**
+     * Constructs a new OffHeapMapper object.
+     *
+     * @since 15.10.01
+     */
     public OffHeapMapper() {
         final CleanupTask cleanup = new CleanupTask();
 

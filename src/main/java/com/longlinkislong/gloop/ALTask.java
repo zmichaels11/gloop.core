@@ -67,6 +67,12 @@ public abstract class ALTask implements Runnable {
     @Override
     public abstract void run();
 
+    /**
+     * Executes the ALTask on the specified ALThread.
+     *
+     * @param thread the ALThread to execute the task on.
+     * @since 16.03.21
+     */
     public final void alRun(final ALThread thread) {
         if (thread == null) {
             this.alRun(ALThread.getDefaultInstance());
@@ -77,6 +83,11 @@ public abstract class ALTask implements Runnable {
         }
     }
 
+    /**
+     * Attempts to execute the ALTask on the default ALThread.
+     *
+     * @since 16.03.21
+     */
     public final void alRun() {
         final ALThread thread = ALThread.getDefaultInstance();
 
@@ -87,6 +98,13 @@ public abstract class ALTask implements Runnable {
         }
     }
 
+    /**
+     * Creates a new ALTask from a Runnable.
+     *
+     * @param task the Runnable to wrap as an ALTask.
+     * @return the ALTask.
+     * @since 16.03.21
+     */
     public static ALTask create(final Runnable task) {
         return new ALTask() {
             @Override

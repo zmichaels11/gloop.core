@@ -57,7 +57,7 @@ public class GLFramebuffer extends GLObject {
 
     private volatile transient Framebuffer framebuffer;
     private volatile int nextColorAttachment = 36064 /* GL_COLOR_ATTACHMENT0 */;
-    private final Map<String, Integer> colorAttachments = new HashMap<>();
+    private final Map<String, Integer> colorAttachments = new HashMap<>(4);
     private final boolean isLocked;
     private String name = "";
 
@@ -132,7 +132,7 @@ public class GLFramebuffer extends GLObject {
         this.name = "id=" + framebuffer.hashCode();
     }
 
-    private static final Map<GLThread, GLFramebuffer> DEFAULT_FRAMEBUFFERS = new HashMap<>();
+    private static final Map<GLThread, GLFramebuffer> DEFAULT_FRAMEBUFFERS = new HashMap<>(4);
 
     /**
      * Retrieves the default framebuffer associated with the default OpenGL

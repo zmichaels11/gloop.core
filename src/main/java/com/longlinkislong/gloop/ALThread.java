@@ -53,7 +53,7 @@ public final class ALThread {
 
     private static final Marker SYS_MARKER = MarkerFactory.getMarker("SYSTEM");
     private static final Logger LOGGER = LoggerFactory.getLogger("ALThread");
-    private static final transient Map<Thread, ALThread> THREAD_MAP = new HashMap<>();
+    private static final transient Map<Thread, ALThread> THREAD_MAP = new HashMap<>(1);
     private transient Thread internalThread = null;
     private Device device;
     private boolean isKill = false;
@@ -184,6 +184,8 @@ public final class ALThread {
     private static final class DefaultHolder {
 
         private static final ALThread INSTANCE = new ALThread();
+
+        private DefaultHolder() {}
     }
 
     /**

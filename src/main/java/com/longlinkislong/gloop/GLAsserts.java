@@ -34,10 +34,16 @@ import java.util.function.Function;
 import org.lwjgl.opengl.GL11;
 
 /**
+ * GLAsserts is a collection of methods that check parameters that may be passed
+ * into OpenGL calls. It also supplies generic error messages.
  *
  * @author zmichaels
+ * @since 16.06.10
  */
-public class GLAsserts {
+public final class GLAsserts {
+
+    private GLAsserts() {
+    }
 
     public static String invalidWidthMsg(int width) {
         return "Invalid width [" + width + "]! Must be at least 1.";

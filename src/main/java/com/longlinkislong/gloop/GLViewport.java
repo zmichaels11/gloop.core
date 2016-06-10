@@ -146,12 +146,30 @@ public class GLViewport extends GLObject {
         this.aspect = (double) w / (double) h;
     }
 
+    /**
+     * Builds a copy of the GLViewport object using the specified GLThread
+     * instead.
+     *
+     * @param thread the GLThread object to bind a new GLViewport to.
+     * @return the new GLViewport.
+     * @since 15.06.25
+     */
     public GLViewport withGLThread(final GLThread thread) {
         return this.getThread() == thread
                 ? this
                 : new GLViewport(thread, this.x, this.y, this.width, this.height);
     }
 
+    /**
+     * Builds a copy of the GLViewport object using the specified rectangle.
+     *
+     * @param x the x-position of the view rectangle.
+     * @param y the y-position of the view rectangle.
+     * @param width the width of the view rectangle.
+     * @param height the height of the view rectangle.
+     * @return the new GLViewport.
+     * @since 15.06.25
+     */
     public GLViewport withViewRect(final int x, final int y, final int width, final int height) {
         return this.x == x && this.y == y && this.width == width && this.height == height
                 ? this
@@ -190,7 +208,7 @@ public class GLViewport extends GLObject {
                 thread.currentViewport = GLViewport.this.withGLThread(thread);
             }
 
-            GLTools.getDriverInstance().viewportApply(x, y, width, height);            
+            GLTools.getDriverInstance().viewportApply(x, y, width, height);
             LOGGER.trace(GLOOP_MARKER, "############### End GLViewport Apply Viewport Task ##############");
         }
     }

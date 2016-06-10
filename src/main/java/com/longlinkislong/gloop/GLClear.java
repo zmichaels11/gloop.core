@@ -90,7 +90,7 @@ public class GLClear extends GLObject {
     public static final Set<GLFramebufferMode> DEFAULT_CLEAR_BITS;
 
     static {
-        final Set<GLFramebufferMode> bits = new HashSet<>();
+        final Set<GLFramebufferMode> bits = new HashSet<>(2);
         DEFAULT_CLEAR_BITS = Collections.unmodifiableSet(bits);
 
         bits.add(GLFramebufferMode.GL_COLOR_BUFFER_BIT);
@@ -215,7 +215,7 @@ public class GLClear extends GLObject {
         this.alpha = a;
         this.depth = depth;
 
-        final Set<GLFramebufferMode> bits = new HashSet<>();
+        final Set<GLFramebufferMode> bits = new HashSet<>(clearBits.size());
         int bitField = 0;
 
         for (GLFramebufferMode bit : clearBits) {
@@ -263,7 +263,7 @@ public class GLClear extends GLObject {
      * @since 15.07.01
      */
     public GLClear withClearBits(final GLFramebufferMode[] modes, final int offset, final int count) {
-        final Set<GLFramebufferMode> bits = new HashSet<>();
+        final Set<GLFramebufferMode> bits = new HashSet<>(modes.length);
 
         Arrays.stream(modes, offset, modes.length).forEach(bits::add);
 

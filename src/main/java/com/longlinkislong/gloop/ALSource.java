@@ -25,8 +25,8 @@
  */
 package com.longlinkislong.gloop;
 
-import com.longlinkislong.gloop.alspi.Source;
 import com.longlinkislong.gloop.alspi.Driver;
+import com.longlinkislong.gloop.alspi.Source;
 import java.util.Map;
 import java.util.Objects;
 import java.util.PriorityQueue;
@@ -45,9 +45,10 @@ import org.slf4j.MarkerFactory;
  * @since 16.03.21
  */
 public class ALSource extends ALObject {
+
     private static final Marker GL_MARKER = MarkerFactory.getMarker("GLOOP");
     private static final Logger LOGGER = LoggerFactory.getLogger("ALSource");
-    
+
     private transient volatile Source source;
     private float gain = 1f;
     private float pitch = 1f;
@@ -83,17 +84,45 @@ public class ALSource extends ALObject {
         return source != null && source.isValid();
     }
 
-    public ALSource setDistance(final float referenceDistance, final float rolloffFactor, final float maxDistance) {
+    /**
+     * Sets the distance of the ALSource object. Each parameter may have a
+     * unique purpose for the different distance models.
+     *
+     * @param referenceDistance the reference distance.
+     * @param rolloffFactor the roll-off factor.
+     * @param maxDistance the maximum distance.
+     * @return self reference.
+     * @since 16.03.21
+     */
+    public ALSource setDistance(
+            final float referenceDistance,
+            final float rolloffFactor,
+            final float maxDistance) {
+
         new SetDistanceTask(referenceDistance, rolloffFactor, maxDistance).alRun();
         return this;
     }
 
+    /**
+     * An ALTask that sets the parameters for the ALSource's distance model.
+     *
+     * @since 16.03.21
+     */
     public final class SetDistanceTask extends ALTask {
 
         private final float referenceDistance;
         private final float maxDistance;
         private final float rolloffFactor;
 
+        /**
+         * Constructs a new SetDistanceTask. The purpose of each parameter is
+         * unique to each of the different distance models.
+         *
+         * @param referenceDistance the reference distance.
+         * @param rolloffFactor the roll-off factor.
+         * @param maxDistance the maximum distance.
+         * @since 16.03.21
+         */
         public SetDistanceTask(final float referenceDistance, final float rolloffFactor, final float maxDistance) {
             if (!Float.isFinite(referenceDistance)) {
                 throw new ALException("Reference distance must be a number!");
@@ -131,26 +160,62 @@ public class ALSource extends ALObject {
         }
     }
 
+    /**
+     * Retrieves the reference distance.
+     *
+     * @return the reference distance.
+     * @since 16.03.21
+     */
     public float getReferenceDistance() {
         return this.referenceDistance;
     }
 
+    /**
+     * Retrieves the roll-off factor.
+     *
+     * @return the roll-off factor.
+     * @since 16.03.21
+     */
     public float getRolloffFactor() {
         return this.rolloffFactor;
     }
 
+    /**
+     * Retrieves the maximum distance
+     *
+     * @return the maximum distance.
+     * @since 16.03.21
+     */
     public float getMaxDistance() {
         return this.maxDistance;
     }
 
+    /**
+     * Retrieves the size of the inner cone angle.
+     *
+     * @return the inner cone angle.
+     * @since 16.03.21
+     */
     public float getInnerConeAngle() {
         return this.coneInnerAngle;
     }
 
+    /**
+     * Retrieves the size of the outer cone angle.
+     *
+     * @return the outer cone angle.
+     * @since 16.03.21
+     */
     public float getOuterConeAngle() {
         return this.coneOuterAngle;
     }
 
+    /**
+     * Retrieves the gain of the outer cone.
+     *
+     * @return the outer cone gain.
+     * @since 16.03.21
+     */
     public float getOuterConeGain() {
         return this.coneOuterGain;
     }
@@ -211,10 +276,10 @@ public class ALSource extends ALObject {
                 throw new ALException("ALSource is already initialized!");
             } else {
                 source = ALTools.getDriverInstance().sourceCreate();
-                
+
                 final int auxSends = ALTools.getDriverInstance().sourceGetMaxAuxiliaryEffectSlotSends();
-                
-                for(int i = 0; i < auxSends; i++) {
+
+                for (int i = 0; i < auxSends; i++) {
                     sends.add(i);
                 }
             }
@@ -815,7 +880,7 @@ public class ALSource extends ALObject {
     public ALSource attachAuxiliaryEffectSlotSend(final ALAuxiliaryEffectSlot effectSlot) {
         return this.attachAuxiliaryEffectSlotSend(effectSlot, null);
     }
-    
+
     public ALSource attachAuxiliaryEffectSlotSend(final ALAuxiliaryEffectSlot effectSlot, final ALFilter filter) {
         new AttachAuxiliaryEffectSlotSendTask(effectSlot, filter).alRun();
         return this;
@@ -841,18 +906,18 @@ public class ALSource extends ALObject {
                 throw new ALException("Source is not valid!");
             } else if (!effectSlot.isValid()) {
                 throw new ALException("Effect slot is not valid!");
-            } else if(sends.isEmpty()) {
+            } else if (sends.isEmpty()) {
                 throw new ALException("Unable to attach Auxiliary Effect Slot to ALSource! No more sends!");
             } else if (this.filter == null) {
                 final int send = sends.poll();
-                
+
                 ALTools.getDriverInstance().sourceSendAuxiliaryEffectSlot(source, effectSlot.effectSlot, send);
-                usedSends.put(effectSlot, send);                
+                usedSends.put(effectSlot, send);
             } else if (this.filter.isValid()) {
                 final int send = sends.poll();
-                
+
                 ALTools.getDriverInstance().sourceSendAuxiliaryEffectSlot(source, effectSlot.effectSlot, send, filter.filter);
-                usedSends.put(effectSlot, send);                
+                usedSends.put(effectSlot, send);
             } else {
                 throw new ALException("Filter is not valid!");
             }

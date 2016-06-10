@@ -94,6 +94,9 @@ public final class NativeTools {
     private static final class Holder {
 
         private static final NativeTools INSTANCE = new NativeTools();
+
+        private Holder() {
+        }
     }
 
     /**
@@ -395,6 +398,12 @@ public final class NativeTools {
 
     private volatile boolean isLoaded = false;
 
+    /**
+     * Attempts to load all libraries from the classpath. The specified lwjgl
+     * library path will be used instead if it was defined.
+     *
+     * @since 15.08.05
+     */
     void autoLoad() {
         LOGGER.trace(SYS_MARKER, "Autoloading natives...");
 
@@ -408,6 +417,12 @@ public final class NativeTools {
         }
     }
 
+    /**
+     * Loads all native libraries needed by gloop from the classpath (usually a
+     * jar). No operation will occur if the libraries are already loaded.
+     *
+     * @since 15.08.05
+     */
     public synchronized void loadNatives() {
         if (isLoaded) {
             return;
