@@ -37,6 +37,8 @@ package com.longlinkislong.gloop;
  */
 public abstract class GLTask implements Runnable {
 
+    private static final boolean IMMEDIATE = Boolean.getBoolean("com.longlinkislong.gloop.gl_immediate");
+
     /**
      * Executes the task after at least [code]frames[/code] frames have passed.
      *
@@ -84,7 +86,9 @@ public abstract class GLTask implements Runnable {
      * @since 15.05.12
      */
     public final void glRun(final GLThread thread) {
-        if (thread == null) {
+        if (IMMEDIATE) {
+            this.run();
+        } else if (thread == null) {
             this.glRun(GLThread.getDefaultInstance());
         } else if (thread.isCurrent()) {
             this.run();
@@ -101,12 +105,16 @@ public abstract class GLTask implements Runnable {
      * @since 15.05.12
      */
     public final void glRun() {
-        final GLThread thread = GLThread.getDefaultInstance();
-
-        if (thread.isCurrent()) {
+        if (IMMEDIATE) {
             this.run();
         } else {
-            thread.submitGLTask(this);
+            final GLThread thread = GLThread.getDefaultInstance();
+
+            if (thread.isCurrent()) {
+                this.run();
+            } else {
+                thread.submitGLTask(this);
+            }
         }
     }
 
