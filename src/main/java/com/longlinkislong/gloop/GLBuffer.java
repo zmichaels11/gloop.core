@@ -132,6 +132,143 @@ public class GLBuffer extends GLObject {
     }
 
     /**
+     * Binds the GLBuffer as a uniform buffer object.
+     *
+     * @param binding the uniform buffer object binding point.
+     * @since 16.07.05
+     */
+    public void bindUniform(final int binding) {
+        new BindUniformTask(binding).glRun(this.getThread());
+    }
+
+    /**
+     * Binds the GLBuffer as a uniform buffer object.
+     *
+     * @param binding the uniform buffer object binding point.
+     * @param offset the offset of the buffer to bind.
+     * @param size the amount of bytes to bind.
+     * @since 16.07.05
+     */
+    public void bindUniform(final int binding, final long offset, final long size) {
+        new BindUniformTask(binding, offset, size).glRun(this.getThread());
+    }
+
+    public final class BindUniformTask extends GLTask {
+
+        final int binding;
+        final long offset;
+        final long size;
+
+        public BindUniformTask(final int binding) {
+            this.binding = binding;
+            this.offset = 0L;
+            this.size = -1L;
+        }
+
+        public BindUniformTask(final int binding, final long offset, final long size) {
+            this.binding = binding;
+            if ((this.offset = offset) < 0) {
+                throw new IllegalArgumentException("Offset cannot be less than 0!");
+            }
+
+            this.size = size;
+        }
+
+        @Override
+        public void run() {
+            LOGGER.trace(GLOOP_MARKER, "############### Start GLBuffer Bind Uniform Task ###############");
+
+            if (!GLBuffer.this.isValid()) {
+                throw new GLException("Invalid GLBuffer!");
+            } else {
+                if (this.size == -1) {
+                    LOGGER.trace(GLOOP_MARKER, "\tBinding GLBuffer[{}] at uniform buffer binding: [{}]!", GLBuffer.this.getName(), this.binding);
+
+                    GLTools.getDriverInstance().bufferBindUniform(buffer, this.binding);
+                } else {
+                    LOGGER.trace(GLOOP_MARKER, "\tBinding GLBuffer[{}],off={},size={} at uniform buffer binding: [{}]!", GLBuffer.this.getName(), this.offset, this.size, this.binding);
+
+                    GLTools.getDriverInstance().bufferBindUniform(buffer, this.binding, this.offset, this.size);
+                }
+
+                GLBuffer.this.buffer.updateTime();
+            }
+
+            LOGGER.trace(GLOOP_MARKER, "############### End GLBuffer Bind Uniform Task ###############");
+        }
+    }
+
+    /**
+     * Binds the GLBuffer as a shader storage buffer object.
+     *
+     * @param binding the shader storage buffer object binding point.
+     * @since 16.07.05
+     */
+    public void bindStorage(final int binding) {
+        new BindStorageTask(binding).glRun(this.getThread());
+    }
+
+    /**
+     * Binds the GLBuffer as a shader storage buffer object.
+     *
+     * @param binding the shader storage buffer object binding point.
+     * @param offset the offset of the GLBuffer to bind.
+     * @param size the amount of bytes to bind.
+     * @since 16.07.05
+     */
+    public void bindStorage(final int binding, final long offset, final long size) {
+        new BindStorageTask(binding, offset, size).glRun(this.getThread());
+    }
+
+    /**
+     * A GLTask that binds the GLBuffer to a shader storage buffer object
+     * binding point.
+     *
+     * @since 16.07.05
+     */
+    public final class BindStorageTask extends GLTask {
+
+        final int binding;
+        final long offset;
+        final long size;
+
+        public BindStorageTask(final int binding, final long offset, final long size) {
+            this.binding = binding;
+
+            if ((this.offset = offset) < 0) {
+                throw new IllegalArgumentException("Offset cannot be less than 0!");
+            }
+
+            this.size = size;
+        }
+
+        public BindStorageTask(final int binding) {
+            this.binding = binding;
+            this.offset = 0;
+            this.size = -1;
+        }
+
+        @Override
+        public void run() {
+            LOGGER.trace(GLOOP_MARKER, "############### Start GLBuffer Bind Storage Task ###############");
+
+            if (!GLBuffer.this.isValid()) {
+                throw new GLException("Invalid GLBuffer!");
+            } else {
+                if (this.size == -1) {
+                    GLTools.getDriverInstance().bufferBindStorage(buffer, this.binding);
+                } else {
+                    GLTools.getDriverInstance().bufferBindStorage(buffer, this.binding, this.offset, this.size);
+                }
+
+                GLBuffer.this.buffer.updateTime();
+            }
+
+            LOGGER.trace(GLOOP_MARKER, "############### End GLBuffer Bind Storage Task ###############");
+        }
+    }
+
+    /**
      * A GLTask that initializes this GLBuffer. The task will fail if the
      * GLBuffer is already initialized.
      *
@@ -151,7 +288,7 @@ public class GLBuffer extends GLObject {
             } else {
                 throw new GLException("GLBuffer is already initialized!");
             }
-            
+
             GLBuffer.this.buffer.updateTime();
             LOGGER.trace(GLOOP_MARKER, "############### End GLBuffer Init Task ###############");
         }
@@ -245,7 +382,7 @@ public class GLBuffer extends GLObject {
                 GLBuffer.this.buffer.resetTime();
                 buffer = null;
             }
-            
+
             LOGGER.trace(GLOOP_MARKER, "############### End GLBuffer Delete Task ###############");
         }
     }
@@ -429,7 +566,7 @@ public class GLBuffer extends GLObject {
             if (!GLBuffer.this.isValid()) {
                 throw new GLException("Invalid GLBuffer!");
             }
-            
+
             GLTools.getDriverInstance().bufferAllocateImmutable(buffer, size, this.flags);
             GLBuffer.this.buffer.updateTime();
             GLBuffer.this.accessFlags = this.flags;
@@ -872,7 +1009,7 @@ public class GLBuffer extends GLObject {
                 throw new GLException("Invalid GLBuffer!");
             }
 
-            GLTools.getDriverInstance().bufferInvalidateRange(buffer, offset, length);      
+            GLTools.getDriverInstance().bufferInvalidateRange(buffer, offset, length);
             GLBuffer.this.buffer.updateTime();
             LOGGER.trace(GLOOP_MARKER, "############### End GLBuffer InvalidateSubData Task ###############");
         }
@@ -903,14 +1040,14 @@ public class GLBuffer extends GLObject {
                 throw new GLException("Invalid GLBuffer!");
             }
 
-            GLTools.getDriverInstance().bufferInvalidateData(buffer);          
+            GLTools.getDriverInstance().bufferInvalidateData(buffer);
             GLBuffer.this.buffer.updateTime();
             LOGGER.trace(GLOOP_MARKER, "############### End GLBuffer Invalidate Task ###############");
         }
     }
-    
+
     public long getTimeSinceLastUsed() {
-        if(this.buffer != null) {
+        if (this.buffer != null) {
             return this.buffer.getTimeSinceLastUsed();
         } else {
             return System.nanoTime();

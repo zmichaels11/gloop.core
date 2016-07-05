@@ -36,6 +36,7 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
 import java.util.Objects;
+import java.util.OptionalInt;
 import java.util.Set;
 import java.util.stream.Collectors;
 import org.slf4j.Logger;
@@ -244,7 +245,7 @@ public class GLProgram extends GLObject {
             }
 
             GLProgram.this.program.updateTime();
-            
+
             LOGGER.trace(
                     GL_MARKER,
                     "############### End GLProgram Set Vertex Attributes Task ###############");
@@ -1210,13 +1211,188 @@ public class GLProgram extends GLObject {
     }
 
     /**
+     * Retrieves the binding assigned to the shader storage buffer object.
+     *
+     * @param sBlockName the uniform block name.
+     * @return the binding point. An empty OptionalInt is returned when a
+     * binding point was not assigned to the uniform block name.
+     * @since 16.07.05
+     */
+    public OptionalInt getStorageBlockBinding(final String sBlockName) {
+        return new GetStorageBlockBindingQuery(sBlockName).glCall(this.getThread());
+    }
+
+    /**
+     * A GLQuery that retrieves the binding point for a shader storage buffer
+     * object.
+     *
+     * @since 16.07.05
+     */
+    public final class GetStorageBlockBindingQuery extends GLQuery<OptionalInt> {
+
+        final String sblockName;
+
+        public GetStorageBlockBindingQuery(final CharSequence sBlockName) {
+            this.sblockName = sBlockName.toString();
+        }
+
+        @Override
+        public OptionalInt call() throws Exception {
+            if (!GLProgram.this.program.isValid()) {
+                throw new GLException("Invalid GLProgram!");
+            } else {
+                final int binding = GLTools.getDriverInstance().programGetStorageBlockBinding(program, this.sblockName);
+
+                if (binding == -1) {
+                    return OptionalInt.empty();
+                } else {
+                    return OptionalInt.of(binding);
+                }
+            }
+        }
+    }
+
+    /**
+     * Retrieves the binding assigned to a uniform buffer object.
+     *
+     * @param ublockName the uniform block name.
+     * @return the binding point. An empty OptionalInt is returned when a
+     * binding point was not assigned to the uniform block name.
+     *
+     * @since 16.07.05
+     */
+    public OptionalInt getUniformBlockBinding(final String ublockName) {
+        return new GetUniformBlockBindingQuery(ublockName).glCall(this.getThread());
+    }
+
+    /**
+     * A GLQuery that retrieves the binding point assigned to a uniform buffer
+     * object. The binding point must have been assigned prior to executing this
+     * query.
+     *
+     * @since 16.07.05
+     */
+    public final class GetUniformBlockBindingQuery extends GLQuery<OptionalInt> {
+
+        final String ublockName;
+
+        public GetUniformBlockBindingQuery(final CharSequence ublockName) {
+            this.ublockName = ublockName.toString();
+        }
+
+        @Override
+        public OptionalInt call() throws Exception {
+            if (!GLProgram.this.isValid()) {
+                throw new GLException("Invalid GLProgram!");
+            }
+
+            final int binding = GLTools.getDriverInstance().programGetUniformBlockBinding(program, this.ublockName);
+
+            if (binding == -1) {
+                return OptionalInt.empty();
+            } else {
+                return OptionalInt.of(binding);
+            }
+        }
+    }
+
+    /**
+     * Assigns a binding point for a uniform buffer object. The binding can then
+     * be used by GLBuffer in [code]bindUniform(binding)[/code]
+     *
+     * @param ublockName the uniform block name.
+     * @param binding the binding point.
+     * @since 16.07.05
+     */
+    public void setUniformBlockBinding(final String ublockName, final int binding) {
+        new SetUniformBlockBinding(ublockName, binding).glRun(this.getThread());
+    }
+
+    /**
+     * A GLTask that assigns a binding point for a uniform buffer object.
+     *
+     * @since 16.07.05
+     */
+    public final class SetUniformBlockBinding extends GLTask {
+
+        final int binding;
+        final String ublockName;
+
+        public SetUniformBlockBinding(final CharSequence ublockName, final int binding) {
+            this.ublockName = ublockName.toString();
+            this.binding = binding;
+        }
+
+        @Override
+        public void run() {
+            LOGGER.trace(GL_MARKER, "############### Start GLProgram Set Uniform Block Binding Task ###############");
+            LOGGER.trace(GL_MARKER, "\tAssigning uniform block: [{}] to uniform buffer binding: [{}]!", this.ublockName, this.binding);
+
+            if (!GLProgram.this.isValid()) {
+                throw new GLException("Invalid GLProgram!");
+            } else {
+                GLTools.getDriverInstance().programSetUniformBlockBinding(program, this.ublockName, this.binding);
+                GLProgram.this.program.updateTime();
+            }
+
+            LOGGER.trace(GL_MARKER, "############### End GLProgram Set Uniform Block Binding Task ###############");
+        }
+    }
+
+    /**
+     * Assigns a binding point for a shader storage buffer. The binding can then
+     * be used by GLBuffer in [code]bindStorage(binding)[/code]
+     *
+     * @param sblockName the uniform block name.
+     * @param binding the binding point.
+     * @since 16.07.05
+     */
+    public final void setStorageBlockBinding(final String sblockName, final int binding) {
+        new SetStorageBlockBindingTask(sblockName, binding).glRun(this.getThread());
+    }
+
+    /**
+     * A GLTask that assigns a binding point for a shader storage buffer.
+     *
+     * @since 16.07.05
+     */
+    public final class SetStorageBlockBindingTask extends GLTask {
+
+        final int binding;
+        final String sblockName;
+
+        public SetStorageBlockBindingTask(final CharSequence sblockName, final int binding) {
+            this.binding = binding;
+            this.sblockName = sblockName.toString();
+        }
+
+        @Override
+        public void run() {
+            LOGGER.trace(GL_MARKER, "############### Start GLProgram Set Storage Block Binding Task ###############");
+            LOGGER.trace(GL_MARKER, "\tAssigning uniform block: [{}] to storage binding: [{}]!", this.sblockName, this.binding);
+
+            if (!GLProgram.this.isValid()) {
+                throw new GLException("Invalid GLProgram!");
+            } else {
+                GLTools.getDriverInstance().programSetStorageBlockBinding(program, this.sblockName, this.binding);
+                GLProgram.this.program.updateTime();
+            }
+
+            LOGGER.trace(GL_MARKER, "############### End GLProgram Set Storage Block Binding Task ###############");
+        }
+    }
+
+    /**
      * Sets the shader storage with a GLBuffer.
      *
      * @param storageName the name of the storage block.
      * @param buffer the GLBuffer to bind.
      * @param bindingPoint the index to bind the GLBuffer to.
      * @since 15.07.06
+     * @deprecated binding points are actually independent of the program
+     * object!
      */
+    @Deprecated
     public void setShaderStorage(
             final CharSequence storageName,
             final GLBuffer buffer,
@@ -1289,6 +1465,7 @@ public class GLProgram extends GLObject {
      * @param bindingPoint the index to bind the buffer to.
      * @since 15.07.06
      */
+    @Deprecated
     public void setUniformBlock(
             final CharSequence uBlock,
             final GLBuffer buffer,
@@ -1347,7 +1524,7 @@ public class GLProgram extends GLObject {
             } else if (!this.buffer.isValid()) {
                 throw new GLException("Invalid GLBuffer object!");
             }
-            
+
             GLProgram.this.program.updateTime();
             GLTools.getDriverInstance().programSetUniformBlock(program, blockName, buffer.buffer, bindingPoint);
             LOGGER.trace(GL_MARKER, "############### End GLProgram Set Uniform Block Task ###############");
@@ -1523,9 +1700,9 @@ public class GLProgram extends GLObject {
             LOGGER.trace(GL_MARKER, "############### End GLProgram Set Feedback Buffer Task ###############");
         }
     }
-    
+
     public long getTimeSinceLastUpdate() {
-        if(this.program != null) {
+        if (this.program != null) {
             return this.program.getTimeSinceLastUsed();
         } else {
             return System.nanoTime();
