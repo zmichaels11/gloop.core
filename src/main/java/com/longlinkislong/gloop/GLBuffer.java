@@ -28,6 +28,7 @@ package com.longlinkislong.gloop;
 import com.longlinkislong.gloop.glspi.Buffer;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
+import java.util.Arrays;
 import java.util.Objects;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -778,6 +779,18 @@ public class GLBuffer extends GLObject {
     }
 
     /**
+     * Maps a GLBuffer to a ByteBuffer. This function can force a thread sync.
+     * @param offset the offset in bytes to begin the map.
+     * @param length the number of bytes to map.
+     * @param access the buffer access.
+     * @return the mapped ByteBuffer.
+     * @since 16.07.06
+     */
+    public ByteBuffer map(final long offset, final long length, GLBufferAccess... access) {
+        return new MapQuery(offset, length ,access).glCall(this.getThread());
+    }
+
+    /**
      * A GLQuery that requests the buffer to be mapped. A GLBuffer can only be
      * mapped once at a time and should be unmapped before being used elsewhere.
      *
@@ -789,6 +802,16 @@ public class GLBuffer extends GLObject {
 
         final long offset;
         final long length;
+        final int access;
+
+        public MapQuery(final long offset, final long length, final GLBufferAccess... access) {
+            this.offset = offset;
+            this.length = length;
+
+            this.access = Arrays.stream(access)
+                    .map(a -> a.value)
+                    .reduce(0, (accumulator, _item) -> accumulator | _item);
+        }
 
         /**
          * Constructs a new MapQuery.
@@ -802,6 +825,7 @@ public class GLBuffer extends GLObject {
 
             this.offset = offset;
             this.length = length;
+            this.access = GLBuffer.this.accessFlags;
         }
 
         @SuppressWarnings("unchecked")
@@ -816,7 +840,7 @@ public class GLBuffer extends GLObject {
                 throw new GLException("Invalid GLBuffer!");
             }
 
-            final ByteBuffer out = GLTools.getDriverInstance().bufferMapData(buffer, offset, length, accessFlags);
+            final ByteBuffer out = GLTools.getDriverInstance().bufferMapData(buffer, this.offset, this.length, this.access);
 
             GLBuffer.this.buffer.updateTime();
             LOGGER.trace(GLOOP_MARKER, "############### End GLBuffer Map Query ###############");

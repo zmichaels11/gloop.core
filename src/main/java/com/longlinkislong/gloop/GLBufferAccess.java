@@ -60,7 +60,7 @@ public enum GLBufferAccess {
     GL_MAP_INVALIDATE_RANGE(4),
     /**
      * Indicates that the previous contents of the entire buffer may be
-     * discarded.
+     * discarded. It is recommended to use this with GL_PERSISTENT.
      *
      * @since 15.06.23
      */
@@ -82,7 +82,7 @@ public enum GLBufferAccess {
     /**
      * Indicates that the mapping is to be made in a persistent fashion and that
      * the client intends to hold and use the returned pointer during subsequent
-     * OpenGL operations.
+     * OpenGL operations. Should be used with GL_MAP_COHERENT.
      *
      * Requires OpenGL 4.4 support
      *
