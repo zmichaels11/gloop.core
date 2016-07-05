@@ -1101,6 +1101,57 @@ public final class GLTools {
         return out;
     }
 
+    public static ByteBuffer wrapIndirectCommands(final List<GLIndirectCommand> cmds) {
+        return wrapIndirectCommands(cmds, 0, cmds.size());
+    }
+    
+    public static ByteBuffer wrapIndirectCommands(
+            final List<GLIndirectCommand> cmds, 
+            final int offset, 
+            final int length) {
+        
+        final int bytes = length * GLIndirectCommand.WIDTH;
+        final ByteBuffer out = ByteBuffer.allocateDirect(bytes).order(ByteOrder.nativeOrder());
+        final ListIterator<GLIndirectCommand> it = cmds.listIterator(offset);
+        
+        for(int i = 0; i < length; i++) {
+            final GLIndirectCommand cmd = it.next();
+            
+            out.putInt(cmd.count);
+            out.putInt(cmd.primCount);
+            out.putInt(cmd.first);
+            out.putInt(cmd.baseInstance);
+        }
+        
+        out.flip();
+        
+        return out;
+    }
+    
+    public static ByteBuffer wrapIndirectCommands(final GLIndirectCommand... cmds) {
+        return wrapIndirectCommands(cmds, 0, cmds.length);
+    }
+
+    public static ByteBuffer wrapIndirectCommands(
+            final GLIndirectCommand[] cmds,
+            final int offset,
+            final int length) {
+
+        final int bytes = length * GLIndirectCommand.WIDTH;
+        final ByteBuffer out = ByteBuffer.allocateDirect(bytes).order(ByteOrder.nativeOrder());
+
+        for(int i = 0; i < length; i++) {
+            out.putInt(cmds[i].count);
+            out.putInt(cmds[i].primCount);
+            out.putInt(cmds[i].first);
+            out.putInt(cmds[i].baseInstance);
+        }
+
+        out.flip();
+
+        return out;
+    }
+
     /**
      * Reads from an InputStream line by line and returns the entire source.
      *
