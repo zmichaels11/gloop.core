@@ -2019,4 +2019,58 @@ public class GLTexture extends GLObject {
             return System.nanoTime();
         }
     }
+
+    /**
+     * Retrieves the pointer to the texture. This can be passed into shaders as
+     * a bindless textures.
+     *
+     * @return the pointer.
+     * @since 16.07.06
+     */
+    public long map() {
+        return new MapTextureQuery().glCall(this.getThread());
+    }
+
+    /**
+     * Unmaps the texture.
+     *
+     * @since 16.07.06
+     */
+    public void unmap() {
+        new UnmapTextureTask().glRun(this.getThread());
+    }
+
+    /**
+     * A GLTask that unmaps the texture.
+     *
+     * @since 16.07.06
+     */
+    public class UnmapTextureTask extends GLTask {
+
+        @Override
+        public void run() {
+            if (!GLTexture.this.isValid()) {
+                throw new GLException("Invalid GLTexture!");
+            }
+
+            GLTools.getDriverInstance().textureUnmap(GLTexture.this.texture);
+        }
+    }
+
+    /**
+     * A GLQuery that maps a pointer to the texture's data.
+     *
+     * @since 16.07.06
+     */
+    public class MapTextureQuery extends GLQuery<Long> {
+
+        @Override
+        public Long call() {
+            if (!GLTexture.this.isValid()) {
+                throw new GLException("Invalid GLBuffer!");
+            }
+
+            return GLTools.getDriverInstance().textureMap(GLTexture.this.texture);
+        }
+    }
 }
