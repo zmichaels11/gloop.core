@@ -63,25 +63,24 @@ public class GLTexture extends GLObject {
     private volatile int vpageDepth;
 
     private GLTextureInternalFormat internalFormat;
-    private GLTextureFormat format;
 
+    /**
+     * Retrieves the internal format of the texture. The texture must be
+     * allocated AND the allocation task must be processed for this method to
+     * succeed.
+     *
+     * @return the internal format.
+     * @throws IllegalStateException if the texture has not been allocated.
+     * @since 16.07.07
+     */
     public GLTextureInternalFormat getInternalFormat() {
-        if(this.internalFormat == null) {
+        if (this.internalFormat == null) {
             throw new IllegalStateException("GLTexture has not been allocated yet!");
         }
 
         return this.internalFormat;
     }
 
-    public GLTextureFormat getFormat() {
-        if(this.format == null) {
-            throw new IllegalStateException("GLTexture has not been allocated yet!");
-        }
-
-        return this.format;
-    }
-
-    
     /**
      * Retrieves the virtual page width. This only has meaningful data if
      * GL_ARB_sparse_texture is supported and the texture was allocated as a
@@ -955,6 +954,7 @@ public class GLTexture extends GLObject {
                 throw new GLException("GLTexture is not valid!");
             }
 
+            GLTexture.this.internalFormat = this.internalFormat;
             GLTexture.this.texture = GLTools.getDriverInstance().textureAllocate(mipmaps, internalFormat.value, width, height, depth);
             GLTexture.this.setAttributes(GLTextureParameters.DEFAULT_PARAMETERS);
             GLTexture.this.name = "id=" + texture.hashCode();
@@ -1038,6 +1038,7 @@ public class GLTexture extends GLObject {
                 throw new GLException("GLTexture has already been allocated!");
             }
 
+            GLTexture.this.internalFormat = this.internalFormat;
             GLTexture.this.texture = GLTools.getDriverInstance().textureAllocate(mipmaps, internalFormat.value, width, height, 1);
             GLTexture.this.setAttributes(GLTextureParameters.DEFAULT_PARAMETERS);
             GLTexture.this.name = "id=" + texture.hashCode();
@@ -1114,7 +1115,8 @@ public class GLTexture extends GLObject {
                 throw new GLException("GLTexture has already been allocated!");
             }
 
-            texture = GLTools.getDriverInstance().textureAllocate(mipmaps, internalFormat.value, width, 1, 1);
+            GLTexture.this.internalFormat = this.internalFormat;
+            GLTexture.this.texture = GLTools.getDriverInstance().textureAllocate(mipmaps, internalFormat.value, width, 1, 1);
             GLTexture.this.setAttributes(GLTextureParameters.DEFAULT_PARAMETERS);
             GLTexture.this.name = "id=" + texture.hashCode();
             GLTexture.this.texture.updateTime();
