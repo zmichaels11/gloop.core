@@ -140,7 +140,8 @@ public class GLProgram extends GLObject {
      * @since 15.12.18
      */
     public class UseTask extends GLTask {
-
+        GLProgram program = GLProgram.this;
+        
         @SuppressWarnings("unchecked")
         @Override
         public void run() {
@@ -151,7 +152,9 @@ public class GLProgram extends GLObject {
                 throw new GLException("Invalid GLProgram!");
             }
 
-            GLTools.getDriverInstance().programUse(program);
+            GLThread.getCurrent().orElseThrow(GLException::new).currentProgramUse = this;
+
+            GLTools.getDriverInstance().programUse(GLProgram.this.program);
             GLProgram.this.program.updateTime();
             LOGGER.trace(GL_MARKER, "############### End GLProgram Use Task ###############");
         }

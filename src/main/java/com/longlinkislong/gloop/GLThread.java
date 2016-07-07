@@ -70,6 +70,8 @@ public class GLThread implements ExecutorService {
     final Deque<GLPolygonParameters> polygonParameterStack = new ArrayDeque<>(4);
     final Deque<GLViewport> viewportStack = new ArrayDeque<>(4);
     final Deque<GLScissorTest> scissorStack = new ArrayDeque<>(4);
+    final Deque<GLFramebuffer.BindTask> framebufferStack = new ArrayDeque<>(4);
+    final Deque<GLProgram.UseTask> programStack = new ArrayDeque<>(4);
 
     private BiConsumer<GLBlending, GLBlending> onBlendChange = null;
 
@@ -92,7 +94,7 @@ public class GLThread implements ExecutorService {
      * @param newBlend the new blending state.
      * @since 16.06.09
      */
-    void runBlendChangeCallback(final GLBlending oldBlend, final GLBlending newBlend) {
+    void runOnBlendChangeCallback(final GLBlending oldBlend, final GLBlending newBlend) {
         if (this.onBlendChange != null) {
             this.onBlendChange.accept(oldBlend, newBlend);
         }
@@ -199,7 +201,7 @@ public class GLThread implements ExecutorService {
     }
 
     void runOnScissorTestChangeCallback(final GLScissorTest oldScissorTest, final GLScissorTest newScissorTest) {
-        if(this.onScissorTestChange != null) {
+        if (this.onScissorTestChange != null) {
             this.onScissorTestChange.accept(oldScissorTest, newScissorTest);
         }
     }
@@ -225,6 +227,8 @@ public class GLThread implements ExecutorService {
     GLMask currentMask = new GLMask(this);
     GLViewport currentViewport = null;
     GLScissorTest currentScissor = new GLScissorTest(this);
+    GLFramebuffer.BindTask currentFramebufferBind;
+    GLProgram.UseTask currentProgramUse;
 
     /**
      * Retrieves the current blending mode.
@@ -279,7 +283,7 @@ public class GLThread implements ExecutorService {
         return this.getCurrentClear();
     }
 
-    public void pushScissorTest(){
+    public void pushScissorTest() {
         this.scissorStack.push(this.currentScissor);
     }
 
@@ -453,6 +457,41 @@ public class GLThread implements ExecutorService {
     public void pushViewport() {
         LOGGER.trace(GLOOP_MARKER, "Pushing GLViewport stack!");
         this.viewportStack.push(this.currentViewport);
+    }
+
+    public void pushProgram() {
+        this.programStack.push(this.currentProgramUse);
+    }
+
+    public void popProgram() {
+        final GLProgram.UseTask useTask = this.programStack.pop();
+
+        useTask.run();
+    }
+
+    public GLProgram getCurrentProgram() {
+        return this.currentProgramUse.program;
+    }
+
+    public void pushFramebufferBind() {
+        this.framebufferStack.push(this.currentFramebufferBind);
+    }
+
+    public void popFramebufferBind() {
+        final GLFramebuffer.BindTask bindTask = this.framebufferStack.pop();
+
+        bindTask.run();
+    }
+
+    public GLFramebuffer getCurrentFramebuffer() {
+        return this.currentFramebufferBind.fb;
+    }
+
+    public String[] getCurrentFramebufferAttachments() {
+        final String[] out = new String[this.currentFramebufferBind.attachmentNames.length];
+
+        System.arraycopy(this.currentFramebufferBind.attachmentNames, 0, out, 0, out.length);
+        return out;
     }
 
     /**
@@ -717,6 +756,8 @@ public class GLThread implements ExecutorService {
             LOGGER.debug(SYS_MARKER, "Renamed GLThread[{}] to GLThread[{}]", GLThread.this.internalThread.getName(), name);
             GLThread.this.internalThread.setName(name);
             THREAD_MAP.put(GLThread.this.internalThread, GLThread.this);
+
+            GLThread.this.currentFramebufferBind = GLFramebuffer.getDefaultFramebuffer().new BindTask();
         }
     }
 
@@ -946,7 +987,8 @@ public class GLThread implements ExecutorService {
         private static boolean IS_ASSIGNED = false;
         private final static GLThread INSTANCE = new GLThread();
 
-        private Holder() {}
+        private Holder() {
+        }
     }
 
     /**

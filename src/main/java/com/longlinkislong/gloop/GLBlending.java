@@ -341,7 +341,7 @@ public class GLBlending extends GLObject {
 
             final GLThread thread = GLThread.getCurrent().orElseThrow(GLException::new);            
 
-            thread.runBlendChangeCallback(thread.currentBlend, GLBlending.this);
+            thread.runOnBlendChangeCallback(thread.currentBlend, GLBlending.this);
             thread.currentBlend = GLBlending.this.withGLThread(thread);
             
             switch (GLBlending.this.enabled) {

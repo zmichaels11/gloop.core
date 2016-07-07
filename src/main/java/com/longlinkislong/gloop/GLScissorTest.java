@@ -167,6 +167,7 @@ public class GLScissorTest extends GLObject {
         public void run() {
             final GLThread thread = GLThread.getCurrent().orElseThrow(GLException::new);
 
+            thread.runOnScissorTestChangeCallback(thread.currentScissor, GLScissorTest.this);
             thread.currentScissor = GLScissorTest.this.withGLThread(thread);
 
             if(GLScissorTest.this.enabled) {

@@ -328,7 +328,9 @@ public class GLFramebuffer extends GLObject {
     public final class BindTask extends GLTask {
 
         private final IntBuffer attachments;
-        private final String[] attachmentNames;
+        final String[] attachmentNames;
+        GLFramebuffer fb = GLFramebuffer.this;
+
 
         /**
          * Constructs a new BindTask with the specified color attachments.
@@ -385,6 +387,8 @@ public class GLFramebuffer extends GLObject {
             if (!GLFramebuffer.this.isValid()) {
                 throw new GLException("Invalid GLFramebuffer!");
             }
+
+            GLThread.getCurrent().orElseThrow(GLException::new).currentFramebufferBind = this;
 
             GLTools.getDriverInstance().framebufferBind(framebuffer, attachments);
             GLFramebuffer.this.framebuffer.updateTime();
