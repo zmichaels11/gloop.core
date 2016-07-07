@@ -46,6 +46,7 @@ public class GLScissorTest extends GLObject {
     public final int bottom;
     public final int width;
     public final int height;
+    public final boolean enabled;
 
     private String name = "id=" + System.currentTimeMillis();
 
@@ -80,6 +81,7 @@ public class GLScissorTest extends GLObject {
     /**
      * Constructs a new GLScissorTest on any OpenGL thread.
      *
+     * @param enabled if the scissortest should be enabled.
      * @param left the leftmost value of the pixel test.
      * @param bottom the bottommost value of the pixel test.
      * @param width the width of the pixel test.
@@ -87,16 +89,18 @@ public class GLScissorTest extends GLObject {
      * @since 15.12.18
      */
     public GLScissorTest(
+            final boolean enabled,
             final int left, final int bottom,
             final int width, final int height) {
 
-        this(GLThread.getAny(), left, bottom, width, height);
+        this(GLThread.getAny(), enabled, left, bottom, width, height);
     }
 
     /**
      * Constructs a new GLScissorTest on the specified thread.
      *
      * @param thread the OpenGL thread to associate the GLScissorTest with.
+     * @param enabled if the scissor test should be enabled.
      * @param left the leftmost pixel of the test.
      * @param bottom the bottommost pixel of the test.
      * @param width the width of the test.
@@ -105,6 +109,7 @@ public class GLScissorTest extends GLObject {
      */
     public GLScissorTest(
             final GLThread thread,
+            final boolean enabled,
             final int left, final int bottom,
             final int width, final int height) {
 
@@ -120,6 +125,27 @@ public class GLScissorTest extends GLObject {
         this.bottom = bottom;
         this.width = width;
         this.height = height;
+        this.enabled = enabled;
+    }
+
+    public GLScissorTest(final GLThread thread) {
+        this(thread, false, 0, 0, 0, 0);
+    }
+
+    public GLScissorTest() {
+        this(false, 0, 0, 0, 0);
+    }
+
+    public GLScissorTest withEnabled(final boolean enabled) {
+        return new GLScissorTest(this.getThread(), enabled, this.left, this.bottom, this.width, this.height);
+    }
+
+    public GLScissorTest withRectangle(final int left, final int bottom, final int width, final int height) {
+        return new GLScissorTest(this.getThread(), this.enabled, left, bottom, width, height);
+    }
+
+    public GLScissorTest withGLThread(final GLThread thread) {
+        return new GLScissorTest(thread, enabled, left, bottom, width, height);
     }
 
     /**
@@ -127,8 +153,28 @@ public class GLScissorTest extends GLObject {
      *
      * @since 15.12.18
      */
+    @Deprecated
     public void begin() {
         new BeginScissorTestTask().glRun(this.getThread());
+    }
+
+    public void apply() {
+        new ApplyTask().glRun(this.getThread());
+    }
+
+    public class ApplyTask extends GLTask {
+        @Override
+        public void run() {
+            final GLThread thread = GLThread.getCurrent().orElseThrow(GLException::new);
+
+            thread.currentScissor = GLScissorTest.this.withGLThread(thread);
+
+            if(GLScissorTest.this.enabled) {
+                GLTools.getDriverInstance().scissorTestEnable(left, bottom, width, height);
+            } else {
+                GLTools.getDriverInstance().scissorTestDisable();
+            }
+        }
     }
 
     /**
@@ -136,6 +182,7 @@ public class GLScissorTest extends GLObject {
      *
      * @since 15.12.18
      */
+    @Deprecated
     public class BeginScissorTestTask extends GLTask {
 
         @Override
@@ -153,6 +200,7 @@ public class GLScissorTest extends GLObject {
      *
      * @since 15.12.18
      */
+    @Deprecated
     public void end() {
         new EndScissorTestTask().glRun(this.getThread());
     }
@@ -162,6 +210,7 @@ public class GLScissorTest extends GLObject {
      *
      * @since 15.12.18
      */
+    @Deprecated
     public class EndScissorTestTask extends GLTask {
 
         @Override

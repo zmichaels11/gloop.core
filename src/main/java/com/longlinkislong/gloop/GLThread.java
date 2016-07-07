@@ -69,6 +69,7 @@ public class GLThread implements ExecutorService {
     final Deque<GLMask> maskStack = new ArrayDeque<>(4);
     final Deque<GLPolygonParameters> polygonParameterStack = new ArrayDeque<>(4);
     final Deque<GLViewport> viewportStack = new ArrayDeque<>(4);
+    final Deque<GLScissorTest> scissorStack = new ArrayDeque<>(4);
 
     private BiConsumer<GLBlending, GLBlending> onBlendChange = null;
 
@@ -191,6 +192,18 @@ public class GLThread implements ExecutorService {
         this.onViewportChange = callback;
     }
 
+    private BiConsumer<GLScissorTest, GLScissorTest> onScissorTestChange = null;
+
+    public void setOnScissorTestChange(final BiConsumer<GLScissorTest, GLScissorTest> callback) {
+        this.onScissorTestChange = callback;
+    }
+
+    void runOnScissorTestChangeCallback(final GLScissorTest oldScissorTest, final GLScissorTest newScissorTest) {
+        if(this.onScissorTestChange != null) {
+            this.onScissorTestChange.accept(oldScissorTest, newScissorTest);
+        }
+    }
+
     /**
      * Executes the callback linked to the viewport state. No operation occurs
      * if no callback is set.
@@ -211,6 +224,7 @@ public class GLThread implements ExecutorService {
     GLPolygonParameters currentPolygonParameters = new GLPolygonParameters(this);
     GLMask currentMask = new GLMask(this);
     GLViewport currentViewport = null;
+    GLScissorTest currentScissor = new GLScissorTest(this);
 
     /**
      * Retrieves the current blending mode.
@@ -218,7 +232,12 @@ public class GLThread implements ExecutorService {
      * @return the current blending mode.
      * @since 15.07.01
      */
+    @Deprecated
     public GLBlending currentBlend() {
+        return this.getCurrentBlend();
+    }
+
+    public GLBlending getCurrentBlend() {
         return this.currentBlend;
     }
 
@@ -245,14 +264,33 @@ public class GLThread implements ExecutorService {
         return blend;
     }
 
+    public GLClear getCurrentClear() {
+        return this.currentClear;
+    }
+
     /**
      * Retrieves the current clear.
      *
      * @return the current clear.
      * @since 15.07.01
      */
+    @Deprecated
     public GLClear currentClear() {
-        return this.currentClear;
+        return this.getCurrentClear();
+    }
+
+    public void pushScissorTest(){
+        this.scissorStack.push(this.currentScissor);
+    }
+
+    public GLScissorTest popScissorTest() {
+        final GLScissorTest scissor = this.scissorStack.pop();
+        scissor.apply();
+        return scissor;
+    }
+
+    public GLScissorTest getCurrentScissorTest() {
+        return this.currentScissor;
     }
 
     /**
@@ -284,7 +322,12 @@ public class GLThread implements ExecutorService {
      * @return the current depth test.
      * @since 15.07.01
      */
+    @Deprecated
     public GLDepthTest currentDepthTest() {
+        return this.getCurrentDepthTest();
+    }
+
+    public GLDepthTest getCurrentDepthTest() {
         return this.currentDepthTest;
     }
 
@@ -317,7 +360,12 @@ public class GLThread implements ExecutorService {
      * @return the current mask.
      * @since 15.07.01
      */
+    @Deprecated
     public GLMask currentMask() {
+        return this.getCurrentMask();
+    }
+
+    public GLMask getCurrentMask() {
         return this.currentMask;
     }
 
@@ -350,7 +398,12 @@ public class GLThread implements ExecutorService {
      * @return the current polygon parameters.
      * @since 15.07.16
      */
+    @Deprecated
     public GLPolygonParameters currentPolygonParameters() {
+        return this.getCurrentPolygonParameters();
+    }
+
+    public GLPolygonParameters getCurrentPolygonParameters() {
         return this.currentPolygonParameters;
     }
 
@@ -383,7 +436,12 @@ public class GLThread implements ExecutorService {
      * @return the current viewport.
      * @since 15.07.01
      */
+    @Deprecated
     public GLViewport currentViewport() {
+        return this.getCurrentViewport();
+    }
+
+    public GLViewport getCurrentViewport() {
         return this.currentViewport;
     }
 
