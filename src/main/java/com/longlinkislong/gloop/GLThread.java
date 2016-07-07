@@ -474,6 +474,10 @@ public class GLThread implements ExecutorService {
     }
 
     public void pushFramebufferBind() {
+        if (this.currentFramebufferBind == null) {
+            this.currentFramebufferBind = GLFramebuffer.getDefaultFramebuffer(this).new BindTask();
+        }
+
         this.framebufferStack.push(this.currentFramebufferBind);
     }
 
@@ -484,7 +488,11 @@ public class GLThread implements ExecutorService {
     }
 
     public GLFramebuffer getCurrentFramebuffer() {
-        return this.currentFramebufferBind.fb;
+        if (this.currentFramebufferBind == null) {
+            return GLFramebuffer.getDefaultFramebuffer(this);
+        } else {
+            return this.currentFramebufferBind.fb;
+        }
     }
 
     public String[] getCurrentFramebufferAttachments() {
@@ -756,8 +764,6 @@ public class GLThread implements ExecutorService {
             LOGGER.debug(SYS_MARKER, "Renamed GLThread[{}] to GLThread[{}]", GLThread.this.internalThread.getName(), name);
             GLThread.this.internalThread.setName(name);
             THREAD_MAP.put(GLThread.this.internalThread, GLThread.this);
-
-            GLThread.this.currentFramebufferBind = GLFramebuffer.getDefaultFramebuffer().new BindTask();
         }
     }
 

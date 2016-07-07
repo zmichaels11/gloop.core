@@ -62,6 +62,26 @@ public class GLTexture extends GLObject {
     private volatile int vpageHeight;
     private volatile int vpageDepth;
 
+    private GLTextureInternalFormat internalFormat;
+    private GLTextureFormat format;
+
+    public GLTextureInternalFormat getInternalFormat() {
+        if(this.internalFormat == null) {
+            throw new IllegalStateException("GLTexture has not been allocated yet!");
+        }
+
+        return this.internalFormat;
+    }
+
+    public GLTextureFormat getFormat() {
+        if(this.format == null) {
+            throw new IllegalStateException("GLTexture has not been allocated yet!");
+        }
+
+        return this.format;
+    }
+
+    
     /**
      * Retrieves the virtual page width. This only has meaningful data if
      * GL_ARB_sparse_texture is supported and the texture was allocated as a
