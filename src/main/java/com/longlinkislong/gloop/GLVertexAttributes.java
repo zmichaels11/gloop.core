@@ -89,6 +89,7 @@ public class GLVertexAttributes {
                 "Renamed GLVertexAttributes[{}] to GLVertexAttributes[{}]",
                 this.name,
                 newName);
+
         this.name = newName.toString();
     }
 

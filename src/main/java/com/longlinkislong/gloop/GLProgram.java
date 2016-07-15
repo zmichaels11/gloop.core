@@ -1654,7 +1654,9 @@ public class GLProgram extends GLObject {
      * @param varyingLoc the location of the feedback varying.
      * @param fbBuffer the buffer to bind.
      * @since 15.10.30
+     * @deprecated use GLBuffer.bindFeedback instead
      */
+    @Deprecated
     public void setFeedbackBuffer(final int varyingLoc, final GLBuffer fbBuffer) {
         new SetFeedbackBufferTask(varyingLoc, fbBuffer).glRun(this.getThread());
     }
@@ -1664,6 +1666,7 @@ public class GLProgram extends GLObject {
      *
      * @since 15.10.30
      */
+    @Deprecated
     public class SetFeedbackBufferTask extends GLTask {
 
         private final GLBuffer fbBuffer;

@@ -133,6 +133,73 @@ public class GLBuffer extends GLObject {
     }
 
     /**
+     * Binds the buffer as the sink for program feedback.
+     *
+     * @param binding the binding point.
+     * @since 16.07.15
+     */
+    public void bindFeedback(final int binding) {
+        new BindFeedbackTask(binding).glRun(this.getThread());
+    }
+
+    /**
+     * Binds the buffer as the sink for program feedback.
+     *
+     * @param binding the binding point
+     * @param offset the offset
+     * @param size the amount of bytes to bind.
+     * @since 16.07.15
+     */
+    public void bindFeedback(final int binding, long offset, long size) {
+        new BindFeedbackTask(binding, offset, size).glRun(this.getThread());
+    }
+
+    public final class BindFeedbackTask extends GLTask {
+
+        final int binding;
+        final long offset;
+        final long size;
+
+        public BindFeedbackTask(final int binding) {
+            this.binding = binding;
+            this.offset = 0L;
+            this.size = -1L;
+        }
+
+        public BindFeedbackTask(final int binding, final long offset, final long size) {
+            this.binding = binding;
+            if ((this.offset = offset) < 0) {
+                throw new IllegalArgumentException("Offset cannot be less than 0!");
+            }
+
+            this.size = size;
+        }
+
+        @Override
+        public void run() {
+            LOGGER.trace(GLOOP_MARKER, "############### Start GLBuffer Bind Feedback Task ###############");
+
+            if (!GLBuffer.this.isValid()) {
+                throw new GLException("Invalid GLBuffer!");
+            } else {
+                if (this.size == -1) {
+                    LOGGER.trace(GLOOP_MARKER, "\tBinding GLBuffer[{}] at feedback buffer binding: [{}]!", GLBuffer.this.getName(), this.binding);
+
+                    GLTools.getDriverInstance().bufferBindFeedback(buffer, this.binding);
+                } else {
+                    LOGGER.trace(GLOOP_MARKER, "\tBinding GLBuffer[{}],off={},size={} at feedback buffer binding: [{}]!", GLBuffer.this.getName(), this.offset, this.size, this.binding);
+
+                    GLTools.getDriverInstance().bufferBindFeedback(buffer, this.binding, this.offset, this.size);
+                }
+
+                GLBuffer.this.buffer.updateTime();
+            }
+
+            LOGGER.trace(GLOOP_MARKER, "############### End GLBuffer Bind Feedback Task ###############");
+        }
+    }
+
+    /**
      * Binds the GLBuffer as a uniform buffer object.
      *
      * @param binding the uniform buffer object binding point.
@@ -780,6 +847,7 @@ public class GLBuffer extends GLObject {
 
     /**
      * Maps a GLBuffer to a ByteBuffer. This function can force a thread sync.
+     *
      * @param offset the offset in bytes to begin the map.
      * @param length the number of bytes to map.
      * @param access the buffer access.
@@ -787,7 +855,7 @@ public class GLBuffer extends GLObject {
      * @since 16.07.06
      */
     public ByteBuffer map(final long offset, final long length, GLBufferAccess... access) {
-        return new MapQuery(offset, length ,access).glCall(this.getThread());
+        return new MapQuery(offset, length, access).glCall(this.getThread());
     }
 
     /**
