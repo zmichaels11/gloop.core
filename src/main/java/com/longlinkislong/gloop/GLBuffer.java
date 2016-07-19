@@ -876,24 +876,11 @@ public class GLBuffer extends GLObject {
             this.offset = offset;
             this.length = length;
 
-            this.access = Arrays.stream(access)
+            this.access = (access.length == 0)
+                    ? GLBuffer.this.accessFlags
+                    : Arrays.stream(access)
                     .map(a -> a.value)
-                    .reduce(0, (accumulator, _item) -> accumulator | _item);
-        }
-
-        /**
-         * Constructs a new MapQuery.
-         *
-         * @param offset the starting offset within the buffer range to be
-         * mapped.
-         * @param length the length of the range to be mapped.
-         * @since 15.05.13
-         */
-        public MapQuery(final long offset, final long length) {
-
-            this.offset = offset;
-            this.length = length;
-            this.access = GLBuffer.this.accessFlags;
+                    .reduce(0, (bitfield, flag) -> bitfield | flag);
         }
 
         @SuppressWarnings("unchecked")
