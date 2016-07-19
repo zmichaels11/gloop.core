@@ -47,8 +47,7 @@ public class GLBuffer extends GLObject {
     private static final Marker GLOOP_MARKER = MarkerFactory.getMarker("GLOOP");
     private static final Logger LOGGER = LoggerFactory.getLogger("GLBuffer");
 
-    transient volatile Buffer buffer;
-    private volatile int accessFlags = GLBufferAccess.GL_MAP_WRITE.value | GLBufferAccess.GL_MAP_READ.value;
+    transient volatile Buffer buffer;    
     private String name = "";
 
     /**
@@ -636,8 +635,7 @@ public class GLBuffer extends GLObject {
             }
 
             GLTools.getDriverInstance().bufferAllocateImmutable(buffer, size, this.flags);
-            GLBuffer.this.buffer.updateTime();
-            GLBuffer.this.accessFlags = this.flags;
+            GLBuffer.this.buffer.updateTime();            
 
             LOGGER.trace(GLOOP_MARKER, "############# End GLBuffer Allocate Immutable Task ##############");
         }
@@ -828,34 +826,21 @@ public class GLBuffer extends GLObject {
         protected ByteBuffer handleInterruption() {
             return ByteBuffer.allocate(0).asReadOnlyBuffer();
         }
-    }
+    }    
 
     /**
      * Maps a GLBuffer to a ByteBuffer. This function can force a thread sync.
      *
      * @param offset the offset in bytes to begin the map.
      * @param length the number of bytes to map.
-     * @return the mapped ByteBuffer
-     * @see
-     * <a href="https://www.opengl.org/wiki/GLAPI/glMapBufferRange#Function_Definition">glMapBufferRange</a>
-     * @since 15.06.23
-     */
-    public ByteBuffer map(final long offset, final long length) {
-
-        return new MapQuery(offset, length).glCall(this.getThread());
-    }
-
-    /**
-     * Maps a GLBuffer to a ByteBuffer. This function can force a thread sync.
-     *
-     * @param offset the offset in bytes to begin the map.
-     * @param length the number of bytes to map.
-     * @param access the buffer access.
+     * @param access the buffer access. If no flags are specified, GL_MAP_READ | GL_MAP_WRITE will be used.
      * @return the mapped ByteBuffer.
      * @since 16.07.06
      */
     public ByteBuffer map(final long offset, final long length, GLBufferAccess... access) {
-        return new MapQuery(offset, length, access).glCall(this.getThread());
+        return (access.length == 0)
+                ? map(offset, length, GLBufferAccess.GL_MAP_READ, GLBufferAccess.GL_MAP_WRITE)
+                : new MapQuery(offset, length, access, 0, access.length).glCall(this.getThread());
     }
 
     /**
@@ -872,14 +857,12 @@ public class GLBuffer extends GLObject {
         final long length;
         final int access;
 
-        public MapQuery(final long offset, final long length, final GLBufferAccess... access) {
+        public MapQuery(final long offset, final long length, final GLBufferAccess[] accessFlags, final int flagOffset, final int flatCount) {
             this.offset = offset;
             this.length = length;
 
-            this.access = (access.length == 0)
-                    ? GLBuffer.this.accessFlags
-                    : Arrays.stream(access)
-                    .map(a -> a.value)
+            this.access = Arrays.stream(accessFlags, flagOffset, flagOffset + flatCount)
+                    .map(flag -> flag.value)
                     .reduce(0, (bitfield, flag) -> bitfield | flag);
         }
 
@@ -896,6 +879,13 @@ public class GLBuffer extends GLObject {
             }
 
             final ByteBuffer out = GLTools.getDriverInstance().bufferMapData(buffer, this.offset, this.length, this.access);
+
+            if(out == null) {
+                LOGGER.error(
+                        GLOOP_MARKER,
+                        "gloop call: bufferMapData(buffer={}, offset={}, length={}, access={}) returned null!",
+                        buffer, offset, length, access);
+            }
 
             GLBuffer.this.buffer.updateTime();
             LOGGER.trace(GLOOP_MARKER, "############### End GLBuffer Map Query ###############");
