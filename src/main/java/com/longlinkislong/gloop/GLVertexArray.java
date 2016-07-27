@@ -25,8 +25,8 @@
  */
 package com.longlinkislong.gloop;
 
+import com.longlinkislong.gloop.glspi.Driver;
 import com.longlinkislong.gloop.glspi.VertexArray;
-import java.nio.IntBuffer;
 import java.util.Objects;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -167,6 +167,10 @@ public class GLVertexArray extends GLObject {
         new DrawElementsIndirectTask(drawMode, indexType, indirectCommandBuffer, offset).glRun(this.getThread());
     }
 
+    public void drawElementsIndirectFeedback(final GLDrawMode drawMode, final GLIndexElementType indexType, final GLBuffer indirectCommandBuffer, final long offset) {
+        new DrawElementsIndirectTask(drawMode, indexType, indirectCommandBuffer, offset, true).glRun(this.getThread());
+    }
+
     /**
      * A GLTask that executes an indirect draw elements task.
      *
@@ -178,6 +182,7 @@ public class GLVertexArray extends GLObject {
         private final GLDrawMode drawMode;
         private final GLIndexElementType indexType;
         private final long offset;
+        private final boolean isTransformFeedback;
 
         /**
          * Constructs a new DrawElementsIndirectTask using 0 for the offset.
@@ -191,7 +196,15 @@ public class GLVertexArray extends GLObject {
                 final GLDrawMode mode, final GLIndexElementType indexType,
                 final GLBuffer indirectCommandBuffer) {
 
-            this(mode, indexType, indirectCommandBuffer, 0);
+            this(mode, indexType, indirectCommandBuffer, 0, false);
+        }
+
+        public DrawElementsIndirectTask(
+                final GLDrawMode mode, final GLIndexElementType indexType,
+                final GLBuffer indirectCommandBuffer,
+                final long offset) {
+
+            this(mode, indexType, indirectCommandBuffer, offset, false);
         }
 
         /**
@@ -201,13 +214,16 @@ public class GLVertexArray extends GLObject {
          * @param indexType the index type to use
          * @param indirectCommandBuffer the indirect command buffer
          * @param offset the offset to use
+         * @param isTransformFeedback indicates that the draw call is for a
+         * transform feedback
          * @throws GLException if the offset is less than 0.
          * @since 15.06.05
          */
         public DrawElementsIndirectTask(
                 final GLDrawMode mode, final GLIndexElementType indexType,
                 final GLBuffer indirectCommandBuffer,
-                final long offset) throws GLException {
+                final long offset,
+                final boolean isTransformFeedback) throws GLException {
 
             this.indexType = Objects.requireNonNull(indexType);
             this.drawMode = Objects.requireNonNull(mode);
@@ -216,6 +232,7 @@ public class GLVertexArray extends GLObject {
             if ((this.offset = offset) < 0) {
                 throw new GLException("Offset value cannot be less than 0!");
             }
+            this.isTransformFeedback = isTransformFeedback;
         }
 
         @SuppressWarnings("unchecked")
@@ -227,6 +244,7 @@ public class GLVertexArray extends GLObject {
             LOGGER.trace(GLOOP_MARKER, "\tIndex type: {}", indexType);
             LOGGER.trace(GLOOP_MARKER, "\tIndirect command buffer: GLBuffer[{}]", indirectCommandBuffer.getName());
             LOGGER.trace(GLOOP_MARKER, "\tOffset: {} bytes", this.offset);
+            LOGGER.trace(GLOOP_MARKER, "\tisTransformFeedback: {}", this.isTransformFeedback);
 
             checkThread();
 
@@ -236,7 +254,16 @@ public class GLVertexArray extends GLObject {
                 throw new GLException("Invalid GLBuffer!");
             }
 
-            GLTools.getDriverInstance().vertexArrayDrawElementsIndirect(vao, indirectCommandBuffer.buffer, drawMode.value, indexType.value, offset);
+            final Driver driver = GLTools.getDriverInstance();
+
+            if (this.isTransformFeedback) {
+                driver.transformFeedbackBegin(drawMode.value);
+                driver.vertexArrayDrawElementsIndirect(vao, indirectCommandBuffer.buffer, drawMode.value, indexType.value, offset);
+                driver.transformFeedbackEnd();
+            } else {
+                driver.vertexArrayDrawElementsIndirect(vao, indirectCommandBuffer.buffer, drawMode.value, indexType.value, offset);
+            }
+
             LOGGER.trace(GLOOP_MARKER, "############ End GLVertexArray Draw Elements Indirect Task ###########");
         }
     }
@@ -260,6 +287,14 @@ public class GLVertexArray extends GLObject {
         new DrawArraysIndirectTask(drawMode, indirectCommandBuffer, offset).glRun(this.getThread());
     }
 
+    public void drawArraysIndirectFeedback(
+            final GLDrawMode drawMode,
+            final GLBuffer indirectCommandBuffer,
+            final long offset) throws GLException {
+
+        new DrawArraysIndirectTask(drawMode, indirectCommandBuffer, offset, true).glRun(this.getThread());
+    }
+
     /**
      * A GLTask that runs an indirect draw arrays call.
      *
@@ -270,6 +305,15 @@ public class GLVertexArray extends GLObject {
         private final GLBuffer indirectCommandBuffer;
         private final GLDrawMode drawMode;
         private final long offset;
+        private final boolean isTransformFeedback;
+
+        public DrawArraysIndirectTask(
+                final GLDrawMode drawMode,
+                final GLBuffer indirectCommandBuffer,
+                final long offset) {
+
+            this(drawMode, indirectCommandBuffer, offset, false);
+        }
 
         /**
          * Constructs a new DrawArraysIndirect task.
@@ -278,12 +322,15 @@ public class GLVertexArray extends GLObject {
          * @param indirectCommandBuffer the GLBuffer to read indirect commands
          * from.
          * @param offset the offset to use
+         * @param isTransformFeedback signals if the draw is for a transform
+         * feedback.
          * @since 15.06.24
          */
         public DrawArraysIndirectTask(
                 final GLDrawMode drawMode,
                 final GLBuffer indirectCommandBuffer,
-                final long offset) {
+                final long offset,
+                final boolean isTransformFeedback) {
 
             this.indirectCommandBuffer = Objects.requireNonNull(indirectCommandBuffer);
             this.drawMode = Objects.requireNonNull(drawMode);
@@ -291,6 +338,7 @@ public class GLVertexArray extends GLObject {
             if ((this.offset = offset) < 0) {
                 throw new GLException("Offset cannot be less than 0!");
             }
+            this.isTransformFeedback = isTransformFeedback;
         }
 
         @SuppressWarnings("unchecked")
@@ -300,6 +348,7 @@ public class GLVertexArray extends GLObject {
             LOGGER.trace(GLOOP_MARKER, "\tDrawing GLVertexArray[{}]", getName());
             LOGGER.trace(GLOOP_MARKER, "\tDraw mode: {}", drawMode);
             LOGGER.trace(GLOOP_MARKER, "\tIndirect command buffer: GLBuffer[{}]", this.indirectCommandBuffer.getName());
+            LOGGER.trace(GLOOP_MARKER, "\tisTransformFeedback: {}", this.isTransformFeedback);
 
             checkThread();
 
@@ -309,69 +358,17 @@ public class GLVertexArray extends GLObject {
                 throw new GLException("Invalid GLBuffer!");
             }
 
-            GLTools.getDriverInstance().vertexArrayDrawArraysIndirect(vao, indirectCommandBuffer.buffer, drawMode.value, offset);
-            LOGGER.trace(GLOOP_MARKER, "############### End GLVertexArray Draw Arrays Indirect Task ###############");
-        }
-    }
+            final Driver driver = GLTools.getDriverInstance();
 
-    /**
-     * Performs a multidraw arrays task on the default OpenGL thread.
-     *
-     * @param drawMode the draw mode to use.
-     * @param first the individual offsets.
-     * @param count the number of elements to render per offset.
-     * @since 15.06.24
-     */
-    public void multiDrawArrays(
-            final GLDrawMode drawMode,
-            final IntBuffer first, final IntBuffer count) {
-
-        new MultiDrawArraysTask(drawMode, first, count).glRun(this.getThread());
-    }
-
-    /**
-     * A GLTask that performs a MultiDraw operation.
-     *
-     * @since 15.06.24
-     */
-    public class MultiDrawArraysTask extends GLTask implements GLDrawTask {
-
-        private final IntBuffer first;
-        private final IntBuffer count;
-        private final GLDrawMode drawMode;
-
-        /**
-         * Constructs a new MultiDrawArraysTask.
-         *
-         * @param drawMode the draw mode to use.
-         * @param first the offset for each draw task
-         * @param count the number of elements to draw per task
-         * @since 15.06.24
-         */
-        public MultiDrawArraysTask(
-                final GLDrawMode drawMode,
-                final IntBuffer first, final IntBuffer count) {
-
-            Objects.requireNonNull(this.first = first);
-            Objects.requireNonNull(this.count = count);
-            Objects.requireNonNull(this.drawMode = drawMode);
-        }
-
-        @SuppressWarnings("unchecked")
-        @Override
-        public void run() {
-            LOGGER.trace(GLOOP_MARKER, "############### Start GLVertexArray Multi Draw Arrays Task ###############");
-            LOGGER.trace(GLOOP_MARKER, "\tDrawing GLVertexArray[{}]", getName());
-            LOGGER.trace(GLOOP_MARKER, "\tDraw mode: {}", this.drawMode);
-
-            checkThread();
-
-            if (!GLVertexArray.this.isValid()) {
-                throw new GLException("Invalid GLVertexArray!");
+            if (this.isTransformFeedback) {
+                driver.transformFeedbackBegin(drawMode.value);
+                driver.vertexArrayDrawArraysIndirect(vao, indirectCommandBuffer.buffer, drawMode.value, offset);
+                driver.transformFeedbackEnd();
+            } else {
+                driver.vertexArrayDrawArraysIndirect(vao, indirectCommandBuffer.buffer, drawMode.value, offset);
             }
 
-            GLTools.getDriverInstance().vertexArrayMultiDrawArrays(vao, drawMode.value, first, count);
-            LOGGER.trace(GLOOP_MARKER, "############### End GLVertexArray Multi Draw Arrays Task ###############");
+            LOGGER.trace(GLOOP_MARKER, "############### End GLVertexArray Draw Arrays Indirect Task ###############");
         }
     }
 
@@ -393,6 +390,13 @@ public class GLVertexArray extends GLObject {
         new DrawElementsInstancedTask(drawMode, count, indexType, offset, instanceCount).glRun(this.getThread());
     }
 
+    public void drawElementsInstancedFeedback(final GLDrawMode drawMode,
+            final int count, final GLIndexElementType indexType,
+            final long offset, final int instanceCount) {
+
+        new DrawElementsInstancedTask(drawMode, count, indexType, offset, instanceCount, true).glRun(this.getThread());
+    }
+
     /**
      * A GLTask that performs a draw elements instanced operation.
      *
@@ -405,6 +409,17 @@ public class GLVertexArray extends GLObject {
         private GLDrawMode drawMode;
         private final int instanceCount;
         private final long offset;
+        private final boolean isTransformFeedback;
+
+        public DrawElementsInstancedTask(
+                final GLDrawMode drawMode,
+                final int count,
+                final GLIndexElementType indexType,
+                final long offset,
+                final int instanceCount) {
+
+            this(drawMode, count, indexType, offset, instanceCount, false);
+        }
 
         /**
          * Constructs a new DrawElementsInstancedTask.
@@ -414,6 +429,8 @@ public class GLVertexArray extends GLObject {
          * @param indexType the data type the indices are stored as.
          * @param offset the offset for the first instance.
          * @param instanceCount the number of instances to draw.
+         * @param isTransformFeedback indicates that the draw is for a transform
+         * feedback.
          * @since 15.06.24
          */
         public DrawElementsInstancedTask(
@@ -421,7 +438,8 @@ public class GLVertexArray extends GLObject {
                 final int count,
                 final GLIndexElementType indexType,
                 final long offset,
-                final int instanceCount) {
+                final int instanceCount,
+                final boolean isTransformFeedback) {
 
             this.count = count;
             this.type = Objects.requireNonNull(indexType);
@@ -434,6 +452,7 @@ public class GLVertexArray extends GLObject {
             if ((this.instanceCount = instanceCount) < 0) {
                 throw new GLException("Instance count cannot be less than 0!");
             }
+            this.isTransformFeedback = isTransformFeedback;
         }
 
         @SuppressWarnings("unchecked")
@@ -445,16 +464,25 @@ public class GLVertexArray extends GLObject {
             LOGGER.trace(GLOOP_MARKER, "\tCount: {}", count);
             LOGGER.trace(GLOOP_MARKER, "\tIndex type: {}", type);
             LOGGER.trace(GLOOP_MARKER, "\tOffset: {} bytes", offset);
-            LOGGER.trace(GLOOP_MARKER, "\tInstance count: {}", this.instanceCount
-            );
+            LOGGER.trace(GLOOP_MARKER, "\tInstance count: {}", this.instanceCount);
+            LOGGER.trace(GLOOP_MARKER, "\tisTransformFeedback: {}", this.isTransformFeedback);
 
             checkThread();
 
             if (!GLVertexArray.this.isValid()) {
                 throw new GLException("Invalid GLVertexArray!");
             }
-            
-            GLTools.getDriverInstance().vertexArrayDrawElementsInstanced(vao, drawMode.value, count, type.value, offset, instanceCount);            
+
+            final Driver driver = GLTools.getDriverInstance();
+
+            if (this.isTransformFeedback) {
+                driver.transformFeedbackBegin(drawMode.value);
+                driver.vertexArrayDrawElementsInstanced(vao, drawMode.value, count, type.value, offset, instanceCount);
+                driver.transformFeedbackEnd();
+            } else {
+                driver.vertexArrayDrawElementsInstanced(vao, drawMode.value, count, type.value, offset, instanceCount);
+            }
+
             LOGGER.trace(GLOOP_MARKER, "############### End GLVertexArray Draw Elements Instanced Task ###############");
         }
 
@@ -481,6 +509,10 @@ public class GLVertexArray extends GLObject {
                 instanceCount).glRun(this.getThread());
     }
 
+    public void drawArraysInstancedFeedback(final GLDrawMode mode, final int first, final int count, final int instanceCount) {
+        new DrawArraysInstancedTask(mode, first, count, instanceCount, true).glRun(this.getThread());
+    }
+
     /**
      * A GLTask that runs a draw arrays instanced task.
      *
@@ -492,6 +524,16 @@ public class GLVertexArray extends GLObject {
         private final int first;
         private final int count;
         private final int instanceCount;
+        private final boolean isTransformFeedback;
+
+        public DrawArraysInstancedTask(
+                final GLDrawMode mode,
+                final int first,
+                final int count,
+                final int instanceCount) {
+
+            this(mode, first, count, instanceCount, false);
+        }
 
         /**
          * Constructs a new Draw Arrays Instanced task.
@@ -500,13 +542,15 @@ public class GLVertexArray extends GLObject {
          * @param first the offset to the first instance.
          * @param count the number of vertices to draw.
          * @param instanceCount the number of instances to draw.
+         * @param isTransformFeedback
          * @since 15.06.24
          */
         public DrawArraysInstancedTask(
                 final GLDrawMode mode,
                 final int first,
                 final int count,
-                final int instanceCount) {
+                final int instanceCount,
+                final boolean isTransformFeedback) {
 
             this.mode = Objects.requireNonNull(mode);
             this.count = count;
@@ -518,6 +562,7 @@ public class GLVertexArray extends GLObject {
             if ((this.instanceCount = instanceCount) < 0) {
                 throw new GLException("Instance count cannot be less than 0!");
             }
+            this.isTransformFeedback = isTransformFeedback;
         }
 
         @SuppressWarnings("unchecked")
@@ -529,6 +574,7 @@ public class GLVertexArray extends GLObject {
             LOGGER.trace(GLOOP_MARKER, "\tFirst: {}", first);
             LOGGER.trace(GLOOP_MARKER, "\tCount: {}", count);
             LOGGER.trace(GLOOP_MARKER, "\tInstance count: {}", this.instanceCount);
+            LOGGER.trace(GLOOP_MARKER, "\tisTransformFeedback: {}", this.isTransformFeedback);
 
             checkThread();
 
@@ -536,7 +582,16 @@ public class GLVertexArray extends GLObject {
                 throw new GLException("GLVertexArray is not valid!");
             }
 
-            GLTools.getDriverInstance().vertexArrayDrawArraysInstanced(vao, mode.value, first, count, instanceCount);            
+            final Driver driver = GLTools.getDriverInstance();
+
+            if (this.isTransformFeedback) {
+                driver.transformFeedbackBegin(mode.value);
+                driver.vertexArrayDrawArraysInstanced(vao, mode.value, first, count, instanceCount);
+                driver.transformFeedbackEnd();
+            } else {
+                driver.vertexArrayDrawArraysInstanced(vao, mode.value, first, count, instanceCount);
+            }
+
             LOGGER.trace(GLOOP_MARKER, "############### End GLVertexArray Draw Arrays Instanced Task ###############");
         }
     }
@@ -558,6 +613,10 @@ public class GLVertexArray extends GLObject {
         new DrawElementsTask(mode, count, type, offset).glRun(this.getThread());
     }
 
+    public void drawElementsFeedback(final GLDrawMode mode, final int count, final GLIndexElementType type, final long offset) {
+        new DrawElementsTask(mode, count, type, offset, true).glRun(this.getThread());
+    }
+
     /**
      * A GLTask that executes a draw elements task.
      *
@@ -569,6 +628,16 @@ public class GLVertexArray extends GLObject {
         private final int count;
         private final GLIndexElementType type;
         private final long offset;
+        private final boolean isTransformFeedback;
+
+        public DrawElementsTask(
+                final GLDrawMode mode,
+                final int count,
+                final GLIndexElementType type,
+                final long offset) {
+
+            this(mode, count, type, offset, false);
+        }
 
         /**
          * Constructs a new DrawElementsTask
@@ -577,13 +646,16 @@ public class GLVertexArray extends GLObject {
          * @param count the number of elements drawn.
          * @param type the data type the elements are stored as.
          * @param offset the offset to the first element
+         * @param isTransformFeedback indicates that the draw is for a transform
+         * feedback.
          * @since 15.06.24
          */
         public DrawElementsTask(
                 final GLDrawMode mode,
                 final int count,
                 final GLIndexElementType type,
-                final long offset) {
+                final long offset,
+                final boolean isTransformFeedback) {
 
             this.mode = Objects.requireNonNull(mode);
             this.type = Objects.requireNonNull(type);
@@ -593,6 +665,7 @@ public class GLVertexArray extends GLObject {
             } else if ((this.offset = offset) < 0) {
                 throw new GLException("Offset cannot be less than 0!");
             }
+            this.isTransformFeedback = isTransformFeedback;
         }
 
         @SuppressWarnings("unchecked")
@@ -604,6 +677,7 @@ public class GLVertexArray extends GLObject {
             LOGGER.trace(GLOOP_MARKER, "\tCount: {}", count);
             LOGGER.trace(GLOOP_MARKER, "\tIndex type: {}", type);
             LOGGER.trace(GLOOP_MARKER, "\tOffset: {} bytes", this.offset);
+            LOGGER.trace(GLOOP_MARKER, "\tisTransformFeedback: {}", this.isTransformFeedback);
 
             checkThread();
 
@@ -611,7 +685,16 @@ public class GLVertexArray extends GLObject {
                 throw new GLException("Invalid GLVertex!");
             }
 
-            GLTools.getDriverInstance().vertexArrayDrawElements(vao, mode.value, count, type.value, offset);
+            final Driver driver = GLTools.getDriverInstance();
+
+            if (this.isTransformFeedback) {
+                driver.transformFeedbackBegin(mode.value);
+                driver.vertexArrayDrawElements(vao, mode.value, count, type.value, offset);
+                driver.transformFeedbackEnd();
+            } else {
+                driver.vertexArrayDrawElements(vao, mode.value, count, type.value, offset);
+            }
+
             LOGGER.trace(GLOOP_MARKER, "############### End GLVertexArray Draw Elements Task ###############");
         }
     }
@@ -632,81 +715,24 @@ public class GLVertexArray extends GLObject {
         new DrawArraysTask(mode, start, count).glRun(this.getThread());
     }
 
-    /**
-     * Draws a transform feedback. The rasterizer is discarded.
-     *
-     * @param mode the polygon mode for drawing the feedback.
-     * @param start the index of the first element to draw.
-     * @param count the number of elements to draw.
-     * @since 15.10.30
-     */
-    public void drawTransformFeedback(
+    public void drawArraysFeedback(
             final GLDrawMode mode,
-            final int start,
-            final int count) {
+            final int start, final int count) {
 
-        new DrawTransformFeedbackTask(
-                mode,
-                start,
-                count).glRun(this.getThread());
-    }
-
-    /**
-     * A GLTask that draws a transform feedback.
-     *
-     * @since 15.10.30
-     */
-    public final class DrawTransformFeedbackTask
-            extends GLTask
-            implements GLDrawTask {
-
-        private final GLDrawMode mode;
-        private final int start;
-        private final int count;
-
-        /**
-         * Constructs a new DrawTransformFeedbackTask
-         *
-         * @param mode the type of feedback primitive.
-         * @param start the index of the first element to draw.
-         * @param count the number of elements to draw.
-         * @since 15.10.30
-         */
-        public DrawTransformFeedbackTask(GLDrawMode mode, int start, int count) {
-
-            this.mode = Objects.requireNonNull(mode);
-            this.count = count;
-
-            if ((this.start = start) < 0) {
-                throw new GLException("Start value cannot be less than 0!");
-            }
-        }
-
-        @SuppressWarnings("unchecked")
-        @Override
-        public void run() {
-            LOGGER.trace(GLOOP_MARKER, "############### Start GLVertexArray Draw Transform Feedback Task ###############");
-            LOGGER.trace(GLOOP_MARKER, "\tDrawing GLVertexArray[{}]", getName());
-            LOGGER.trace(GLOOP_MARKER, "\tDraw mode: {}", mode);
-            LOGGER.trace(GLOOP_MARKER, "\tStart: {}", start);
-            LOGGER.trace(GLOOP_MARKER, "\tCount: {}", this.count);
-
-            checkThread();
-
-            if (!GLVertexArray.this.isValid()) {
-                throw new GLException("GLVertexArray is not valid!");
-            }
-
-            GLTools.getDriverInstance().vertexArrayDrawTransformFeedback(vao, mode.value, start, count);            
-            LOGGER.trace(GLOOP_MARKER, "############### End GLVertexArray Draw Transform Feedback Task ###############");
-        }
+        new DrawArraysTask(mode, start, count, true).glRun(this.getThread());
     }
 
     public final class DrawArraysTask extends GLTask implements GLDrawTask {
 
+        private final boolean isTransformFeedback;
         private final GLDrawMode mode;
         private final int start;
         private final int count;
+
+        public DrawArraysTask(
+                final GLDrawMode mode, final int start, final int count) {
+            this(mode, start, count, false);
+        }
 
         /**
          * Constructs a new DrawArraysTask.
@@ -714,11 +740,14 @@ public class GLVertexArray extends GLObject {
          * @param mode the draw mode.
          * @param start the starting vertex id.
          * @param count the number of vertices to draw.
+         * @param isTransformFeedback true to signal that the draw operation is
+         * for a transform feedback.
          * @since 15.12.18
          */
         public DrawArraysTask(
                 final GLDrawMode mode,
-                final int start, final int count) {
+                final int start, final int count,
+                final boolean isTransformFeedback) {
 
             this.mode = Objects.requireNonNull(mode);
 
@@ -729,6 +758,7 @@ public class GLVertexArray extends GLObject {
             if ((this.start = start) < 0) {
                 throw new GLException("Start value cannot be less than 0!");
             }
+            this.isTransformFeedback = isTransformFeedback;
         }
 
         @SuppressWarnings("unchecked")
@@ -739,14 +769,24 @@ public class GLVertexArray extends GLObject {
             LOGGER.trace(GLOOP_MARKER, "\tDraw mode: {}", mode);
             LOGGER.trace(GLOOP_MARKER, "\tStart: {}", start);
             LOGGER.trace(GLOOP_MARKER, "\tCount: {}", this.count);
+            LOGGER.trace(GLOOP_MARKER, "\tisTransformFeedback: {}", this.isTransformFeedback);
 
             checkThread();
 
             if (!GLVertexArray.this.isValid()) {
                 throw new GLException("GLVertexArray is not valid!");
             }
-            
-            GLTools.getDriverInstance().vertexArrayDrawArrays(vao, mode.value, start, count);
+
+            final Driver driver = GLTools.getDriverInstance();
+
+            if (this.isTransformFeedback) {
+                driver.transformFeedbackBegin(mode.value);
+                driver.vertexArrayDrawArrays(vao, mode.value, start, count);
+                driver.transformFeedbackEnd();
+            } else {
+                driver.vertexArrayDrawArrays(vao, mode.value, start, count);
+            }
+
             LOGGER.trace(GLOOP_MARKER, "############### End GLVertexArray Draw Arrays Task ###############");
         }
 
@@ -823,7 +863,7 @@ public class GLVertexArray extends GLObject {
                 throw new GLException("Invalid GLBuffer!");
             }
 
-            GLTools.getDriverInstance().vertexArrayAttachIndexBuffer(vao, buffer.buffer);            
+            GLTools.getDriverInstance().vertexArrayAttachIndexBuffer(vao, buffer.buffer);
             LOGGER.trace(GLOOP_MARKER, "############### End GLVertexArray Attach Index Buffer Task ###############");
         }
     }
@@ -1029,7 +1069,7 @@ public class GLVertexArray extends GLObject {
                 throw new GLException("Invalid GLBuffer!");
             }
 
-            GLTools.getDriverInstance().vertexArrayAttachBuffer(vao, index, buffer.buffer, size.value, type.value, stride, offset, divisor);                        
+            GLTools.getDriverInstance().vertexArrayAttachBuffer(vao, index, buffer.buffer, size.value, type.value, stride, offset, divisor);
             LOGGER.trace(GLOOP_MARKER, "############### End GLVertexArray Attach Buffer Task ###############");
         }
     }
