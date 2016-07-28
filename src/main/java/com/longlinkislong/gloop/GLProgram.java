@@ -28,7 +28,6 @@ package com.longlinkislong.gloop;
 import com.longlinkislong.gloop.glspi.Driver;
 import com.longlinkislong.gloop.glspi.Program;
 import com.longlinkislong.gloop.glspi.Shader;
-import java.nio.ByteOrder;
 import java.nio.DoubleBuffer;
 import java.nio.FloatBuffer;
 import java.util.Arrays;
@@ -39,6 +38,7 @@ import java.util.Objects;
 import java.util.OptionalInt;
 import java.util.Set;
 import java.util.stream.Collectors;
+import org.lwjgl.system.MemoryUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.slf4j.Marker;
@@ -405,14 +405,14 @@ public class GLProgram extends GLObject {
             }
 
             final int uLoc = GLProgram.this.getUniformLoc(uName);
-            final DoubleBuffer buffer = NativeTools.getInstance()
-                    .nextOVWord()
-                    .order(ByteOrder.nativeOrder())
-                    .asDoubleBuffer();
+            final DoubleBuffer buffer = MemoryUtil.memAllocDouble(16);
 
             buffer.put(this.values).flip();
 
             GLTools.getDriverInstance().programSetUniformMatD(program, uLoc, buffer);
+
+            MemoryUtil.memFree(buffer);
+
             GLProgram.this.program.updateTime();
             LOGGER.trace(GL_MARKER, "############### End GLProgram Set Uniform MatrixD Task ###############");
         }
@@ -542,14 +542,13 @@ public class GLProgram extends GLObject {
             }
 
             final int uLoc = GLProgram.this.getUniformLoc(this.uName);
-            final FloatBuffer buffer = NativeTools.getInstance()
-                    .nextQVWord()
-                    .order(ByteOrder.nativeOrder())
-                    .asFloatBuffer();
+            final FloatBuffer buffer = MemoryUtil.memAllocFloat(16);
 
             buffer.put(this.values).flip();
 
             GLTools.getDriverInstance().programSetUniformMatF(program, uLoc, buffer);
+
+            MemoryUtil.memFree(buffer);
             GLProgram.this.program.updateTime();
             LOGGER.trace(GL_MARKER, "############### End GLProgram Set Uniform MatrixF Task ###############");
         }

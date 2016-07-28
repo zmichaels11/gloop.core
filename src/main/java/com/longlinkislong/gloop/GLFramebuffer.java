@@ -32,13 +32,13 @@ import static com.longlinkislong.gloop.GLAsserts.checkBufferIsNative;
 import static com.longlinkislong.gloop.GLAsserts.checkBufferSize;
 import com.longlinkislong.gloop.glspi.Framebuffer;
 import java.nio.ByteBuffer;
-import java.nio.ByteOrder;
 import java.nio.IntBuffer;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 import org.lwjgl.opengl.GL30;
+import org.lwjgl.system.MemoryUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.slf4j.Marker;
@@ -327,7 +327,7 @@ public class GLFramebuffer extends GLObject {
      */
     public final class BindTask extends GLTask {
 
-        private final IntBuffer attachments;
+        private final int[] attachments;
         final String[] attachmentNames;
         GLFramebuffer fb = GLFramebuffer.this;
 
@@ -355,7 +355,7 @@ public class GLFramebuffer extends GLObject {
             this.attachmentNames = new String[length];
 
             if (length > 0) {
-                this.attachments = ByteBuffer.allocateDirect(length * 4).order(ByteOrder.nativeOrder()).asIntBuffer();
+                this.attachments = new int[length];
 
                 for (int i = offset; i < length; i++) {
                     final String name = attachments[i].toString();
@@ -366,11 +366,9 @@ public class GLFramebuffer extends GLObject {
 
                     final int attachId = GLFramebuffer.this.colorAttachments.get(name);
 
-                    this.attachments.put(attachId);
+                    this.attachments[i - offset] = attachId;
                     this.attachmentNames[i - offset] = name;
                 }
-
-                this.attachments.flip();
             } else {
                 this.attachments = null;
             }
@@ -390,7 +388,18 @@ public class GLFramebuffer extends GLObject {
 
             GLThread.getCurrent().orElseThrow(GLException::new).currentFramebufferBind = this;
 
-            GLTools.getDriverInstance().framebufferBind(framebuffer, attachments);
+            if (this.attachments == null) {
+                GLTools.getDriverInstance().framebufferBind(framebuffer, null);
+            } else {
+                final IntBuffer iAttachments = MemoryUtil.memAllocInt(this.attachments.length);
+
+                iAttachments.put(this.attachments).flip();
+
+                GLTools.getDriverInstance().framebufferBind(framebuffer, iAttachments);
+
+                MemoryUtil.memFree(iAttachments);
+            }
+            
             GLFramebuffer.this.framebuffer.updateTime();
             LOGGER.trace(GL_MARKER, "############### End GLFramebuffer Bind Task ###############");
         }
