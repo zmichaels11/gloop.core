@@ -38,7 +38,7 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 import org.lwjgl.opengl.GL30;
-import org.lwjgl.system.MemoryUtil;
+import org.lwjgl.system.MemoryStack;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.slf4j.Marker;
@@ -391,13 +391,11 @@ public class GLFramebuffer extends GLObject {
             if (this.attachments == null) {
                 GLTools.getDriverInstance().framebufferBind(framebuffer, null);
             } else {
-                final IntBuffer iAttachments = MemoryUtil.memAllocInt(this.attachments.length);
+                try (MemoryStack mem = MemoryStack.stackPush()) {
+                    final IntBuffer iAttachments = mem.ints(this.attachments);
 
-                iAttachments.put(this.attachments).flip();
-
-                GLTools.getDriverInstance().framebufferBind(framebuffer, iAttachments);
-
-                MemoryUtil.memFree(iAttachments);
+                    GLTools.getDriverInstance().framebufferBind(framebuffer, iAttachments);
+                }
             }
             
             GLFramebuffer.this.framebuffer.updateTime();
