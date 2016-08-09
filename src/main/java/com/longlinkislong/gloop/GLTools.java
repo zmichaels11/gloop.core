@@ -1551,7 +1551,8 @@ public final class GLTools {
     }
 
     private static final class DriverHolder {
-
+        private DriverHolder() {}
+        
         @SuppressWarnings("rawtypes")
         private static final Driver INSTANCE;
 

@@ -181,136 +181,6 @@ public class GLTexture extends GLObject {
     }
 
     /**
-     * Constructs a new GLTexture on the default OpenGL thread and allocates a
-     * 3D texture object. This constructor is the same as using the constructor
-     * GLTexture() and immediately calling allocate(int, format, width, height,
-     * depth).
-     *
-     * @param mipmaps the number of mipmap levels to allocate.
-     * @param pixelFormat the sized pixel format.
-     * @param width the width of the base mipmap level.
-     * @param height the height of the base mipmap level.
-     * @param depth the depth of the base mipmap level.
-     * @since 15.07.08
-     */
-    public GLTexture(
-            final int mipmaps,
-            final GLTextureInternalFormat pixelFormat,
-            final int width, final int height, final int depth) {
-
-        this();
-        this.allocate(mipmaps, pixelFormat, width, height, depth);
-    }
-
-    /**
-     * Constructs a new GLTexture on the default OpenGL thread and allocates a
-     * 2D texture object. This constructor is the same as using the constructor
-     * GLTexture() and immediately calling allocate(int, format, width, height).
-     *
-     * @param mipmaps the number of mipmap levels to allocate.
-     * @param pixelFormat the sized pixel format.
-     * @param width the width of the base mipmap level.
-     * @param height the height of the base mipmap level.
-     * @since 15.07.08
-     */
-    public GLTexture(
-            final int mipmaps,
-            final GLTextureInternalFormat pixelFormat,
-            final int width, final int height) {
-
-        this();
-        this.allocate(mipmaps, pixelFormat, width, height);
-    }
-
-    /**
-     * Constructs a new GLTexture on the default OpenGL thread and allocates a
-     * 1D texture object. This constructor is the same as using the constructor
-     * GLTexture() and immediately calling allocate(int, format, width).
-     *
-     * @param mipmaps the number of mipmap levels to allocate.
-     * @param pixelFormat the sized pixel format.
-     * @param width the width of the base mipmap level.
-     * @since 15.07.08
-     */
-    public GLTexture(
-            final int mipmaps,
-            final GLTextureInternalFormat pixelFormat,
-            final int width) {
-
-        this();
-        this.allocate(mipmaps, pixelFormat, width);
-    }
-
-    /**
-     * Constructs a new GLTexture on the specified OpenGL thread and allocates a
-     * 3D texture object. This constructor is the same as using the constructor
-     * GLTexture(thread) and immediately calling allocate(int, format, width,
-     * height, depth).
-     *
-     * @param thread the OpenGL thread to construct the object on.
-     * @param mipmaps the number of mipmap levels to allocate.
-     * @param pixelFormat the sized pixel format.
-     * @param width the width of the base mipmap level.
-     * @param height the height of the base mipmap level.
-     * @param depth the depth of the base mipmap level.
-     * @since 15.07.08
-     */
-    public GLTexture(
-            final GLThread thread,
-            final int mipmaps,
-            final GLTextureInternalFormat pixelFormat,
-            final int width, final int height, final int depth) {
-
-        this(thread);
-        this.allocate(mipmaps, pixelFormat, width, height, depth);
-    }
-
-    /**
-     * Constructs a new GLTexture on the specified OpenGL thread and allocates a
-     * 2D texture object. This constructor is the same as using the constructor
-     * GLTexture(thread) and immediately calling allocate(int, format, width,
-     * height).
-     *
-     * @param thread the OpenGL thread to construct the object on.
-     * @param mipmaps the number of mipmap levels to allocate.
-     * @param pixelFormat the sized pixel format.
-     * @param width the width of the base mipmap level.
-     * @param height the height of the base mipmap level.
-     * @since 15.07.08
-     */
-    public GLTexture(
-            final GLThread thread,
-            final int mipmaps,
-            final GLTextureInternalFormat pixelFormat,
-            final int width, final int height) {
-
-        this(thread);
-        this.allocate(mipmaps, pixelFormat, width, height);
-    }
-
-    /**
-     * Constructs a new GLTexture on the specified OpenGL thread and allocates
-     * the 1D texture object. This constructor is the same as using the
-     * constructor GLTexture(thread) and immediately calling allocate(int,
-     * format, width).
-     *
-     * @param thread the OpenGL thread to construct the object on.
-     * @param mipmaps the number of mipmap levels to allocate.
-     * @param pixelFormat the sized pixel format.
-     * @param width the width of the base mipmap level.
-     * @since 15.07.08
-     */
-    public GLTexture(
-            final GLThread thread,
-            final int mipmaps,
-            final GLTextureInternalFormat pixelFormat,
-            final int width) {
-
-        this(thread);
-        this.allocate(mipmaps, pixelFormat, width);
-    }
-
-    /**
      * Retrieves the width of the texture.
      *
      * @return the width.
@@ -882,20 +752,27 @@ public class GLTexture extends GLObject {
      * @param width the width of the base mipmap level.
      * @param height the height of the base mipmap level.
      * @param depth the depth of the base mipmap level.
+     * @param type the data type.
      * @return self reference.
      * @since 15.07.08
      */
     public final GLTexture allocate(
             final int mipmaps,
             final GLTextureInternalFormat internalFormat,
-            final int width, final int height, final int depth) {
+            final int width, final int height, final int depth,
+            final GLType type) {
 
         new AllocateImage3DTask(
                 mipmaps,
                 internalFormat,
-                width, height, depth).glRun(this.getThread());
+                width, height, depth,
+                type).glRun(this.getThread());
 
         return this;
+    }
+
+    public final GLTexture allocate(final int mipmaps, final GLTextureInternalFormat internalFormat, final int width, final int height, final int depth) {
+        return allocate(mipmaps, internalFormat, width, height, depth, GLType.GL_UNSIGNED_BYTE);
     }
 
     /**
@@ -910,6 +787,7 @@ public class GLTexture extends GLObject {
         private final int width;
         private final int height;
         private final int depth;
+        private final GLType dataType;
 
         /**
          * Constructs a new AllocateImage3DTask.
@@ -919,6 +797,7 @@ public class GLTexture extends GLObject {
          * @param width the width of the base mipmap level.
          * @param height the height of the base mipmap level.
          * @param depth the depth of the base mipmap level.
+         * @param dataType the data type
          * @throws GLException if mipmaps is less than 1.
          * @throws GLException if width is less than 1.
          * @throws GLException if height is less than 1.
@@ -929,13 +808,15 @@ public class GLTexture extends GLObject {
         public AllocateImage3DTask(
                 final int level,
                 final GLTextureInternalFormat internalFormat,
-                final int width, final int height, final int depth) {
+                final int width, final int height, final int depth,
+                final GLType dataType) {
 
             if ((this.mipmaps = level) < 1) {
                 throw new GLException("Mipmap levels cannot be less than 1!");
             }
 
             this.internalFormat = Objects.requireNonNull(internalFormat);
+            this.dataType = Objects.requireNonNull(dataType);
 
             GLTexture.this.setSize(
                     this.width = width,
@@ -955,7 +836,7 @@ public class GLTexture extends GLObject {
             }
 
             GLTexture.this.internalFormat = this.internalFormat;
-            GLTexture.this.texture = GLTools.getDriverInstance().textureAllocate(mipmaps, internalFormat.value, width, height, depth);
+            GLTexture.this.texture = GLTools.getDriverInstance().textureAllocate(mipmaps, internalFormat.value, width, height, depth, dataType.value);
             GLTexture.this.setAttributes(GLTextureParameters.DEFAULT_PARAMETERS);
             GLTexture.this.name = "id=" + texture.hashCode();
             GLTexture.this.texture.updateTime();
@@ -963,6 +844,14 @@ public class GLTexture extends GLObject {
             LOGGER.trace(GLOOP_MARKER, "Initialized GLTexture[{}]!", GLTexture.this.name);
             LOGGER.trace(GLOOP_MARKER, "############### End GLTexture Allocate Image 3D Task ###############");
         }
+    }
+
+    public final GLTexture allocate(
+            final int mipmaps,
+            final GLTextureInternalFormat internalFormat,
+            final int width, final int height) {
+
+        return allocate(mipmaps, internalFormat, width, height, GLType.GL_UNSIGNED_BYTE);
     }
 
     /**
@@ -973,18 +862,20 @@ public class GLTexture extends GLObject {
      * @param internalFormat the sized pixel format.
      * @param width the width of the base mipmap level.
      * @param height the depth of the base mipmap level.
+     * @param dataType the data type.
      * @return self reference.
      * @since 15.07.08
      */
     public final GLTexture allocate(
             final int mipmaps,
             final GLTextureInternalFormat internalFormat,
-            final int width, final int height) {
+            final int width, final int height, final GLType dataType) {
 
         new AllocateImage2DTask(
                 mipmaps,
                 internalFormat,
-                width, height).glRun(this.getThread());
+                width, height,
+                dataType).glRun(this.getThread());
 
         return this;
     }
@@ -998,6 +889,7 @@ public class GLTexture extends GLObject {
 
         private final int mipmaps;
         private final GLTextureInternalFormat internalFormat;
+        private final GLType dataType;
         private final int width;
         private final int height;
 
@@ -1008,6 +900,7 @@ public class GLTexture extends GLObject {
          * @param internalFormat the sized pixel format.
          * @param width the width of the base mipmap level.
          * @param height the height of the base mipmap level.
+         * @param dataType the data type
          * @throws GLException if mipmaps is less than 1.
          * @throws GLException if width is less than 1.
          * @throws GLException if height is less than 1.
@@ -1017,12 +910,14 @@ public class GLTexture extends GLObject {
         public AllocateImage2DTask(
                 final int level,
                 final GLTextureInternalFormat internalFormat,
-                final int width, final int height) {
+                final int width, final int height,
+                final GLType dataType) {
 
             if ((this.mipmaps = level) < 1) {
                 throw new GLException("Mipmap levels cannot be less than 1!");
             }
 
+            this.dataType = Objects.requireNonNull(dataType);
             this.internalFormat = Objects.requireNonNull(internalFormat);
             GLTexture.this.setSize(this.width = width, this.height = height, 1);
         }
@@ -1039,7 +934,7 @@ public class GLTexture extends GLObject {
             }
 
             GLTexture.this.internalFormat = this.internalFormat;
-            GLTexture.this.texture = GLTools.getDriverInstance().textureAllocate(mipmaps, internalFormat.value, width, height, 1);
+            GLTexture.this.texture = GLTools.getDriverInstance().textureAllocate(mipmaps, internalFormat.value, width, height, 1, dataType.value);
             GLTexture.this.setAttributes(GLTextureParameters.DEFAULT_PARAMETERS);
             GLTexture.this.name = "id=" + texture.hashCode();
             GLTexture.this.texture.updateTime();
@@ -1056,17 +951,26 @@ public class GLTexture extends GLObject {
      * @param mipmaps the number of mipmaps to allocate.
      * @param internalFormat the sized pixel format.
      * @param width the width of the base mipmap level.
+     * @param dataType the data type
      * @return self reference.
      * @since 15.07.08
      */
     public final GLTexture allocate(
             final int mipmaps,
             final GLTextureInternalFormat internalFormat,
-            final int width) {
+            final int width,
+            final GLType dataType) {
 
-        new AllocateImage1DTask(mipmaps, internalFormat, width).glRun(this.getThread());
+        new AllocateImage1DTask(mipmaps, internalFormat, width, dataType).glRun(this.getThread());
 
         return this;
+    }
+
+    public final GLTexture allocate(
+            final int mipmaps,
+            final GLTextureInternalFormat internalFormat,
+            final int width) {
+        return allocate(mipmaps, internalFormat, width, GLType.GL_UNSIGNED_BYTE);
     }
 
     /**
@@ -1075,6 +979,8 @@ public class GLTexture extends GLObject {
      * @since 15.07.08
      */
     public final class AllocateImage1DTask extends GLTask {
+
+        private GLType dataType;
 
         private final int mipmaps;
         private final GLTextureInternalFormat internalFormat;
@@ -1086,6 +992,7 @@ public class GLTexture extends GLObject {
          * @param mipmapLevels the number of mipmaps to allocate.
          * @param internalFormat the sized pixel format.
          * @param width the width of the base mipmap level.
+         * @param dataType the data type
          * @throws GLException if mipmapLevels is less than 1.
          * @throws GLException if width is less than 1.
          * @throws NullPointerException if internalFormat is null.
@@ -1093,13 +1000,15 @@ public class GLTexture extends GLObject {
          */
         public AllocateImage1DTask(final int mipmapLevels,
                 final GLTextureInternalFormat internalFormat,
-                final int width) {
+                final int width,
+                final GLType dataType) {
 
             if ((this.mipmaps = mipmapLevels) < 1) {
                 throw new GLException("Mipmap levels cannot be less than 1!");
             }
 
             this.internalFormat = Objects.requireNonNull(internalFormat);
+            this.dataType = Objects.requireNonNull(dataType);
 
             GLTexture.this.setSize(this.width = width, 1, 1);
         }
@@ -1116,7 +1025,7 @@ public class GLTexture extends GLObject {
             }
 
             GLTexture.this.internalFormat = this.internalFormat;
-            GLTexture.this.texture = GLTools.getDriverInstance().textureAllocate(mipmaps, internalFormat.value, width, 1, 1);
+            GLTexture.this.texture = GLTools.getDriverInstance().textureAllocate(mipmaps, internalFormat.value, width, 1, 1, dataType.value);
             GLTexture.this.setAttributes(GLTextureParameters.DEFAULT_PARAMETERS);
             GLTexture.this.name = "id=" + texture.hashCode();
             GLTexture.this.texture.updateTime();
