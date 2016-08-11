@@ -1104,30 +1104,30 @@ public final class GLTools {
     public static ByteBuffer wrapIndirectCommands(final List<GLIndirectCommand> cmds) {
         return wrapIndirectCommands(cmds, 0, cmds.size());
     }
-    
+
     public static ByteBuffer wrapIndirectCommands(
-            final List<GLIndirectCommand> cmds, 
-            final int offset, 
+            final List<GLIndirectCommand> cmds,
+            final int offset,
             final int length) {
-        
+
         final int bytes = length * GLIndirectCommand.WIDTH;
         final ByteBuffer out = ByteBuffer.allocateDirect(bytes).order(ByteOrder.nativeOrder());
         final ListIterator<GLIndirectCommand> it = cmds.listIterator(offset);
-        
-        for(int i = 0; i < length; i++) {
+
+        for (int i = 0; i < length; i++) {
             final GLIndirectCommand cmd = it.next();
-            
+
             out.putInt(cmd.count);
             out.putInt(cmd.primCount);
             out.putInt(cmd.first);
             out.putInt(cmd.baseInstance);
         }
-        
+
         out.flip();
-        
+
         return out;
     }
-    
+
     public static ByteBuffer wrapIndirectCommands(final GLIndirectCommand... cmds) {
         return wrapIndirectCommands(cmds, 0, cmds.length);
     }
@@ -1140,7 +1140,7 @@ public final class GLTools {
         final int bytes = length * GLIndirectCommand.WIDTH;
         final ByteBuffer out = ByteBuffer.allocateDirect(bytes).order(ByteOrder.nativeOrder());
 
-        for(int i = 0; i < length; i++) {
+        for (int i = 0; i < length; i++) {
             out.putInt(cmds[i].count);
             out.putInt(cmds[i].primCount);
             out.putInt(cmds[i].first);
@@ -1551,8 +1551,10 @@ public final class GLTools {
     }
 
     private static final class DriverHolder {
-        private DriverHolder() {}
-        
+
+        private DriverHolder() {
+        }
+
         @SuppressWarnings("rawtypes")
         private static final Driver INSTANCE;
 
@@ -1631,5 +1633,35 @@ public final class GLTools {
         }
 
         return (width * height * depth) * fSize * tSize;
+    }
+
+    /**
+     * Swaps the red and blue channels in an image. Several images are stored in
+     * BGRA format and, on some hardware, need to be handled in RGBA format.
+     * Supports inline swapping.
+     *
+     * @param dst the buffer to write the data to.
+     * @param src the buffer to read the data to.
+     * @return the buffer.
+     * @since 16.08.10
+     */
+    public ByteBuffer rbPixelSwap(final ByteBuffer dst, final ByteBuffer src) {
+        final int size = dst.capacity();
+
+        assert size == src.capacity();
+
+        for (int i = 0; i < size; i += 4) {
+            final byte b = src.get(i);
+            final byte g = src.get(i + 1);
+            final byte r = src.get(i + 2);
+            final byte a = src.get(i + 3);
+
+            dst.put(i, r);
+            dst.put(i, g);
+            dst.put(i, b);
+            dst.put(i, a);
+        }
+
+        return dst;
     }
 }
