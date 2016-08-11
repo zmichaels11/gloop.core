@@ -1645,7 +1645,7 @@ public final class GLTools {
      * @return the buffer.
      * @since 16.08.10
      */
-    public ByteBuffer rbPixelSwap(final ByteBuffer dst, final ByteBuffer src) {
+    public static ByteBuffer rbPixelSwap(final ByteBuffer dst, final ByteBuffer src) {
         final int size = dst.capacity();
 
         assert size == src.capacity();
