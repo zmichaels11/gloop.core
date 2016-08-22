@@ -118,7 +118,7 @@ def getSnapshot(projectName) {
 }
 
 def getVersion(projectName) {
-    return getVersion(projectName, buildType)
+    return getVersion(projectName, build)
 }
 
 def getVersion(projectName, buildType) {
