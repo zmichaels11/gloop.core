@@ -15,12 +15,8 @@ repositories {
     maven { url 'http://jartifacts.longlinkislong.com/artifactory/libs-release' }
 }
 
-def getProjectVersion(projId) {
-    return "${versionUrl}?name=${projId}".toURL().text.trim()
-}
-
 dependencies {        
     compile 'org.slf4j:slf4j-api:1.7.+'
-    compile "com.longlinkislong:gloop-vectors:${getProjectVersion('gloop-vectors')}"
-    compile "com.longlinkislong:gloop-spi:${getProjectVersion('gloop-spi')}"        
+    compile "com.longlinkislong:gloop-vectors:${getVersion('gloop-vectors')}"
+    compile "com.longlinkislong:gloop-spi:${getVersion('gloop-spi')}"        
 }
