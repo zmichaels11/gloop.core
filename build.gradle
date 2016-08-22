@@ -15,6 +15,30 @@ repositories {
     maven { url 'http://jartifacts.longlinkislong.com/artifactory/libs-release' }
 }
 
+def getVersion(projectName) {
+    return getVersion(projectName, build)
+}
+
+def getVersion(projectName, buildType) {
+    if (isJenkins.toBoolean()) {
+        if (buildType == 'snapshot') {
+            return getSnapshot(projectName)
+        } else if (buildType == 'release') {
+            return getRelease(projectName)
+        } else {
+            throw new IllegalStateException("Unsupported build type: $buildType")
+        }
+    } else {
+        if (buildType == 'snapshot') {
+            return "http://jenkins.longlinkislong.com/job/$projectName/lastSuccessfulBuild/artifact/build/version.snapshot".toURL().text.trim()
+        } else if (buildType == 'release') {
+            return "http://jenkins.longlinkislong.com/job/$projectName/lastSuccessfulBuild/artifact/build/version.release".toURL().text.trim()
+        } else {
+            throw new IllegalArgumentException("Unsupported build type: $buildType")
+        }
+    }
+}
+
 dependencies {        
     compile 'org.slf4j:slf4j-api:1.7.+'
     compile "com.longlinkislong:gloop-vectors:${getVersion('gloop-1.X.X-vectors')}"
