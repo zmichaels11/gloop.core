@@ -764,6 +764,8 @@ public class GLThread implements ExecutorService {
             LOGGER.debug(SYS_MARKER, "Renamed GLThread[{}] to GLThread[{}]", GLThread.this.internalThread.getName(), name);
             GLThread.this.internalThread.setName(name);
             THREAD_MAP.put(GLThread.this.internalThread, GLThread.this);
+
+            //TODO: this should check if OpenGL is initialized. If it is not, all GLTasks should be delayed.
         }
     }
 

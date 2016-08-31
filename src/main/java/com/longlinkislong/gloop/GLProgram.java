@@ -30,9 +30,11 @@ import com.longlinkislong.gloop.glspi.Program;
 import com.longlinkislong.gloop.glspi.Shader;
 import java.nio.DoubleBuffer;
 import java.nio.FloatBuffer;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Iterator;
+import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.OptionalInt;
@@ -58,6 +60,7 @@ public class GLProgram extends GLObject {
     private transient volatile Program program;
     private final Map<String, Integer> uniforms = new HashMap<>(32);
     private String name = "";
+    private final List<GLTask> buildInstructions = new ArrayList<>(0);
 
     /**
      * Assigns a human-readable name to the GLProgram.
@@ -140,8 +143,9 @@ public class GLProgram extends GLObject {
      * @since 15.12.18
      */
     public class UseTask extends GLTask {
+
         GLProgram program = GLProgram.this;
-        
+
         @SuppressWarnings("unchecked")
         @Override
         public void run() {
@@ -247,6 +251,7 @@ public class GLProgram extends GLObject {
                 }
             }
 
+            GLProgram.this.buildInstructions.add(this);
             GLProgram.this.program.updateTime();
 
             LOGGER.trace(
@@ -547,7 +552,7 @@ public class GLProgram extends GLObject {
 
                 GLTools.getDriverInstance().programSetUniformMatF(program, uLoc, buffer);
             }
-            
+
             GLProgram.this.program.updateTime();
             LOGGER.trace(GL_MARKER, "############### End GLProgram Set Uniform MatrixF Task ###############");
         }
@@ -1137,6 +1142,7 @@ public class GLProgram extends GLObject {
                     .collect(Collectors.toList())
                     .toArray(new Shader[shaders.length]));
 
+            GLProgram.this.buildInstructions.add(this);
             GLProgram.this.program.updateTime();
             LOGGER.trace(GL_MARKER, "Linked shaders for GLProgram[{}]!", GLProgram.this.getName());
             LOGGER.trace(GL_MARKER, "############### End GLProgram Link Shaders Task ###############");
@@ -1205,7 +1211,8 @@ public class GLProgram extends GLObject {
             } else {
                 GLTools.getDriverInstance().programDelete(program);
                 GLProgram.this.program.resetTime();
-                program = null;
+                GLProgram.this.program = null;
+                GLProgram.this.uniforms.clear();
             }
             LOGGER.trace(GL_MARKER, "############### End GLProgram Delete Task ###############");
         }
@@ -1711,5 +1718,15 @@ public class GLProgram extends GLObject {
         } else {
             return System.nanoTime();
         }
+    }
+
+    @Override
+    public void migrate(final GLThread thread) {
+        this.delete();
+
+        super.migrate(thread);
+
+        this.init();
+        this.buildInstructions.forEach(task -> task.glRun(thread));
     }
 }

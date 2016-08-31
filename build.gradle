@@ -69,4 +69,9 @@ dependencies {
     compile 'org.slf4j:slf4j-api:1.7.+'
     compile "com.longlinkislong:gloop-vectors:${getVersion('gloop-vectors')}"
     compile "com.longlinkislong:gloop-spi:${getVersion('gloop-spi')}"
+    
+    testCompile group: 'junit', name: 'junit', version: '4.10'
+    testCompile 'org.slf4j:slf4j-simple:1.7.+'
+    testCompile "com.longlinkislong:gloop-window-glfw:${getVersion('gloop-window-glfw')}"
+    testCompile "com.longlinkislong:gloop-impl-opengl:${getVersion('gloop-impl-opengl')}"
 }

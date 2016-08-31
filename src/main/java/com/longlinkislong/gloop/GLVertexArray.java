@@ -27,6 +27,8 @@ package com.longlinkislong.gloop;
 
 import com.longlinkislong.gloop.glspi.Driver;
 import com.longlinkislong.gloop.glspi.VertexArray;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Objects;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -46,6 +48,7 @@ public class GLVertexArray extends GLObject {
     private static final Logger LOGGER = LoggerFactory.getLogger("GLVertexArray");
     private transient volatile VertexArray vao = null;
     private String name = "";
+    private final List<GLTask> buildInstructions = new ArrayList<>(0);
 
     /**
      * Assigns a human-readable name to the GLVertexArray object.
@@ -863,6 +866,7 @@ public class GLVertexArray extends GLObject {
                 throw new GLException("Invalid GLBuffer!");
             }
 
+            GLVertexArray.this.buildInstructions.add(this);
             GLTools.getDriverInstance().vertexArrayAttachIndexBuffer(vao, buffer.buffer);
             LOGGER.trace(GLOOP_MARKER, "############### End GLVertexArray Attach Index Buffer Task ###############");
         }
@@ -1070,6 +1074,8 @@ public class GLVertexArray extends GLObject {
             }
 
             GLTools.getDriverInstance().vertexArrayAttachBuffer(vao, index, buffer.buffer, size.value, type.value, stride, offset, divisor);
+
+            GLVertexArray.this.buildInstructions.add(this);
             LOGGER.trace(GLOOP_MARKER, "############### End GLVertexArray Attach Buffer Task ###############");
         }
     }
@@ -1077,5 +1083,15 @@ public class GLVertexArray extends GLObject {
     @Override
     public final boolean isShareable() {
         return false;
+    }
+
+    @Override
+    public void migrate(final GLThread thread) {
+        this.delete();
+
+        super.migrate(thread);
+
+        this.init();
+        this.buildInstructions.forEach(task -> task.glRun(thread));        
     }
 }

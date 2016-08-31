@@ -33,7 +33,9 @@ import static com.longlinkislong.gloop.GLAsserts.checkBufferSize;
 import com.longlinkislong.gloop.glspi.Framebuffer;
 import java.nio.ByteBuffer;
 import java.nio.IntBuffer;
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
@@ -60,6 +62,7 @@ public class GLFramebuffer extends GLObject {
     private final Map<String, Integer> colorAttachments = new HashMap<>(4);
     private final boolean isLocked;
     private String name = "";
+    private final List<GLTask> buildInstructions = new ArrayList<>(0);
 
     /**
      * Assigns a human-readable name to the GLFramebuffer.
@@ -132,7 +135,8 @@ public class GLFramebuffer extends GLObject {
         this.name = "id=" + framebuffer.hashCode();
     }
 
-    private static final Map<GLThread, GLFramebuffer> DEFAULT_FRAMEBUFFERS = new HashMap<>(4);
+    // replace with thread local storage
+    private static final Map<GLThread, GLFramebuffer> DEFAULT_FRAMEBUFFERS = new HashMap<>(1);
 
     /**
      * Retrieves the default framebuffer associated with the default OpenGL
@@ -283,7 +287,7 @@ public class GLFramebuffer extends GLObject {
             } else {
                 GLTools.getDriverInstance().framebufferDelete(framebuffer);
                 GLFramebuffer.this.framebuffer.resetTime();
-                framebuffer = null;
+                GLFramebuffer.this.framebuffer = null;
                 GLFramebuffer.this.colorAttachments.clear();
                 GLFramebuffer.this.nextColorAttachment = 36064 /* GL_COLOR_ATTACHMENT0 */;
             }
@@ -492,7 +496,10 @@ public class GLFramebuffer extends GLObject {
             }
 
             this.depthStencilAttachment.texture.updateTime();
+
             GLTools.getDriverInstance().framebufferAddAttachment(framebuffer, GL30.GL_DEPTH_STENCIL_ATTACHMENT, depthStencilAttachment.texture, level);
+
+            GLFramebuffer.this.buildInstructions.add(this);
             GLFramebuffer.this.framebuffer.updateTime();
             LOGGER.trace(GL_MARKER, "############### End GLFramebuffer Add Depth Stencil Attachment Task ###############");
         }
@@ -585,6 +592,8 @@ public class GLFramebuffer extends GLObject {
 
             this.depthAttachment.texture.updateTime();
             GLTools.getDriverInstance().framebufferAddAttachment(framebuffer, GL30.GL_DEPTH_ATTACHMENT, depthAttachment.texture, level);
+
+            GLFramebuffer.this.buildInstructions.add(this);
             GLFramebuffer.this.framebuffer.updateTime();
             LOGGER.trace(GL_MARKER, "############### End GLFramebuffer Add Depth Attachment Task ###############");
         }
@@ -711,6 +720,7 @@ public class GLFramebuffer extends GLObject {
                 GLFramebuffer.this.colorAttachments.put(this.name, this.attachmentId);
             }
 
+            GLFramebuffer.this.buildInstructions.add(this);
             GLFramebuffer.this.framebuffer.updateTime();
             LOGGER.trace(GL_MARKER, "############### End GLFramebuffer AddRenderbufferAttachment Task ###############");
         }
@@ -784,7 +794,10 @@ public class GLFramebuffer extends GLObject {
             }
 
             this.colorAttachment.texture.updateTime();
+            
             GLTools.getDriverInstance().framebufferAddAttachment(framebuffer, attachmentId, colorAttachment.texture, level);
+
+            GLFramebuffer.this.buildInstructions.add(this);
             GLFramebuffer.this.framebuffer.updateTime();
             LOGGER.trace(GL_MARKER, "############### End GLFramebuffer Add Color Attachment Task ###############");
         }
@@ -1045,5 +1058,17 @@ public class GLFramebuffer extends GLObject {
         } else {
             return System.nanoTime();
         }
+    }
+
+    @Override
+    public void migrate(final GLThread thread) {
+        this.delete();
+
+        super.migrate(thread);
+
+
+
+        this.init();
+        this.buildInstructions.forEach(task -> task.glRun(thread));
     }
 }

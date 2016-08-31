@@ -40,7 +40,7 @@ public abstract class GLObject {
         NativeTools.getInstance().autoLoad();
     }
 
-    private final GLThread thread;    
+    private GLThread thread;
 
     /**
      * Constructs a new GLObject associated with the default thread.
@@ -95,5 +95,9 @@ public abstract class GLObject {
      */
     public boolean isShareable() {
         return true; // most objects are shareable.
+    }
+
+    public void migrate(final GLThread thread) {
+        this.thread = Objects.requireNonNull(thread, "Cannot migrate to [null] thread!");
     }
 }
