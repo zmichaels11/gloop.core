@@ -28,6 +28,7 @@ package com.longlinkislong.gloop;
 import com.longlinkislong.gloop.glspi.Driver;
 import com.longlinkislong.gloop.glspi.Program;
 import com.longlinkislong.gloop.glspi.Shader;
+import java.lang.ref.WeakReference;
 import java.nio.DoubleBuffer;
 import java.nio.FloatBuffer;
 import java.util.ArrayList;
@@ -1179,6 +1180,10 @@ public class GLProgram extends GLObject {
             GLProgram.this.name = "id=" + program.hashCode();
             GLProgram.this.program.updateTime();
 
+            final GLThread thread = GLThread.getCurrent().get();
+
+            thread.containerObjects.add(new WeakReference<>(GLProgram.this));
+
             LOGGER.trace(GL_MARKER, "Initialized GLProgram[{}]!", GLProgram.this.name);
             LOGGER.trace(GL_MARKER, "############### End GLProgram Init Task ###############");
         }
@@ -1721,12 +1726,14 @@ public class GLProgram extends GLObject {
     }
 
     @Override
-    public void migrate(final GLThread thread) {
-        this.delete();
-
-        super.migrate(thread);
-
-        this.init();
-        this.buildInstructions.forEach(task -> task.glRun(thread));
+    protected GLObject migrate() {
+        if (this.isValid()) {
+            this.delete();
+            this.init();
+            this.buildInstructions.forEach(task -> task.glRun(this.getThread()));
+            return this;
+        } else {
+            return null;
+        }
     }
 }

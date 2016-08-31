@@ -27,6 +27,7 @@ package com.longlinkislong.gloop;
 
 import com.longlinkislong.gloop.glspi.Driver;
 import com.longlinkislong.gloop.glspi.VertexArray;
+import java.lang.ref.WeakReference;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
@@ -144,6 +145,8 @@ public class GLVertexArray extends GLObject {
 
             vao = GLTools.getDriverInstance().vertexArrayCreate();
             GLVertexArray.this.name = "id=" + vao.hashCode();
+
+            GLThread.getCurrent().get().containerObjects.add(new WeakReference<>(GLVertexArray.this));
 
             LOGGER.trace(GLOOP_MARKER, "Initialized GLVertexArray[{}]", GLVertexArray.this.name);
             LOGGER.trace(GLOOP_MARKER, "############## End GLVertexArray Init Task ###############");
@@ -1086,12 +1089,14 @@ public class GLVertexArray extends GLObject {
     }
 
     @Override
-    public void migrate(final GLThread thread) {
-        this.delete();
-
-        super.migrate(thread);
-
-        this.init();
-        this.buildInstructions.forEach(task -> task.glRun(thread));        
+    protected GLObject migrate() {
+        if (this.isValid()) {
+            this.delete();
+            this.init();
+            this.buildInstructions.forEach(task -> task.glRun(this.getThread()));
+            return this;
+        } else {
+            return null;
+        }
     }
 }

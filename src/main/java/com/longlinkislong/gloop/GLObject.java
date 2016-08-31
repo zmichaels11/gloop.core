@@ -40,7 +40,7 @@ public abstract class GLObject {
         NativeTools.getInstance().autoLoad();
     }
 
-    private GLThread thread;
+    private final GLThread thread;
 
     /**
      * Constructs a new GLObject associated with the default thread.
@@ -57,7 +57,7 @@ public abstract class GLObject {
      * @param thread the thread to associate.
      * @since 15.05.13
      */
-    public GLObject(final GLThread thread) {        
+    public GLObject(final GLThread thread) {
         this.thread = Objects.requireNonNull(thread);
     }
 
@@ -97,7 +97,13 @@ public abstract class GLObject {
         return true; // most objects are shareable.
     }
 
-    public void migrate(final GLThread thread) {
-        this.thread = Objects.requireNonNull(thread, "Cannot migrate to [null] thread!");
+    /**
+     * Called when a context change occurs.
+     *
+     * @return self if the object is alive. Otherwise it should return null.
+     * @since 16.08.31
+     */
+    protected GLObject migrate() {
+        return this;
     }
 }

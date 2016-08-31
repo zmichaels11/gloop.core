@@ -211,7 +211,7 @@ public class GLFramebuffer extends GLObject {
             }
 
             GLFramebuffer.this.framebuffer.updateTime();
-            
+
             LOGGER.trace(GL_MARKER, "############### End GLFramebuffer Is Complete Query ###############");
 
             return res;
@@ -291,7 +291,7 @@ public class GLFramebuffer extends GLObject {
                 GLFramebuffer.this.colorAttachments.clear();
                 GLFramebuffer.this.nextColorAttachment = 36064 /* GL_COLOR_ATTACHMENT0 */;
             }
-            
+
             LOGGER.trace(GL_MARKER, "############### End GLFramebuffer Delete Task ###############");
         }
     }
@@ -334,7 +334,6 @@ public class GLFramebuffer extends GLObject {
         private final int[] attachments;
         final String[] attachmentNames;
         GLFramebuffer fb = GLFramebuffer.this;
-
 
         /**
          * Constructs a new BindTask with the specified color attachments.
@@ -401,7 +400,7 @@ public class GLFramebuffer extends GLObject {
                     GLTools.getDriverInstance().framebufferBind(framebuffer, iAttachments);
                 }
             }
-            
+
             GLFramebuffer.this.framebuffer.updateTime();
             LOGGER.trace(GL_MARKER, "############### End GLFramebuffer Bind Task ###############");
         }
@@ -794,7 +793,7 @@ public class GLFramebuffer extends GLObject {
             }
 
             this.colorAttachment.texture.updateTime();
-            
+
             GLTools.getDriverInstance().framebufferAddAttachment(framebuffer, attachmentId, colorAttachment.texture, level);
 
             GLFramebuffer.this.buildInstructions.add(this);
@@ -1040,7 +1039,7 @@ public class GLFramebuffer extends GLObject {
             } else {
                 GLTools.getDriverInstance().framebufferGetPixels(framebuffer, x, y, width, height, format.value, type.value, pixelPackBuffer.buffer);
             }
-            
+
             GLFramebuffer.this.framebuffer.updateTime();
 
             LOGGER.trace(GL_MARKER, "############### End GLFramebuffer Read Pixels Task ###############");
@@ -1051,9 +1050,9 @@ public class GLFramebuffer extends GLObject {
     public final boolean isShareable() {
         return false;
     }
-    
+
     public long getTimeSinceLastUsed() {
-        if(this.framebuffer != null) {
+        if (this.framebuffer != null) {
             return this.framebuffer.getTimeSinceLastUsed();
         } else {
             return System.nanoTime();
@@ -1061,14 +1060,14 @@ public class GLFramebuffer extends GLObject {
     }
 
     @Override
-    public void migrate(final GLThread thread) {
-        this.delete();
-
-        super.migrate(thread);
-
-
-
-        this.init();
-        this.buildInstructions.forEach(task -> task.glRun(thread));
+    protected GLObject migrate() {
+        if (this.isValid()) {
+            this.delete();
+            this.init();
+            this.buildInstructions.forEach(task -> task.glRun(this.getThread()));
+            return this;
+        } else {
+            return null;
+        }
     }
 }

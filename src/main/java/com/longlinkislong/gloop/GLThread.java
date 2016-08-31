@@ -25,13 +25,17 @@
  */
 package com.longlinkislong.gloop;
 
+import java.lang.ref.WeakReference;
 import java.util.ArrayDeque;
 import java.util.Collection;
 import java.util.Deque;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
+import java.util.Set;
 import java.util.concurrent.Callable;
 import java.util.concurrent.CancellationException;
 import java.util.concurrent.ExecutionException;
@@ -63,6 +67,7 @@ public class GLThread implements ExecutorService {
     private static final Logger LOGGER = LoggerFactory.getLogger("GLThread");
 
     private static final transient Map<Thread, GLThread> THREAD_MAP = new HashMap<>(1);
+    final Set<WeakReference<GLObject>> containerObjects = new HashSet<>(4);
     final Deque<GLBlending> blendStack = new ArrayDeque<>(4);
     final Deque<GLClear> clearStack = new ArrayDeque<>(4);
     final Deque<GLDepthTest> depthTestStack = new ArrayDeque<>(4);
@@ -1058,5 +1063,31 @@ public class GLThread implements ExecutorService {
      */
     public void sync() {
         GLQuery.create(() -> null).glCall(this);
+    }
+
+    protected void migrate() {        
+        // remove all garbage collected objects
+        // remove all deleted objects
+        // migrate all alive objects
+        final List<WeakReference<GLObject>> aliveContainers = this.containerObjects.stream()
+                .map(WeakReference::get)
+                .filter(Objects::nonNull)
+                .map(GLObject::migrate)
+                .map(WeakReference::new)
+                .collect(Collectors.toList());
+
+        this.containerObjects.clear();
+        this.containerObjects.addAll(aliveContainers);
+
+        // restore all states
+        this.currentBlend.applyBlending();
+        this.currentClear.clear();
+        this.currentDepthTest.applyDepthFunc();
+        this.currentFramebufferBind.glRun(this);
+        this.currentMask.applyMask();
+        this.currentPolygonParameters.applyParameters();
+        this.currentProgramUse.glRun(this);
+        this.currentScissor.apply();
+        this.currentViewport.applyViewport();
     }
 }
