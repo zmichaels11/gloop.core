@@ -515,39 +515,43 @@ public class GLThread implements ExecutorService {
         return viewport;
     }
 
-    private transient final ExecutorService internalExecutor = new ThreadPoolExecutor(
-            1, 1, 0L, TimeUnit.MILLISECONDS, new LinkedBlockingQueue<>()) {
+    private ExecutorService initExecutor() {
+        return new ThreadPoolExecutor(
+                1, 1, 0L, TimeUnit.MILLISECONDS, new LinkedBlockingQueue<>()) {
 
-        @Override
-        protected void afterExecute(final Runnable task, final Throwable ex) {
-            super.afterExecute(task, ex);
+            @Override
+            protected void afterExecute(final Runnable task, final Throwable ex) {
+                super.afterExecute(task, ex);
 
-            if (task != null && task instanceof Future<?>) {
-                try {
-                    final Future<?> future = (Future<?>) task;
+                if (task != null && task instanceof Future<?>) {
+                    try {
+                        final Future<?> future = (Future<?>) task;
 
-                    if (future.isDone()) {
-                        future.get();
+                        if (future.isDone()) {
+                            future.get();
+                        }
+                    } catch (CancellationException ce) {
+                        LOGGER.error(SYS_MARKER, "GLTask was canceled.");
+                        LOGGER.error(SYS_MARKER, ce.getMessage(), ce);
+                    } catch (ExecutionException ee) {
+                        LOGGER.error(SYS_MARKER, "Error executing GLTask");
+                        LOGGER.error(SYS_MARKER, ee.getMessage(), ee);
+                    } catch (InterruptedException ie) {
+                        LOGGER.error(SYS_MARKER, "GLThread was interrupted! Resetting interrupt state.");
+                        LOGGER.error(SYS_MARKER, ie.getMessage(), ie);
+                        Thread.currentThread().interrupt();
                     }
-                } catch (CancellationException ce) {
-                    LOGGER.error(SYS_MARKER, "GLTask was canceled.");
-                    LOGGER.error(SYS_MARKER, ce.getMessage(), ce);
-                } catch (ExecutionException ee) {
-                    LOGGER.error(SYS_MARKER, "Error executing GLTask");
-                    LOGGER.error(SYS_MARKER, ee.getMessage(), ee);
-                } catch (InterruptedException ie) {
-                    LOGGER.error(SYS_MARKER, "GLThread was interrupted! Resetting interrupt state.");
-                    LOGGER.error(SYS_MARKER, ie.getMessage(), ie);
-                    Thread.currentThread().interrupt();
+                }
+
+                if (ex != null) {
+                    LOGGER.error(SYS_MARKER, "Error executing GLTask!");
+                    LOGGER.error(ex.getMessage(), ex);
                 }
             }
+        };
+    }
 
-            if (ex != null) {
-                LOGGER.error(SYS_MARKER, "Error executing GLTask!");
-                LOGGER.error(ex.getMessage(), ex);
-            }
-        }
-    };
+    private transient final ExecutorService internalExecutor;
     private transient Thread internalThread = null;
     private boolean shouldHaltScheduledTasks = false;
 
@@ -654,7 +658,12 @@ public class GLThread implements ExecutorService {
      * @since 15.06.09
      */
     protected GLThread() {
+        this.internalExecutor = this.initExecutor();
         this.internalExecutor.execute(new InitTask());
+    }
+
+    protected GLThread(final GLThread thread) {
+        this.internalExecutor = thread.internalExecutor;
     }
 
     /**
