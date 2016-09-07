@@ -937,7 +937,10 @@ public class GLFramebuffer extends GLObject {
                 throw new GLException("Write framebuffer is not valid!");
             }
 
-            GLTools.getDriverInstance().framebufferBlit(readFB.framebuffer, srcX0, srcY0, srcX1, srcY1, writeFB.framebuffer, dstX0, dstY0, dstX1, dstY1, bitfield, dstX0);
+            GLTools.getDriverInstance().framebufferBlit(
+                    readFB.framebuffer, srcX0, srcY0, srcX1, srcY1,
+                    writeFB.framebuffer, dstX0, dstY0, dstX1, dstY1,
+                    bitfield, filter.value);
             readFB.updateTimeUsed();
             writeFB.updateTimeUsed();
             LOGGER.trace(GL_MARKER, "############### End GLFramebuffer Blit task ###############");
