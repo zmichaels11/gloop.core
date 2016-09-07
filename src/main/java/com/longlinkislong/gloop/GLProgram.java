@@ -1,5 +1,5 @@
 /* 
- * Copyright (c) 2015, longlinkislong.com
+ * Copyright (c) 2014-2016, longlinkislong.com
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
