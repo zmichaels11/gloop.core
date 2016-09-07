@@ -50,6 +50,12 @@ public class GLVertexArray extends GLObject {
     private transient volatile VertexArray vao = null;
     private String name = "";
     private final List<GLTask> buildInstructions = new ArrayList<>(0);
+    private final List<WeakReference<GLBuffer>> attributes = new ArrayList<>(8);
+
+    @Override
+    public long getTimeSinceLastUsed() {
+        return (System.nanoTime() - this.lastUsedTime);
+    }
 
     /**
      * Assigns a human-readable name to the GLVertexArray object.
@@ -147,6 +153,7 @@ public class GLVertexArray extends GLObject {
             GLVertexArray.this.name = "id=" + vao.hashCode();
 
             GLThread.getCurrent().get().containerObjects.add(new WeakReference<>(GLVertexArray.this));
+            GLVertexArray.this.updateTimeUsed();
 
             LOGGER.trace(GLOOP_MARKER, "Initialized GLVertexArray[{}]", GLVertexArray.this.name);
             LOGGER.trace(GLOOP_MARKER, "############## End GLVertexArray Init Task ###############");
@@ -270,6 +277,12 @@ public class GLVertexArray extends GLObject {
                 driver.vertexArrayDrawElementsIndirect(vao, indirectCommandBuffer.buffer, drawMode.value, indexType.value, offset);
             }
 
+            GLVertexArray.this.updateTimeUsed();
+            GLVertexArray.this.attributes.stream()
+                    .map(WeakReference::get)
+                    .filter(Objects::nonNull)
+                    .forEach(GLObject::updateTimeUsed);
+
             LOGGER.trace(GLOOP_MARKER, "############ End GLVertexArray Draw Elements Indirect Task ###########");
         }
     }
@@ -373,6 +386,12 @@ public class GLVertexArray extends GLObject {
             } else {
                 driver.vertexArrayDrawArraysIndirect(vao, indirectCommandBuffer.buffer, drawMode.value, offset);
             }
+
+            GLVertexArray.this.updateTimeUsed();
+            GLVertexArray.this.attributes.stream()
+                    .map(WeakReference::get)
+                    .filter(Objects::nonNull)
+                    .forEach(GLObject::updateTimeUsed);
 
             LOGGER.trace(GLOOP_MARKER, "############### End GLVertexArray Draw Arrays Indirect Task ###############");
         }
@@ -489,6 +508,12 @@ public class GLVertexArray extends GLObject {
                 driver.vertexArrayDrawElementsInstanced(vao, drawMode.value, count, type.value, offset, instanceCount);
             }
 
+            GLVertexArray.this.updateTimeUsed();
+            GLVertexArray.this.attributes.stream()
+                    .map(WeakReference::get)
+                    .filter(Objects::nonNull)
+                    .forEach(GLObject::updateTimeUsed);
+
             LOGGER.trace(GLOOP_MARKER, "############### End GLVertexArray Draw Elements Instanced Task ###############");
         }
 
@@ -598,6 +623,12 @@ public class GLVertexArray extends GLObject {
                 driver.vertexArrayDrawArraysInstanced(vao, mode.value, first, count, instanceCount);
             }
 
+            GLVertexArray.this.updateTimeUsed();
+            GLVertexArray.this.attributes.stream()
+                    .map(WeakReference::get)
+                    .filter(Objects::nonNull)
+                    .forEach(GLObject::updateTimeUsed);
+
             LOGGER.trace(GLOOP_MARKER, "############### End GLVertexArray Draw Arrays Instanced Task ###############");
         }
     }
@@ -701,6 +732,12 @@ public class GLVertexArray extends GLObject {
                 driver.vertexArrayDrawElements(vao, mode.value, count, type.value, offset);
             }
 
+            GLVertexArray.this.updateTimeUsed();
+            GLVertexArray.this.attributes.stream()
+                    .map(WeakReference::get)
+                    .filter(Objects::nonNull)
+                    .forEach(GLObject::updateTimeUsed);
+
             LOGGER.trace(GLOOP_MARKER, "############### End GLVertexArray Draw Elements Task ###############");
         }
     }
@@ -793,6 +830,12 @@ public class GLVertexArray extends GLObject {
                 driver.vertexArrayDrawArrays(vao, mode.value, start, count);
             }
 
+            GLVertexArray.this.updateTimeUsed();
+            GLVertexArray.this.attributes.stream()
+                    .map(WeakReference::get)
+                    .filter(Objects::nonNull)
+                    .forEach(GLObject::updateTimeUsed);
+
             LOGGER.trace(GLOOP_MARKER, "############### End GLVertexArray Draw Arrays Task ###############");
         }
 
@@ -823,8 +866,10 @@ public class GLVertexArray extends GLObject {
             checkThread();
 
             if (GLVertexArray.this.isValid()) {
-                GLTools.getDriverInstance().vertexArrayDelete(vao);
-                vao = null;
+                GLTools.getDriverInstance().vertexArrayDelete(GLVertexArray.this.vao);
+                GLVertexArray.this.lastUsedTime = 0L;
+                GLVertexArray.this.attributes.clear();
+                GLVertexArray.this.vao = null;
             } else {
                 LOGGER.warn(GLOOP_MARKER, "Attempted to delete invalid GLVertexArray!");
             }
@@ -871,6 +916,9 @@ public class GLVertexArray extends GLObject {
 
             GLVertexArray.this.buildInstructions.add(this);
             GLTools.getDriverInstance().vertexArrayAttachIndexBuffer(vao, buffer.buffer);
+            GLVertexArray.this.attributes.add(new WeakReference<>(this.buffer));
+            GLVertexArray.this.updateTimeUsed();
+            this.buffer.updateTimeUsed();
             LOGGER.trace(GLOOP_MARKER, "############### End GLVertexArray Attach Index Buffer Task ###############");
         }
     }
@@ -1079,6 +1127,9 @@ public class GLVertexArray extends GLObject {
             GLTools.getDriverInstance().vertexArrayAttachBuffer(vao, index, buffer.buffer, size.value, type.value, stride, offset, divisor);
 
             GLVertexArray.this.buildInstructions.add(this);
+            GLVertexArray.this.attributes.add(new WeakReference<>(this.buffer));
+            GLVertexArray.this.updateTimeUsed();
+            this.buffer.updateTimeUsed();
             LOGGER.trace(GLOOP_MARKER, "############### End GLVertexArray Attach Buffer Task ###############");
         }
     }

@@ -1139,12 +1139,16 @@ public class GLProgram extends GLObject {
             driver.programLinkShaders(
                     program,
                     Arrays.stream(shaders)
+                    .map(shader -> {
+                        shader.updateTimeUsed();
+                        return shader;
+                    })
                     .map(shader -> shader.shader)
                     .collect(Collectors.toList())
                     .toArray(new Shader[shaders.length]));
 
             GLProgram.this.buildInstructions.add(this);
-            GLProgram.this.program.updateTime();
+            GLProgram.this.updateTimeUsed();
             LOGGER.trace(GL_MARKER, "Linked shaders for GLProgram[{}]!", GLProgram.this.getName());
             LOGGER.trace(GL_MARKER, "############### End GLProgram Link Shaders Task ###############");
         }
@@ -1184,6 +1188,7 @@ public class GLProgram extends GLObject {
 
             thread.containerObjects.add(new WeakReference<>(GLProgram.this));
 
+            GLProgram.this.updateTimeUsed();
             LOGGER.trace(GL_MARKER, "Initialized GLProgram[{}]!", GLProgram.this.name);
             LOGGER.trace(GL_MARKER, "############### End GLProgram Init Task ###############");
         }
@@ -1215,7 +1220,7 @@ public class GLProgram extends GLObject {
                 LOGGER.warn(GL_MARKER, "Attempted to delete invalid GLProgram!");
             } else {
                 GLTools.getDriverInstance().programDelete(program);
-                GLProgram.this.program.resetTime();
+                GLProgram.this.lastUsedTime = 0L;
                 GLProgram.this.program = null;
                 GLProgram.this.uniforms.clear();
             }
@@ -1251,6 +1256,8 @@ public class GLProgram extends GLObject {
 
         @Override
         public OptionalInt call() throws Exception {
+            GLProgram.this.updateTimeUsed();
+
             if (!GLProgram.this.program.isValid()) {
                 throw new GLException("Invalid GLProgram!");
             } else {
@@ -1393,29 +1400,7 @@ public class GLProgram extends GLObject {
 
             LOGGER.trace(GL_MARKER, "############### End GLProgram Set Storage Block Binding Task ###############");
         }
-    }
-
-    /**
-     * Sets the shader storage with a GLBuffer.
-     *
-     * @param storageName the name of the storage block.
-     * @param buffer the GLBuffer to bind.
-     * @param bindingPoint the index to bind the GLBuffer to.
-     * @since 15.07.06
-     * @deprecated binding points are actually independent of the program
-     * object!
-     */
-    @Deprecated
-    public void setShaderStorage(
-            final CharSequence storageName,
-            final GLBuffer buffer,
-            final int bindingPoint) {
-
-        new SetShaderStorageTask(
-                storageName,
-                buffer,
-                bindingPoint).glRun(this.getThread());
-    }
+    }    
 
     /**
      * A GLTask that sets a Shader Storage block.
@@ -1464,7 +1449,7 @@ public class GLProgram extends GLObject {
                 throw new GLException("Invalid GLBuffer object!");
             }
 
-            GLProgram.this.program.updateTime();
+            GLProgram.this.updateTimeUsed();
             GLTools.getDriverInstance().programSetStorage(program, storageName, buffer.buffer, bindingPoint);
             LOGGER.trace(GL_MARKER, "############### End GLProgram Set Shader Storage Task ###############");
         }
@@ -1653,76 +1638,14 @@ public class GLProgram extends GLObject {
             }
 
             GLTools.getDriverInstance().programDispatchCompute(program, numX, numY, numZ);
-            GLProgram.this.program.updateTime();
+            GLProgram.this.updateTimeUsed();
             LOGGER.trace(GL_MARKER, "############### End GLProgram Compute Task ###############");
         }
-    }
+    }        
 
-    /**
-     * Binds a GLBuffer to a vertex varying location.
-     *
-     * @param varyingLoc the location of the feedback varying.
-     * @param fbBuffer the buffer to bind.
-     * @since 15.10.30
-     * @deprecated use GLBuffer.bindFeedback instead
-     */
-    @Deprecated
-    public void setFeedbackBuffer(final int varyingLoc, final GLBuffer fbBuffer) {
-        new SetFeedbackBufferTask(varyingLoc, fbBuffer).glRun(this.getThread());
-    }
-
-    /**
-     * A GLTask that binds a GLBuffer to a vertex varying location.
-     *
-     * @since 15.10.30
-     */
-    @Deprecated
-    public class SetFeedbackBufferTask extends GLTask {
-
-        private final GLBuffer fbBuffer;
-        private final int varyingLoc;
-
-        /**
-         * Constructs a new SetFeedbackBufferTask.
-         *
-         * @param varyingLoc the location of the feedback varying.
-         * @param fbBuffer the buffer to bind.
-         * @since 15.10.30
-         */
-        public SetFeedbackBufferTask(final int varyingLoc, final GLBuffer fbBuffer) {
-            if ((this.varyingLoc = varyingLoc) == GLVertexAttributes.INVALID_VARYING_LOCATION) {
-                throw new GLException("Invalid varying location!");
-            }
-
-            this.fbBuffer = Objects.requireNonNull(fbBuffer);
-        }
-
-        @SuppressWarnings("unchecked")
-        @Override
-        public void run() {
-            LOGGER.trace(GL_MARKER, "############### Start GLProgram Set Feedback Buffer Task ###############");
-            LOGGER.trace(GL_MARKER, "\tFeedback program: GLProgram[{}]", getName());
-            LOGGER.trace(GL_MARKER, "\tFeedback write buffer: GLBuffer[{}]", fbBuffer.getName());
-            LOGGER.trace(GL_MARKER, "\tVarying: {}", this.varyingLoc);
-
-            if (!GLProgram.this.isValid()) {
-                throw new GLException("Invalid GLProgram!");
-            } else if (!fbBuffer.isValid()) {
-                throw new GLException("Invalid GLBuffer!");
-            }
-
-            GLProgram.this.program.updateTime();
-            GLTools.getDriverInstance().programSetFeedbackBuffer(program, varyingLoc, fbBuffer.buffer);
-            LOGGER.trace(GL_MARKER, "############### End GLProgram Set Feedback Buffer Task ###############");
-        }
-    }
-
-    public long getTimeSinceLastUpdate() {
-        if (this.program != null) {
-            return this.program.getTimeSinceLastUsed();
-        } else {
-            return System.nanoTime();
-        }
+    @Override
+    public long getTimeSinceLastUsed() {
+        return (System.nanoTime() - this.lastUsedTime);
     }
 
     @Override

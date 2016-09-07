@@ -106,4 +106,30 @@ public abstract class GLObject {
     protected GLObject migrate() {
         return this;
     }
+
+    /**
+     * Retrieves the time since the object was last used in nanoseconds. This
+     * function requires no minimum resolution and may always return a value of
+     * 0, indicating that the object is always in use.
+     *
+     * @return the time since the object was last used.
+     * @since 16.09.06
+     */
+    public long getTimeSinceLastUsed() {
+        return 0L;
+    }
+
+    protected transient long lastUsedTime = 0L;
+
+    /**
+     * Updates the internal timer used for getting the time since last update.
+     * The default behavior for this method is to just set the timer to
+     * [code]getThread().getFrameTime()[/code]. However, it may be replaced with
+     * any precision timer as long as it resolves in nanoseconds.
+     *
+     * @since 16.09.06
+     */
+    public void updateTimeUsed() {
+        this.lastUsedTime = this.getThread().getFrameTime();
+    }
 }

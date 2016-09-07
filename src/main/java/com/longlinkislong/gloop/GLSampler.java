@@ -117,7 +117,7 @@ public class GLSampler extends GLObject {
         this.isLocked = false;
     }
 
-    private static final Map<GLThread, GLSampler> DEFAULT_SAMPLERS = new HashMap<>();
+    private static final Map<GLThread, GLSampler> DEFAULT_SAMPLERS = new HashMap<>(1);
 
     /**
      * Retrieves the default sampler object associated with the default OpenGL
@@ -190,7 +190,7 @@ public class GLSampler extends GLObject {
 
             final Driver driver = GLTools.getDriverInstance();
 
-            sampler = driver.samplerCreate();
+            GLSampler.this.sampler = driver.samplerCreate();
 
             driver.samplerSetParameter(sampler, 10242 /* GL_TEXTURE_WRAP_S */, GLSampler.this.parameters.wrapS.value);
             driver.samplerSetParameter(sampler, 10243 /* GL_TEXTURE_WRAP_T */, GLSampler.this.parameters.wrapT.value);
@@ -201,7 +201,7 @@ public class GLSampler extends GLObject {
             driver.samplerSetParameter(sampler, 10240 /* GL_TEXTURE_MAG_FILTER */, GLSampler.this.parameters.magFilter.value);
             driver.samplerSetParameter(sampler, 34046 /* GL_TEXTURE_MAX_ANISOTROPY_EXT */, GLSampler.this.parameters.anisotropicLevel);
 
-            sampler.updateTime();
+            GLSampler.this.updateTimeUsed();
             
             LOGGER.trace(
                     GL_MARKER,
@@ -256,7 +256,7 @@ public class GLSampler extends GLObject {
             }
 
             GLTools.getDriverInstance().samplerBind(unit, sampler);
-            GLSampler.this.sampler.updateTime();
+            GLSampler.this.updateTimeUsed();
             LOGGER.trace(GL_MARKER, "############### End GLSampler Bind Task ###############");
         }
     }
@@ -290,8 +290,8 @@ public class GLSampler extends GLObject {
                 LOGGER.error(GL_MARKER, "Attempted to delete locked GLSampler!");
             } else {
                 GLTools.getDriverInstance().samplerDelete(sampler);
-                sampler.resetTime();
-                sampler = null;
+                GLSampler.this.lastUsedTime = 0L;
+                GLSampler.this.sampler = null;
             }
             
             LOGGER.trace(GL_MARKER, "############### End GLSampler Delete Task ###############");

@@ -244,7 +244,7 @@ public class GLShader extends GLObject {
                     throw new GLException(info);
                 }
 
-                shader.updateTime();
+                GLShader.this.updateTimeUsed();
                 LOGGER.trace(
                         GLOOP_MARKER,
                         "############### End GLShader Compile Task ###############");
@@ -276,8 +276,8 @@ public class GLShader extends GLObject {
 
             if (GLShader.this.isValid()) {
                 GLTools.getDriverInstance().shaderDelete(shader);
-                shader.resetTime();
-                shader = null;
+                GLShader.this.lastUsedTime = 0L;
+                GLShader.this.shader = null;
             } else {
                 LOGGER.warn(GLOOP_MARKER, "Attempted to delete invalid GLShader!");
             }
@@ -331,7 +331,7 @@ public class GLShader extends GLObject {
                     this.pName,
                     res);
 
-            shader.updateTime();
+            GLShader.this.updateTimeUsed();
             LOGGER.trace(
                     GLOOP_MARKER,
                     "############### End GLShader Parameter Query ###############");
@@ -375,7 +375,7 @@ public class GLShader extends GLObject {
                     GLShader.this.getName(),
                     infoLog);
 
-            shader.updateTime();
+            GLShader.this.updateTimeUsed();
             LOGGER.trace(GLOOP_MARKER, "############### End GLShader Info Log Query ###############");
             return infoLog;
         }

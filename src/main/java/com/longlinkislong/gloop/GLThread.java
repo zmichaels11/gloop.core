@@ -779,6 +779,7 @@ public class GLThread implements ExecutorService {
             GLThread.this.internalThread.setName(name);
             THREAD_MAP.put(GLThread.this.internalThread, GLThread.this);
 
+            GLThread.this.scheduleGLTask(GLTask.create(() -> GLThread.this.frameTime = System.nanoTime()));
             //TODO: this should check if OpenGL is initialized. If it is not, all GLTasks should be delayed.
         }
     }
@@ -1065,7 +1066,7 @@ public class GLThread implements ExecutorService {
         GLQuery.create(() -> null).glCall(this);
     }
 
-    protected void migrate() {        
+    protected void migrate() {
         // remove all garbage collected objects
         // remove all deleted objects
         // migrate all alive objects
@@ -1089,5 +1090,18 @@ public class GLThread implements ExecutorService {
         this.currentProgramUse.glRun(this);
         this.currentScissor.apply();
         this.currentViewport.applyViewport();
+    }
+
+    private long frameTime = 0L;
+
+    /**
+     * Returns the current time in nanoseconds. This value only updates once per
+     * frame.
+     *
+     * @return the frame time.
+     * @since 16.09.06
+     */
+    public long getFrameTime() {
+        return this.frameTime;
     }
 }

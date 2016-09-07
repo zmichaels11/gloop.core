@@ -9,8 +9,10 @@ import java.awt.image.BufferedImage;
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.ByteBuffer;
+import java.util.Collections;
 import java.util.concurrent.atomic.AtomicBoolean;
 import static org.junit.Assert.assertEquals;
+import org.lwjgl.glfw.GLFW;
 import org.lwjgl.opengl.GL11;
 import org.lwjgl.opengles.GLES20;
 import org.lwjgl.system.MemoryUtil;
@@ -23,8 +25,8 @@ import org.slf4j.LoggerFactory;
  */
 public class TestFramework {
     private static final Logger LOGGER = LoggerFactory.getLogger(TestFramework.class);
-    private static final int WIDTH = 256;
-    private static final int HEIGHT = 256;
+    private static final int WIDTH = 640;
+    private static final int HEIGHT = 480;
 
     private final GLWindow window;
 
@@ -46,6 +48,13 @@ public class TestFramework {
 
     public TestFramework showWindow() {
         this.window.setVisible(true);
+        this.window.getKeyboard().addKeyListener(
+                GLKeyListener.newFullscreenToggleListener(
+                        GLFW.GLFW_KEY_ENTER,
+                        Collections.singleton(GLKeyModifier.CONTROL)));
+        this.window.addWindowResizeListener((GLWindow glw, GLViewport glv) -> {
+            LOGGER.info("Display resized: width={} height={}", glv.width, glv.height);
+        });
         return this;
     }
 

@@ -21,12 +21,12 @@ public class NeHe02 {
     public void test() {        
         new TestFramework("NeHe 02", this::init, this::redraw)
                 .showWindow()
-                .runFor(5000);
+                .runFor(5);
     }
 
     private final GLClear clear = new GLClear()
             .withClearBits(GLFramebufferMode.GL_COLOR_BUFFER_BIT, GLFramebufferMode.GL_DEPTH_BUFFER_BIT)
-            .withClearColor(0, 0, 0, 0)
+            .withClearColor(0, 0, 0, 1)
             .withClearDepth(1.0);
 
     private final GLDepthTest depthTest = new GLDepthTest()
@@ -85,10 +85,12 @@ public class NeHe02 {
     }
     
     private void redraw() {
+        clear.clear();
+        
         final GLMat4F p = GLMat4F.perspective(45.0f, 1.0f, 0.1f, 100.0f);
 
-
         simpleProgram.use();
+        
         {
             final GLMat4F mv = GLMat4F.translation(-1.5f, 0f, -8f);
 

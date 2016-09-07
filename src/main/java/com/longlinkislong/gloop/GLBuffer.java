@@ -46,8 +46,8 @@ public class GLBuffer extends GLObject {
 
     private static final Marker GLOOP_MARKER = MarkerFactory.getMarker("GLOOP");
     private static final Logger LOGGER = LoggerFactory.getLogger("GLBuffer");
-
-    transient volatile Buffer buffer;    
+    
+    transient volatile Buffer buffer;
     private String name = "";
 
     /**
@@ -191,7 +191,7 @@ public class GLBuffer extends GLObject {
                     GLTools.getDriverInstance().bufferBindFeedback(buffer, this.binding, this.offset, this.size);
                 }
 
-                GLBuffer.this.buffer.updateTime();
+                GLBuffer.this.updateTimeUsed();
             }
 
             LOGGER.trace(GLOOP_MARKER, "############### End GLBuffer Bind Feedback Task ###############");
@@ -258,7 +258,7 @@ public class GLBuffer extends GLObject {
                     GLTools.getDriverInstance().bufferBindUniform(buffer, this.binding, this.offset, this.size);
                 }
 
-                GLBuffer.this.buffer.updateTime();
+                GLBuffer.this.updateTimeUsed();
             }
 
             LOGGER.trace(GLOOP_MARKER, "############### End GLBuffer Bind Uniform Task ###############");
@@ -328,7 +328,7 @@ public class GLBuffer extends GLObject {
                     GLTools.getDriverInstance().bufferBindStorage(buffer, this.binding, this.offset, this.size);
                 }
 
-                GLBuffer.this.buffer.updateTime();
+                GLBuffer.this.updateTimeUsed();
             }
 
             LOGGER.trace(GLOOP_MARKER, "############### End GLBuffer Bind Storage Task ###############");
@@ -356,7 +356,7 @@ public class GLBuffer extends GLObject {
                 throw new GLException("GLBuffer is already initialized!");
             }
 
-            GLBuffer.this.buffer.updateTime();
+            GLBuffer.this.updateTimeUsed();
             LOGGER.trace(GLOOP_MARKER, "############### End GLBuffer Init Task ###############");
         }
     }
@@ -406,7 +406,7 @@ public class GLBuffer extends GLObject {
 
             final int result = GLTools.getDriverInstance().bufferGetParameterI(buffer, this.pName.value);
 
-            GLBuffer.this.buffer.updateTime();
+            GLBuffer.this.updateTimeUsed();
             LOGGER.trace(GLOOP_MARKER, "GLBuffer[{}].{} = {}!", GLBuffer.this.getName(), this.pName, result);
             LOGGER.trace(GLOOP_MARKER, "############### End GLBuffer Parameter Query ###############");
 
@@ -446,8 +446,8 @@ public class GLBuffer extends GLObject {
 
             if (GLBuffer.this.isValid()) {
                 GLTools.getDriverInstance().bufferDelete(buffer);
-                GLBuffer.this.buffer.resetTime();
-                buffer = null;
+                GLBuffer.this.lastUsedTime = 0L;
+                GLBuffer.this.buffer = null;
             }
 
             LOGGER.trace(GLOOP_MARKER, "############### End GLBuffer Delete Task ###############");
@@ -533,7 +533,7 @@ public class GLBuffer extends GLObject {
             }
 
             GLTools.getDriverInstance().bufferSetData(buffer, data, this.usage.value);
-            GLBuffer.this.buffer.updateTime();
+            GLBuffer.this.updateTimeUsed();
             LOGGER.trace(GLOOP_MARKER, "############### End GLBuffer Upload Task ###############");
         }
     }
@@ -635,7 +635,7 @@ public class GLBuffer extends GLObject {
             }
 
             GLTools.getDriverInstance().bufferAllocateImmutable(buffer, size, this.flags);
-            GLBuffer.this.buffer.updateTime();            
+            GLBuffer.this.updateTimeUsed();
 
             LOGGER.trace(GLOOP_MARKER, "############# End GLBuffer Allocate Immutable Task ##############");
         }
@@ -693,7 +693,7 @@ public class GLBuffer extends GLObject {
             }
 
             GLTools.getDriverInstance().bufferAllocate(buffer, size, this.usage.value);
-            GLBuffer.this.buffer.updateTime();
+            GLBuffer.this.updateTimeUsed();
             LOGGER.trace(GLOOP_MARKER, "############### End GLBuffer Allocate Task ###############");
         }
 
@@ -816,7 +816,7 @@ public class GLBuffer extends GLObject {
 
             LOGGER.trace(GLOOP_MARKER, "GLBuffer[{}]: download {} bytes", GLBuffer.this.name, out.capacity());
             GLTools.getDriverInstance().bufferGetData(buffer, offset, out);
-            GLBuffer.this.buffer.updateTime();
+            GLBuffer.this.updateTimeUsed();
             LOGGER.trace(GLOOP_MARKER, "############### End GLBuffer Download Query ###############");
 
             return out;
@@ -826,14 +826,15 @@ public class GLBuffer extends GLObject {
         protected ByteBuffer handleInterruption() {
             return ByteBuffer.allocate(0).asReadOnlyBuffer();
         }
-    }    
+    }
 
     /**
      * Maps a GLBuffer to a ByteBuffer. This function can force a thread sync.
      *
      * @param offset the offset in bytes to begin the map.
      * @param length the number of bytes to map.
-     * @param access the buffer access. If no flags are specified, GL_MAP_READ | GL_MAP_WRITE will be used.
+     * @param access the buffer access. If no flags are specified, GL_MAP_READ |
+     * GL_MAP_WRITE will be used.
      * @return the mapped ByteBuffer.
      * @since 16.07.06
      */
@@ -880,14 +881,14 @@ public class GLBuffer extends GLObject {
 
             final ByteBuffer out = GLTools.getDriverInstance().bufferMapData(buffer, this.offset, this.length, this.access);
 
-            if(out == null) {
+            if (out == null) {
                 LOGGER.error(
                         GLOOP_MARKER,
                         "gloop call: bufferMapData(buffer={}, offset={}, length={}, access={}) returned null!",
                         buffer, offset, length, access);
             }
 
-            GLBuffer.this.buffer.updateTime();
+            GLBuffer.this.updateTimeUsed();
             LOGGER.trace(GLOOP_MARKER, "############### End GLBuffer Map Query ###############");
 
             return out;
@@ -930,7 +931,7 @@ public class GLBuffer extends GLObject {
             }
 
             GLTools.getDriverInstance().bufferUnmapData(buffer);
-            GLBuffer.this.buffer.updateTime();
+            GLBuffer.this.updateTimeUsed();
             LOGGER.trace(GLOOP_MARKER, "############### End GLBuffer Unmap Task ###############");
         }
     }
@@ -1004,8 +1005,10 @@ public class GLBuffer extends GLObject {
             }
 
             GLTools.getDriverInstance().bufferCopyData(src.buffer, srcOffset, dest.buffer, destOffset, size);
-            src.buffer.updateTime();
-            dest.buffer.updateTime();
+            final GLThread thread = GLThread.getCurrent().get();
+
+            src.updateTimeUsed();
+            dest.updateTimeUsed();
             LOGGER.trace(GLOOP_MARKER, "############### End GLBuffer Copy Task ###############");
         }
     }
@@ -1079,7 +1082,7 @@ public class GLBuffer extends GLObject {
             }
 
             GLTools.getDriverInstance().bufferInvalidateRange(buffer, offset, length);
-            GLBuffer.this.buffer.updateTime();
+            GLBuffer.this.updateTimeUsed();
             LOGGER.trace(GLOOP_MARKER, "############### End GLBuffer InvalidateSubData Task ###############");
         }
     }
@@ -1110,16 +1113,13 @@ public class GLBuffer extends GLObject {
             }
 
             GLTools.getDriverInstance().bufferInvalidateData(buffer);
-            GLBuffer.this.buffer.updateTime();
+            GLBuffer.this.updateTimeUsed();
             LOGGER.trace(GLOOP_MARKER, "############### End GLBuffer Invalidate Task ###############");
         }
     }
 
+    @Override
     public long getTimeSinceLastUsed() {
-        if (this.buffer != null) {
-            return this.buffer.getTimeSinceLastUsed();
-        } else {
-            return System.nanoTime();
-        }
+        return (System.nanoTime() - this.lastUsedTime);
     }
 }

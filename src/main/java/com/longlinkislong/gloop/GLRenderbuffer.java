@@ -194,6 +194,7 @@ public class GLRenderbuffer extends GLObject {
                     GLRenderbuffer.this.height);
 
             GLRenderbuffer.this.name = "id=" + renderbuffer.hashCode();
+            GLRenderbuffer.this.updateTimeUsed();
 
             LOGGER.trace(GL_MARKER, "Initialized GLRenderbuffer[{}]!", GLRenderbuffer.this.name);
             LOGGER.trace(GL_MARKER, "############### End GLRenderer Init Task ###############");
@@ -218,9 +219,15 @@ public class GLRenderbuffer extends GLObject {
             } else {
                 GLTools.getDriverInstance().renderbufferDelete(GLRenderbuffer.this.renderbuffer);
                 GLRenderbuffer.this.renderbuffer = null;
+                GLRenderbuffer.this.lastUsedTime = 0L;
             }
 
             LOGGER.trace(GL_MARKER, "############### End GLRendebruffer Delete Task ###############");
         }
+    }
+
+    @Override
+    public long getTimeSinceLastUsed() {
+        return (System.nanoTime() - this.lastUsedTime);
     }
 }
