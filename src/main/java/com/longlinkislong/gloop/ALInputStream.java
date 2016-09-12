@@ -145,6 +145,8 @@ public class ALInputStream implements Closeable {
         final int readCount = this.ain.read(inBuffer, 0, this.bufferSize);
 
         if (readCount == -1) {
+            MemoryUtil.memFree(outBuffer);
+            
             throw new EOFException("End of stream reached!") {
                 @Override
                 public Throwable fillInStackTrace() {
