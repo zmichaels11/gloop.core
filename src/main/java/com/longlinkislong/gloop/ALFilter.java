@@ -66,7 +66,7 @@ public class ALFilter extends ALObject {
         @Override
         public void run() {
             if (isValid()) {
-                throw new ALException("ALFilter is already initialized!");
+                throw new ALException.InvalidStateException("ALFilter is already initialized!");
             }
 
             ALFilter.this.filter = ALTools.getDriverInstance().filterCreate(type.value);
@@ -104,7 +104,7 @@ public class ALFilter extends ALObject {
         @Override
         public void run() {
             if (!isValid()) {
-                throw new ALException("ALFilter is not valid!");
+                throw new ALException.InvalidStateException("ALFilter is not valid!");
             }
 
             ALTools.getDriverInstance().filterSetProperty(
@@ -127,7 +127,7 @@ public class ALFilter extends ALObject {
         @Override
         public void run() {
             if (!isValid()) {
-                throw new ALException("ALFilter is not valid!");
+                throw new ALException.InvalidStateException("ALFilter is not valid!");
             }
 
             ALTools.getDriverInstance().filterSetProperty(

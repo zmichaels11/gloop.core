@@ -165,7 +165,7 @@ public class GLScissorTest extends GLObject {
     public class ApplyTask extends GLTask {
         @Override
         public void run() {
-            final GLThread thread = GLThread.getCurrent().orElseThrow(GLException::new);
+            final GLThread thread = GLThread.getCurrent().orElseThrow(GLException.InvalidThreadException::new);
 
             thread.runOnScissorTestChangeCallback(thread.currentScissor, GLScissorTest.this);
             thread.currentScissor = GLScissorTest.this.withGLThread(thread);

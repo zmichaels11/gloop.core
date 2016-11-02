@@ -126,7 +126,7 @@ public class ALBuffer extends ALObject {
             if (isValid()) {
                 ALTools.getDriverInstance().bufferSetData(buffer, format, dataBuffer, frequency);
             } else {
-                throw new ALException("Invalid ALBuffer!");
+                throw new ALException.InvalidStateException("Invalid ALBuffer!");
             }
         }
     }
@@ -141,7 +141,7 @@ public class ALBuffer extends ALObject {
         @Override
         public void run() {
             if (isValid()) {
-                throw new ALException("ALBuffer is already initialized!");
+                throw new ALException.InvalidStateException("ALBuffer is already initialized!");
             } else {
                 buffer = ALTools.getDriverInstance().bufferCreate();
             }

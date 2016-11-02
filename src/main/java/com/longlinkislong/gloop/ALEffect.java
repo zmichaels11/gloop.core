@@ -63,7 +63,7 @@ public abstract class ALEffect extends ALObject {
         @Override
         public void run() {
             if (isValid()) {
-                throw new ALException("ALEffect is already initialized!");
+                throw new ALException.InvalidStateException("ALEffect is already initialized!");
             }
 
             ALEffect.this.effect = ALTools.getDriverInstance().effectCreate(ALEffect.this.type.value);
@@ -106,7 +106,7 @@ public abstract class ALEffect extends ALObject {
         @Override
         public void run() {
             if (!isValid()) {
-                throw new ALException("ALEffect is not valid!");
+                throw new ALException.InvalidStateException("ALEffect is not valid!");
             }
 
             ALTools.getDriverInstance().effectSetProperty(
@@ -129,7 +129,7 @@ public abstract class ALEffect extends ALObject {
         @Override
         public void run() {
             if (!isValid()) {
-                throw new ALException("ALEffect is not valid!");
+                throw new ALException.InvalidStateException("ALEffect is not valid!");
             }
 
             ALTools.getDriverInstance().effectSetProperty(

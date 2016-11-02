@@ -200,7 +200,7 @@ public class GLViewport extends GLObject {
             LOGGER.trace(GLOOP_MARKER, "\tApplying GLViewport[{}]", getName());
             LOGGER.trace(GLOOP_MARKER, "\tX: {}, Y: {}, Width: {}, Height: {}", GLViewport.this.x, GLViewport.this.y, GLViewport.this.width, GLViewport.this.height);
 
-            final GLThread thread = GLThread.getCurrent().orElseThrow(GLException::new);
+            final GLThread thread = GLThread.getCurrent().orElseThrow(GLException.InvalidThreadException::new);
 
             if (thread == GLViewport.this.getThread()) {
                 thread.currentViewport = GLViewport.this;

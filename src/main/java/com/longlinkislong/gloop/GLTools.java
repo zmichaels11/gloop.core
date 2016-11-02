@@ -233,15 +233,15 @@ public final class GLTools {
      *
      * @param data the buffer to check
      * @return the ByteBuffer
-     * @throws GLException if buffer is not direct.
-     * @throws GLException if buffer is not in native byte order.
+     * @throws GLException.DataStoreException if buffer is not direct.
+     * @throws GLException.DataStoreException if buffer is not in native byte order.
      * @since 15.06.13
      */
-    public static ByteBuffer checkBuffer(final ByteBuffer data) {
+    public static ByteBuffer checkBuffer(final ByteBuffer data) throws GLException.DataStoreException {
         if (!data.isDirect()) {
-            throw new GLException("ByteBuffer is not direct!");
+            throw new GLException.DataStoreException("ByteBuffer is not direct!");
         } else if (data.order() != ByteOrder.nativeOrder()) {
-            throw new GLException("ByteBuffer is not in native order!");
+            throw new GLException.DataStoreException("ByteBuffer is not in native order!");
         }
 
         return data;
@@ -1184,7 +1184,7 @@ public final class GLTools {
      */
     public static long sizeOf(final long count, final GLType type) {
         if (count < 0) {
-            throw new GLException("Count should not be less than 0!");
+            throw new GLException.InvalidValueException("Count should not be less than 0!");
         }
 
         switch (type) {
@@ -1205,7 +1205,7 @@ public final class GLTools {
             case GL_DOUBLE:
                 return count * 8L;
             default:
-                throw new GLException("Invalid type: " + type);
+                throw new GLException.InvalidTypeException("Invalid type: " + type);
         }
     }
 

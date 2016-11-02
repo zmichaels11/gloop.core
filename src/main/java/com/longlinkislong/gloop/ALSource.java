@@ -125,17 +125,17 @@ public class ALSource extends ALObject {
          */
         public SetDistanceTask(final float referenceDistance, final float rolloffFactor, final float maxDistance) {
             if (!Float.isFinite(referenceDistance)) {
-                throw new ALException("Reference distance must be a number!");
+                throw new ALException.InvalidValueException("Reference distance must be a number!");
             } else if (!Float.isFinite(rolloffFactor)) {
-                throw new ALException("Rolloff factor must be a number!");
+                throw new ALException.InvalidValueException("Rolloff factor must be a number!");
             } else if (!Float.isFinite(maxDistance)) {
-                throw new ALException("Max distance must be a number!");
+                throw new ALException.InvalidValueException("Max distance must be a number!");
             } else if (referenceDistance < 0) {
-                throw new ALException("Reference distance cannot be less than 0!");
+                throw new ALException.InvalidValueException("Reference distance cannot be less than 0!");
             } else if (rolloffFactor < 0F) {
-                throw new ALException("Rolloff factor cannot be less than 0!");
+                throw new ALException.InvalidValueException("Rolloff factor cannot be less than 0!");
             } else if (maxDistance < 0F) {
-                throw new ALException("Max distance cannot be less than 0!");
+                throw new ALException.InvalidValueException("Max distance cannot be less than 0!");
             } else {
                 this.referenceDistance = referenceDistance;
                 this.rolloffFactor = rolloffFactor;
@@ -146,7 +146,7 @@ public class ALSource extends ALObject {
         @Override
         public void run() {
             if (!isValid()) {
-                throw new ALException("ALSource is not valid!");
+                throw new ALException.InvalidStateException("ALSource is not valid!");
             } else {
                 ALTools.getDriverInstance().sourceSetDistance(
                         source,
@@ -233,13 +233,13 @@ public class ALSource extends ALObject {
 
         public SetConeTask(final float innerAngle, final float outerAngle, final float outerGain) {
             if (!Float.isNaN(innerAngle)) {
-                throw new ALException("Inner angle cannot be NaN!");
+                throw new ALException.InvalidValueException("Inner angle cannot be NaN!");
             } else if (!Float.isNaN(outerAngle)) {
-                throw new ALException("Outer angle cannot be NaN!");
+                throw new ALException.InvalidValueException("Outer angle cannot be NaN!");
             } else if (outerGain < 0F) {
-                throw new ALException("Outer gain cannot be less than 0.0!");
+                throw new ALException.InvalidValueException("Outer gain cannot be less than 0.0!");
             } else if (outerGain > 1F) {
-                throw new ALException("Outer gain cannot be greater than 1.0!");
+                throw new ALException.InvalidValueException("Outer gain cannot be greater than 1.0!");
             } else {
                 this.innerConeAngle = innerAngle;
                 this.outerConeAngle = outerAngle;
@@ -250,7 +250,7 @@ public class ALSource extends ALObject {
         @Override
         public void run() {
             if (!isValid()) {
-                throw new ALException("ALSource is not valid!");
+                throw new ALException.InvalidStateException("ALSource is not valid!");
             }
 
             ALTools.getDriverInstance().sourceSetCone(source, innerConeAngle, outerConeAngle, outerConeGain);
@@ -273,7 +273,7 @@ public class ALSource extends ALObject {
         @Override
         public void run() {
             if (isValid()) {
-                throw new ALException("ALSource is already initialized!");
+                throw new ALException.InvalidStateException("ALSource is already initialized!");
             } else {
                 source = ALTools.getDriverInstance().sourceCreate();
 
@@ -356,10 +356,10 @@ public class ALSource extends ALObject {
                 if (buffer.isValid()) {
                     ALTools.getDriverInstance().sourceSetBuffer(source, buffer.buffer);
                 } else {
-                    throw new ALException("Invalid buffer!");
+                    throw new ALException.InvalidStateException("Invalid buffer!");
                 }
             } else {
-                throw new ALException("Invalid source!");
+                throw new ALException.InvalidStateException("Invalid source!");
             }
         }
     }
@@ -404,7 +404,7 @@ public class ALSource extends ALObject {
          */
         public SetPitchTask(final float pitch) {
             if (!Float.isFinite(pitch)) {
-                throw new ALException("Pitch must be a finite value on the range [0.0, \u221E)!");
+                throw new ALException.InvalidValueException("Pitch must be a finite value on the range [0.0, \u221E)!");
             } else if (pitch <= 0.0F) {
                 LOGGER.warn("Attempted to set pitch less than or equal to 0.0!");
                 this.pitch = 0.0F;
@@ -420,7 +420,7 @@ public class ALSource extends ALObject {
                 ALSource.this.pitch = pitch;
                 ALTools.getDriverInstance().sourceSetPitch(source, pitch);
             } else {
-                throw new ALException("Invalid pitch!");
+                throw new ALException.InvalidValueException("Invalid pitch!");
             }
         }
     }
@@ -459,7 +459,7 @@ public class ALSource extends ALObject {
 
         public SetGainTask(final float gain) {
             if (!Float.isFinite(gain)) {
-                throw new ALException("Gain must be finite on the range [0.0, \u221E)!");
+                throw new ALException.InvalidValueException("Gain must be finite on the range [0.0, \u221E)!");
             } else if (gain < 0.0F) {
                 LOGGER.warn("Attempted to set gain below 0.0!");
                 this.gain = 0.0F;
@@ -475,7 +475,7 @@ public class ALSource extends ALObject {
                 ALSource.this.gain = gain;
                 ALTools.getDriverInstance().sourceSetGain(source, gain);
             } else {
-                throw new ALException("Invalid source!");
+                throw new ALException.InvalidValueException("Invalid source!");
             }
         }
     }
@@ -563,7 +563,7 @@ public class ALSource extends ALObject {
                 ALSource.this.position.set(this.x, this.y, this.z);
                 ALTools.getDriverInstance().sourceSetPosition(source, x, y, z);
             } else {
-                throw new ALException("Invalid position!");
+                throw new ALException.InvalidStateException("Invalid position!");
             }
         }
     }
@@ -651,7 +651,7 @@ public class ALSource extends ALObject {
                 ALSource.this.velocity.set(this.x, this.y, this.z);
                 ALTools.getDriverInstance().sourceSetVelocity(source, x, y, z);
             } else {
-                throw new ALException("Invalid source!");
+                throw new ALException.InvalidStateException("Invalid source!");
             }
         }
     }
@@ -704,7 +704,7 @@ public class ALSource extends ALObject {
                 ALSource.this.isLooping = this.shouldLoop;
                 ALTools.getDriverInstance().sourceSetLooping(source, shouldLoop);
             } else {
-                throw new ALException("Invalid source!");
+                throw new ALException.InvalidStateException("Invalid source!");
             }
         }
     }
@@ -742,7 +742,7 @@ public class ALSource extends ALObject {
                 ALSource.this.isPlaying = true;
                 ALTools.getDriverInstance().sourcePlay(source);
             } else {
-                throw new ALException("Invalid source!");
+                throw new ALException.InvalidStateException("Invalid source!");
             }
         }
     }
@@ -779,7 +779,7 @@ public class ALSource extends ALObject {
 
                 return buffers;
             } else {
-                throw new ALException("ALSource is not valid!");
+                throw new ALException.InvalidStateException("ALSource is not valid!");
             }
         }
     }
@@ -839,11 +839,11 @@ public class ALSource extends ALObject {
                     if (buffer.isValid()) {
                         ALTools.getDriverInstance().sourceEnqueueBuffer(source, buffer.buffer);
                     } else {
-                        throw new ALException("Invalid ALBuffer!");
+                        throw new ALException.InvalidStateException("Invalid ALBuffer!");
                     }
                 }
             } else {
-                throw new ALException("Invalid ALSource!");
+                throw new ALException.InvalidStateException("Invalid ALSource!");
             }
         }
     }
@@ -903,9 +903,9 @@ public class ALSource extends ALObject {
         @Override
         public void run() {
             if (!isValid()) {
-                throw new ALException("Source is not valid!");
+                throw new ALException.InvalidStateException("Source is not valid!");
             } else if (!effectSlot.isValid()) {
-                throw new ALException("Effect slot is not valid!");
+                throw new ALException.InvalidStateException("Effect slot is not valid!");
             } else if (sends.isEmpty()) {
                 throw new ALException("Unable to attach Auxiliary Effect Slot to ALSource! No more sends!");
             } else if (this.filter == null) {
@@ -919,7 +919,7 @@ public class ALSource extends ALObject {
                 ALTools.getDriverInstance().sourceSendAuxiliaryEffectSlot(source, effectSlot.effectSlot, send, filter.filter);
                 usedSends.put(effectSlot, send);
             } else {
-                throw new ALException("Filter is not valid!");
+                throw new ALException.InvalidStateException("Filter is not valid!");
             }
         }
     }
@@ -947,7 +947,7 @@ public class ALSource extends ALObject {
         @Override
         public void run() {
             if (!isValid()) {
-                throw new ALException("ALSource is not valid!");
+                throw new ALException.InvalidStateException("ALSource is not valid!");
             } else {
                 final int send = usedSends.get(this.effectSlot);
 
@@ -993,11 +993,11 @@ public class ALSource extends ALObject {
         @Override
         public void run() {
             if (!isValid()) {
-                throw new ALException("ALSource is not valid!");
+                throw new ALException.InvalidStateException("ALSource is not valid!");
             } else if (filter == null) {
                 ALTools.getDriverInstance().sourceRemoveDirectFilter(source);
             } else if (!filter.isValid()) {
-                throw new ALException("ALFilter is not valid!");
+                throw new ALException.InvalidStateException("ALFilter is not valid!");
             } else {
                 ALTools.getDriverInstance().sourceAttachDirectFilter(source, filter.filter);
             }
@@ -1027,7 +1027,7 @@ public class ALSource extends ALObject {
         @Override
         public void run() {
             if (!isValid()) {
-                throw new ALException("ALSource is not valid!");
+                throw new ALException.InvalidStateException("ALSource is not valid!");
             } else {
                 ALTools.getDriverInstance().sourceRemoveDirectFilter(source);
             }

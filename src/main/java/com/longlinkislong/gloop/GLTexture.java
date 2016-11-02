@@ -189,7 +189,7 @@ public class GLTexture extends GLObject {
      */
     public int getWidth() throws GLException {
         if (this.width == 0) {
-            throw new GLException("GLTexture has not yet been initialized!");
+            throw new GLException.InvalidStateException("GLTexture has not yet been initialized!");
         } else {
             return this.width;
         }
@@ -205,7 +205,7 @@ public class GLTexture extends GLObject {
      */
     public int getHeight() throws GLException {
         if (this.height == 0) {
-            throw new GLException("GLTexture has not yet been initialized!");
+            throw new GLException.InvalidStateException("GLTexture has not yet been initialized!");
         } else {
             return this.height;
         }
@@ -221,7 +221,7 @@ public class GLTexture extends GLObject {
      */
     public int getDepth() throws GLException {
         if (this.depth == 0) {
-            throw new GLException("GLTexture has not yet been initialized!");
+            throw new GLException.InvalidStateException("GLTexture has not yet been initialized!");
         } else {
             return this.depth;
         }
@@ -269,7 +269,7 @@ public class GLTexture extends GLObject {
             this.activeTexture = activeTexture;
 
             if (activeTexture < 0) {
-                throw new GLException("Invalid active texture!");
+                throw new GLException.InvalidStateException("Invalid active texture!");
             }
         }
 
@@ -281,7 +281,7 @@ public class GLTexture extends GLObject {
             LOGGER.trace(GLOOP_MARKER, "\tActive texture: {}", this.activeTexture);
 
             if (!GLTexture.this.isValid()) {
-                throw new GLException("GLTexture is not valid! You must allocate a texture prior to binding it.");
+                throw new GLException.InvalidStateException("GLTexture is not valid! You must allocate a texture prior to binding it.");
             }
 
             GLTools.getDriverInstance().textureBind(texture, activeTexture);
@@ -333,11 +333,11 @@ public class GLTexture extends GLObject {
 
     private void setSize(final int width, final int height, final int depth) {
         if (width < 0) {
-            throw new GLException("Invalid texture width: " + width);
+            throw new GLException.InvalidValueException("Invalid texture width: " + width);
         } else if (height < 0) {
-            throw new GLException("Invalid texture height: " + height);
+            throw new GLException.InvalidValueException("Invalid texture height: " + height);
         } else if (depth < 0) {
-            throw new GLException("Invalid texture depth: " + depth);
+            throw new GLException.InvalidValueException("Invalid texture depth: " + depth);
         }
 
         this.width = width;
@@ -429,13 +429,13 @@ public class GLTexture extends GLObject {
                 final GLType type, final ByteBuffer data) {
 
             if (level < 0) {
-                throw new GLException("Level cannot be less than 0!");
+                throw new GLException.InvalidValueException("Level cannot be less than 0!");
             } else {
                 this.level = level;
             }
 
             if (xOffset < 0 || yOffset < 0 || zOffset < 0) {
-                throw new GLException("Offsets cannot be less than 0!");
+                throw new GLException.InvalidValueException("Offsets cannot be less than 0!");
             } else {
                 this.xOffset = xOffset;
                 this.yOffset = yOffset;
@@ -449,15 +449,15 @@ public class GLTexture extends GLObject {
                     data.asReadOnlyBuffer().order(ByteOrder.nativeOrder()));
 
             if ((this.width = width) < 0) {
-                throw new GLException("Width cannot be less than 0!");
+                throw new GLException.InvalidValueException("Width cannot be less than 0!");
             }
 
             if ((this.height = height) < 0) {
-                throw new GLException("Height cannot be less than 0!");
+                throw new GLException.InvalidValueException("Height cannot be less than 0!");
             }
 
             if ((this.depth = depth) < 0) {
-                throw new GLException("Depth cannot be less than 0!");
+                throw new GLException.InvalidValueException("Depth cannot be less than 0!");
             }
         }
 
@@ -473,7 +473,7 @@ public class GLTexture extends GLObject {
             LOGGER.trace(GLOOP_MARKER, "\tType: {}", this.type);
 
             if (!GLTexture.this.isValid()) {
-                throw new GLException("GLTexture is not valid!");
+                throw new GLException.InvalidStateException("GLTexture is not valid!");
             }
 
             GLTools.getDriverInstance().textureSetData(
@@ -563,13 +563,13 @@ public class GLTexture extends GLObject {
                 final GLType type, final ByteBuffer data) {
 
             if (level < 0) {
-                throw new GLException("Mipmap level cannot be less than 0!");
+                throw new GLException.InvalidValueException("Mipmap level cannot be less than 0!");
             } else {
                 this.level = level;
             }
 
             if (xOffset < 0 || yOffset < 0) {
-                throw new GLException("Offset values cannot be less than 0!");
+                throw new GLException.InvalidValueException("Offset values cannot be less than 0!");
             } else {
                 this.xOffset = xOffset;
                 this.yOffset = yOffset;
@@ -583,11 +583,11 @@ public class GLTexture extends GLObject {
                     .order(ByteOrder.nativeOrder()));
 
             if ((this.width = width) < 0) {
-                throw new GLException("Width cannot be less than 0!");
+                throw new GLException.InvalidValueException("Width cannot be less than 0!");
             }
 
             if ((this.height = height) < 0) {
-                throw new GLException("Height cannot be less than 0!");
+                throw new GLException.InvalidValueException("Height cannot be less than 0!");
             }
         }
 
@@ -603,7 +603,7 @@ public class GLTexture extends GLObject {
             LOGGER.trace(GLOOP_MARKER, "\tType: {}", type);
 
             if (!GLTexture.this.isValid()) {
-                throw new GLException("GLTexture is not valid!");
+                throw new GLException.InvalidStateException("GLTexture is not valid!");
             }
 
             GLTools.getDriverInstance().textureSetData(
@@ -690,19 +690,19 @@ public class GLTexture extends GLObject {
                 final ByteBuffer data) {
 
             if (level < 0) {
-                throw new GLException("Level cannot be less than 0!");
+                throw new GLException.InvalidValueException("Level cannot be less than 0!");
             } else {
                 this.level = level;
             }
 
             if (xOffset < 0) {
-                throw new GLException("X-Offset cannot be less than 0!");
+                throw new GLException.InvalidValueException("X-Offset cannot be less than 0!");
             } else {
                 this.xOffset = xOffset;
             }
 
             if (width < 0) {
-                throw new GLException("Width cannot be less than 0!");
+                throw new GLException.InvalidValueException("Width cannot be less than 0!");
             } else {
                 this.width = width;
             }
@@ -725,7 +725,7 @@ public class GLTexture extends GLObject {
             LOGGER.trace(GLOOP_MARKER, "\tType: {}", this.type);
 
             if (!GLTexture.this.isValid()) {
-                throw new GLException("GLTexture is not valid!");
+                throw new GLException.InvalidStateException("GLTexture is not valid!");
             }
 
             GLTools.getDriverInstance().textureSetData(
@@ -809,7 +809,7 @@ public class GLTexture extends GLObject {
                 final GLType dataType) {
 
             if ((this.mipmaps = level) < 1) {
-                throw new GLException("Mipmap levels cannot be less than 1!");
+                throw new GLException.InvalidValueException("Mipmap levels cannot be less than 1!");
             }
 
             this.internalFormat = Objects.requireNonNull(internalFormat);
@@ -829,7 +829,7 @@ public class GLTexture extends GLObject {
             LOGGER.trace(GLOOP_MARKER, "\tSize: <{}, {}, {}>", this.width, this.height, this.depth);
 
             if (!GLTexture.this.isValid()) {
-                throw new GLException("GLTexture is not valid!");
+                throw new GLException.InvalidStateException("GLTexture is not valid!");
             }
 
             GLTexture.this.internalFormat = this.internalFormat;
@@ -911,7 +911,7 @@ public class GLTexture extends GLObject {
                 final GLType dataType) {
 
             if ((this.mipmaps = level) < 1) {
-                throw new GLException("Mipmap levels cannot be less than 1!");
+                throw new GLException.InvalidStateException("Mipmap levels cannot be less than 1!");
             }
 
             this.dataType = Objects.requireNonNull(dataType);
@@ -927,7 +927,7 @@ public class GLTexture extends GLObject {
             LOGGER.trace(GLOOP_MARKER, "\tSize: <{}, {}>", this.width, this.height);
 
             if (GLTexture.this.isValid()) {
-                throw new GLException("GLTexture has already been allocated!");
+                throw new GLException.InvalidStateException("GLTexture has already been allocated!");
             }
 
             GLTexture.this.internalFormat = this.internalFormat;
@@ -1018,7 +1018,7 @@ public class GLTexture extends GLObject {
             LOGGER.trace(GLOOP_MARKER, "\tWidth: {}", this.width);
 
             if (GLTexture.this.isValid()) {
-                throw new GLException("GLTexture has already been allocated!");
+                throw new GLException.InvalidStateException("GLTexture has already been allocated!");
             }
 
             GLTexture.this.internalFormat = this.internalFormat;
@@ -1057,7 +1057,7 @@ public class GLTexture extends GLObject {
             LOGGER.trace(GLOOP_MARKER, "\tGenerating mipmaps for GLTexture[{}]", getName());
 
             if (!GLTexture.this.isValid()) {
-                throw new GLException("Invalid GLTexture object!");
+                throw new GLException.InvalidStateException("Invalid GLTexture object!");
             }
 
             GLTools.getDriverInstance().textureGenerateMipmap(texture);
@@ -1098,15 +1098,15 @@ public class GLTexture extends GLObject {
             this.type = Objects.requireNonNull(type);
 
             if ((this.level = level) < 0) {
-                throw new GLException("Mipmap level cannot be less than 0!");
+                throw new GLException.InvalidValueException("Mipmap level cannot be less than 0!");
             } else if ((this.xOffset = xOffset) < 0) {
-                throw new GLException("X-offset cannot be less than 0!");
+                throw new GLException.InvalidValueException("X-offset cannot be less than 0!");
             } else if ((this.yOffset = yOffset) < 0) {
-                throw new GLException("Y-offset cannot be less than 0!");
+                throw new GLException.InvalidValueException("Y-offset cannot be less than 0!");
             } else if ((this.width = width) < 1) {
-                throw new GLException("Width cannot be less than 1!");
+                throw new GLException.InvalidValueException("Width cannot be less than 1!");
             } else if ((this.height = height) < 1) {
-                throw new GLException("Height cannot be less than 1!");
+                throw new GLException.InvalidValueException("Height cannot be less than 1!");
             }
         }
 
@@ -1121,41 +1121,12 @@ public class GLTexture extends GLObject {
             LOGGER.trace(GLOOP_MARKER, "\tType: {}", type);
 
             if (!GLTexture.this.isValid()) {
-                throw new GLException("Invalid GLTexture!");
+                throw new GLException.InvalidValueException("Invalid GLTexture!");
             } else if (!this.buffer.isValid()) {
-                throw new GLException("Invalid GLBuffer!");
+                throw new GLException.InvalidValueException("Invalid GLBuffer!");
             }
 
-            throw new UnsupportedOperationException("not implemented...");
-            /*
-            final DSADriver dsa = GLTools.getDSAInstance();
-
-            dsa.glBindTexture(
-                    3553 /* GL_TEXTURE_2D /,
-                    GLTexture.this.textureId);
-
-            dsa.glBindBuffer(
-                    35052 /* GL_PIXEL_UNPACK_BUFFER /,
-                    this.buffer.bufferId);
-
-            dsa.glTexSubImage2D(
-                    3553 /* GL_TEXTURE_2D /,
-                    this.level,
-                    this.xOffset, this.yOffset,
-                    this.width, this.height,
-                    this.format.value,
-                    this.type.value,
-                    0);
-
-            //TODO: this should instead restore the previous state.
-            dsa.glBindTexture(
-                    3553 /* GL_TEXTURE_2D /,
-                    0);
-
-            LOGGER.trace(
-                    GLOOP_MARKER,
-                    "############### End GLTexture Set Pixel Buffer 2D Task ###############");
-             */
+            throw new UnsupportedOperationException("not implemented...");            
         }
     }
 
@@ -1179,41 +1150,7 @@ public class GLTexture extends GLObject {
             LOGGER.trace(GLOOP_MARKER, "\tTexture buffer: GLBuffer[{}]", buffer.getName());
             LOGGER.trace(GLOOP_MARKER, "\tFormat: {}", this.internalFormat);
 
-            throw new UnsupportedOperationException("not yet implemented.");
-            /*
-            if (!GLTexture.this.isValid()) {
-                throw new GLException("GLTexture is invalid! You must allocate a texture prior to assigning a texture buffer!");
-            }
-
-            if (!this.buffer.isValid()) {
-                throw new GLException("GLBuffer is invalid!");
-            }
-
-            final DSADriver dsa = GLTools.getDSAInstance();
-
-            dsa.glBindTexture(
-                    GLBufferTarget.GL_TEXTURE_BUFFER.value,
-                    GLTexture.this.textureId);
-
-            dsa.glTexBuffer(
-                    GLBufferTarget.GL_TEXTURE_BUFFER.value,
-                    this.internalFormat.value,
-                    this.buffer.bufferId);
-
-            GLTexture.this.width = dsa.glGetTexLevelParameteri(
-                    3552 /* GL_TEXTURE_1D /,
-                    0,
-                    4096 /*GL_TEXTURE_WIDTH /);
-
-            GLTexture.this.height = GLTexture.this.depth = 1;
-            GLTexture.this.target = GLTextureTarget.GL_TEXTURE_1D;
-
-            dsa.glBindTexture(GLBufferTarget.GL_TEXTURE_BUFFER.value, 0);
-
-            LOGGER.trace(
-                    GLOOP_MARKER,
-                    "############### End GLTexture Set Texture Buffer Task ###############");
-             */
+            throw new UnsupportedOperationException("not yet implemented.");            
         }
     }
 

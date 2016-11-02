@@ -241,7 +241,7 @@ public class GLShader extends GLObject {
                 if (status == 0) {
                     final String info = GLShader.this.getInfoLog();
                     
-                    throw new GLException(info);
+                    throw new GLSLCompileException(info);
                 }
 
                 GLShader.this.updateTimeUsed();
@@ -249,6 +249,25 @@ public class GLShader extends GLObject {
                         GLOOP_MARKER,
                         "############### End GLShader Compile Task ###############");
             }
+        }
+    }
+    
+    @SuppressWarnings("serial")
+    public static final class GLSLCompileException extends GLException {
+        public GLSLCompileException() {
+            
+        }
+        
+        public GLSLCompileException(final String msg) {
+            super(msg);
+        }
+        
+        public GLSLCompileException(final Throwable cause) {
+            super(cause);
+        }
+        
+        public GLSLCompileException(final String msg, final Throwable cause) {
+            super(msg, cause);
         }
     }
 
@@ -319,7 +338,7 @@ public class GLShader extends GLObject {
             LOGGER.trace(GLOOP_MARKER, "\tParameter: {}", this.pName);
 
             if (!GLShader.this.isValid()) {
-                throw new GLException("Invalid GLShader!");
+                throw new GLException.InvalidStateException("Invalid GLShader!");
             }
 
             final int res = GLTools.getDriverInstance().shaderGetParameterI(shader, pName.value);
@@ -364,7 +383,7 @@ public class GLShader extends GLObject {
             LOGGER.trace(GLOOP_MARKER, "\tQuerying GLShader[{}]", GLShader.this.getName());
 
             if (!GLShader.this.isValid()) {
-                throw new GLException("Invalid GLShader!");
+                throw new GLException.InvalidStateException("Invalid GLShader!");
             }
 
             final String infoLog = GLTools.getDriverInstance().shaderGetInfoLog(shader);

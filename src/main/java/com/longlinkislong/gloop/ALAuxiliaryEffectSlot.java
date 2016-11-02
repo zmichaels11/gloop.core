@@ -59,7 +59,7 @@ public class ALAuxiliaryEffectSlot extends ALObject {
         @Override
         public void run() {
             if (isValid()) {
-                throw new ALException("ALEffectSlot is already initialized!");
+                throw new ALException.InvalidStateException("ALEffectSlot is already initialized!");
             }
 
             ALAuxiliaryEffectSlot.this.effectSlot = ALTools.getDriverInstance().auxiliaryEffectSlotCreate();
@@ -98,9 +98,9 @@ public class ALAuxiliaryEffectSlot extends ALObject {
         @Override
         public void run() {
             if (!isValid()) {
-                throw new ALException("ALEffectSlot is not valid!");
+                throw new ALException.InvalidStateException("ALEffectSlot is not valid!");
             } else if (!effect.isValid()) {
-                throw new ALException("ALEffect is not valid!");
+                throw new ALException.InvalidStateException("ALEffect is not valid!");
             } else {
                 ALTools.getDriverInstance().auxiliaryEffectSlotAttachEffect(effectSlot, effect.effect);
             }

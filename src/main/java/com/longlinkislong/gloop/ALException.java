@@ -27,44 +27,93 @@ package com.longlinkislong.gloop;
 
 /**
  * ALException represents an error that occurred while interfacing with OpenAL.
+ *
  * @author zmichaels
  * @since 16.03.21
  */
 @SuppressWarnings("serial")
 public class ALException extends RuntimeException {
+
+    public static final boolean ENABLE_STACK_TRACE = Boolean.getBoolean("com.longlinkislong.gloop.alexception.enable_stack_trace");
+
     /**
      * Constructs a new ALException with no message nor cause.
+     *
      * @since 16.03.21
      */
     public ALException() {
         super();
     }
-    
+
     /**
      * Constructs a new ALException with message and no cause.
+     *
      * @param msg the message.
      * @since 16.03.21
      */
     public ALException(final String msg) {
         super(msg);
     }
-    
+
     /**
      * Constructs a new ALException with a cause and no message.
+     *
      * @param cause the cause of the ALException.
      * @since 16.03.21
      */
     public ALException(final Throwable cause) {
         super(cause);
     }
-    
+
     /**
      * Constructs a new ALException with the supplied message and cause.
+     *
      * @param msg the message.
      * @param cause the cause of the ALException.
      * @since 16.03.21
      */
     public ALException(final String msg, final Throwable cause) {
         super(msg, cause);
+    }
+
+    @Override
+    public Throwable fillInStackTrace() {
+        if (ENABLE_STACK_TRACE) {
+            return super.fillInStackTrace();
+        } else {
+            return this;
+        }
+    }
+
+    @SuppressWarnings("serial")
+    public static final class InvalidStateException extends ALException {
+
+        public InvalidStateException(final String msg) {
+            super(msg);
+        }
+
+        public InvalidStateException(final String msg, final Throwable cause) {
+            super(msg, cause);
+        }
+
+        public InvalidStateException(final Throwable cause) {
+            super(cause);
+        }
+    }
+
+    @SuppressWarnings("serial")
+    public static final class InvalidValueException extends ALException {
+
+        public InvalidValueException(final String msg) {
+            super(msg);
+        }
+
+        public InvalidValueException(final Throwable cause) {
+            super(cause);
+        }
+
+        public InvalidValueException(final String msg, final Throwable cause) {
+            super(msg, cause);
+        }
     }
 }

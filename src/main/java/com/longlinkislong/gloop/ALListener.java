@@ -138,7 +138,7 @@ public final class ALListener extends ALObject {
                 position.set(x, y, z);
                 ALTools.getDriverInstance().listenerSetPosition(listener, x, y, z);
             } else {
-                throw new ALException("Invalid ALListener!");
+                throw new ALException.InvalidStateException("Invalid ALListener!");
             }
         }
     }
@@ -226,7 +226,7 @@ public final class ALListener extends ALObject {
                 velocity.set(x, y, z);
                 ALTools.getDriverInstance().listenerSetVelocity(listener, x, y, z);
             } else {
-                throw new ALException("Invalid ALListener!");
+                throw new ALException.InvalidStateException("Invalid ALListener!");
             }
         }
     }
@@ -260,7 +260,7 @@ public final class ALListener extends ALObject {
 
         public SetGainTask(final float gain) {
             if (!Float.isFinite(gain)) {
-                throw new ALException("Gain must be finite on range [0.0, \u221E)!");
+                throw new ALException.InvalidValueException("Gain must be finite on range [0.0, \u221E)!");
             } else if (gain < 0.0F) {
                 LOGGER.warn(GL_MARKER, "Attempted to set gain less than 0.0!");
                 this.gain = 0.0F;
@@ -276,7 +276,7 @@ public final class ALListener extends ALObject {
                 ALListener.this.gain = gain;
                 ALTools.getDriverInstance().listenerSetGain(listener, gain);
             } else {
-                throw new ALException("Invalid ALListener!");
+                throw new ALException.InvalidStateException("Invalid ALListener!");
             }
         }
     }

@@ -183,9 +183,9 @@ public class GLSampler extends GLObject {
             LOGGER.trace(GL_MARKER, "############### Start GLSampler Init Task ###############");
 
             if (GLSampler.this.isLocked) {
-                throw new GLException("Cannot initialize the null instance of the GLSampler object!");
+                throw new GLException.InvalidStateException("Cannot initialize the null instance of the GLSampler object!");
             } else if (GLSampler.this.isValid()) {
-                throw new GLException("GLSampler is already initialized!");
+                throw new GLException.InvalidStateException("GLSampler is already initialized!");
             }
 
             final Driver driver = GLTools.getDriverInstance();
@@ -240,7 +240,7 @@ public class GLSampler extends GLObject {
          */
         public BindTask(final int unit) {
             if ((this.unit = unit) < 0) {
-                throw new GLException("Invalid sampler unit!");
+                throw new GLException.InvalidStateException("Invalid sampler unit!");
             }
         }
 
@@ -252,7 +252,7 @@ public class GLSampler extends GLObject {
             LOGGER.trace(GL_MARKER, "\tTexture unit: {}", this.unit);
 
             if (!GLSampler.this.isValid()) {
-                throw new GLException("Invalid GLSampler!");
+                throw new GLException.InvalidStateException("Invalid GLSampler!");
             }
 
             GLTools.getDriverInstance().samplerBind(unit, sampler);

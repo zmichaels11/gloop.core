@@ -154,10 +154,10 @@ public class GLProgram extends GLObject {
             LOGGER.trace(GL_MARKER, "\tUsing GLProgram[{}]", GLProgram.this.getName());
 
             if (!GLProgram.this.isValid()) {
-                throw new GLException("Invalid GLProgram!");
+                throw new GLException.InvalidStateException("Invalid GLProgram!");
             }
 
-            GLThread.getCurrent().orElseThrow(GLException::new).currentProgramUse = this;
+            GLThread.getCurrent().orElseThrow(GLException.InvalidThreadException::new).currentProgramUse = this;
 
             GLTools.getDriverInstance().programUse(GLProgram.this.program);
             GLProgram.this.program.updateTime();
@@ -219,7 +219,7 @@ public class GLProgram extends GLObject {
             final Driver driver = GLTools.getDriverInstance();
 
             if (!GLProgram.this.isValid()) {
-                throw new GLException("Invalid GLProgram!");
+                throw new GLException.InvalidStateException("Invalid GLProgram!");
             } else {
                 this.attribs.nameMap.forEach((name, index) -> {
                     LOGGER.trace(
@@ -358,7 +358,7 @@ public class GLProgram extends GLObject {
             final int sz = mat.size();
 
             if (!(sz == 2 || sz == 3 || sz == 4)) {
-                throw new GLException("Invalid uniform count!");
+                throw new GLException.InvalidValueException("Invalid uniform count!");
             }
 
             final GLMatD<?, ?> matD = mat.asGLMatD();
@@ -389,7 +389,7 @@ public class GLProgram extends GLObject {
                 final double[] data, final int offset, final int length) {
 
             if (!(length == 4 || length == 9 || length == 16)) {
-                throw new GLException("Invalid uniform count!");
+                throw new GLException.InvalidValueException("Invalid uniform count!");
             }
 
             this.uName = uName.toString();
@@ -407,7 +407,7 @@ public class GLProgram extends GLObject {
             LOGGER.trace(GL_MARKER, "\tUniform name: {}", this.uName);
 
             if (!GLProgram.this.isValid()) {
-                throw new GLException("GLProgram is not valid!");
+                throw new GLException.InvalidStateException("GLProgram is not valid!");
             }
 
             final int uLoc = GLProgram.this.getUniformLoc(uName);
@@ -497,7 +497,7 @@ public class GLProgram extends GLObject {
             final int sz = mat.size();
 
             if (!(sz == 2 || sz == 3 || sz == 4)) {
-                throw new GLException("Invalid uniform count!");
+                throw new GLException.InvalidValueException("Invalid uniform count!");
             }
 
             final GLMatF<?, ?> mf = mat.asGLMatF();
@@ -525,7 +525,7 @@ public class GLProgram extends GLObject {
                 final float[] values, final int offset, final int length) {
 
             if (!(length == 4 || length == 9 || length == 16)) {
-                throw new GLException("Invalid uniform count!");
+                throw new GLException.InvalidValueException("Invalid uniform count!");
             }
 
             this.uName = uName.toString();
@@ -543,7 +543,7 @@ public class GLProgram extends GLObject {
             LOGGER.trace(GL_MARKER, "\tUniform matrix location: {}", this.uName);
 
             if (!GLProgram.this.isValid()) {
-                throw new GLException("GLProgram is not valid!");
+                throw new GLException.InvalidStateException("GLProgram is not valid!");
             }
 
             final int uLoc = GLProgram.this.getUniformLoc(this.uName);
@@ -671,7 +671,7 @@ public class GLProgram extends GLObject {
             final int sz = v.size();
 
             if (sz < 1 || sz > 4) {
-                throw new GLException("Invalid uniform count!");
+                throw new GLException.InvalidValueException("Invalid uniform count!");
             }
 
             this.values = new double[sz];
@@ -710,7 +710,7 @@ public class GLProgram extends GLObject {
                 final double[] data, final int offset, final int length) {
 
             if (length < 1 || length > 4) {
-                throw new GLException("Invalid uniform count!");
+                throw new GLException.InvalidValueException("Invalid uniform count!");
             }
 
             this.values = new double[length];
@@ -727,7 +727,7 @@ public class GLProgram extends GLObject {
             LOGGER.trace(GL_MARKER, "\tUniform location: {}", this.uName);
 
             if (!GLProgram.this.isValid()) {
-                throw new GLException("GLProgram is not valid!");
+                throw new GLException.InvalidStateException("GLProgram is not valid!");
             }
 
             final int uLoc = GLProgram.this.getUniformLoc(this.uName);
@@ -835,7 +835,7 @@ public class GLProgram extends GLObject {
                 final int[] data, final int offset, final int length) {
 
             if (length < 1 || length > 4) {
-                throw new GLException("Invalid uniform count!");
+                throw new GLException.InvalidStateException("Invalid uniform count!");
             }
 
             this.values = new int[length];
@@ -852,7 +852,7 @@ public class GLProgram extends GLObject {
             LOGGER.trace(GL_MARKER, "\tUniform location: {}", this.uName);
 
             if (!GLProgram.this.isValid()) {
-                throw new GLException("GLProgram is not valid!");
+                throw new GLException.InvalidStateException("GLProgram is not valid!");
             }
 
             final int uLoc = GLProgram.this.getUniformLoc(this.uName);
@@ -973,7 +973,7 @@ public class GLProgram extends GLObject {
             final int sz = vec.size();
 
             if (sz < 1 || sz > 4) {
-                throw new GLException("Invalid uniform vector size!");
+                throw new GLException.InvalidValueException("Invalid uniform vector size!");
             }
 
             final GLVecF<?> vecF = vec.asGLVecF();
@@ -1011,7 +1011,7 @@ public class GLProgram extends GLObject {
                 final float[] data, final int offset, final int length) {
 
             if (length < 1 || length > 4) {
-                throw new GLException("Invalid uniform count!");
+                throw new GLException.InvalidValueException("Invalid uniform count!");
             }
 
             this.values = new float[length];
@@ -1028,7 +1028,7 @@ public class GLProgram extends GLObject {
             LOGGER.trace(GL_MARKER, "\tUniform location: {}", this.uName);
 
             if (!GLProgram.this.isValid()) {
-                throw new GLException("GLProgram is not valid!");
+                throw new GLException.InvalidStateException("GLProgram is not valid!");
             }
 
             final int uLoc = GLProgram.this.getUniformLoc(this.uName);
@@ -1131,7 +1131,7 @@ public class GLProgram extends GLObject {
             LOGGER.trace(GL_MARKER, "\tLinking shaders for GLProgram[{}]", GLProgram.this.getName());
 
             if (!GLProgram.this.isValid()) {
-                throw new GLException("GLProgram is not valid!");
+                throw new GLException.InvalidStateException("GLProgram is not valid!");
             }
 
             final Driver driver = GLTools.getDriverInstance();
@@ -1177,7 +1177,7 @@ public class GLProgram extends GLObject {
             LOGGER.trace(GL_MARKER, "############### Start GLProgram Init Task ###############");
 
             if (GLProgram.this.isValid()) {
-                throw new GLException("Cannot reinit GLProgram!");
+                throw new GLException.InvalidStateException("Cannot reinit GLProgram!");
             }
 
             program = GLTools.getDriverInstance().programCreate();
@@ -1259,7 +1259,7 @@ public class GLProgram extends GLObject {
             GLProgram.this.updateTimeUsed();
 
             if (!GLProgram.this.program.isValid()) {
-                throw new GLException("Invalid GLProgram!");
+                throw new GLException.InvalidStateException("Invalid GLProgram!");
             } else {
                 final int binding = GLTools.getDriverInstance().programGetStorageBlockBinding(program, this.sblockName);
 
@@ -1303,7 +1303,7 @@ public class GLProgram extends GLObject {
         @Override
         public OptionalInt call() throws Exception {
             if (!GLProgram.this.isValid()) {
-                throw new GLException("Invalid GLProgram!");
+                throw new GLException.InvalidStateException("Invalid GLProgram!");
             }
 
             final int binding = GLTools.getDriverInstance().programGetUniformBlockBinding(program, this.ublockName);
@@ -1349,7 +1349,7 @@ public class GLProgram extends GLObject {
             LOGGER.trace(GL_MARKER, "\tAssigning uniform block: [{}] to uniform buffer binding: [{}]!", this.ublockName, this.binding);
 
             if (!GLProgram.this.isValid()) {
-                throw new GLException("Invalid GLProgram!");
+                throw new GLException.InvalidStateException("Invalid GLProgram!");
             } else {
                 GLTools.getDriverInstance().programSetUniformBlockBinding(program, this.ublockName, this.binding);
                 GLProgram.this.program.updateTime();
@@ -1392,7 +1392,7 @@ public class GLProgram extends GLObject {
             LOGGER.trace(GL_MARKER, "\tAssigning uniform block: [{}] to storage binding: [{}]!", this.sblockName, this.binding);
 
             if (!GLProgram.this.isValid()) {
-                throw new GLException("Invalid GLProgram!");
+                throw new GLException.InvalidStateException("Invalid GLProgram!");
             } else {
                 GLTools.getDriverInstance().programSetStorageBlockBinding(program, this.sblockName, this.binding);
                 GLProgram.this.program.updateTime();
@@ -1430,7 +1430,7 @@ public class GLProgram extends GLObject {
             this.buffer = Objects.requireNonNull(buffer);
 
             if ((this.bindingPoint = bindingPoint) < 0) {
-                throw new GLException("Invalid binding point: " + bindingPoint);
+                throw new GLException.InvalidValueException("Invalid binding point: " + bindingPoint);
             }
         }
 
@@ -1444,9 +1444,9 @@ public class GLProgram extends GLObject {
             LOGGER.trace(GL_MARKER, "\tBinding point: {}", bindingPoint);
 
             if (!GLProgram.this.isValid()) {
-                throw new GLException("Invalid GLProgram object!");
+                throw new GLException.InvalidStateException("Invalid GLProgram object!");
             } else if (!this.buffer.isValid()) {
-                throw new GLException("Invalid GLBuffer object!");
+                throw new GLException.InvalidStateException("Invalid GLBuffer object!");
             }
 
             GLProgram.this.updateTimeUsed();
@@ -1503,8 +1503,7 @@ public class GLProgram extends GLObject {
             this.buffer = Objects.requireNonNull(buffer);
 
             if ((this.bindingPoint = bindingPoint) < 0) {
-                throw new GLException(
-                        "Invalid binding point address: " + bindingPoint);
+                throw new GLException.InvalidValueException("Invalid binding point address: " + bindingPoint);
             }
         }
 
@@ -1518,9 +1517,9 @@ public class GLProgram extends GLObject {
             LOGGER.trace(GL_MARKER, "\tBinding Point: {}", this.bindingPoint);
 
             if (!GLProgram.this.isValid()) {
-                throw new GLException("Invalid GLProgram object!");
+                throw new GLException.InvalidStateException("Invalid GLProgram object!");
             } else if (!this.buffer.isValid()) {
-                throw new GLException("Invalid GLBuffer object!");
+                throw new GLException.InvalidStateException("Invalid GLBuffer object!");
             }
 
             GLProgram.this.program.updateTime();
@@ -1618,11 +1617,11 @@ public class GLProgram extends GLObject {
                 final int groupsX, final int groupsY, final int groupsZ) {
 
             if ((this.numX = groupsX) < 1) {
-                throw new GLException("groupsX cannot be less than 1!");
+                throw new GLException.InvalidValueException("groupsX cannot be less than 1!");
             } else if ((this.numY = groupsY) < 1) {
-                throw new GLException("groupsY cannot be less than 1!");
+                throw new GLException.InvalidValueException("groupsY cannot be less than 1!");
             } else if ((this.numZ = groupsZ) < 1) {
-                throw new GLException("groupsZ cannot be less than 1!");
+                throw new GLException.InvalidValueException("groupsZ cannot be less than 1!");
             }
         }
 
@@ -1634,7 +1633,7 @@ public class GLProgram extends GLObject {
             LOGGER.trace(GL_MARKER, "\tGroup size: <{}, {}, {}>", this.numX, this.numY, this.numZ);
 
             if (!GLProgram.this.isValid()) {
-                throw new GLException("Invalid GLProgram!");
+                throw new GLException.InvalidStateException("Invalid GLProgram!");
             }
 
             GLTools.getDriverInstance().programDispatchCompute(program, numX, numY, numZ);

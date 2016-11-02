@@ -50,9 +50,10 @@ public abstract class GLQuery<ReturnType> implements Callable<ReturnType> {
      *
      * @param thread the GLThread to run the GLQuery on.
      * @return the result of the GLQuery.
+     * @throws GLException if any other form of exception occurred.
      * @since 15.05.27
      */
-    public final ReturnType glCall(final GLThread thread) {
+    public final ReturnType glCall(final GLThread thread) throws GLException {
         if (thread == null) {
             return this.glCall(GLThread.getDefaultInstance());
         }
@@ -79,9 +80,10 @@ public abstract class GLQuery<ReturnType> implements Callable<ReturnType> {
      * method may cause a thread sync.
      *
      * @return the result of the GLCall.
+     * @throws GLException if any other form of exception occurred.
      * @since 15.05.27
      */
-    public final ReturnType glCall() {
+    public final ReturnType glCall() throws GLException {
         final GLThread thread = GLThread.getDefaultInstance();
 
         try {
@@ -117,9 +119,10 @@ public abstract class GLQuery<ReturnType> implements Callable<ReturnType> {
      *
      * @param other the task to run
      * @return the GLTask
+     * @throws GLException if any other exception occurred.
      * @since 15.06.13
      */
-    public GLTask andThen(final Consumer<ReturnType> other) {
+    public GLTask andThen(final Consumer<ReturnType> other) throws GLException {
         return new GLTask() {
             @Override
             public void run() {

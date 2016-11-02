@@ -9,6 +9,7 @@ buildscript {
 }
 
 apply plugin: 'com.jfrog.artifactory'
+apply plugin: 'findbugs'
 
 apply plugin: 'java'
 apply plugin: 'maven-publish'
@@ -74,4 +75,15 @@ dependencies {
     testCompile 'org.slf4j:slf4j-simple:1.7.+'
     testCompile "com.longlinkislong:gloop-window-glfw:${getVersion('gloop-window-glfw')}"
     testCompile "com.longlinkislong:gloop-impl-opengl:${getVersion('gloop-impl-opengl')}"
+}
+
+findbugs {
+    ignoreFailures = true
+}
+
+tasks.withType(FindBugs) {
+    reports {
+        xml.enabled false
+        html.enabled true
+    }
 }

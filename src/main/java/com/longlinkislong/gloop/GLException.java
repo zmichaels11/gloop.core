@@ -34,6 +34,8 @@ package com.longlinkislong.gloop;
 @SuppressWarnings("serial")
 public class GLException extends RuntimeException {
 
+    public static final boolean ENABLE_STACK_TRACE = Boolean.getBoolean("com.longlinkislong.gloop.glexception.enable_stack_trace");
+
     /**
      * Constructs a new GLException with no message or cause.
      *
@@ -76,15 +78,122 @@ public class GLException extends RuntimeException {
         super(msg, cause);
     }
 
-    public static class InvalidGLEnumException extends GLException {
-        public InvalidGLEnumException() {}
+    @Override
+    public Throwable fillInStackTrace() {
+        if (ENABLE_STACK_TRACE) {
+            return super.fillInStackTrace();
+        } else {
+            return this;
+        }
+    }
+
+    @SuppressWarnings("serial")
+    public static final class DataStoreException extends GLException {
+        public DataStoreException() {}
+        
+        public DataStoreException(final String msg) {
+            super(msg);
+        }
+        
+        public DataStoreException(final String msg, final Throwable cause) {
+            super(msg, cause);
+        }
+        
+        public DataStoreException(final Throwable cause) {
+            super(cause);
+        }
+    }
+
+    @SuppressWarnings("serial")
+    public static final class InvalidThreadException extends GLException {
+
+        public InvalidThreadException() {
+        }
+
+        public InvalidThreadException(final String msg) {
+            super(msg);
+        }
+
+        public InvalidThreadException(final Throwable cause) {
+            super(cause);
+        }
+
+        public InvalidThreadException(final String msg, final Throwable cause) {
+            super(msg, cause);
+        }
+    }
+    
+    @SuppressWarnings("serial")
+    public static final class InvalidValueException extends GLException {
+        public InvalidValueException() {
+            
+        }
+        
+        public InvalidValueException(final String msg) {
+            super(msg);
+        }
+        
+        public InvalidValueException(final String msg, final Throwable cause) {
+            super(msg, cause);
+        }
+        
+        public InvalidValueException(final Throwable cause) {
+            super(cause);
+        }
+    }
+
+    @SuppressWarnings("serial")
+    public static final class InvalidGLEnumException extends GLException {
+
+        public InvalidGLEnumException() {
+        }
+
         public InvalidGLEnumException(final String msg) {
             super(msg);
         }
+
         public InvalidGLEnumException(final Throwable cause) {
             super(cause);
         }
+
         public InvalidGLEnumException(final String msg, final Throwable cause) {
+            super(msg, cause);
+        }
+    }
+    
+    @SuppressWarnings("serial")
+    public static final class InvalidTypeException extends GLException {
+        public InvalidTypeException() {
+            
+        }
+        
+        public InvalidTypeException(final String msg) {
+            super(msg);
+        }
+        
+        public InvalidTypeException(final Throwable cause) {
+            super(cause);
+        }
+        
+        public InvalidTypeException(final String msg, final Throwable cause) {
+            super(msg, cause);
+        }
+    }
+    
+    public static final class InvalidStateException extends GLException {
+        public InvalidStateException() {
+            
+        }
+        
+        public InvalidStateException(final String msg) {
+            super(msg);
+        }
+        
+        public InvalidStateException(final Throwable cause) {
+            super(cause);
+        }
+        
+        public InvalidStateException(final String msg, Throwable cause) {
             super(msg, cause);
         }
     }

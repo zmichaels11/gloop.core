@@ -166,7 +166,7 @@ public class GLDrawQuery extends GLObject {
             LOGGER.trace(GLOOP_MARKER, "\tDraw Task: {}", this.testDraw);
 
             if (!GLDrawQuery.this.isValid()) {
-                throw new GLException("Invalid GLDrawQuery!");
+                throw new GLException.InvalidStateException("Invalid GLDrawQuery!");
             }
 
             final Driver driver = GLTools.getDriverInstance();
@@ -227,7 +227,7 @@ public class GLDrawQuery extends GLObject {
             LOGGER.trace(GLOOP_MARKER, "\tDraw task: {}", this.fullDraw);
 
             if (!GLDrawQuery.this.isValid()) {
-                throw new GLException("Invalid GLDrawQuery!");
+                throw new GLException.InvalidStateException("Invalid GLDrawQuery!");
             }
 
             final Driver driver = GLTools.getDriverInstance();            
@@ -246,7 +246,7 @@ public class GLDrawQuery extends GLObject {
             LOGGER.trace(GLOOP_MARKER, "############### Start GLDrawQuery Init Task ###############");
 
             if (!GLDrawQuery.this.isValid()) {
-                throw new GLException("Invalid GLDrawQuery!");
+                throw new GLException.InvalidStateException("Invalid GLDrawQuery!");
             }
 
             query = GLTools.getDriverInstance().drawQueryCreate();            
@@ -267,7 +267,7 @@ public class GLDrawQuery extends GLObject {
             LOGGER.trace(GLOOP_MARKER, "\tDeleting GLDrawQuery[{}]", GLDrawQuery.this.getName());
 
             if (!GLDrawQuery.this.isValid()) {
-                throw new GLException("Invalid GLDrawQuery!");
+                throw new GLException.InvalidStateException("Invalid GLDrawQuery!");
             }
 
             GLTools.getDriverInstance().drawQueryDelete(query);
