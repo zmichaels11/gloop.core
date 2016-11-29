@@ -147,7 +147,7 @@ public abstract class AbstractSampler2D implements Sampler2D {
     }
     
     protected final AbstractSampler2DFactory getFactory() {
-        return GLObjectFactoryManager.getInstance().getSampler2DFactory();
+        return ObjectFactoryManager.getInstance().getSampler2DFactory();
     }
     
     @Override

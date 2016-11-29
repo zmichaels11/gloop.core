@@ -3,20 +3,21 @@
  * To change this template file, choose Tools | Templates
  * and open the template in the editor.
  */
-package com.longlinkislong.gloop2.glimpl;
+package com.longlinkislong.gloop2.vkimpl;
 
-import com.longlinkislong.gloop2.AbstractProgram;
+import com.longlinkislong.gloop2.AbstractShader;
 
 /**
  *
  * @author zmichaels
  */
-public class GL41Program extends AbstractProgram {
-    int id;
+public final class VK10Shader extends AbstractShader {
+    public long module;    
     
     @Override
     protected void clear() {
         super.clear();
-        this.id = 0;
+        
+        this.module = 0L;
     }
 }

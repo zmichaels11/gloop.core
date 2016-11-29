@@ -92,7 +92,7 @@ public abstract class AbstractTexture2D implements Texture2D {
     }
     
     protected final AbstractTexture2DFactory getFactory() {
-        return GLObjectFactoryManager.getInstance().getTexture2DFactory();
+        return ObjectFactoryManager.getInstance().getTexture2DFactory();
     }
 
     @Override

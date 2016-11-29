@@ -44,6 +44,6 @@ public final class Texture2DCreateInfo {
     }    
     
     public Texture2D allocate() {
-        return GLObjectFactoryManager.getInstance().getTexture2DFactory().allocate(this);
+        return ObjectFactoryManager.getInstance().getTexture2DFactory().allocate(this);
     }
 }

@@ -62,7 +62,7 @@ public abstract class AbstractImage2D implements Image2D {
     }
     
     protected final AbstractImage2DFactory getFactory() {
-        return GLObjectFactoryManager.getInstance().getImage2DFactory();
+        return ObjectFactoryManager.getInstance().getImage2DFactory();
     }
     
     @Override

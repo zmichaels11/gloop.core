@@ -30,8 +30,8 @@ public final class BufferCreateInfo {
         this.mapped = Objects.requireNonNull(mapped);
     }
     
-    public BufferCreateInfo(final long size) {
-        this(size, BufferStorageHint.DONT_CARE, BufferAccessHint.DONT_CARE, BufferMapHint.DONT_CARE);
+    public BufferCreateInfo() {
+        this(0L, BufferStorageHint.DONT_CARE, BufferAccessHint.DONT_CARE, BufferMapHint.DONT_CARE);
     }
     
     public BufferCreateInfo withSize(final long newSize) {
@@ -51,6 +51,6 @@ public final class BufferCreateInfo {
     }
     
     public Buffer allocate() {
-        return GLObjectFactoryManager.getInstance().getBufferFactory().allocate(this);
+        return ObjectFactoryManager.getInstance().getBufferFactory().allocate(this);
     }
 }

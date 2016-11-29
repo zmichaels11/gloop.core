@@ -38,6 +38,6 @@ public final class Image2DCreateInfo {
     }
     
     public Image2D allocate() {
-        return GLObjectFactoryManager.getInstance().getImage2DFactory().allocate(this);
+        return ObjectFactoryManager.getInstance().getImage2DFactory().allocate(this);
     }
 }

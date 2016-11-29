@@ -5,19 +5,12 @@
  */
 package com.longlinkislong.gloop2;
 
-import java.util.HashMap;
-import java.util.Map;
-
 /**
  *
  * @author zmichaels
  */
-public abstract class AbstractProgram {
-    final Map<String, Integer> uniforms = new HashMap<>();
-    
-    protected void clear() {
-        this.uniforms.clear();
-    }
-    
-    
+public enum PolygonMode {
+    FILL,
+    LINE,
+    POINT
 }

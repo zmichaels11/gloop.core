@@ -46,7 +46,7 @@ public abstract class AbstractBuffer implements Buffer{
     @Override
     public ByteBuffer getMappedBuffer() {
         if (this.mapBuf == null && this.isMapped()) {
-            //TODO: support LARGER buffers?
+            //TODO: support LARGER buffers?                      
             this.mapBuf = MemoryUtil.memByteBuffer(this.mapPtr, (int) this.mapSize);
         }
         
@@ -79,7 +79,7 @@ public abstract class AbstractBuffer implements Buffer{
     }
     
     protected final AbstractBufferFactory getFactory() {
-        return GLObjectFactoryManager.getInstance().getBufferFactory();
+        return ObjectFactoryManager.getInstance().getBufferFactory();
     }
     
     @Override

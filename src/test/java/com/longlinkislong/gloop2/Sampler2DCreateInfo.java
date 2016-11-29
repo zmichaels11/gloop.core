@@ -117,6 +117,6 @@ public final class Sampler2DCreateInfo {
     }
     
     public Sampler2D allocate() {
-        return GLObjectFactoryManager.getInstance().getSampler2DFactory().allocate(this);
+        return ObjectFactoryManager.getInstance().getSampler2DFactory().allocate(this);
     }
 }

@@ -7,6 +7,7 @@ package vulkansamples;
 
 import com.longlinkislong.gloop.GLWindow;
 import java.nio.IntBuffer;
+import org.junit.Test;
 import org.lwjgl.PointerBuffer;
 import org.lwjgl.system.MemoryStack;
 import org.lwjgl.vulkan.VK;
@@ -26,7 +27,7 @@ public class Enumerate {
         System.setProperty("com.longlinkislong.gloop.client_api", "Vulkan");
     }
 
-    //@Test
+    @Test
     public void test() {
         final SampleInfo info = new SampleInfo();
         
