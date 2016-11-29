@@ -12,10 +12,12 @@ import java.util.Map;
  *
  * @author zmichaels
  */
-public abstract class AbstractFramebuffer {
+public abstract class AbstractFramebuffer implements Framebuffer {
     protected final Map<String, AbstractFramebufferAttachment> attachments = new HashMap<>();
     
-    protected abstract void clear();
+    protected void clear() {
+        this.attachments.clear();
+    }
     
     protected abstract int newAttachmentId();
     

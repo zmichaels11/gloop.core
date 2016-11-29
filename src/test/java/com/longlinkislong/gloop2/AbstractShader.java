@@ -9,7 +9,7 @@ package com.longlinkislong.gloop2;
  *
  * @author zmichaels
  */
-public abstract class AbstractShader {
+public abstract class AbstractShader implements Shader {
     protected String src;
     protected boolean compiled;
     protected ShaderType type;
@@ -19,15 +19,29 @@ public abstract class AbstractShader {
         this.compiled = false;
     }
     
-    public String getSource() {
+    @Override
+    public final String getSource() {
         return this.src;
     }
     
-    public boolean isCompiled() {
+    @Override
+    public final boolean isCompiled() {
         return this.compiled;
     }
     
-    public ShaderType getShaderType() {
+    @Override
+    public final ShaderType getShaderType() {
         return this.type;
-    }        
+    }     
+    
+    @Override
+    public final void free() {
+        //TODO: implement
+    }
+    
+    @Override
+    public final boolean isValid() {        
+        //TODO: implement
+        return false;
+    }
 }

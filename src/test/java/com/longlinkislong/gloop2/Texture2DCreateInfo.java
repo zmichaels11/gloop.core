@@ -42,4 +42,8 @@ public final class Texture2DCreateInfo {
     public Texture2DCreateInfo() {
         this(new Sampler2DCreateInfo(), DEFAULT_BASE_LEVEL, DEFAULT_MAX_LEVEL, 1, 1, 1, TextureFormat.RGBA8);
     }    
+    
+    public Texture2D allocate() {
+        return GLObjectFactoryManager.getInstance().getTexture2DFactory().allocate(this);
+    }
 }

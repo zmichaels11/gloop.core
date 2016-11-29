@@ -9,10 +9,7 @@ package com.longlinkislong.gloop2;
  *
  * @author zmichaels 
  */
-public abstract class AbstractTexture2D {
-
-    protected static final IllegalStateException EX_INVALID_TEXTURE = new IllegalStateException("Invalid Texture2D!");    
-    
+public abstract class AbstractTexture2D implements Texture2D {    
     protected int width;
     protected int height;
     protected Sampler2DCreateInfo sampler;
@@ -21,7 +18,8 @@ public abstract class AbstractTexture2D {
     protected int levels;
     protected TextureFormat format;
     
-    public TextureFormat getFormat() {
+    @Override
+    public final TextureFormat getFormat() {
         if (this.isValid()) {
             return this.format;
         } else {
@@ -29,7 +27,8 @@ public abstract class AbstractTexture2D {
         }
     }
     
-    public int getBaseMipmapLevel() {
+    @Override
+    public final int getBaseMipmapLevel() {
         if (this.isValid()) {
             return this.baseLevel;
         } else {
@@ -37,7 +36,8 @@ public abstract class AbstractTexture2D {
         }
     }
     
-    public int getMaxMipmapLevel() {
+    @Override
+    public final int getMaxMipmapLevel() {
         if (this.isValid()) {
             return this.maxLevel;
         } else {
@@ -45,7 +45,8 @@ public abstract class AbstractTexture2D {
         }
     }
     
-    public int getMipmapLevelCount() {
+    @Override
+    public final int getMipmapLevelCount() {
         if (this.isValid()) {
             return this.levels;
         } else {
@@ -53,7 +54,8 @@ public abstract class AbstractTexture2D {
         }
     }
 
-    public Sampler2DCreateInfo getSampler() {
+    @Override
+    public final Sampler2DCreateInfo getSampler() {
         if (this.isValid()) {
             return this.sampler;
         } else {
@@ -71,7 +73,8 @@ public abstract class AbstractTexture2D {
         this.format = null;        
     }
 
-    public int getWidth() {
+    @Override
+    public final int getWidth() {
         if (this.isValid()) {
             return this.width;
         } else {
@@ -79,7 +82,8 @@ public abstract class AbstractTexture2D {
         }
     }
 
-    public int getHeight() {
+    @Override
+    public final int getHeight() {
         if (this.isValid()) {
             return this.height;
         } else {
@@ -91,14 +95,16 @@ public abstract class AbstractTexture2D {
         return GLObjectFactoryManager.getInstance().getTexture2DFactory();
     }
 
-    public AbstractTexture2D bind(int unit) {
+    @Override
+    public final AbstractTexture2D bind(int unit) {
         getFactory().bind(this, unit);
         return this;
     }
 
-    protected abstract AbstractImage2D doGetImage(final int level);
+    protected abstract Image2D doGetImage(final int level);
 
-    public AbstractImage2D getImage(final int level) {
+    @Override
+    public final Image2D getImage(final int level) {
         if (this.isValid()) {
             return doGetImage(level);
         } else {
@@ -106,20 +112,24 @@ public abstract class AbstractTexture2D {
         }
     }
 
-    public AbstractTexture2D generateMipmaps() {
+    @Override
+    public final AbstractTexture2D generateMipmaps() {
         getFactory().generateMipmaps(this);
         return this;
     }
 
-    public boolean isValid() {
+    @Override
+    public final boolean isValid() {
         return getFactory().isValid(this);
     }        
 
-    public boolean isHandleResident() {
+    @Override
+    public final boolean isHandleResident() {
         return getFactory().isHandleResident(this);
     }
 
-    public AbstractTexture2D setHandleResidency(final boolean residency) {
+    @Override
+    public final AbstractTexture2D setHandleResidency(final boolean residency) {
         if (residency) {
             getFactory().makeHandleResident(this);
         } else {
@@ -129,5 +139,11 @@ public abstract class AbstractTexture2D {
         return this;
     }
 
+    @Override
     public abstract long getHandle();
+    
+    @Override
+    public final void free() {
+        getFactory().free(this);
+    }
 }

@@ -5,7 +5,6 @@
  */
 package com.longlinkislong.gloop2;
 
-import java.nio.ByteBuffer;
 import java.util.Objects;
 
 /**
@@ -36,5 +35,9 @@ public final class Image2DCreateInfo {
     
     public Image2DCreateInfo() {
         this(1, 1, ImageFormat.RGB);
+    }
+    
+    public Image2D allocate() {
+        return GLObjectFactoryManager.getInstance().getImage2DFactory().allocate(this);
     }
 }

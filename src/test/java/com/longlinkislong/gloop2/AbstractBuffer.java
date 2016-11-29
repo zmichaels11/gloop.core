@@ -12,7 +12,7 @@ import org.lwjgl.system.MemoryUtil;
  *
  * @author zmichaels
  */
-public abstract class AbstractBuffer {
+public abstract class AbstractBuffer implements Buffer{
     protected long size;
     protected long mapPtr;
     protected ByteBuffer mapBuf;
@@ -33,14 +33,17 @@ public abstract class AbstractBuffer {
         this.storageHint = null;
     }
     
+    @Override
     public boolean isMapped() {
         return this.mapPtr != 0L;
     }
     
+    @Override
     public long getSize() {
         return this.size;
     }        
     
+    @Override
     public ByteBuffer getMappedBuffer() {
         if (this.mapBuf == null && this.isMapped()) {
             //TODO: support LARGER buffers?
@@ -50,26 +53,36 @@ public abstract class AbstractBuffer {
         return mapBuf;
     }
     
+    @Override
     public long getMapOffset() {
         return this.mapOffset;
     }
     
+    @Override
     public long getMapSize() {
         return this.mapSize;
     }        
     
+    @Override
     public BufferAccessHint getAccessHint() {
         return this.accessHint;
     }
     
+    @Override
     public BufferMapHint getMapHint() {
         return this.mapHint;
     }
     
+    @Override
     public BufferStorageHint getStorageHint() {
         return this.storageHint;
     }
     
+    protected final AbstractBufferFactory getFactory() {
+        return GLObjectFactoryManager.getInstance().getBufferFactory();
+    }
+    
+    @Override
     public AbstractBuffer map(
             final long offset, final long size, 
             final BufferMapHint mapHint, 
@@ -77,17 +90,14 @@ public abstract class AbstractBuffer {
             final BufferMapSynchronizationHint syncHint, 
             final BufferUnmapHint unmapHint) {
         
-        GLObjectFactoryManager.getInstance()
-                .getBufferFactory()
-                .map(this, offset, size, mapHint, invalidationHint, syncHint, unmapHint);        
+        getFactory().map(this, offset, size, mapHint, invalidationHint, syncHint, unmapHint);        
         
         return this;
     }
     
+    @Override
     public AbstractBuffer unmap() {                
-        GLObjectFactoryManager.getInstance()
-                .getBufferFactory()
-                .doUnmap(this);
+        getFactory().doUnmap(this);
         
         // allow the byte buffer to become kill
         this.mapBuf = null;
@@ -95,23 +105,22 @@ public abstract class AbstractBuffer {
         return this;
     }
     
+    @Override
     public AbstractBuffer upload(long offset, long size, ByteBuffer data) {        
-        GLObjectFactoryManager.getInstance()
-                .getBufferFactory()
-                .upload(this, offset, size, MemoryUtil.memAddress(data));
+        getFactory().upload(this, offset, size, MemoryUtil.memAddress(data));
                 
         return this;
     }
     
+    @Override
     public AbstractBuffer download(final long offset, final long size, final ByteBuffer data) {
-        GLObjectFactoryManager.getInstance()
-                .getBufferFactory()
-                .download(this, offset, size, MemoryUtil.memAddress(data));
+        getFactory().download(this, offset, size, MemoryUtil.memAddress(data));
         
         return this;
     }
     
+    @Override
     public boolean isValid() {
-        return GLObjectFactoryManager.getInstance().isValid(this);
+        return getFactory().isValid(this);
     }
 }

@@ -115,4 +115,8 @@ public final class Sampler2DCreateInfo {
         this.borderB = borderB;
         this.borderA = borderA;
     }
+    
+    public Sampler2D allocate() {
+        return GLObjectFactoryManager.getInstance().getSampler2DFactory().allocate(this);
+    }
 }

@@ -11,16 +11,25 @@ import java.nio.ByteBuffer;
  *
  * @author zmichaels
  */
-public abstract class AbstractImage2D {
+public abstract class AbstractImage2D implements Image2D {
     protected static final IllegalStateException EX_INVALID_IMAGE = new IllegalStateException("Invalid Image2D!");    
-        
-    protected boolean layered;
-    protected int layer;
+            
     protected int width;
     protected int height;
     protected ImageFormat format;
     
-    public ImageFormat getFormat() {
+    @Override
+    public final boolean isLayered() {
+        throw new UnsupportedOperationException("Layered Image2D objects are currently not supported!");
+    }
+    
+    @Override
+    public final int getLayer() {
+        throw new UnsupportedOperationException("Layered Image2D objects are currently not supported!");
+    }
+    
+    @Override
+    public final ImageFormat getFormat() {
         if (this.isValid()) {
             return this.format;
         } else {
@@ -34,7 +43,8 @@ public abstract class AbstractImage2D {
         this.format = null;
     }
     
-    public int getWidth() {
+    @Override
+    public final int getWidth() {
         if (this.isValid()) {
             return this.width;
         } else {
@@ -42,7 +52,8 @@ public abstract class AbstractImage2D {
         }
     }
     
-    public int getHeight() {
+    @Override
+    public final int getHeight() {
         if (this.isValid()) {
             return this.height;
         } else {
@@ -54,38 +65,36 @@ public abstract class AbstractImage2D {
         return GLObjectFactoryManager.getInstance().getImage2DFactory();
     }
     
-    public boolean isValid() {
+    @Override
+    public final boolean isValid() {
         return getFactory().isValid(this);
     }
     
-    public AbstractImage2D write(int xOffset, int yOffset, int width, int height, DataFormat dFmt, ByteBuffer data) {
+    @Override
+    public final AbstractImage2D write(int xOffset, int yOffset, int width, int height, DataFormat dFmt, ByteBuffer data) {
         getFactory().write(this, xOffset, yOffset, width, height, dFmt, data);
         return this;
     }
     
-    public AbstractImage2D read(int xOffset, int yOffset, int width, int height, DataFormat dFmt, ByteBuffer data) {
+    @Override
+    public final AbstractImage2D read(int xOffset, int yOffset, int width, int height, DataFormat dFmt, ByteBuffer data) {
         getFactory().read(this, xOffset, yOffset, width, height, dFmt, data);
         return this;
-    }
-    
-    public final AbstractImage2D write(final DataFormat dFmt, final ByteBuffer data) {
-        return this.write(0, 0, this.width, this.height, dFmt, data);
-    }
-    
-    public final AbstractImage2D read(final DataFormat dFmt, final ByteBuffer data) {
-        return this.read(0, 0, this.width, this.height, dFmt, data);
-    }
-    
-    public AbstractImage2D bind(int unit, ImageAccess access) {
+    }        
+        
+    @Override
+    public final AbstractImage2D bind(int unit, ImageAccess access) {
         this.getFactory().bind(this, unit, access);
         return this;
     }
     
-    public boolean isHandleResident() {
+    @Override
+    public final boolean isHandleResident() {
         return this.getFactory().isHandleResident(this);
     }        
     
-    public AbstractImage2D setHandleResidency(final boolean residency, final ImageAccess access) {
+    @Override
+    public final AbstractImage2D setHandleResidency(final boolean residency, final ImageAccess access) {
         if (residency) {
             this.getFactory().makeHandleResident(this, access);
         } else {
@@ -93,5 +102,10 @@ public abstract class AbstractImage2D {
         }
         
         return this;
+    }
+    
+    @Override
+    public final void free() {
+        getFactory().free(this);
     }
 }

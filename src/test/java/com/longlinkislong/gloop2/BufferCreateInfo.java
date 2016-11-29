@@ -11,7 +11,7 @@ import java.util.Objects;
  *
  * @author zmichaels
  */
-public class BufferCreateInfo {
+public final class BufferCreateInfo {
 
     public final long size;
     public final BufferStorageHint storage;
@@ -48,5 +48,9 @@ public class BufferCreateInfo {
     
     public BufferCreateInfo withMappedHints(final BufferMapHint hints) {
         return new BufferCreateInfo(this.size, this.storage, this.access, hints);
+    }
+    
+    public Buffer allocate() {
+        return GLObjectFactoryManager.getInstance().getBufferFactory().allocate(this);
     }
 }

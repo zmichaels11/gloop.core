@@ -5,8 +5,6 @@
  */
 package com.longlinkislong.gloop2;
 
-import com.longlinkislong.gloop2.glimpl.GL45BufferFactory;
-
 /**
  *
  * @author zmichaels
@@ -24,7 +22,7 @@ public final class GLObjectFactoryManager {
     }
     
     //TODO: do a selector
-    private final AbstractBufferFactory bufferFactory = new GL45BufferFactory();
+    private AbstractBufferFactory<?> bufferFactory;
     private AbstractTexture2DFactory<?> textureFactory;
     private AbstractSampler2DFactory<?> sampler2DFactory;
     private AbstractImage2DFactory<?> image2DFactory;
@@ -39,21 +37,7 @@ public final class GLObjectFactoryManager {
     
     public AbstractTexture2DFactory<?> getTexture2DFactory() {
         return this.textureFactory;
-    }
-    
-    public AbstractBuffer allocate(BufferCreateInfo info) {
-        return bufferFactory.allocate(info);
-    }
-    
-    
-    
-    protected void free(AbstractBuffer buffer) {
-        bufferFactory.free(buffer);
-    }   
-    
-    protected boolean isValid(AbstractBuffer buffer) {
-        return bufferFactory.isValid(buffer);
-    }
+    }    
     
     public AbstractBufferFactory getBufferFactory() {
         return this.bufferFactory;

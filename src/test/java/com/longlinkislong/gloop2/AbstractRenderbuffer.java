@@ -9,20 +9,23 @@ package com.longlinkislong.gloop2;
  *
  * @author zmichaels
  */
-public abstract class AbstractRenderbuffer {
+public abstract class AbstractRenderbuffer implements Renderbuffer {
     protected int width;
     protected int height;
     protected RenderbufferFormat format;
     
-    public int getWidth() {
+    @Override
+    public final int getWidth() {
         return this.width;
     }
     
-    public int getHeight() {
+    @Override
+    public final int getHeight() {
         return this.height;
     }
     
-    public RenderbufferFormat getFormat() {
+    @Override
+    public final RenderbufferFormat getFormat() {
         return this.format;
     }
     
