@@ -3,19 +3,16 @@
  * To change this template file, choose Tools | Templates
  * and open the template in the editor.
  */
-package com.longlinkislong.gloop2;
+package com.longlinkislong.gloop2.glimpl;
+
+import com.longlinkislong.gloop2.AbstractImage2D;
 
 /**
  *
  * @author zmichaels
  */
-public enum ImageFormat {
-    RED,
-    RG,
-    RGB,
-    BGR,
-    RGBA,
-    BGRA,
-    DEPTH_COMPONENT,
-    STENCIL_INDEX
+public final class GL45Image2D extends AbstractImage2D {
+    int level;
+    int parentId;
+    long handle;
 }

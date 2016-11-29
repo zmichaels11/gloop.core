@@ -25,10 +25,27 @@ public final class GLObjectFactoryManager {
     
     //TODO: do a selector
     private final AbstractBufferFactory bufferFactory = new GL45BufferFactory();
+    private AbstractTexture2DFactory<?> textureFactory;
+    private AbstractSampler2DFactory<?> sampler2DFactory;
+    private AbstractImage2DFactory<?> image2DFactory;
+    
+    public AbstractImage2DFactory<?> getImage2DFactory() {
+        return this.image2DFactory;
+    }
+    
+    public AbstractSampler2DFactory<?> getSampler2DFactory() {
+        return this.sampler2DFactory;
+    }
+    
+    public AbstractTexture2DFactory<?> getTexture2DFactory() {
+        return this.textureFactory;
+    }
     
     public AbstractBuffer allocate(BufferCreateInfo info) {
         return bufferFactory.allocate(info);
     }
+    
+    
     
     protected void free(AbstractBuffer buffer) {
         bufferFactory.free(buffer);

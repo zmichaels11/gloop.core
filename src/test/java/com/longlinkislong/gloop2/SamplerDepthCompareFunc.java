@@ -9,13 +9,14 @@ package com.longlinkislong.gloop2;
  *
  * @author zmichaels
  */
-public enum ImageFormat {
-    RED,
-    RG,
-    RGB,
-    BGR,
-    RGBA,
-    BGRA,
-    DEPTH_COMPONENT,
-    STENCIL_INDEX
+public enum SamplerDepthCompareFunc {
+    LEQUAL,
+    GEQUAL,
+    LESS,
+    GREATER,
+    EQUAL,
+    NOTEQUAL,
+    ALWAYS,
+    NEVER,
+    DEFAULT
 }

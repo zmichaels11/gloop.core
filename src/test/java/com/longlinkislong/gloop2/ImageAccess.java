@@ -12,5 +12,6 @@ package com.longlinkislong.gloop2;
 public enum ImageAccess {
     READ,
     WRITE,
-    READ_WRITE
+    READ_WRITE,
+    DONT_CARE
 }

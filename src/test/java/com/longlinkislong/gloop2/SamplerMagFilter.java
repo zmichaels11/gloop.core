@@ -9,8 +9,8 @@ package com.longlinkislong.gloop2;
  *
  * @author zmichaels
  */
-public enum SamplerWrap {
-    REPEAT,
-    CLAMP_TO_EDGE,
-    MIRROR_REPEAT
+public enum SamplerMagFilter {
+    NEAREST,
+    LINEAR,
+    DEFAULT
 }
