@@ -37,6 +37,7 @@ import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
+import javax.swing.JOptionPane;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.slf4j.Marker;
@@ -58,7 +59,7 @@ public final class ALThread {
     private Device device;
     private boolean isKill = false;
 
-    private transient final ExecutorService internalExecutor = new ThreadPoolExecutor(1, 1, 0L, TimeUnit.MILLISECONDS, new LinkedBlockingQueue<>()) {
+    private transient ExecutorService internalExecutor = new ThreadPoolExecutor(1, 1, 0L, TimeUnit.MILLISECONDS, new LinkedBlockingQueue<>()) {
         @Override
         protected void afterExecute(final Runnable task, final Throwable ex) {
             super.afterExecute(task, ex);
@@ -98,7 +99,14 @@ public final class ALThread {
         } catch (InterruptedException ex) {
             throw new RuntimeException("OpenAL initialization was interrupted!", ex);
         } catch (ExecutionException ex) {
-            throw new RuntimeException("Error while initializing OpenAL!", ex);
+            LOGGER.error("Unable to initialize OpenAL!");
+            LOGGER.debug(ex.getMessage(), ex);
+            
+            final int res = JOptionPane.showConfirmDialog(null, "Unable to initialize OpenAL! Would you like to terminate the application?", "OpenAL Error", JOptionPane.YES_NO_OPTION, JOptionPane.ERROR_MESSAGE);
+            
+            if (res == JOptionPane.YES_OPTION) {                
+                System.exit(1);
+            }            
         } catch (TimeoutException ex) {
             LOGGER.error("Failed to initialize OpenAL in the timelimit. Sound will now be disabled.", ex);
             shutdown();
