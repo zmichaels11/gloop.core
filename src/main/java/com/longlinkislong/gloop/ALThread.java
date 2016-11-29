@@ -37,6 +37,7 @@ import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
+import java.util.concurrent.atomic.AtomicBoolean;
 import javax.swing.JOptionPane;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -56,10 +57,10 @@ public final class ALThread {
     private static final Logger LOGGER = LoggerFactory.getLogger("ALThread");
     private static final transient Map<Thread, ALThread> THREAD_MAP = new HashMap<>(1);
     private transient Thread internalThread = null;
-    private Device device;
-    private boolean isKill = false;
+    private Device device;    
+    private final AtomicBoolean isKill = new AtomicBoolean(false);
 
-    private transient ExecutorService internalExecutor = new ThreadPoolExecutor(1, 1, 0L, TimeUnit.MILLISECONDS, new LinkedBlockingQueue<>()) {
+    private transient final ExecutorService internalExecutor = new ThreadPoolExecutor(1, 1, 0L, TimeUnit.MILLISECONDS, new LinkedBlockingQueue<>()) {
         @Override
         protected void afterExecute(final Runnable task, final Throwable ex) {
             super.afterExecute(task, ex);
@@ -93,7 +94,7 @@ public final class ALThread {
 
     private ALThread() {
         try {
-            Future<?> initTask = this.internalExecutor.submit(this::init);
+            final Future<?> initTask = this.internalExecutor.submit(this::init);
 
             initTask.get(5, TimeUnit.SECONDS);
         } catch (InterruptedException ex) {
@@ -106,7 +107,9 @@ public final class ALThread {
             
             if (res == JOptionPane.YES_OPTION) {                
                 System.exit(1);
-            }            
+            } else {
+                isKill.set(true);
+            }       
         } catch (TimeoutException ex) {
             LOGGER.error("Failed to initialize OpenAL in the timelimit. Sound will now be disabled.", ex);
             shutdown();
@@ -127,8 +130,9 @@ public final class ALThread {
      */
     @SuppressWarnings("unchecked")
     public void shutdown() {
-        if (isKill) {
-            throw new IllegalStateException("ALThread has already shutdown!");
+        if (isKill.get()) {
+            LOGGER.error("Attempted to shutdown OpenAL thread, but OpenAL thread is already shutdown!");
+            return;
         }
 
         try {
@@ -137,12 +141,13 @@ public final class ALThread {
                 device = null;
                 THREAD_MAP.remove(internalThread);
                 internalThread = null;
-                isKill = true;
+                isKill.set(true);
             }).get();
         } catch (InterruptedException ex) {
             throw new RuntimeException("Synchronized task: [ALThread.destroy] was interrupted!", ex);
         } catch (ExecutionException ex) {
-            throw new ALException("Unable to delete ALDevice!", ex);
+            LOGGER.error("An error occurred while attempting to shutdown the OpenAL thread!");
+            LOGGER.debug(ex.getMessage(), ex);
         }
 
         internalExecutor.shutdown();
@@ -155,7 +160,7 @@ public final class ALThread {
      * @since 16.03.21
      */
     public void submitALTask(final ALTask task) {
-        if (!this.isKill) {
+        if (!this.isKill.get()) {
             this.internalExecutor.execute(Objects.requireNonNull(task));
         }
     }
@@ -170,7 +175,7 @@ public final class ALThread {
      * @since 16.03.21
      */
     public <ReturnType> ALFuture<ReturnType> submitALQuery(final ALQuery<ReturnType> query) {
-        if (!this.isKill) {
+        if (!this.isKill.get()) {
             final Future<ReturnType> raw = this.internalExecutor.submit(Objects.requireNonNull(query));
 
             return new ALFuture<>(raw);
