@@ -17,10 +17,7 @@ import com.longlinkislong.gloop2.VertexAttributeFormat;
 import com.longlinkislong.gloop2.vkimpl.VK10Buffer;
 import com.longlinkislong.gloop2.vkimpl.VK10BufferFactory;
 import com.longlinkislong.gloop2.vkimpl.VKThreadContext;
-import com.longlinkislong.gloop2.vkimpl.VK10Program;
 import com.longlinkislong.gloop2.vkimpl.VK10RasterPipeline;
-import com.longlinkislong.gloop2.vkimpl.VK10RenderPass;
-import com.longlinkislong.gloop2.vkimpl.VK10Shader;
 import static org.lwjgl.system.MemoryUtil.*;
 import static org.lwjgl.vulkan.EXTDebugReport.*;
 import static org.lwjgl.vulkan.KHRSwapchain.*;
@@ -55,23 +52,12 @@ import org.lwjgl.vulkan.VkDeviceCreateInfo;
 import org.lwjgl.vulkan.VkDeviceQueueCreateInfo;
 import org.lwjgl.vulkan.VkExtent2D;
 import org.lwjgl.vulkan.VkFramebufferCreateInfo;
-import org.lwjgl.vulkan.VkGraphicsPipelineCreateInfo;
 import org.lwjgl.vulkan.VkImageMemoryBarrier;
 import org.lwjgl.vulkan.VkImageViewCreateInfo;
 import org.lwjgl.vulkan.VkInstance;
 import org.lwjgl.vulkan.VkInstanceCreateInfo;
 import org.lwjgl.vulkan.VkPhysicalDevice;
 import org.lwjgl.vulkan.VkPhysicalDeviceMemoryProperties;
-import org.lwjgl.vulkan.VkPipelineColorBlendAttachmentState;
-import org.lwjgl.vulkan.VkPipelineColorBlendStateCreateInfo;
-import org.lwjgl.vulkan.VkPipelineDepthStencilStateCreateInfo;
-import org.lwjgl.vulkan.VkPipelineDynamicStateCreateInfo;
-import org.lwjgl.vulkan.VkPipelineInputAssemblyStateCreateInfo;
-import org.lwjgl.vulkan.VkPipelineLayoutCreateInfo;
-import org.lwjgl.vulkan.VkPipelineMultisampleStateCreateInfo;
-import org.lwjgl.vulkan.VkPipelineRasterizationStateCreateInfo;
-import org.lwjgl.vulkan.VkPipelineVertexInputStateCreateInfo;
-import org.lwjgl.vulkan.VkPipelineViewportStateCreateInfo;
 import org.lwjgl.vulkan.VkPresentInfoKHR;
 import org.lwjgl.vulkan.VkQueue;
 import org.lwjgl.vulkan.VkQueueFamilyProperties;
@@ -92,9 +78,9 @@ import org.lwjgl.vulkan.VkViewport;
  */
 public class TriangleDemoGloop {
 
-    private static final boolean validation = Boolean.parseBoolean(System.getProperty("vulkan.validation", "false"));
+    private static final boolean VALIDATION = Boolean.parseBoolean(System.getProperty("vulkan.validation", "false"));
 
-    private static ByteBuffer[] layers = {
+    private static final ByteBuffer[] LAYERS = {
         memUTF8("VK_LAYER_LUNARG_standard_validation"),};
 
     /**
@@ -105,52 +91,7 @@ public class TriangleDemoGloop {
     /**
      * This is just -1L, but it is nicer as a symbolic constant.
      */
-    private static final long UINT64_MAX = 0xFFFFFFFFFFFFFFFFL;
-
-    /**
-     * Create a Vulkan instance using LWJGL 3.
-     *
-     * @return the VkInstance handle
-     */
-    private static VkInstance createInstance(PointerBuffer requiredExtensions) {
-        VkApplicationInfo appInfo = VkApplicationInfo.calloc()
-                .sType(VK_STRUCTURE_TYPE_APPLICATION_INFO)
-                .pApplicationName(memUTF8("GLFW Vulkan Demo"))
-                .pEngineName(memUTF8(""))
-                .apiVersion(VK_MAKE_VERSION(1, 0, 2));
-        PointerBuffer ppEnabledExtensionNames = memAllocPointer(requiredExtensions.remaining() + 1);
-        ppEnabledExtensionNames.put(requiredExtensions);
-        ByteBuffer VK_EXT_DEBUG_REPORT_EXTENSION = memUTF8(VK_EXT_DEBUG_REPORT_EXTENSION_NAME);
-        ppEnabledExtensionNames.put(VK_EXT_DEBUG_REPORT_EXTENSION);
-        ppEnabledExtensionNames.flip();
-        PointerBuffer ppEnabledLayerNames = memAllocPointer(layers.length);
-        for (int i = 0; validation && i < layers.length; i++) {
-            ppEnabledLayerNames.put(layers[i]);
-        }
-        ppEnabledLayerNames.flip();
-        VkInstanceCreateInfo pCreateInfo = VkInstanceCreateInfo.calloc()
-                .sType(VK_STRUCTURE_TYPE_INSTANCE_CREATE_INFO)
-                .pNext(NULL)
-                .pApplicationInfo(appInfo)
-                .ppEnabledExtensionNames(ppEnabledExtensionNames)
-                .ppEnabledLayerNames(ppEnabledLayerNames);
-        PointerBuffer pInstance = memAllocPointer(1);
-        int err = vkCreateInstance(pCreateInfo, null, pInstance);
-        long instance = pInstance.get(0);
-        memFree(pInstance);
-        if (err != VK_SUCCESS) {
-            throw new AssertionError("Failed to create VkInstance: " + translateVulkanResult(err));
-        }
-        VkInstance ret = new VkInstance(instance, pCreateInfo);
-        pCreateInfo.free();
-        memFree(ppEnabledLayerNames);
-        memFree(VK_EXT_DEBUG_REPORT_EXTENSION);
-        memFree(ppEnabledExtensionNames);
-        memFree(appInfo.pApplicationName());
-        memFree(appInfo.pEngineName());
-        appInfo.free();
-        return ret;
-    }
+    private static final long UINT64_MAX = 0xFFFFFFFFFFFFFFFFL;    
 
     private static long setupDebugging(VkInstance instance, int flags, VkDebugReportCallbackEXT callback) {
         VkDebugReportCallbackCreateInfoEXT dbgCreateInfo = VkDebugReportCallbackCreateInfoEXT.calloc()
@@ -168,24 +109,7 @@ public class TriangleDemoGloop {
             throw new AssertionError("Failed to create VkInstance: " + translateVulkanResult(err));
         }
         return callbackHandle;
-    }
-
-    private static VkPhysicalDevice getFirstPhysicalDevice(VkInstance instance) {
-        IntBuffer pPhysicalDeviceCount = memAllocInt(1);
-        int err = vkEnumeratePhysicalDevices(instance, pPhysicalDeviceCount, null);
-        if (err != VK_SUCCESS) {
-            throw new AssertionError("Failed to get number of physical devices: " + translateVulkanResult(err));
-        }
-        PointerBuffer pPhysicalDevices = memAllocPointer(pPhysicalDeviceCount.get(0));
-        err = vkEnumeratePhysicalDevices(instance, pPhysicalDeviceCount, pPhysicalDevices);
-        long physicalDevice = pPhysicalDevices.get(0);
-        memFree(pPhysicalDeviceCount);
-        memFree(pPhysicalDevices);
-        if (err != VK_SUCCESS) {
-            throw new AssertionError("Failed to get physical devices: " + translateVulkanResult(err));
-        }
-        return new VkPhysicalDevice(physicalDevice, instance);
-    }
+    }    
 
     private static class DeviceAndGraphicsQueueFamily {
 
@@ -194,67 +118,7 @@ public class TriangleDemoGloop {
         VkPhysicalDeviceMemoryProperties memoryProperties;
     }
 
-    private static DeviceAndGraphicsQueueFamily createDeviceAndGetGraphicsQueueFamily(VkPhysicalDevice physicalDevice) {
-        IntBuffer pQueueFamilyPropertyCount = memAllocInt(1);
-        vkGetPhysicalDeviceQueueFamilyProperties(physicalDevice, pQueueFamilyPropertyCount, null);
-        int queueCount = pQueueFamilyPropertyCount.get(0);
-        VkQueueFamilyProperties.Buffer queueProps = VkQueueFamilyProperties.calloc(queueCount);
-        vkGetPhysicalDeviceQueueFamilyProperties(physicalDevice, pQueueFamilyPropertyCount, queueProps);
-        memFree(pQueueFamilyPropertyCount);
-        int graphicsQueueFamilyIndex;
-        for (graphicsQueueFamilyIndex = 0; graphicsQueueFamilyIndex < queueCount; graphicsQueueFamilyIndex++) {
-            if ((queueProps.get(graphicsQueueFamilyIndex).queueFlags() & VK_QUEUE_GRAPHICS_BIT) != 0) {
-                break;
-            }
-        }
-        queueProps.free();
-        FloatBuffer pQueuePriorities = memAllocFloat(1).put(0.0f);
-        pQueuePriorities.flip();
-        VkDeviceQueueCreateInfo.Buffer queueCreateInfo = VkDeviceQueueCreateInfo.calloc(1)
-                .sType(VK_STRUCTURE_TYPE_DEVICE_QUEUE_CREATE_INFO)
-                .queueFamilyIndex(graphicsQueueFamilyIndex)
-                .pQueuePriorities(pQueuePriorities);
-
-        PointerBuffer extensions = memAllocPointer(1);
-        ByteBuffer VK_KHR_SWAPCHAIN_EXTENSION = memUTF8(VK_KHR_SWAPCHAIN_EXTENSION_NAME);
-        extensions.put(VK_KHR_SWAPCHAIN_EXTENSION);
-        extensions.flip();
-        PointerBuffer ppEnabledLayerNames = memAllocPointer(layers.length);
-        for (int i = 0; validation && i < layers.length; i++) {
-            ppEnabledLayerNames.put(layers[i]);
-        }
-        ppEnabledLayerNames.flip();
-
-        VkDeviceCreateInfo deviceCreateInfo = VkDeviceCreateInfo.calloc()
-                .sType(VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO)
-                .pNext(NULL)
-                .pQueueCreateInfos(queueCreateInfo)
-                .ppEnabledExtensionNames(extensions)
-                .ppEnabledLayerNames(ppEnabledLayerNames);
-
-        PointerBuffer pDevice = memAllocPointer(1);
-        int err = vkCreateDevice(physicalDevice, deviceCreateInfo, null, pDevice);
-        long device = pDevice.get(0);
-        memFree(pDevice);
-        if (err != VK_SUCCESS) {
-            throw new AssertionError("Failed to create device: " + translateVulkanResult(err));
-        }
-
-        VkPhysicalDeviceMemoryProperties memoryProperties = VkPhysicalDeviceMemoryProperties.calloc();
-        vkGetPhysicalDeviceMemoryProperties(physicalDevice, memoryProperties);
-
-        DeviceAndGraphicsQueueFamily ret = new DeviceAndGraphicsQueueFamily();
-        ret.device = new VkDevice(device, physicalDevice, deviceCreateInfo);
-        ret.queueFamilyIndex = graphicsQueueFamilyIndex;
-        ret.memoryProperties = memoryProperties;
-
-        deviceCreateInfo.free();
-        memFree(ppEnabledLayerNames);
-        memFree(VK_KHR_SWAPCHAIN_EXTENSION);
-        memFree(extensions);
-        memFree(pQueuePriorities);
-        return ret;
-    }
+    
 
     private static class ColorFormatAndSpace {
 
@@ -880,7 +744,7 @@ public class TriangleDemoGloop {
         }
 
         // Create the Vulkan instance
-        final VkInstance instance = createInstance(requiredExtensions);
+        final VkInstance instance = VKThreadContext.createInstance(requiredExtensions);
         final VkDebugReportCallbackEXT debugCallback = new VkDebugReportCallbackEXT() {
             public int invoke(int flags, int objectType, long object, long location, int messageCode, long pLayerPrefix, long pMessage, long pUserData) {
                 System.err.println("ERROR OCCURED: " + VkDebugReportCallbackEXT.getString(pMessage));
@@ -888,8 +752,9 @@ public class TriangleDemoGloop {
             }
         };
         final long debugCallbackHandle = setupDebugging(instance, VK_DEBUG_REPORT_ERROR_BIT_EXT | VK_DEBUG_REPORT_WARNING_BIT_EXT, debugCallback);
-        final VkPhysicalDevice physicalDevice = getFirstPhysicalDevice(instance);
-        final DeviceAndGraphicsQueueFamily deviceAndGraphicsQueueFamily = createDeviceAndGetGraphicsQueueFamily(physicalDevice);
+        final VkPhysicalDevice physicalDevice = VKThreadContext.getPhysicalDevice(instance, 0);
+        final int graphicsQueueIndex = VKThreadContext.getGraphicsQueueIndex(physicalDevice);
+        final VKThreadContext.DeviceInfo deviceAndGraphicsQueueFamily = VKThreadContext.createDevice(physicalDevice, graphicsQueueIndex, Arrays.asList(VK_KHR_SWAPCHAIN_EXTENSION_NAME));
         final VkDevice device = deviceAndGraphicsQueueFamily.device;
 
         // bind the device context to the current thread...
