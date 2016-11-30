@@ -14,6 +14,7 @@ import com.longlinkislong.gloop2.ShaderType;
 import com.longlinkislong.gloop2.VertexInputs;
 import com.longlinkislong.gloop2.VertexAttribute;
 import com.longlinkislong.gloop2.VertexAttributeFormat;
+import com.longlinkislong.gloop2.vkimpl.CommandPool;
 import com.longlinkislong.gloop2.vkimpl.VK10Buffer;
 import com.longlinkislong.gloop2.vkimpl.VK10BufferFactory;
 import com.longlinkislong.gloop2.vkimpl.VK10RasterPipeline;
@@ -198,23 +199,6 @@ public class TriangleDemoGloop {
         long queue = pQueue.get(0);
         memFree(pQueue);
         return new VkQueue(queue, device);
-    }
-
-    private static VkCommandBuffer createCommandBuffer(VkDevice device, long commandPool) {
-        VkCommandBufferAllocateInfo cmdBufAllocateInfo = VkCommandBufferAllocateInfo.calloc()
-                .sType(VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO)
-                .commandPool(commandPool)
-                .level(VK_COMMAND_BUFFER_LEVEL_PRIMARY)
-                .commandBufferCount(1);
-        PointerBuffer pCommandBuffer = memAllocPointer(1);
-        int err = vkAllocateCommandBuffers(device, cmdBufAllocateInfo, pCommandBuffer);
-        cmdBufAllocateInfo.free();
-        long commandBuffer = pCommandBuffer.get(0);
-        memFree(pCommandBuffer);
-        if (err != VK_SUCCESS) {
-            throw new AssertionError("Failed to allocate command buffer: " + translateVulkanResult(err));
-        }
-        return new VkCommandBuffer(commandBuffer, device);
     }
 
     private static void imageBarrier(VkCommandBuffer cmdbuffer, long image, int aspectMask, int oldImageLayout, int srcAccess, int newImageLayout, int dstAccess) {
@@ -495,23 +479,9 @@ public class TriangleDemoGloop {
 
     private static VkCommandBuffer[] createRenderCommandBuffers(VkDevice device, long commandPool, long[] framebuffers, long renderPass, int width, int height,
             long pipeline, Buffer verticesBuf) {
-        // Create the render command buffers (one command buffer per framebuffer image)
-        VkCommandBufferAllocateInfo cmdBufAllocateInfo = VkCommandBufferAllocateInfo.calloc()
-                .sType(VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO)
-                .commandPool(commandPool)
-                .level(VK_COMMAND_BUFFER_LEVEL_PRIMARY)
-                .commandBufferCount(framebuffers.length);
-        PointerBuffer pCommandBuffer = memAllocPointer(framebuffers.length);
-        int err = vkAllocateCommandBuffers(device, cmdBufAllocateInfo, pCommandBuffer);
-        if (err != VK_SUCCESS) {
-            throw new AssertionError("Failed to allocate render command buffer: " + translateVulkanResult(err));
-        }
-        VkCommandBuffer[] renderCommandBuffers = new VkCommandBuffer[framebuffers.length];
-        for (int i = 0; i < framebuffers.length; i++) {
-            renderCommandBuffers[i] = new VkCommandBuffer(pCommandBuffer.get(i), device);
-        }
-        memFree(pCommandBuffer);
-        cmdBufAllocateInfo.free();
+        
+        VkCommandBuffer[] renderCommandBuffers = VKThreadConstants.getInstance().device.getFirstGraphicsCommandPool().newCommandBuffers(framebuffers.length);
+        int err;
 
         // Create the command buffer begin structure
         VkCommandBufferBeginInfo cmdBufInfo = VkCommandBufferBeginInfo.calloc()
@@ -745,11 +715,10 @@ public class TriangleDemoGloop {
 
         // Create static Vulkan resources
         final ColorFormatAndSpace colorFormatAndSpace = getColorFormatAndSpace(physicalDevice, surface);
-        final long commandPool = VKThreadConstants.getInstance().device.getFirstGraphicsCommandPool().id;
-        final VkCommandBuffer setupCommandBuffer = createCommandBuffer(device, commandPool);
-        final VkCommandBuffer postPresentCommandBuffer = createCommandBuffer(device, commandPool);
-        final VkQueue queue = createDeviceQueue(device, queueFamilyIndex);
-        //final long renderCommandPool = createCommandPool(device, queueFamilyIndex);
+        final CommandPool commandPool = VKThreadConstants.getInstance().device.getFirstGraphicsCommandPool();
+        final VkCommandBuffer setupCommandBuffer = commandPool.newCommandBuffer();
+        final VkCommandBuffer postPresentCommandBuffer = commandPool.newCommandBuffer();
+        final VkQueue queue = createDeviceQueue(device, queueFamilyIndex);        
         final Vertices vertices = createVertices(memoryProperties, device);
 
         final RasterPipeline pipeline = new RasterPipelineCreateInfo()
@@ -802,9 +771,9 @@ public class TriangleDemoGloop {
                 framebuffers = createFramebuffers(device, swapchain, renderPass.id, width, height);
                 // Create render command buffers
                 if (renderCommandBuffers != null) {
-                    vkResetCommandPool(device, commandPool, VK_FLAGS_NONE);
+                    vkResetCommandPool(device, commandPool.id, VK_FLAGS_NONE);
                 }
-                renderCommandBuffers = createRenderCommandBuffers(device, commandPool, framebuffers, renderPass.id, width, height, ((VK10RasterPipeline) pipeline).pipeline,
+                renderCommandBuffers = createRenderCommandBuffers(device, commandPool.id, framebuffers, renderPass.id, width, height, ((VK10RasterPipeline) pipeline).pipeline,
                         vertices.buffer);
 
                 mustRecreate = false;

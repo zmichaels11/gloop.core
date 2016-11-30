@@ -6,9 +6,12 @@
 package com.longlinkislong.gloop2.vkimpl;
 
 import java.nio.LongBuffer;
+import org.lwjgl.PointerBuffer;
 import static org.lwjgl.demo.vulkan.VKUtil.translateVulkanResult;
 import org.lwjgl.system.MemoryStack;
 import org.lwjgl.vulkan.VK10;
+import org.lwjgl.vulkan.VkCommandBuffer;
+import org.lwjgl.vulkan.VkCommandBufferAllocateInfo;
 import org.lwjgl.vulkan.VkCommandPoolCreateInfo;
 import org.lwjgl.vulkan.VkDevice;
 
@@ -34,6 +37,52 @@ public final class CommandPool {
             }
             
             this.id = pCmdPool.get(0);
+        }
+    }
+    
+    public VkCommandBuffer newCommandBuffer() {
+        try (MemoryStack stack = MemoryStack.stackPush()) {
+            final VkCommandBufferAllocateInfo cmdBufAllocateInfo = VkCommandBufferAllocateInfo.callocStack(stack)
+                    .sType(VK10.VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO)
+                    .commandPool(id)
+                    .level(VK10.VK_COMMAND_BUFFER_LEVEL_PRIMARY)
+                    .commandBufferCount(1);
+            
+            final VkDevice device = VKThreadConstants.getInstance().device.vkDevice;
+            final PointerBuffer pCommandBuffer = stack.callocPointer(1);
+            final int err = VK10.vkAllocateCommandBuffers(device, cmdBufAllocateInfo, pCommandBuffer);
+            
+            if (err != VK10.VK_SUCCESS) {
+                throw new AssertionError("Failed to allocate command buffer: " + translateVulkanResult(err));
+            }
+            
+            return new VkCommandBuffer(pCommandBuffer.get(0), device);
+        }
+    }
+    
+    public VkCommandBuffer[] newCommandBuffers(final int count) {
+        try (MemoryStack stack = MemoryStack.stackPush()) {
+            final VkCommandBufferAllocateInfo cmdBufAllocateInfo = VkCommandBufferAllocateInfo.callocStack(stack)
+                    .sType(VK10.VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO)
+                    .commandPool(id)
+                    .level(VK10.VK_COMMAND_BUFFER_LEVEL_PRIMARY)
+                    .commandBufferCount(count);
+            
+            final VkDevice device = VKThreadConstants.getInstance().device.vkDevice;
+            final PointerBuffer pCommandBuffer = stack.callocPointer(count);
+            final int err = VK10.vkAllocateCommandBuffers(device, cmdBufAllocateInfo, pCommandBuffer);
+            
+            if (err != VK10.VK_SUCCESS) {
+                throw new AssertionError("Failed to allocate command buffers: " + translateVulkanResult(err));
+            }
+            
+            final VkCommandBuffer[] out = new VkCommandBuffer[count];
+            
+            for (int i = 0; i < count; i++) {
+                out[i] = new VkCommandBuffer(pCommandBuffer.get(i), device);
+            }
+            
+            return out;
         }
     }
 }
