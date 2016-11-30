@@ -33,9 +33,9 @@ import org.slf4j.LoggerFactory;
  *
  * @author zmichaels
  */
-public final class VkGlobalConstants {
+public final class VKGlobalConstants {
     public static final List<String> LAYERS = new ArrayList<>();
-    private static final Logger LOGGER = LoggerFactory.getLogger(VkGlobalConstants.class);
+    private static final Logger LOGGER = LoggerFactory.getLogger(VKGlobalConstants.class);
     
     public final String appName = System.getProperty("com.longlinkislong.gloop2.app_name", "GLOOP_TEST");
     public final String engineName = System.getProperty("com.longlinkislong.gloop2.engine_name", "");
@@ -110,7 +110,7 @@ public final class VkGlobalConstants {
         }
     }
     
-    private VkGlobalConstants() {
+    private VKGlobalConstants() {
         this.instance = this.createInstance();
         this.debugCallbackHandle = this.setupDebug();
     }
@@ -124,10 +124,10 @@ public final class VkGlobalConstants {
     }
     
     private static final class Holder {
-        private static final VkGlobalConstants INSTANCE = new VkGlobalConstants();
+        private static final VKGlobalConstants INSTANCE = new VKGlobalConstants();
     }
     
-    public static VkGlobalConstants getInstance() {
+    public static VKGlobalConstants getInstance() {
         return Holder.INSTANCE;
     }
     

@@ -162,11 +162,7 @@ public class VKThreadConstants {
         this.device = device;
     }
     
-    private final VkDevice device;
-
-    public VkDevice getDevice() {
-        return this.device;
-    }
+    public final VkDevice device;    
 
     public static VKThreadConstants getInstance() {
         return INSTANCES.get();

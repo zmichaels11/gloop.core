@@ -18,7 +18,7 @@ import com.longlinkislong.gloop2.vkimpl.VK10Buffer;
 import com.longlinkislong.gloop2.vkimpl.VK10BufferFactory;
 import com.longlinkislong.gloop2.vkimpl.VKThreadConstants;
 import com.longlinkislong.gloop2.vkimpl.VK10RasterPipeline;
-import com.longlinkislong.gloop2.vkimpl.VkGlobalConstants;
+import com.longlinkislong.gloop2.vkimpl.VKGlobalConstants;
 import static org.lwjgl.system.MemoryUtil.*;
 import static org.lwjgl.vulkan.EXTDebugReport.*;
 import static org.lwjgl.vulkan.KHRSwapchain.*;
@@ -92,16 +92,7 @@ public class TriangleDemoGloop {
     /**
      * This is just -1L, but it is nicer as a symbolic constant.
      */
-    private static final long UINT64_MAX = 0xFFFFFFFFFFFFFFFFL;
-
-    private static class DeviceAndGraphicsQueueFamily {
-
-        VkDevice device;
-        int queueFamilyIndex;
-        VkPhysicalDeviceMemoryProperties memoryProperties;
-    }
-
-    
+    private static final long UINT64_MAX = 0xFFFFFFFFFFFFFFFFL;    
 
     private static class ColorFormatAndSpace {
 
@@ -727,7 +718,7 @@ public class TriangleDemoGloop {
         }
 
         // Create the Vulkan instance
-        final VkInstance instance = VkGlobalConstants.getInstance().instance;        
+        final VkInstance instance = VKGlobalConstants.getInstance().instance;        
         final VkPhysicalDevice physicalDevice = VKThreadConstants.getPhysicalDevice(instance, 0);
         final int graphicsQueueIndex = VKThreadConstants.getGraphicsQueueIndex(physicalDevice);
         final VKThreadConstants.DeviceInfo deviceAndGraphicsQueueFamily = VKThreadConstants.createDevice(physicalDevice, graphicsQueueIndex, Arrays.asList(VK_KHR_SWAPCHAIN_EXTENSION_NAME));
