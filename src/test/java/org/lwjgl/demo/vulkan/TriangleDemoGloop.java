@@ -7,6 +7,8 @@ package org.lwjgl.demo.vulkan;
 import com.longlinkislong.gloop2.Buffer;
 import com.longlinkislong.gloop2.BufferCreateInfo;
 import com.longlinkislong.gloop2.ObjectFactoryManager;
+import com.longlinkislong.gloop2.ShaderCreateInfo;
+import com.longlinkislong.gloop2.ShaderType;
 import com.longlinkislong.gloop2.VertexArrayCreateInfo;
 import com.longlinkislong.gloop2.VertexAttribute;
 import com.longlinkislong.gloop2.VertexAttributeFormat;
@@ -14,7 +16,9 @@ import com.longlinkislong.gloop2.vkimpl.VK10Buffer;
 import com.longlinkislong.gloop2.vkimpl.VK10BufferFactory;
 import com.longlinkislong.gloop2.vkimpl.VKThreadContext;
 import com.longlinkislong.gloop2.vkimpl.VK10PipelineFactory;
+import com.longlinkislong.gloop2.vkimpl.VK10Program;
 import com.longlinkislong.gloop2.vkimpl.VK10RenderPass;
+import com.longlinkislong.gloop2.vkimpl.VK10Shader;
 import static org.lwjgl.system.MemoryUtil.*;
 import static org.lwjgl.vulkan.EXTDebugReport.*;
 import static org.lwjgl.vulkan.KHRSwapchain.*;
@@ -23,13 +27,13 @@ import static org.lwjgl.vulkan.VK10.*;
 import static org.lwjgl.demo.vulkan.VKUtil.*;
 import static org.lwjgl.glfw.GLFW.*;
 import static org.lwjgl.glfw.GLFWVulkan.*;
-import static org.lwjgl.demo.opengl.util.DemoUtils.*;
 
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.FloatBuffer;
 import java.nio.IntBuffer;
 import java.nio.LongBuffer;
+import java.util.Arrays;
 import org.junit.Test;
 
 import org.lwjgl.PointerBuffer;
@@ -64,7 +68,6 @@ import org.lwjgl.vulkan.VkPipelineInputAssemblyStateCreateInfo;
 import org.lwjgl.vulkan.VkPipelineLayoutCreateInfo;
 import org.lwjgl.vulkan.VkPipelineMultisampleStateCreateInfo;
 import org.lwjgl.vulkan.VkPipelineRasterizationStateCreateInfo;
-import org.lwjgl.vulkan.VkPipelineShaderStageCreateInfo;
 import org.lwjgl.vulkan.VkPipelineVertexInputStateCreateInfo;
 import org.lwjgl.vulkan.VkPipelineViewportStateCreateInfo;
 import org.lwjgl.vulkan.VkPresentInfoKHR;
@@ -73,7 +76,6 @@ import org.lwjgl.vulkan.VkQueueFamilyProperties;
 import org.lwjgl.vulkan.VkRect2D;
 import org.lwjgl.vulkan.VkRenderPassBeginInfo;
 import org.lwjgl.vulkan.VkSemaphoreCreateInfo;
-import org.lwjgl.vulkan.VkShaderModuleCreateInfo;
 import org.lwjgl.vulkan.VkSubmitInfo;
 import org.lwjgl.vulkan.VkSurfaceCapabilitiesKHR;
 import org.lwjgl.vulkan.VkSurfaceFormatKHR;
@@ -81,8 +83,9 @@ import org.lwjgl.vulkan.VkSwapchainCreateInfoKHR;
 import org.lwjgl.vulkan.VkViewport;
 
 /**
- * Renders a simple triangle on a cornflower blue background on a GLFW window with Vulkan.
- * 
+ * Renders a simple triangle on a cornflower blue background on a GLFW window
+ * with Vulkan.
+ *
  * @author Kai Burjack
  */
 public class TriangleDemoGloop {
@@ -90,8 +93,7 @@ public class TriangleDemoGloop {
     private static final boolean validation = Boolean.parseBoolean(System.getProperty("vulkan.validation", "false"));
 
     private static ByteBuffer[] layers = {
-            memUTF8("VK_LAYER_LUNARG_standard_validation"),
-    };
+        memUTF8("VK_LAYER_LUNARG_standard_validation"),};
 
     /**
      * Remove if added to spec.
@@ -105,7 +107,7 @@ public class TriangleDemoGloop {
 
     /**
      * Create a Vulkan instance using LWJGL 3.
-     * 
+     *
      * @return the VkInstance handle
      */
     private static VkInstance createInstance(PointerBuffer requiredExtensions) {
@@ -120,8 +122,9 @@ public class TriangleDemoGloop {
         ppEnabledExtensionNames.put(VK_EXT_DEBUG_REPORT_EXTENSION);
         ppEnabledExtensionNames.flip();
         PointerBuffer ppEnabledLayerNames = memAllocPointer(layers.length);
-        for (int i = 0; validation && i < layers.length; i++)
+        for (int i = 0; validation && i < layers.length; i++) {
             ppEnabledLayerNames.put(layers[i]);
+        }
         ppEnabledLayerNames.flip();
         VkInstanceCreateInfo pCreateInfo = VkInstanceCreateInfo.calloc()
                 .sType(VK_STRUCTURE_TYPE_INSTANCE_CREATE_INFO)
@@ -183,6 +186,7 @@ public class TriangleDemoGloop {
     }
 
     private static class DeviceAndGraphicsQueueFamily {
+
         VkDevice device;
         int queueFamilyIndex;
         VkPhysicalDeviceMemoryProperties memoryProperties;
@@ -197,8 +201,9 @@ public class TriangleDemoGloop {
         memFree(pQueueFamilyPropertyCount);
         int graphicsQueueFamilyIndex;
         for (graphicsQueueFamilyIndex = 0; graphicsQueueFamilyIndex < queueCount; graphicsQueueFamilyIndex++) {
-            if ((queueProps.get(graphicsQueueFamilyIndex).queueFlags() & VK_QUEUE_GRAPHICS_BIT) != 0)
+            if ((queueProps.get(graphicsQueueFamilyIndex).queueFlags() & VK_QUEUE_GRAPHICS_BIT) != 0) {
                 break;
+            }
         }
         queueProps.free();
         FloatBuffer pQueuePriorities = memAllocFloat(1).put(0.0f);
@@ -213,8 +218,9 @@ public class TriangleDemoGloop {
         extensions.put(VK_KHR_SWAPCHAIN_EXTENSION);
         extensions.flip();
         PointerBuffer ppEnabledLayerNames = memAllocPointer(layers.length);
-        for (int i = 0; validation && i < layers.length; i++)
+        for (int i = 0; validation && i < layers.length; i++) {
             ppEnabledLayerNames.put(layers[i]);
+        }
         ppEnabledLayerNames.flip();
 
         VkDeviceCreateInfo deviceCreateInfo = VkDeviceCreateInfo.calloc()
@@ -249,6 +255,7 @@ public class TriangleDemoGloop {
     }
 
     private static class ColorFormatAndSpace {
+
         int colorFormat;
         int colorSpace;
     }
@@ -401,7 +408,7 @@ public class TriangleDemoGloop {
         // Put barrier on top
         int srcStageFlags = VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT;
         int destStageFlags = VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT;
-        
+
         // Put barrier inside setup command buffer
         vkCmdPipelineBarrier(cmdbuffer, srcStageFlags, destStageFlags, VK_FLAGS_NONE,
                 null, // no memory barriers
@@ -411,6 +418,7 @@ public class TriangleDemoGloop {
     }
 
     private static class Swapchain {
+
         long swapchainHandle;
         long[] images;
         long[] imageViews;
@@ -569,7 +577,7 @@ public class TriangleDemoGloop {
         ret.swapchainHandle = swapChain;
         return ret;
     }
-    
+
     private static long[] createFramebuffers(VkDevice device, Swapchain swapchain, long renderPass, int width, int height) {
         LongBuffer attachments = memAllocLong(1);
         VkFramebufferCreateInfo fci = VkFramebufferCreateInfo.calloc()
@@ -600,8 +608,9 @@ public class TriangleDemoGloop {
     }
 
     private static void submitCommandBuffer(VkQueue queue, VkCommandBuffer commandBuffer) {
-        if (commandBuffer == null || commandBuffer.address() == NULL)
+        if (commandBuffer == null || commandBuffer.address() == NULL) {
             return;
+        }
         VkSubmitInfo submitInfo = VkSubmitInfo.calloc()
                 .sType(VK_STRUCTURE_TYPE_SUBMIT_INFO);
         PointerBuffer pCommandBuffers = memAllocPointer(1)
@@ -616,34 +625,8 @@ public class TriangleDemoGloop {
         }
     }
 
-    private static long loadShader(String classPath, VkDevice device) throws IOException {
-        ByteBuffer shaderCode = ioResourceToByteBuffer(classPath, 1024);
-        int err;
-        VkShaderModuleCreateInfo moduleCreateInfo = VkShaderModuleCreateInfo.calloc()
-                .sType(VK_STRUCTURE_TYPE_SHADER_MODULE_CREATE_INFO)
-                .pNext(NULL)
-                .pCode(shaderCode)
-                .flags(0);
-        LongBuffer pShaderModule = memAllocLong(1);
-        err = vkCreateShaderModule(device, moduleCreateInfo, null, pShaderModule);
-        long shaderModule = pShaderModule.get(0);
-        memFree(pShaderModule);
-        if (err != VK_SUCCESS) {
-            throw new AssertionError("Failed to create shader module: " + translateVulkanResult(err));
-        }
-        return shaderModule;
-    }
-
-    private static VkPipelineShaderStageCreateInfo loadShader(VkDevice device, String classPath, int stage) throws IOException {
-        VkPipelineShaderStageCreateInfo shaderStage = VkPipelineShaderStageCreateInfo.calloc()
-                .sType(VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO)
-                .stage(stage)
-                .module(loadShader(classPath, device))
-                .pName(memUTF8("main"));
-        return shaderStage;
-    }    
-
     private static class Vertices {
+
         Buffer buffer;
         VertexArrayCreateInfo vertexArrayInput;
     }
@@ -653,31 +636,31 @@ public class TriangleDemoGloop {
         VK10BufferFactory.DEVICE = device;
         VK10BufferFactory.deviceMemoryProperties = deviceMemoryProperties;
         ObjectFactoryManager.getInstance().initVK10();
-        
+
         final Buffer out = new BufferCreateInfo()
-                .withSize(Float.BYTES * 6)                
+                .withSize(Float.BYTES * 6)
                 .allocate();
-        
+
         out.map();
         final FloatBuffer fb = out.getMappedBuffer().asFloatBuffer();
-                                
+
         // The triangle will showup upside-down, because Vulkan does not do proper viewport transformation to
         // account for inverted Y axis between the window coordinate system and clip space/NDC
         fb.put(-0.5f).put(-0.5f);
-        fb.put( 0.5f).put(-0.5f);
-        fb.put( 0.0f).put( 0.5f);
-        
-        out.unmap();                        
+        fb.put(0.5f).put(-0.5f);
+        fb.put(0.0f).put(0.5f);
+
+        out.unmap();
 
         Vertices ret = new Vertices();
         ret.vertexArrayInput = new VertexArrayCreateInfo()
                 .withAttribute(new VertexAttribute()
                         .withBuffer(out)
-                        .withStride(2 * 4)                        
+                        .withStride(2 * 4)
                         .withFormat(VertexAttributeFormat.XY_32F)
                 );
         ret.buffer = out;
-        
+
         return ret;
     }
 
@@ -702,7 +685,7 @@ public class TriangleDemoGloop {
         // Color blend state
         // Describes blend modes and color masks
         VkPipelineColorBlendAttachmentState.Buffer colorWriteMask = VkPipelineColorBlendAttachmentState.calloc(1)
-                .blendEnable(VK_FALSE)                
+                .blendEnable(VK_FALSE)
                 .colorWriteMask(0xF); // <- RGBA
         VkPipelineColorBlendStateCreateInfo colorBlendState = VkPipelineColorBlendStateCreateInfo.calloc()
                 .sType(VK_STRUCTURE_TYPE_PIPELINE_COLOR_BLEND_STATE_CREATE_INFO)
@@ -750,9 +733,16 @@ public class TriangleDemoGloop {
                 .rasterizationSamples(VK_SAMPLE_COUNT_1_BIT);
 
         // Load shaders
-        VkPipelineShaderStageCreateInfo.Buffer shaderStages = VkPipelineShaderStageCreateInfo.calloc(2);
-        shaderStages.get(0).set(loadShader(device, "org/lwjgl/demo/vulkan/triangle.vert.spv", VK_SHADER_STAGE_VERTEX_BIT));
-        shaderStages.get(1).set(loadShader(device, "org/lwjgl/demo/vulkan/triangle.frag.spv", VK_SHADER_STAGE_FRAGMENT_BIT));
+        final VK10Program program = new VK10Program(Arrays.asList(
+                (VK10Shader) new ShaderCreateInfo()
+                        .withType(ShaderType.VERTEX)
+                        .withSource("org/lwjgl/demo/vulkan/triangle.vert.spv")
+                        .allocate(),
+                (VK10Shader) new ShaderCreateInfo()
+                        .withType(ShaderType.FRAGMENT)
+                        .withSource("org/lwjgl/demo/vulkan/triangle.frag.spv")
+                        .allocate()
+        ));
 
         // Create the pipeline layout that is used to generate the rendering pipelines that
         // are based on this descriptor set layout
@@ -782,14 +772,14 @@ public class TriangleDemoGloop {
                 .pMultisampleState(multisampleState)
                 .pViewportState(viewportState)
                 .pDepthStencilState(depthStencilState)
-                .pStages(shaderStages)
+                .pStages(program.createInfo)
                 .pDynamicState(dynamicState);
 
         // Create rendering pipeline
         LongBuffer pPipelines = memAllocLong(1);
         err = vkCreateGraphicsPipelines(device, VK_NULL_HANDLE, pipelineCreateInfo, null, pPipelines);
         long pipeline = pPipelines.get(0);
-        shaderStages.free();
+        program.free();
         multisampleState.free();
         depthStencilState.free();
         dynamicState.free();
@@ -804,7 +794,7 @@ public class TriangleDemoGloop {
         }
         return pipeline;
     }
-    
+
     private static VkCommandBuffer[] createRenderCommandBuffers(VkDevice device, long commandPool, long[] framebuffers, long renderPass, int width, int height,
             long pipeline, Buffer verticesBuf) {
         // Create the render command buffers (one command buffer per framebuffer image)
@@ -833,9 +823,9 @@ public class TriangleDemoGloop {
         // Specify clear color (cornflower blue)
         VkClearValue.Buffer clearValues = VkClearValue.calloc(1);
         clearValues.color()
-                .float32(0, 100/255.0f)
-                .float32(1, 149/255.0f)
-                .float32(2, 237/255.0f)
+                .float32(0, 100 / 255.0f)
+                .float32(1, 149 / 255.0f)
+                .float32(2, 237 / 255.0f)
                 .float32(3, 1.0f);
 
         // Specify everything to begin a render pass
@@ -897,12 +887,12 @@ public class TriangleDemoGloop {
             // new layout for presenting it to the windowing system integration 
             VkImageMemoryBarrier.Buffer prePresentBarrier = createPrePresentBarrier(swapchain.images[i]);
             vkCmdPipelineBarrier(renderCommandBuffers[i],
-                VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT,
-                VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT,
-                VK_FLAGS_NONE,
-                null, // No memory barriers
-                null, // No buffer memory barriers
-                prePresentBarrier); // One image memory barrier
+                    VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT,
+                    VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT,
+                    VK_FLAGS_NONE,
+                    null, // No memory barriers
+                    null, // No buffer memory barriers
+                    prePresentBarrier); // One image memory barrier
             prePresentBarrier.free();
 
             err = vkEndCommandBuffer(renderCommandBuffers[i]);
@@ -968,13 +958,13 @@ public class TriangleDemoGloop {
 
         VkImageMemoryBarrier.Buffer postPresentBarrier = createPostPresentBarrier(image);
         vkCmdPipelineBarrier(
-            commandBuffer,
-            VK_PIPELINE_STAGE_ALL_COMMANDS_BIT,
-            VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT,
-            VK_FLAGS_NONE,
-            null, // No memory barriers,
-            null, // No buffer barriers,
-            postPresentBarrier); // one image barrier
+                commandBuffer,
+                VK_PIPELINE_STAGE_ALL_COMMANDS_BIT,
+                VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT,
+                VK_FLAGS_NONE,
+                null, // No memory barriers,
+                null, // No buffer barriers,
+                postPresentBarrier); // one image barrier
         postPresentBarrier.free();
 
         err = vkEndCommandBuffer(commandBuffer);
@@ -997,14 +987,14 @@ public class TriangleDemoGloop {
     @Test
     public void testTriangleDemo() {
         final String[] args = {};
-        
+
         try {
             main(args);
         } catch (IOException ex) {
             throw new RuntimeException(ex);
         }
     }
-    
+
     public static void main(String[] args) throws IOException {
         if (!glfwInit()) {
             throw new RuntimeException("Failed to initialize GLFW");
@@ -1031,10 +1021,10 @@ public class TriangleDemoGloop {
         final VkPhysicalDevice physicalDevice = getFirstPhysicalDevice(instance);
         final DeviceAndGraphicsQueueFamily deviceAndGraphicsQueueFamily = createDeviceAndGetGraphicsQueueFamily(physicalDevice);
         final VkDevice device = deviceAndGraphicsQueueFamily.device;
-        
+
         // bind the device context to the current thread...
         VKThreadContext.create(device);
-        
+
         int queueFamilyIndex = deviceAndGraphicsQueueFamily.queueFamilyIndex;
         final VkPhysicalDeviceMemoryProperties memoryProperties = deviceAndGraphicsQueueFamily.memoryProperties;
 
@@ -1046,10 +1036,12 @@ public class TriangleDemoGloop {
         GLFWKeyCallback keyCallback;
         glfwSetKeyCallback(window, keyCallback = new GLFWKeyCallback() {
             public void invoke(long window, int key, int scancode, int action, int mods) {
-                if (action != GLFW_RELEASE)
+                if (action != GLFW_RELEASE) {
                     return;
-                if (key == GLFW_KEY_ESCAPE)
+                }
+                if (key == GLFW_KEY_ESCAPE) {
                     glfwSetWindowShouldClose(window, true);
+                }
             }
         });
         LongBuffer pSurface = memAllocLong(1);
@@ -1071,7 +1063,9 @@ public class TriangleDemoGloop {
         final long pipeline = createPipeline(device, renderPass.id, VK10PipelineFactory.createVertexArrayInput(vertices.vertexArrayInput));
 
         final class SwapchainRecreator {
+
             boolean mustRecreate = true;
+
             void recreate() {
                 // Begin the setup command buffer (the one we will use for swapchain/framebuffer creation)
                 VkCommandBufferBeginInfo cmdBufInfo = VkCommandBufferBeginInfo.calloc()
@@ -1094,8 +1088,9 @@ public class TriangleDemoGloop {
                 vkQueueWaitIdle(queue);
 
                 if (framebuffers != null) {
-                    for (int i = 0; i < framebuffers.length; i++)
+                    for (int i = 0; i < framebuffers.length; i++) {
                         vkDestroyFramebuffer(device, framebuffers[i], null);
+                    }
                 }
                 framebuffers = createFramebuffers(device, swapchain, renderPass.id, width, height);
                 // Create render command buffers
@@ -1113,8 +1108,9 @@ public class TriangleDemoGloop {
         // Handle canvas resize
         GLFWWindowSizeCallback windowSizeCallback = new GLFWWindowSizeCallback() {
             public void invoke(long window, int width, int height) {
-                if (width <= 0 || height <= 0)
+                if (width <= 0 || height <= 0) {
                     return;
+                }
                 TriangleDemoGloop.width = width;
                 TriangleDemoGloop.height = height;
                 swapchainRecreator.mustRecreate = true;
@@ -1124,7 +1120,6 @@ public class TriangleDemoGloop {
         glfwShowWindow(window);
 
         // Pre-allocate everything needed in the render loop
-
         IntBuffer pImageIndex = memAllocInt(1);
         int currentBuffer = 0;
         PointerBuffer pCommandBuffers = memAllocPointer(1);
@@ -1165,8 +1160,9 @@ public class TriangleDemoGloop {
             // Handle window messages. Resize events happen exactly here.
             // So it is safe to use the new swapchain images and framebuffers afterwards.
             glfwPollEvents();
-            if (swapchainRecreator.mustRecreate)
+            if (swapchainRecreator.mustRecreate) {
                 swapchainRecreator.recreate();
+            }
 
             // Create a semaphore to wait for the swapchain to acquire the next image
             err = vkCreateSemaphore(device, semaphoreCreateInfo, null, pImageAcquiredSemaphore);

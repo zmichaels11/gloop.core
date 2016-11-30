@@ -26,8 +26,7 @@ import org.slf4j.LoggerFactory;
  * @author zmichaels 
  */
 public final class VK10ShaderFactory extends AbstractShaderFactory<VK10Shader> {
-    private static final Logger LOGGER = LoggerFactory.getLogger(VK10ShaderFactory.class);
-    public static VkDevice DEVICE;
+    private static final Logger LOGGER = LoggerFactory.getLogger(VK10ShaderFactory.class);    
     
     @Override
     protected VK10Shader newShader() {
@@ -46,6 +45,7 @@ public final class VK10ShaderFactory extends AbstractShaderFactory<VK10Shader> {
     }
     
     private static long loadShader(String classPath) throws IOException {
+        final VkDevice device = VKThreadContext.getCurrentContext().getDevice();
         final ByteBuffer shaderCode = ioResourceToByteBuffer(classPath, 8096);
                 
         final VkShaderModuleCreateInfo moduleCreateInfo = VkShaderModuleCreateInfo.calloc()
@@ -56,7 +56,7 @@ public final class VK10ShaderFactory extends AbstractShaderFactory<VK10Shader> {
         
         try (MemoryStack stack = MemoryStack.stackPush()) {
             final LongBuffer pShaderModule = stack.callocLong(1);            
-            final int err = VK10.vkCreateShaderModule(DEVICE, moduleCreateInfo, null, pShaderModule);
+            final int err = VK10.vkCreateShaderModule(device, moduleCreateInfo, null, pShaderModule);
             
             if (err != VK10.VK_SUCCESS) {
                 throw new AssertionError("Failed to create shader module: " + translateVulkanResult(err));
@@ -70,7 +70,9 @@ public final class VK10ShaderFactory extends AbstractShaderFactory<VK10Shader> {
 
     @Override
     protected void doFree(VK10Shader shader) {
-        VK10.vkDestroyShaderModule(DEVICE, shader.module, null);
+        final VkDevice device = VKThreadContext.getCurrentContext().getDevice();
+        
+        VK10.vkDestroyShaderModule(device, shader.module, null);
     }
 
     @Override
