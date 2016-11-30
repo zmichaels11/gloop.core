@@ -24,13 +24,15 @@ import org.lwjgl.vulkan.VkDeviceQueueCreateInfo;
 import org.lwjgl.vulkan.VkPhysicalDevice;
 import org.lwjgl.vulkan.VkPhysicalDeviceMemoryProperties;
 import org.lwjgl.vulkan.VkQueueFamilyProperties;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  *
  * @author zmichaels
  */
 public final class Device {
-    
+    private static final Logger LOGGER = LoggerFactory.getLogger(Device.class);
     public final VkDevice vkDevice;
     public final VkPhysicalDevice physicalDevice;
     public final List<QueueFamily> queueFamilies;
@@ -46,18 +48,18 @@ public final class Device {
     private Device(final VkPhysicalDevice physicalDevice) {
         this.physicalDevice = Objects.requireNonNull(physicalDevice);        
         this.queueFamilies = this.listQueues();        
-        this.vkDevice = createDevice(this.queueFamilies);
-        System.out.println("created device");
+        LOGGER.debug(this.queueFamilies.toString());
+        this.vkDevice = createDevice(this.queueFamilies);        
         this.memoryProperties = getMemoryProperties();
         this.commandPools = createCommandPools(this.queueFamilies);
     }
     
     public CommandPool getFirstGraphicsCommandPool() {
-        return this.commandPools.get(this.getFirstGraphicsQueue());
+        return this.commandPools.get(this.getFirstGraphicsFamily());
     }
     
     public CommandPool getFirstComputeCommandPool() {
-        return this.commandPools.get(this.getFirstComputeQueue());
+        return this.commandPools.get(this.getFirstComputeFamily());
     }
     
     private Map<QueueFamily, CommandPool> createCommandPools(final List<QueueFamily> queueFamilies) {
@@ -82,6 +84,7 @@ public final class Device {
             final int queueCount = pQueueCount.get(0);
             final VkQueueFamilyProperties.Buffer queueProps = VkQueueFamilyProperties.callocStack(queueCount, stack);
 
+            
             VK10.vkGetPhysicalDeviceQueueFamilyProperties(physicalDevice, pQueueCount, queueProps);
 
             if (queueCount == 0) {
@@ -90,7 +93,7 @@ public final class Device {
 
             return Collections.unmodifiableList(
                     IntStream.range(0, queueCount)
-                            .mapToObj(index -> new QueueFamily(index, queueProps.get(index).queueFlags()))
+                            .mapToObj(index -> new QueueFamily(index, queueProps.get(index).queueFlags(), queueProps.get(index).queueCount()))
                             .sorted()
                             .collect(Collectors.toList()));
         }
@@ -143,14 +146,14 @@ public final class Device {
         }
     }
 
-    public final QueueFamily getFirstGraphicsQueue() {
+    public final QueueFamily getFirstGraphicsFamily() {
         return this.queueFamilies.stream()
                 .filter(queue -> queue.isGraphicsQueue)
                 .findFirst()
                 .orElseThrow(() -> new UnsupportedOperationException("The physical device does not have a Graphics Queue!"));
     }
 
-    public final QueueFamily getFirstComputeQueue() {
+    public final QueueFamily getFirstComputeFamily() {
         return this.queueFamilies.stream()
                 .filter(queue -> queue.isComputeQueue)
                 .findFirst()

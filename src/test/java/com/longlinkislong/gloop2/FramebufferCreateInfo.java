@@ -9,6 +9,16 @@ package com.longlinkislong.gloop2;
  *
  * @author zmichaels
  */
-public class FramebufferCreateInfo {
+public final class FramebufferCreateInfo {
+    public final int width;
+    public final int height;
     
+    public FramebufferCreateInfo(final int width, final int height) {
+        this.width = width;
+        this.height = height;
+    }
+    
+    public FramebufferCreateInfo withSize(final int width, final int height) {
+        return new FramebufferCreateInfo(width, height);
+    }
 }

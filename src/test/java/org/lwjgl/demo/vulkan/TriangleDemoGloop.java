@@ -15,6 +15,7 @@ import com.longlinkislong.gloop2.VertexInputs;
 import com.longlinkislong.gloop2.VertexAttribute;
 import com.longlinkislong.gloop2.VertexAttributeFormat;
 import com.longlinkislong.gloop2.vkimpl.CommandPool;
+import com.longlinkislong.gloop2.vkimpl.Surface;
 import com.longlinkislong.gloop2.vkimpl.VK10Buffer;
 import com.longlinkislong.gloop2.vkimpl.VK10BufferFactory;
 import com.longlinkislong.gloop2.vkimpl.VK10RasterPipeline;
@@ -41,7 +42,6 @@ import org.lwjgl.glfw.GLFWWindowSizeCallback;
 import org.lwjgl.vulkan.VkClearValue;
 import org.lwjgl.vulkan.VkCommandBuffer;
 import org.lwjgl.vulkan.VkCommandBufferBeginInfo;
-import org.lwjgl.vulkan.VkCommandPoolCreateInfo;
 import org.lwjgl.vulkan.VkDevice;
 import org.lwjgl.vulkan.VkExtent2D;
 import org.lwjgl.vulkan.VkFramebufferCreateInfo;
@@ -88,117 +88,7 @@ public class TriangleDemoGloop {
 
         int colorFormat;
         int colorSpace;
-    }
-
-    private static ColorFormatAndSpace getColorFormatAndSpace(VkPhysicalDevice physicalDevice, long surface) {
-        IntBuffer pQueueFamilyPropertyCount = memAllocInt(1);
-        vkGetPhysicalDeviceQueueFamilyProperties(physicalDevice, pQueueFamilyPropertyCount, null);
-        int queueCount = pQueueFamilyPropertyCount.get(0);
-        VkQueueFamilyProperties.Buffer queueProps = VkQueueFamilyProperties.calloc(queueCount);
-        vkGetPhysicalDeviceQueueFamilyProperties(physicalDevice, pQueueFamilyPropertyCount, queueProps);
-        memFree(pQueueFamilyPropertyCount);
-
-        // Iterate over each queue to learn whether it supports presenting:
-        IntBuffer supportsPresent = memAllocInt(queueCount);
-        for (int i = 0; i < queueCount; i++) {
-            supportsPresent.position(i);
-            int err = vkGetPhysicalDeviceSurfaceSupportKHR(physicalDevice, i, surface, supportsPresent);
-            if (err != VK_SUCCESS) {
-                throw new AssertionError("Failed to physical device surface support: " + translateVulkanResult(err));
-            }
-        }
-
-        // Search for a graphics and a present queue in the array of queue families, try to find one that supports both
-        int graphicsQueueNodeIndex = Integer.MAX_VALUE;
-        int presentQueueNodeIndex = Integer.MAX_VALUE;
-        for (int i = 0; i < queueCount; i++) {
-            if ((queueProps.get(i).queueFlags() & VK_QUEUE_GRAPHICS_BIT) != 0) {
-                if (graphicsQueueNodeIndex == Integer.MAX_VALUE) {
-                    graphicsQueueNodeIndex = i;
-                }
-                if (supportsPresent.get(i) == VK_TRUE) {
-                    graphicsQueueNodeIndex = i;
-                    presentQueueNodeIndex = i;
-                    break;
-                }
-            }
-        }
-        queueProps.free();
-        if (presentQueueNodeIndex == Integer.MAX_VALUE) {
-            // If there's no queue that supports both present and graphics try to find a separate present queue
-            for (int i = 0; i < queueCount; ++i) {
-                if (supportsPresent.get(i) == VK_TRUE) {
-                    presentQueueNodeIndex = i;
-                    break;
-                }
-            }
-        }
-        memFree(supportsPresent);
-
-        // Generate error if could not find both a graphics and a present queue
-        if (graphicsQueueNodeIndex == Integer.MAX_VALUE) {
-            throw new AssertionError("No graphics queue found");
-        }
-        if (presentQueueNodeIndex == Integer.MAX_VALUE) {
-            throw new AssertionError("No presentation queue found");
-        }
-        if (graphicsQueueNodeIndex != presentQueueNodeIndex) {
-            throw new AssertionError("Presentation queue != graphics queue");
-        }
-
-        // Get list of supported formats
-        IntBuffer pFormatCount = memAllocInt(1);
-        int err = vkGetPhysicalDeviceSurfaceFormatsKHR(physicalDevice, surface, pFormatCount, null);
-        int formatCount = pFormatCount.get(0);
-        if (err != VK_SUCCESS) {
-            throw new AssertionError("Failed to query number of physical device surface formats: " + translateVulkanResult(err));
-        }
-
-        VkSurfaceFormatKHR.Buffer surfFormats = VkSurfaceFormatKHR.calloc(formatCount);
-        err = vkGetPhysicalDeviceSurfaceFormatsKHR(physicalDevice, surface, pFormatCount, surfFormats);
-        memFree(pFormatCount);
-        if (err != VK_SUCCESS) {
-            throw new AssertionError("Failed to query physical device surface formats: " + translateVulkanResult(err));
-        }
-
-        int colorFormat;
-        if (formatCount == 1 && surfFormats.get(0).format() == VK_FORMAT_UNDEFINED) {
-            colorFormat = VK_FORMAT_B8G8R8A8_UNORM;
-        } else {
-            colorFormat = surfFormats.get(0).format();
-        }
-        int colorSpace = surfFormats.get(0).colorSpace();
-        surfFormats.free();
-
-        ColorFormatAndSpace ret = new ColorFormatAndSpace();
-        ret.colorFormat = colorFormat;
-        ret.colorSpace = colorSpace;
-        return ret;
-    }
-
-    private static long createCommandPool(VkDevice device, int queueNodeIndex) {
-        VkCommandPoolCreateInfo cmdPoolInfo = VkCommandPoolCreateInfo.calloc()
-                .sType(VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO)
-                .queueFamilyIndex(queueNodeIndex)
-                .flags(VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT);
-        LongBuffer pCmdPool = memAllocLong(1);
-        int err = vkCreateCommandPool(device, cmdPoolInfo, null, pCmdPool);
-        long commandPool = pCmdPool.get(0);
-        cmdPoolInfo.free();
-        memFree(pCmdPool);
-        if (err != VK_SUCCESS) {
-            throw new AssertionError("Failed to create command pool: " + translateVulkanResult(err));
-        }
-        return commandPool;
-    }
-
-    private static VkQueue createDeviceQueue(VkDevice device, int queueFamilyIndex) {
-        PointerBuffer pQueue = memAllocPointer(1);
-        vkGetDeviceQueue(device, queueFamilyIndex, 0, pQueue);
-        long queue = pQueue.get(0);
-        memFree(pQueue);
-        return new VkQueue(queue, device);
-    }
+    }    
 
     private static void imageBarrier(VkCommandBuffer cmdbuffer, long image, int aspectMask, int oldImageLayout, int srcAccess, int newImageLayout, int dstAccess) {
         // Create an image barrier object
@@ -237,52 +127,21 @@ public class TriangleDemoGloop {
         long[] imageViews;
     }
 
-    private static Swapchain createSwapChain(VkDevice device, VkPhysicalDevice physicalDevice, long surface, long oldSwapChain, VkCommandBuffer commandBuffer, int newWidth,
+    private static Swapchain createSwapChain(VkDevice device, VkPhysicalDevice physicalDevice, Surface surface, long oldSwapChain, VkCommandBuffer commandBuffer, int newWidth,
             int newHeight, int colorFormat, int colorSpace) {
         int err;
-        // Get physical device surface properties and formats
-        VkSurfaceCapabilitiesKHR surfCaps = VkSurfaceCapabilitiesKHR.calloc();
-        err = vkGetPhysicalDeviceSurfaceCapabilitiesKHR(physicalDevice, surface, surfCaps);
-        if (err != VK_SUCCESS) {
-            throw new AssertionError("Failed to get physical device surface capabilities: " + translateVulkanResult(err));
-        }
-
-        IntBuffer pPresentModeCount = memAllocInt(1);
-        err = vkGetPhysicalDeviceSurfacePresentModesKHR(physicalDevice, surface, pPresentModeCount, null);
-        int presentModeCount = pPresentModeCount.get(0);
-        if (err != VK_SUCCESS) {
-            throw new AssertionError("Failed to get number of physical device surface presentation modes: " + translateVulkanResult(err));
-        }
-
-        IntBuffer pPresentModes = memAllocInt(presentModeCount);
-        err = vkGetPhysicalDeviceSurfacePresentModesKHR(physicalDevice, surface, pPresentModeCount, pPresentModes);
-        memFree(pPresentModeCount);
-        if (err != VK_SUCCESS) {
-            throw new AssertionError("Failed to get physical device surface presentation modes: " + translateVulkanResult(err));
-        }
-
-        // Try to use mailbox mode. Low latency and non-tearing
-        int swapchainPresentMode = VK_PRESENT_MODE_FIFO_KHR;
-        for (int i = 0; i < presentModeCount; i++) {
-            if (pPresentModes.get(i) == VK_PRESENT_MODE_MAILBOX_KHR) {
-                swapchainPresentMode = VK_PRESENT_MODE_MAILBOX_KHR;
-                break;
-            }
-            if ((swapchainPresentMode != VK_PRESENT_MODE_MAILBOX_KHR) && (pPresentModes.get(i) == VK_PRESENT_MODE_IMMEDIATE_KHR)) {
-                swapchainPresentMode = VK_PRESENT_MODE_IMMEDIATE_KHR;
-            }
-        }
-        memFree(pPresentModes);
-
+        
+        
         // Determine the number of images
-        int desiredNumberOfSwapchainImages = surfCaps.minImageCount() + 1;
-        if ((surfCaps.maxImageCount() > 0) && (desiredNumberOfSwapchainImages > surfCaps.maxImageCount())) {
-            desiredNumberOfSwapchainImages = surfCaps.maxImageCount();
+        int desiredNumberOfSwapchainImages = surface.capabilities.minImageCount() + 1;
+        if ((surface.capabilities.maxImageCount() > 0) && (desiredNumberOfSwapchainImages > surface.capabilities.maxImageCount())) {
+            desiredNumberOfSwapchainImages = surface.capabilities.maxImageCount();
         }
 
-        VkExtent2D currentExtent = surfCaps.currentExtent();
+        VkExtent2D currentExtent = surface.capabilities.currentExtent();
         int currentWidth = currentExtent.width();
         int currentHeight = currentExtent.height();
+                
         if (currentWidth != -1 && currentHeight != -1) {
             width = currentWidth;
             height = currentHeight;
@@ -292,17 +151,16 @@ public class TriangleDemoGloop {
         }
 
         int preTransform;
-        if ((surfCaps.supportedTransforms() & VK_SURFACE_TRANSFORM_IDENTITY_BIT_KHR) != 0) {
+        if ((surface.capabilities.supportedTransforms() & VK_SURFACE_TRANSFORM_IDENTITY_BIT_KHR) != 0) {
             preTransform = VK_SURFACE_TRANSFORM_IDENTITY_BIT_KHR;
         } else {
-            preTransform = surfCaps.currentTransform();
-        }
-        surfCaps.free();
+            preTransform = surface.capabilities.currentTransform();
+        }        
 
         VkSwapchainCreateInfoKHR swapchainCI = VkSwapchainCreateInfoKHR.calloc()
                 .sType(VK_STRUCTURE_TYPE_SWAPCHAIN_CREATE_INFO_KHR)
                 .pNext(NULL)
-                .surface(surface)
+                .surface(surface.surface)
                 .minImageCount(desiredNumberOfSwapchainImages)
                 .imageFormat(colorFormat)
                 .imageColorSpace(colorSpace)
@@ -311,7 +169,7 @@ public class TriangleDemoGloop {
                 .imageArrayLayers(1)
                 .imageSharingMode(VK_SHARING_MODE_EXCLUSIVE)
                 .pQueueFamilyIndices(null)
-                .presentMode(swapchainPresentMode)
+                .presentMode(surface.presentationMode)
                 .oldSwapchain(oldSwapChain)
                 .clipped(VK_TRUE)
                 .compositeAlpha(VK_COMPOSITE_ALPHA_OPAQUE_BIT_KHR);
@@ -340,6 +198,7 @@ public class TriangleDemoGloop {
             throw new AssertionError("Failed to get number of swapchain images: " + translateVulkanResult(err));
         }
 
+        //NOTE: these will be "renderbuffers"
         LongBuffer pSwapchainImages = memAllocLong(imageCount);
         err = vkGetSwapchainImagesKHR(device, swapChain, pImageCount, pSwapchainImages);
         if (err != VK_SUCCESS) {
@@ -668,22 +527,11 @@ public class TriangleDemoGloop {
         }
         if (!glfwVulkanSupported()) {
             throw new AssertionError("GLFW failed to find the Vulkan loader");
-        }
-
-        /* Look for instance extensions */
-        PointerBuffer requiredExtensions = glfwGetRequiredInstanceExtensions();
-        if (requiredExtensions == null) {
-            throw new AssertionError("Failed to find list of required Vulkan extensions");
-        }
+        }       
 
         // Create the Vulkan instance
         final VkInstance instance = VKGlobalConstants.getInstance().instance;                
-        final VkDevice device = VKGlobalConstants.getInstance().selectedDevice.vkDevice;
-
-        // bind the device context to the current thread...
-        //VKThreadConstantsOld.create(device);
-
-        final int queueFamilyIndex = VKGlobalConstants.getInstance().selectedDevice.getFirstComputeQueue().queueFamilyIndex;
+        final VkDevice device = VKGlobalConstants.getInstance().selectedDevice.vkDevice;        
         final VkPhysicalDevice physicalDevice = VKGlobalConstants.getInstance().selectedDevice.physicalDevice;
         final VkPhysicalDeviceMemoryProperties memoryProperties = VKGlobalConstants.getInstance().selectedDevice.memoryProperties;
 
@@ -705,17 +553,17 @@ public class TriangleDemoGloop {
         });
         LongBuffer pSurface = memAllocLong(1);
         int err = glfwCreateWindowSurface(instance, window, null, pSurface);
-        final long surface = pSurface.get(0);
+        final Surface surface = new Surface(pSurface.get(0));
         if (err != VK_SUCCESS) {
             throw new AssertionError("Failed to create surface: " + translateVulkanResult(err));
         }
 
         // Create static Vulkan resources
-        final ColorFormatAndSpace colorFormatAndSpace = getColorFormatAndSpace(physicalDevice, surface);
+        final Surface.Format colorFormatAndSpace = surface.supportedFormats.get(0);
         final CommandPool commandPool = VKGlobalConstants.getInstance().selectedDevice.getFirstGraphicsCommandPool();
         final VkCommandBuffer setupCommandBuffer = commandPool.newCommandBuffer();
         final VkCommandBuffer postPresentCommandBuffer = commandPool.newCommandBuffer();
-        final VkQueue queue = createDeviceQueue(device, queueFamilyIndex);        
+        final VkQueue queue = VKGlobalConstants.getInstance().selectedDevice.getFirstGraphicsFamily().getQueue();
         final Vertices vertices = createVertices(memoryProperties, device);
 
         final RasterPipeline pipeline = new RasterPipelineCreateInfo()
