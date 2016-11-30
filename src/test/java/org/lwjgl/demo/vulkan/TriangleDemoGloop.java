@@ -6,13 +6,14 @@ package org.lwjgl.demo.vulkan;
 
 import com.longlinkislong.gloop2.Buffer;
 import com.longlinkislong.gloop2.BufferCreateInfo;
-import com.longlinkislong.gloop2.BufferMapHint;
-import com.longlinkislong.gloop2.BufferMapInvalidationHint;
-import com.longlinkislong.gloop2.BufferMapSynchronizationHint;
-import com.longlinkislong.gloop2.BufferUnmapHint;
 import com.longlinkislong.gloop2.ObjectFactoryManager;
+import com.longlinkislong.gloop2.VertexArrayCreateInfo;
+import com.longlinkislong.gloop2.VertexAttribute;
+import com.longlinkislong.gloop2.VertexAttributeFormat;
 import com.longlinkislong.gloop2.vkimpl.VK10Buffer;
 import com.longlinkislong.gloop2.vkimpl.VK10BufferFactory;
+import com.longlinkislong.gloop2.vkimpl.VKThreadContext;
+import com.longlinkislong.gloop2.vkimpl.VK10PipelineFactory;
 import static org.lwjgl.system.MemoryUtil.*;
 import static org.lwjgl.vulkan.EXTDebugReport.*;
 import static org.lwjgl.vulkan.KHRSwapchain.*;
@@ -33,12 +34,10 @@ import org.junit.Test;
 import org.lwjgl.PointerBuffer;
 import org.lwjgl.glfw.GLFWKeyCallback;
 import org.lwjgl.glfw.GLFWWindowSizeCallback;
-import org.lwjgl.system.MemoryUtil;
 import static org.lwjgl.vulkan.VKUtil.VK_MAKE_VERSION;
 import org.lwjgl.vulkan.VkApplicationInfo;
 import org.lwjgl.vulkan.VkAttachmentDescription;
 import org.lwjgl.vulkan.VkAttachmentReference;
-import org.lwjgl.vulkan.VkBufferCreateInfo;
 import org.lwjgl.vulkan.VkClearValue;
 import org.lwjgl.vulkan.VkCommandBuffer;
 import org.lwjgl.vulkan.VkCommandBufferAllocateInfo;
@@ -56,8 +55,6 @@ import org.lwjgl.vulkan.VkImageMemoryBarrier;
 import org.lwjgl.vulkan.VkImageViewCreateInfo;
 import org.lwjgl.vulkan.VkInstance;
 import org.lwjgl.vulkan.VkInstanceCreateInfo;
-import org.lwjgl.vulkan.VkMemoryAllocateInfo;
-import org.lwjgl.vulkan.VkMemoryRequirements;
 import org.lwjgl.vulkan.VkPhysicalDevice;
 import org.lwjgl.vulkan.VkPhysicalDeviceMemoryProperties;
 import org.lwjgl.vulkan.VkPipelineColorBlendAttachmentState;
@@ -84,8 +81,6 @@ import org.lwjgl.vulkan.VkSubpassDescription;
 import org.lwjgl.vulkan.VkSurfaceCapabilitiesKHR;
 import org.lwjgl.vulkan.VkSurfaceFormatKHR;
 import org.lwjgl.vulkan.VkSwapchainCreateInfoKHR;
-import org.lwjgl.vulkan.VkVertexInputAttributeDescription;
-import org.lwjgl.vulkan.VkVertexInputBindingDescription;
 import org.lwjgl.vulkan.VkViewport;
 
 /**
@@ -699,7 +694,7 @@ public class TriangleDemoGloop {
 
     private static class Vertices {
         Buffer buffer;
-        VkPipelineVertexInputStateCreateInfo createInfo;
+        VertexArrayCreateInfo vertexArrayInput;
     }
 
     private static Vertices createVertices(VkPhysicalDeviceMemoryProperties deviceMemoryProperties, VkDevice device) {
@@ -721,34 +716,15 @@ public class TriangleDemoGloop {
         fb.put( 0.5f).put(-0.5f);
         fb.put( 0.0f).put( 0.5f);
         
-        out.unmap();
-        
-        // Binding description
-        VkVertexInputBindingDescription.Buffer bindingDescriptor = VkVertexInputBindingDescription.calloc(1)
-                .binding(0) // <- we bind our vertex buffer to point 0
-                .stride(2 * 4)
-                .inputRate(VK_VERTEX_INPUT_RATE_VERTEX);
-
-        // Attribute descriptions
-        // Describes memory layout and shader attribute locations
-        VkVertexInputAttributeDescription.Buffer attributeDescriptions = VkVertexInputAttributeDescription.calloc(1);
-        // Location 0 : Position
-        attributeDescriptions.get(0)
-                .binding(0) // <- binding point used in the VkVertexInputBindingDescription
-                .location(0) // <- location in the shader's attribute layout (inside the shader source)
-                .format(VK_FORMAT_R32G32_SFLOAT)
-                .offset(0);
-
-        
-        // Assign to vertex buffer
-        VkPipelineVertexInputStateCreateInfo vi = VkPipelineVertexInputStateCreateInfo.calloc();
-        vi.sType(VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO);
-        vi.pNext(NULL);
-        vi.pVertexBindingDescriptions(bindingDescriptor);
-        vi.pVertexAttributeDescriptions(attributeDescriptions);
+        out.unmap();                        
 
         Vertices ret = new Vertices();
-        ret.createInfo = vi;
+        ret.vertexArrayInput = new VertexArrayCreateInfo()
+                .withAttribute(new VertexAttribute()
+                        .withBuffer(out)
+                        .withStride(2 * 4)                        
+                        .withFormat(VertexAttributeFormat.XY_32F)
+                );
         ret.buffer = out;
         
         return ret;
@@ -1104,6 +1080,10 @@ public class TriangleDemoGloop {
         final VkPhysicalDevice physicalDevice = getFirstPhysicalDevice(instance);
         final DeviceAndGraphicsQueueFamily deviceAndGraphicsQueueFamily = createDeviceAndGetGraphicsQueueFamily(physicalDevice);
         final VkDevice device = deviceAndGraphicsQueueFamily.device;
+        
+        // bind the device context to the current thread...
+        VKThreadContext.create(device);
+        
         int queueFamilyIndex = deviceAndGraphicsQueueFamily.queueFamilyIndex;
         final VkPhysicalDeviceMemoryProperties memoryProperties = deviceAndGraphicsQueueFamily.memoryProperties;
 
@@ -1137,7 +1117,7 @@ public class TriangleDemoGloop {
         final long renderPass = createRenderPass(device, colorFormatAndSpace.colorFormat);
         final long renderCommandPool = createCommandPool(device, queueFamilyIndex);
         final Vertices vertices = createVertices(memoryProperties, device);
-        final long pipeline = createPipeline(device, renderPass, vertices.createInfo);
+        final long pipeline = createPipeline(device, renderPass, VK10PipelineFactory.createVertexArrayInput(vertices.vertexArrayInput));
 
         final class SwapchainRecreator {
             boolean mustRecreate = true;

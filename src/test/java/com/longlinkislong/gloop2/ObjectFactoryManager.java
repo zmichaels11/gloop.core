@@ -48,9 +48,9 @@ public final class ObjectFactoryManager {
     private AbstractSampler2DFactory<?> sampler2DFactory;
     private AbstractImage2DFactory<?> image2DFactory;    
     private AbstractShaderFactory<?> shaderFactory;
-    private AbstractPipelineFactory<?> pipelineFactory;
+    private AbstractRasterPipelineFactory<?> pipelineFactory;
     
-    public AbstractPipelineFactory<?> getPipelineFactory() {
+    public AbstractRasterPipelineFactory<?> getPipelineFactory() {
         return this.pipelineFactory;
     }
     

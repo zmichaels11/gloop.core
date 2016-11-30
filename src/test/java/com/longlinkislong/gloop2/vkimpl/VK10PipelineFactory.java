@@ -5,8 +5,9 @@
  */
 package com.longlinkislong.gloop2.vkimpl;
 
-import com.longlinkislong.gloop2.AbstractPipelineFactory;
-import com.longlinkislong.gloop2.PipelineCreateInfo;
+import com.longlinkislong.gloop2.AbstractRasterPipelineFactory;
+import com.longlinkislong.gloop2.RasterPipelineCreateInfo;
+import com.longlinkislong.gloop2.VertexArrayCreateInfo;
 import com.longlinkislong.gloop2.VertexAttribute;
 import static com.longlinkislong.gloop2.vkimpl.VKTranslate.toVKenum;
 import java.nio.IntBuffer;
@@ -42,24 +43,25 @@ import org.lwjgl.vulkan.VkVertexInputBindingDescription;
  *
  * @author zmichaels
  */
-public class VK10PipelineFactory extends AbstractPipelineFactory<VK10Pipeline> {
+public class VK10PipelineFactory extends AbstractRasterPipelineFactory<VK10RasterPipeline> {
 
     public static VkDevice DEVICE;
     public static int colorFormat; //TODO: generate this!
 
     @Override
-    protected VK10Pipeline newPipeline() {
-        return new VK10Pipeline();
+    protected VK10RasterPipeline newPipeline() {
+        return new VK10RasterPipeline();
     }
 
     @Override
-    protected void doAllocate(VK10Pipeline pipeline) {
-
+    protected void doAllocate(VK10RasterPipeline pipeline) {
+        pipeline.renderPass = new VK10RenderPass(colorFormat);
+        createPipeline(pipeline);
     }
 
-    private VkPipelineVertexInputStateCreateInfo createVao(VK10Pipeline pipeline) {
-        final List<VertexAttribute> attribs = pipeline.getAttributes();
-
+    public static VkPipelineVertexInputStateCreateInfo createVertexArrayInput(VertexArrayCreateInfo info) {
+        final List<VertexAttribute> attribs = info.attributes;
+        
         final VkVertexInputBindingDescription.Buffer bindings = VkVertexInputBindingDescription.calloc(attribs.size());
         final VkVertexInputAttributeDescription.Buffer descriptions = VkVertexInputAttributeDescription.calloc(attribs.size());
 
@@ -88,8 +90,8 @@ public class VK10PipelineFactory extends AbstractPipelineFactory<VK10Pipeline> {
         return out;
     }
 
-    private void createPipeline(VK10Pipeline pipeline) {
-        final PipelineCreateInfo info = pipeline.getInfo();
+    private void createPipeline(VK10RasterPipeline pipeline) {
+        final RasterPipelineCreateInfo info = pipeline.getInfo();
 
         final VkPipelineInputAssemblyStateCreateInfo inputAssemblyState = VkPipelineInputAssemblyStateCreateInfo.calloc()
                 .sType(VK10.VK_STRUCTURE_TYPE_PIPELINE_INPUT_ASSEMBLY_STATE_CREATE_INFO)
@@ -169,8 +171,8 @@ public class VK10PipelineFactory extends AbstractPipelineFactory<VK10Pipeline> {
         final VkGraphicsPipelineCreateInfo.Buffer pipelineCreateInfo = VkGraphicsPipelineCreateInfo.calloc(1)
                 .sType(VK10.VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO)
                 .layout(layout)
-                .renderPass(pipeline.renderpass)
-                .pVertexInputState(createVao(pipeline))
+                .renderPass(pipeline.renderPass.id)
+                .pVertexInputState(createVertexArrayInput(pipeline.getInfo().attributes))                
                 .pInputAssemblyState(inputAssemblyState)
                 .pRasterizationState(rasterizationState)
                 .pColorBlendState(colorBlendState)
@@ -203,7 +205,7 @@ public class VK10PipelineFactory extends AbstractPipelineFactory<VK10Pipeline> {
         }
     }
 
-    private VkPipelineShaderStageCreateInfo.Buffer createShaderStages(VK10Pipeline pipeline) {
+    private VkPipelineShaderStageCreateInfo.Buffer createShaderStages(VK10RasterPipeline pipeline) {
         final List<VK10Shader> shaders = pipeline.getInfo().shaderStages.stream()
                 .map(shader -> (VK10Shader) shader)
                 .collect(Collectors.toList());
@@ -221,68 +223,21 @@ public class VK10PipelineFactory extends AbstractPipelineFactory<VK10Pipeline> {
         }
 
         return shaderStages;
-    }
+    }    
 
-    private void createRenderPass(VK10Pipeline pipeline) {
-        final VkAttachmentDescription.Buffer attachments = VkAttachmentDescription.calloc(1)
-                .format(colorFormat)
-                .samples(VK10.VK_SAMPLE_COUNT_1_BIT)
-                .loadOp(VK10.VK_ATTACHMENT_LOAD_OP_CLEAR)
-                .storeOp(VK10.VK_ATTACHMENT_STORE_OP_STORE)
-                .stencilLoadOp(VK10.VK_ATTACHMENT_LOAD_OP_DONT_CARE)
-                .stencilStoreOp(VK10.VK_ATTACHMENT_STORE_OP_DONT_CARE)
-                .initialLayout(VK10.VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL)
-                .finalLayout(VK10.VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL);
-
-        final VkAttachmentReference.Buffer colorReference = VkAttachmentReference.calloc(1)
-                .attachment(0)
-                .layout(VK10.VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL);
-
-        final VkSubpassDescription.Buffer subpass = VkSubpassDescription.calloc(1)
-                .pipelineBindPoint(VK10.VK_PIPELINE_BIND_POINT_GRAPHICS)
-                .pInputAttachments(null)
-                .colorAttachmentCount(colorReference.remaining())
-                .pColorAttachments(colorReference)
-                .pResolveAttachments(null)
-                .pDepthStencilAttachment(null)
-                .pPreserveAttachments(null);
-
-        final VkRenderPassCreateInfo renderPassInfo = VkRenderPassCreateInfo.calloc()
-                .sType(VK10.VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO)
-                .pNext(NULL)
-                .pAttachments(attachments)
-                .pSubpasses(subpass)
-                .pDependencies(null);
-
-        try (MemoryStack stack = MemoryStack.stackPush()) {
-            final LongBuffer pRenderPass = stack.callocLong(1);
-            final int err = VK10.vkCreateRenderPass(DEVICE, renderPassInfo, null, pRenderPass);
-
-            if (err != VK10.VK_SUCCESS) {
-                throw new AssertionError("Failed to create render pass: " + translateVulkanResult(err));
-            }
-
-            pipeline.renderpass = pRenderPass.get(0);
-        } finally {
-            renderPassInfo.free();
-            subpass.free();
-            colorReference.free();
-            attachments.free();
-        }
+    @Override
+    public boolean isValid(VK10RasterPipeline pipeline) {
+        return pipeline.pipeline != 0L;
     }
 
     @Override
-    public boolean isValid(VK10Pipeline pipeline) {
-        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+    protected void doFree(VK10RasterPipeline pipeline) {
+        VK10.vkDestroyPipeline(DEVICE, pipeline.pipeline, null);
+        VK10.vkDestroyRenderPass(DEVICE, pipeline.renderPass.id, null);
     }
 
     @Override
-    protected void doFree(VK10Pipeline pipeline) {
-        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
-    }
-
-    @Override
-    protected void doDraw(VK10Pipeline pipeline, int offset, int start) {
+    protected void doDraw(VK10RasterPipeline pipeline, int offset, int start) {
         throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
     }
 

@@ -13,14 +13,14 @@ import org.slf4j.LoggerFactory;
  * @author zmichaels
  * @param <T>
  */
-public abstract class AbstractPipelineFactory <T extends AbstractPipeline> {
-    private static final Logger LOGGER = LoggerFactory.getLogger(AbstractPipelineFactory.class);
+public abstract class AbstractRasterPipelineFactory <T extends AbstractRasterPipeline> {
+    private static final Logger LOGGER = LoggerFactory.getLogger(AbstractRasterPipelineFactory.class);
     
     protected abstract T newPipeline();
     
     protected abstract void doAllocate(T pipeline);
     
-    public T allocate(final PipelineCreateInfo info) {
+    public T allocate(final RasterPipelineCreateInfo info) {
         final T out = newPipeline();
         
         out.info = info;

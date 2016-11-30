@@ -5,8 +5,8 @@
  */
 package com.longlinkislong.gloop2.vkimpl;
 
-import com.longlinkislong.gloop2.AbstractPipeline;
-import com.longlinkislong.gloop2.PipelineCreateInfo;
+import com.longlinkislong.gloop2.AbstractRasterPipeline;
+import com.longlinkislong.gloop2.RasterPipelineCreateInfo;
 import com.longlinkislong.gloop2.VertexAttribute;
 import java.util.List;
 
@@ -14,8 +14,8 @@ import java.util.List;
  *
  * @author zmichaels
  */
-public class VK10Pipeline extends AbstractPipeline {
-    public long renderpass;
+public class VK10RasterPipeline extends AbstractRasterPipeline {
+    public VK10RenderPass renderPass;
     public long pipeline;    
     
     @Override
@@ -32,7 +32,7 @@ public class VK10Pipeline extends AbstractPipeline {
         return this.info.attributes.attributes;
     }
     
-    public PipelineCreateInfo getInfo() {
+    public RasterPipelineCreateInfo getInfo() {
         return this.info;
     }
 }

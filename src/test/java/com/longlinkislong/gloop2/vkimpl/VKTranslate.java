@@ -105,5 +105,5 @@ public final class VKTranslate {
             default:
                 throw new UnsupportedOperationException("Unsupported front face mode: " + frontFace);
         }
-    }
+    }        
 }

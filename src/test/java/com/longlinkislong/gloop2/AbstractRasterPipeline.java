@@ -9,8 +9,8 @@ package com.longlinkislong.gloop2;
  *
  * @author zmichaels
  */
-public abstract class AbstractPipeline implements Pipeline {
-    protected PipelineCreateInfo info;
+public abstract class AbstractRasterPipeline implements RasterPipeline {
+    protected RasterPipelineCreateInfo info;
     
     protected void clear() {
         this.info = null;
