@@ -10,7 +10,7 @@ import com.longlinkislong.gloop2.glimpl.GL45BufferFactory;
 import com.longlinkislong.gloop2.glimpl.GL45Image2DFactory;
 import com.longlinkislong.gloop2.glimpl.GL45Texture2DFactory;
 import com.longlinkislong.gloop2.vkimpl.VK10BufferFactory;
-import com.longlinkislong.gloop2.vkimpl.VK10PipelineFactory;
+import com.longlinkislong.gloop2.vkimpl.VK10RasterPipelineFactory;
 import com.longlinkislong.gloop2.vkimpl.VK10ShaderFactory;
 
 /**
@@ -39,7 +39,7 @@ public final class ObjectFactoryManager {
     public void initVK10() {
         bufferFactory = new VK10BufferFactory();
         shaderFactory = new VK10ShaderFactory();
-        pipelineFactory = new VK10PipelineFactory();
+        pipelineFactory = new VK10RasterPipelineFactory();
     }
     
     //TODO: do a selector
@@ -50,7 +50,7 @@ public final class ObjectFactoryManager {
     private AbstractShaderFactory<?> shaderFactory;
     private AbstractRasterPipelineFactory<?> pipelineFactory;
     
-    public AbstractRasterPipelineFactory<?> getPipelineFactory() {
+    public AbstractRasterPipelineFactory getRasterPipelineFactory() {
         return this.pipelineFactory;
     }
     

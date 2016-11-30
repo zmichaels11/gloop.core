@@ -15,4 +15,10 @@ public abstract class AbstractRasterPipeline implements RasterPipeline {
     protected void clear() {
         this.info = null;
     }
+    
+    public final void free() {
+        if (this.isValid()) {
+            ObjectFactoryManager.getInstance().getRasterPipelineFactory().free(this);
+        }
+    }
 }

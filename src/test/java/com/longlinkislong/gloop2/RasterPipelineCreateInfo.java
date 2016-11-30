@@ -224,6 +224,6 @@ public final class RasterPipelineCreateInfo {
     //TODO: support attachment customization. Currently assuming only color attachment...
     //TODO: support multisample. Currently assuming only 1 sample...
     public RasterPipeline allocate() {
-        return ObjectFactoryManager.getInstance().getPipelineFactory().allocate(this);
+        return ObjectFactoryManager.getInstance().getRasterPipelineFactory().allocate(this);
     }
 }

@@ -33,7 +33,7 @@ import org.lwjgl.vulkan.VkPipelineViewportStateCreateInfo;
  *
  * @author zmichaels
  */
-public class VK10PipelineFactory extends AbstractRasterPipelineFactory<VK10RasterPipeline> {
+public class VK10RasterPipelineFactory extends AbstractRasterPipelineFactory<VK10RasterPipeline> {
     
     public static int COLOR_FORMAT; //TODO: generate this!
 

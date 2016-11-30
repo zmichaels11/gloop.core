@@ -52,13 +52,10 @@ import org.lwjgl.vulkan.VkPhysicalDevice;
 import org.lwjgl.vulkan.VkPhysicalDeviceMemoryProperties;
 import org.lwjgl.vulkan.VkPresentInfoKHR;
 import org.lwjgl.vulkan.VkQueue;
-import org.lwjgl.vulkan.VkQueueFamilyProperties;
 import org.lwjgl.vulkan.VkRect2D;
 import org.lwjgl.vulkan.VkRenderPassBeginInfo;
 import org.lwjgl.vulkan.VkSemaphoreCreateInfo;
 import org.lwjgl.vulkan.VkSubmitInfo;
-import org.lwjgl.vulkan.VkSurfaceCapabilitiesKHR;
-import org.lwjgl.vulkan.VkSurfaceFormatKHR;
 import org.lwjgl.vulkan.VkSwapchainCreateInfoKHR;
 import org.lwjgl.vulkan.VkViewport;
 
@@ -335,7 +332,7 @@ public class TriangleDemoGloop {
         return ret;
     }
 
-    private static VkCommandBuffer[] createRenderCommandBuffers(VkDevice device, long commandPool, long[] framebuffers, long renderPass, int width, int height,
+    private static VkCommandBuffer[] createRenderCommandBuffers(long[] framebuffers, long renderPass, int width, int height,
             long pipeline, Buffer verticesBuf) {
         
         VkCommandBuffer[] renderCommandBuffers = VKGlobalConstants.getInstance().selectedDevice.getFirstGraphicsCommandPool().newCommandBuffers(framebuffers.length);
@@ -618,7 +615,7 @@ public class TriangleDemoGloop {
                 if (renderCommandBuffers != null) {
                     vkResetCommandPool(device, commandPool.id, VK_FLAGS_NONE);
                 }
-                renderCommandBuffers = createRenderCommandBuffers(device, commandPool.id, framebuffers, renderPass.id, width, height, ((VK10RasterPipeline) pipeline).pipeline,
+                renderCommandBuffers = createRenderCommandBuffers(framebuffers, renderPass.id, width, height, ((VK10RasterPipeline) pipeline).pipeline,
                         vertices.buffer);
 
                 mustRecreate = false;
