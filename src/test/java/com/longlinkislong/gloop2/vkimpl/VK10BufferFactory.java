@@ -41,7 +41,7 @@ public class VK10BufferFactory extends AbstractBufferFactory<VK10Buffer> {
 
     @Override
     protected void doAllocate(VK10Buffer buffer, long size, BufferAccessHint accessHint, BufferMapHint mapHint, BufferStorageHint storageHint) {
-        final VkDevice device = VKThreadConstants.getInstance().device;
+        final VkDevice device = VKThreadConstantsOld.getInstance().device;
         
         final VkBufferCreateInfo bufInfo = VkBufferCreateInfo.calloc()
                 .sType(VK10.VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO)
@@ -120,7 +120,7 @@ public class VK10BufferFactory extends AbstractBufferFactory<VK10Buffer> {
 
     @Override
     protected void doFree(VK10Buffer buffer) {
-        final VkDevice device = VKThreadConstants.getInstance().device;
+        final VkDevice device = VKThreadConstantsOld.getInstance().device;
         
         VK10.vkDestroyBuffer(device, buffer.id, null);
     }
@@ -137,7 +137,7 @@ public class VK10BufferFactory extends AbstractBufferFactory<VK10Buffer> {
 
     @Override
     protected long doMap(VK10Buffer buffer, long offset, long size, BufferMapHint mapHint, BufferMapInvalidationHint invalidHint, BufferMapSynchronizationHint syncHint, BufferUnmapHint unmapHint) {                
-        final VkDevice device = VKThreadConstants.getInstance().device;
+        final VkDevice device = VKThreadConstantsOld.getInstance().device;
         
         try (MemoryStack stack = MemoryStack.stackPush()) {
             final PointerBuffer pData = stack.callocPointer(1);
@@ -157,7 +157,7 @@ public class VK10BufferFactory extends AbstractBufferFactory<VK10Buffer> {
 
     @Override
     protected void doUnmap(VK10Buffer buffer) {
-        final VkDevice device = VKThreadConstants.getInstance().device;
+        final VkDevice device = VKThreadConstantsOld.getInstance().device;
         
         VK10.vkUnmapMemory(device, buffer.memId);                
         buffer.setMapInfo(0L, 0L, 0L);

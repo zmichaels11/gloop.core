@@ -16,11 +16,11 @@ import com.longlinkislong.gloop2.VertexAttribute;
 import com.longlinkislong.gloop2.VertexAttributeFormat;
 import com.longlinkislong.gloop2.vkimpl.VK10Buffer;
 import com.longlinkislong.gloop2.vkimpl.VK10BufferFactory;
-import com.longlinkislong.gloop2.vkimpl.VKThreadConstants;
+import com.longlinkislong.gloop2.vkimpl.VKThreadConstantsOld;
 import com.longlinkislong.gloop2.vkimpl.VK10RasterPipeline;
 import com.longlinkislong.gloop2.vkimpl.VKGlobalConstants;
+import com.longlinkislong.gloop2.vkimpl.VKThreadConstants;
 import static org.lwjgl.system.MemoryUtil.*;
-import static org.lwjgl.vulkan.EXTDebugReport.*;
 import static org.lwjgl.vulkan.KHRSwapchain.*;
 import static org.lwjgl.vulkan.KHRSurface.*;
 import static org.lwjgl.vulkan.VK10.*;
@@ -29,7 +29,6 @@ import static org.lwjgl.glfw.GLFW.*;
 import static org.lwjgl.glfw.GLFWVulkan.*;
 
 import java.io.IOException;
-import java.nio.ByteBuffer;
 import java.nio.FloatBuffer;
 import java.nio.IntBuffer;
 import java.nio.LongBuffer;
@@ -39,24 +38,17 @@ import org.junit.Test;
 import org.lwjgl.PointerBuffer;
 import org.lwjgl.glfw.GLFWKeyCallback;
 import org.lwjgl.glfw.GLFWWindowSizeCallback;
-import static org.lwjgl.vulkan.VKUtil.VK_MAKE_VERSION;
-import org.lwjgl.vulkan.VkApplicationInfo;
 import org.lwjgl.vulkan.VkClearValue;
 import org.lwjgl.vulkan.VkCommandBuffer;
 import org.lwjgl.vulkan.VkCommandBufferAllocateInfo;
 import org.lwjgl.vulkan.VkCommandBufferBeginInfo;
 import org.lwjgl.vulkan.VkCommandPoolCreateInfo;
-import org.lwjgl.vulkan.VkDebugReportCallbackCreateInfoEXT;
-import org.lwjgl.vulkan.VkDebugReportCallbackEXT;
 import org.lwjgl.vulkan.VkDevice;
-import org.lwjgl.vulkan.VkDeviceCreateInfo;
-import org.lwjgl.vulkan.VkDeviceQueueCreateInfo;
 import org.lwjgl.vulkan.VkExtent2D;
 import org.lwjgl.vulkan.VkFramebufferCreateInfo;
 import org.lwjgl.vulkan.VkImageMemoryBarrier;
 import org.lwjgl.vulkan.VkImageViewCreateInfo;
 import org.lwjgl.vulkan.VkInstance;
-import org.lwjgl.vulkan.VkInstanceCreateInfo;
 import org.lwjgl.vulkan.VkPhysicalDevice;
 import org.lwjgl.vulkan.VkPhysicalDeviceMemoryProperties;
 import org.lwjgl.vulkan.VkPresentInfoKHR;
@@ -79,11 +71,10 @@ import org.lwjgl.vulkan.VkViewport;
  */
 public class TriangleDemoGloop {
 
-    private static final boolean VALIDATION = Boolean.parseBoolean(System.getProperty("vulkan.validation", "false"));
-
-    private static final ByteBuffer[] LAYERS = {
-        memUTF8("VK_LAYER_LUNARG_standard_validation"),};
-
+    static {
+        System.setProperty("org.slf4j.simpleLogger.defaultLogLevel", "debug");
+    }
+    
     /**
      * Remove if added to spec.
      */
@@ -92,7 +83,7 @@ public class TriangleDemoGloop {
     /**
      * This is just -1L, but it is nicer as a symbolic constant.
      */
-    private static final long UINT64_MAX = 0xFFFFFFFFFFFFFFFFL;    
+    private static final long UINT64_MAX = 0xFFFFFFFFFFFFFFFFL;
 
     private static class ColorFormatAndSpace {
 
@@ -501,7 +492,7 @@ public class TriangleDemoGloop {
         ret.buffer = out;
 
         return ret;
-    }    
+    }
 
     private static VkCommandBuffer[] createRenderCommandBuffers(VkDevice device, long commandPool, long[] framebuffers, long renderPass, int width, int height,
             long pipeline, Buffer verticesBuf) {
@@ -718,14 +709,14 @@ public class TriangleDemoGloop {
         }
 
         // Create the Vulkan instance
-        final VkInstance instance = VKGlobalConstants.getInstance().instance;        
-        final VkPhysicalDevice physicalDevice = VKThreadConstants.getPhysicalDevice(instance, 0);
-        final int graphicsQueueIndex = VKThreadConstants.getGraphicsQueueIndex(physicalDevice);
-        final VKThreadConstants.DeviceInfo deviceAndGraphicsQueueFamily = VKThreadConstants.createDevice(physicalDevice, graphicsQueueIndex, Arrays.asList(VK_KHR_SWAPCHAIN_EXTENSION_NAME));
+        final VkInstance instance = VKGlobalConstants.getInstance().instance;
+        final VkPhysicalDevice physicalDevice = VKThreadConstants.getInstance().physicalDevice;
+        final int graphicsQueueIndex = VKThreadConstants.getInstance().getFirstGraphicsQueue().queueIndex;
+        final VKThreadConstantsOld.DeviceInfo deviceAndGraphicsQueueFamily = VKThreadConstantsOld.createDevice(physicalDevice, graphicsQueueIndex, Arrays.asList(VK_KHR_SWAPCHAIN_EXTENSION_NAME));
         final VkDevice device = deviceAndGraphicsQueueFamily.device;
 
         // bind the device context to the current thread...
-        VKThreadConstants.create(device);
+        VKThreadConstantsOld.create(device);
 
         int queueFamilyIndex = deviceAndGraphicsQueueFamily.queueFamilyIndex;
         final VkPhysicalDeviceMemoryProperties memoryProperties = deviceAndGraphicsQueueFamily.memoryProperties;
@@ -758,10 +749,10 @@ public class TriangleDemoGloop {
         final long commandPool = createCommandPool(device, queueFamilyIndex);
         final VkCommandBuffer setupCommandBuffer = createCommandBuffer(device, commandPool);
         final VkCommandBuffer postPresentCommandBuffer = createCommandBuffer(device, commandPool);
-        final VkQueue queue = createDeviceQueue(device, queueFamilyIndex);        
+        final VkQueue queue = createDeviceQueue(device, queueFamilyIndex);
         final long renderCommandPool = createCommandPool(device, queueFamilyIndex);
         final Vertices vertices = createVertices(memoryProperties, device);
-                
+
         final RasterPipeline pipeline = new RasterPipelineCreateInfo()
                 .withVertexInputs(vertices.vertexArrayInput)
                 .withShaderStage(new ShaderCreateInfo()
@@ -779,8 +770,8 @@ public class TriangleDemoGloop {
             boolean mustRecreate = true;
 
             void recreate() {
-                final VKThreadConstants ctx = VKThreadConstants.getInstance();
-                
+                final VKThreadConstantsOld ctx = VKThreadConstantsOld.getInstance();
+
                 // Begin the setup command buffer (the one we will use for swapchain/framebuffer creation)
                 VkCommandBufferBeginInfo cmdBufInfo = VkCommandBufferBeginInfo.calloc()
                         .sType(VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO)
@@ -929,7 +920,7 @@ public class TriangleDemoGloop {
         memFree(pRenderCompleteSemaphore);
         semaphoreCreateInfo.free();
         memFree(pSwapchains);
-        memFree(pCommandBuffers);        
+        memFree(pCommandBuffers);
 
         windowSizeCallback.free();
         keyCallback.free();

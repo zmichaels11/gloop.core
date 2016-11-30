@@ -111,7 +111,7 @@ public class VK10PipelineFactory extends AbstractRasterPipelineFactory<VK10Raste
                 .pNext(NULL)
                 .pSetLayouts(null);
 
-        final VKThreadConstants ctx = VKThreadConstants.getInstance();
+        final VKThreadConstantsOld ctx = VKThreadConstantsOld.getInstance();
         final VkDevice device = ctx.device;
         
         final long layout;
@@ -174,7 +174,7 @@ public class VK10PipelineFactory extends AbstractRasterPipelineFactory<VK10Raste
 
     @Override
     protected void doFree(VK10RasterPipeline pipeline) {
-        VkDevice device = VKThreadConstants.getInstance().device;
+        VkDevice device = VKThreadConstantsOld.getInstance().device;
         
         VK10.vkDestroyPipeline(device, pipeline.pipeline, null);        
     }
