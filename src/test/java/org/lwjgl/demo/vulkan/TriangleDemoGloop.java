@@ -14,6 +14,7 @@ import com.longlinkislong.gloop2.vkimpl.VK10Buffer;
 import com.longlinkislong.gloop2.vkimpl.VK10BufferFactory;
 import com.longlinkislong.gloop2.vkimpl.VKThreadContext;
 import com.longlinkislong.gloop2.vkimpl.VK10PipelineFactory;
+import com.longlinkislong.gloop2.vkimpl.VK10RenderPass;
 import static org.lwjgl.system.MemoryUtil.*;
 import static org.lwjgl.vulkan.EXTDebugReport.*;
 import static org.lwjgl.vulkan.KHRSwapchain.*;
@@ -36,8 +37,6 @@ import org.lwjgl.glfw.GLFWKeyCallback;
 import org.lwjgl.glfw.GLFWWindowSizeCallback;
 import static org.lwjgl.vulkan.VKUtil.VK_MAKE_VERSION;
 import org.lwjgl.vulkan.VkApplicationInfo;
-import org.lwjgl.vulkan.VkAttachmentDescription;
-import org.lwjgl.vulkan.VkAttachmentReference;
 import org.lwjgl.vulkan.VkClearValue;
 import org.lwjgl.vulkan.VkCommandBuffer;
 import org.lwjgl.vulkan.VkCommandBufferAllocateInfo;
@@ -73,11 +72,9 @@ import org.lwjgl.vulkan.VkQueue;
 import org.lwjgl.vulkan.VkQueueFamilyProperties;
 import org.lwjgl.vulkan.VkRect2D;
 import org.lwjgl.vulkan.VkRenderPassBeginInfo;
-import org.lwjgl.vulkan.VkRenderPassCreateInfo;
 import org.lwjgl.vulkan.VkSemaphoreCreateInfo;
 import org.lwjgl.vulkan.VkShaderModuleCreateInfo;
 import org.lwjgl.vulkan.VkSubmitInfo;
-import org.lwjgl.vulkan.VkSubpassDescription;
 import org.lwjgl.vulkan.VkSurfaceCapabilitiesKHR;
 import org.lwjgl.vulkan.VkSurfaceFormatKHR;
 import org.lwjgl.vulkan.VkSwapchainCreateInfoKHR;
@@ -572,53 +569,7 @@ public class TriangleDemoGloop {
         ret.swapchainHandle = swapChain;
         return ret;
     }
-
-    private static long createRenderPass(VkDevice device, int colorFormat) {
-        VkAttachmentDescription.Buffer attachments = VkAttachmentDescription.calloc(1)
-                .format(colorFormat)
-                .samples(VK_SAMPLE_COUNT_1_BIT)
-                .loadOp(VK_ATTACHMENT_LOAD_OP_CLEAR)
-                .storeOp(VK_ATTACHMENT_STORE_OP_STORE)
-                .stencilLoadOp(VK_ATTACHMENT_LOAD_OP_DONT_CARE)
-                .stencilStoreOp(VK_ATTACHMENT_STORE_OP_DONT_CARE)
-                .initialLayout(VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL)
-                .finalLayout(VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL);
-
-        VkAttachmentReference.Buffer colorReference = VkAttachmentReference.calloc(1)
-                .attachment(0)
-                .layout(VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL);
-
-        VkSubpassDescription.Buffer subpass = VkSubpassDescription.calloc(1)
-                .pipelineBindPoint(VK_PIPELINE_BIND_POINT_GRAPHICS)
-                .flags(VK_FLAGS_NONE)
-                .pInputAttachments(null)
-                .colorAttachmentCount(colorReference.remaining())
-                .pColorAttachments(colorReference) // <- only color attachment
-                .pResolveAttachments(null)
-                .pDepthStencilAttachment(null)
-                .pPreserveAttachments(null);
-
-        VkRenderPassCreateInfo renderPassInfo = VkRenderPassCreateInfo.calloc()
-                .sType(VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO)
-                .pNext(NULL)
-                .pAttachments(attachments)
-                .pSubpasses(subpass)
-                .pDependencies(null);
-
-        LongBuffer pRenderPass = memAllocLong(1);
-        int err = vkCreateRenderPass(device, renderPassInfo, null, pRenderPass);
-        long renderPass = pRenderPass.get(0);
-        memFree(pRenderPass);
-        renderPassInfo.free();
-        colorReference.free();
-        subpass.free();
-        attachments.free();
-        if (err != VK_SUCCESS) {
-            throw new AssertionError("Failed to create clear render pass: " + translateVulkanResult(err));
-        }
-        return renderPass;
-    }
-
+    
     private static long[] createFramebuffers(VkDevice device, Swapchain swapchain, long renderPass, int width, int height) {
         LongBuffer attachments = memAllocLong(1);
         VkFramebufferCreateInfo fci = VkFramebufferCreateInfo.calloc()
@@ -1114,10 +1065,10 @@ public class TriangleDemoGloop {
         final VkCommandBuffer setupCommandBuffer = createCommandBuffer(device, commandPool);
         final VkCommandBuffer postPresentCommandBuffer = createCommandBuffer(device, commandPool);
         final VkQueue queue = createDeviceQueue(device, queueFamilyIndex);
-        final long renderPass = createRenderPass(device, colorFormatAndSpace.colorFormat);
+        final VK10RenderPass renderPass = new VK10RenderPass(colorFormatAndSpace.colorFormat);
         final long renderCommandPool = createCommandPool(device, queueFamilyIndex);
         final Vertices vertices = createVertices(memoryProperties, device);
-        final long pipeline = createPipeline(device, renderPass, VK10PipelineFactory.createVertexArrayInput(vertices.vertexArrayInput));
+        final long pipeline = createPipeline(device, renderPass.id, VK10PipelineFactory.createVertexArrayInput(vertices.vertexArrayInput));
 
         final class SwapchainRecreator {
             boolean mustRecreate = true;
@@ -1146,12 +1097,12 @@ public class TriangleDemoGloop {
                     for (int i = 0; i < framebuffers.length; i++)
                         vkDestroyFramebuffer(device, framebuffers[i], null);
                 }
-                framebuffers = createFramebuffers(device, swapchain, renderPass, width, height);
+                framebuffers = createFramebuffers(device, swapchain, renderPass.id, width, height);
                 // Create render command buffers
                 if (renderCommandBuffers != null) {
                     vkResetCommandPool(device, renderCommandPool, VK_FLAGS_NONE);
                 }
-                renderCommandBuffers = createRenderCommandBuffers(device, renderCommandPool, framebuffers, renderPass, width, height, pipeline,
+                renderCommandBuffers = createRenderCommandBuffers(device, renderCommandPool, framebuffers, renderPass.id, width, height, pipeline,
                         vertices.buffer);
 
                 mustRecreate = false;
