@@ -14,24 +14,24 @@ import java.util.Objects;
  *
  * @author zmichaels
  */
-public final class VertexArrayCreateInfo {
+public final class VertexInputs {
     public final List<VertexAttribute> attributes;
     
-    public VertexArrayCreateInfo(final List<VertexAttribute> attribs) {
+    public VertexInputs(final List<VertexAttribute> attribs) {
         final List<VertexAttribute> newAttribList = new ArrayList<>(attribs);
         
         this.attributes = Collections.unmodifiableList(newAttribList);
     }
     
-    public VertexArrayCreateInfo() {
+    public VertexInputs() {
         this.attributes = Collections.emptyList();
     }
     
-    public VertexArrayCreateInfo withAttribute(final VertexAttribute attrib) {
+    public VertexInputs withAttribute(final VertexAttribute attrib) {
         final List<VertexAttribute> newAttribList = new ArrayList<>(this.attributes);
         
         newAttribList.add(attrib);
         
-        return new VertexArrayCreateInfo(newAttribList);
+        return new VertexInputs(newAttribList);
     }        
 }

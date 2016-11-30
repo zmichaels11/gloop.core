@@ -10,7 +10,7 @@ import com.longlinkislong.gloop2.PolygonMode;
 import com.longlinkislong.gloop2.PrimitiveType;
 import com.longlinkislong.gloop2.ShaderType;
 import com.longlinkislong.gloop2.VertexAttributeFormat;
-import com.longlinkislong.gloop2.VertexOrder;
+import com.longlinkislong.gloop2.FrontFace;
 import org.lwjgl.vulkan.VK10;
 
 /**
@@ -62,7 +62,7 @@ public final class VKTranslate {
             case LINES:
                 return VK10.VK_PRIMITIVE_TOPOLOGY_LINE_LIST;
             case TRIANGLES:
-                return VK10.VK_PRIMITIVE_TOPOLOGY_LINE_LIST;
+                return VK10.VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST;
             default:
                 throw new UnsupportedOperationException("Unsupported primitive type: "+ type);
         }
@@ -96,7 +96,7 @@ public final class VKTranslate {
         }
     }
     
-    public static int toVKenum(final VertexOrder frontFace) {
+    public static int toVKenum(final FrontFace frontFace) {
         switch (frontFace) {
             case CLOCKWISE:
                 return VK10.VK_FRONT_FACE_CLOCKWISE;

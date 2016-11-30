@@ -7,19 +7,20 @@ package org.lwjgl.demo.vulkan;
 import com.longlinkislong.gloop2.Buffer;
 import com.longlinkislong.gloop2.BufferCreateInfo;
 import com.longlinkislong.gloop2.ObjectFactoryManager;
+import com.longlinkislong.gloop2.RasterPipeline;
+import com.longlinkislong.gloop2.RasterPipelineCreateInfo;
 import com.longlinkislong.gloop2.ShaderCreateInfo;
 import com.longlinkislong.gloop2.ShaderType;
-import com.longlinkislong.gloop2.VertexArrayCreateInfo;
+import com.longlinkislong.gloop2.VertexInputs;
 import com.longlinkislong.gloop2.VertexAttribute;
 import com.longlinkislong.gloop2.VertexAttributeFormat;
 import com.longlinkislong.gloop2.vkimpl.VK10Buffer;
 import com.longlinkislong.gloop2.vkimpl.VK10BufferFactory;
 import com.longlinkislong.gloop2.vkimpl.VKThreadContext;
-import com.longlinkislong.gloop2.vkimpl.VK10PipelineFactory;
 import com.longlinkislong.gloop2.vkimpl.VK10Program;
+import com.longlinkislong.gloop2.vkimpl.VK10RasterPipeline;
 import com.longlinkislong.gloop2.vkimpl.VK10RenderPass;
 import com.longlinkislong.gloop2.vkimpl.VK10Shader;
-import com.longlinkislong.gloop2.vkimpl.VKVertexInput;
 import static org.lwjgl.system.MemoryUtil.*;
 import static org.lwjgl.vulkan.EXTDebugReport.*;
 import static org.lwjgl.vulkan.KHRSwapchain.*;
@@ -629,7 +630,7 @@ public class TriangleDemoGloop {
     private static class Vertices {
 
         Buffer buffer;
-        VertexArrayCreateInfo vertexArrayInput;
+        VertexInputs vertexArrayInput;
     }
 
     private static Vertices createVertices(VkPhysicalDeviceMemoryProperties deviceMemoryProperties, VkDevice device) {
@@ -653,7 +654,7 @@ public class TriangleDemoGloop {
         out.unmap();
 
         Vertices ret = new Vertices();
-        ret.vertexArrayInput = new VertexArrayCreateInfo()
+        ret.vertexArrayInput = new VertexInputs()
                 .withAttribute(new VertexAttribute()
                         .withBuffer(out)
                         .withStride(2 * 4)
@@ -662,138 +663,7 @@ public class TriangleDemoGloop {
         ret.buffer = out;
 
         return ret;
-    }
-
-    private static long createPipeline(VkDevice device, long renderPass, VkPipelineVertexInputStateCreateInfo vi) throws IOException {
-        int err;
-        // Vertex input state
-        // Describes the topoloy used with this pipeline
-        VkPipelineInputAssemblyStateCreateInfo inputAssemblyState = VkPipelineInputAssemblyStateCreateInfo.calloc()
-                .sType(VK_STRUCTURE_TYPE_PIPELINE_INPUT_ASSEMBLY_STATE_CREATE_INFO)
-                .topology(VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST);
-
-        // Rasterization state
-        VkPipelineRasterizationStateCreateInfo rasterizationState = VkPipelineRasterizationStateCreateInfo.calloc()
-                .sType(VK_STRUCTURE_TYPE_PIPELINE_RASTERIZATION_STATE_CREATE_INFO)
-                .polygonMode(VK_POLYGON_MODE_FILL)
-                .cullMode(VK_CULL_MODE_NONE)
-                .frontFace(VK_FRONT_FACE_COUNTER_CLOCKWISE)
-                .depthClampEnable(VK_FALSE)
-                .rasterizerDiscardEnable(VK_FALSE)
-                .depthBiasEnable(VK_FALSE);
-
-        // Color blend state
-        // Describes blend modes and color masks
-        VkPipelineColorBlendAttachmentState.Buffer colorWriteMask = VkPipelineColorBlendAttachmentState.calloc(1)
-                .blendEnable(VK_FALSE)
-                .colorWriteMask(0xF); // <- RGBA
-        VkPipelineColorBlendStateCreateInfo colorBlendState = VkPipelineColorBlendStateCreateInfo.calloc()
-                .sType(VK_STRUCTURE_TYPE_PIPELINE_COLOR_BLEND_STATE_CREATE_INFO)
-                .pAttachments(colorWriteMask);
-
-        // Viewport state
-        VkPipelineViewportStateCreateInfo viewportState = VkPipelineViewportStateCreateInfo.calloc()
-                .sType(VK_STRUCTURE_TYPE_PIPELINE_VIEWPORT_STATE_CREATE_INFO)
-                .viewportCount(1) // <- one viewport
-                .scissorCount(1); // <- one scissor rectangle
-
-        // Enable dynamic states
-        // Describes the dynamic states to be used with this pipeline
-        // Dynamic states can be set even after the pipeline has been created
-        // So there is no need to create new pipelines just for changing
-        // a viewport's dimensions or a scissor box
-        IntBuffer pDynamicStates = memAllocInt(2);
-        pDynamicStates.put(VK_DYNAMIC_STATE_VIEWPORT).put(VK_DYNAMIC_STATE_SCISSOR).flip();
-        VkPipelineDynamicStateCreateInfo dynamicState = VkPipelineDynamicStateCreateInfo.calloc()
-                // The dynamic state properties themselves are stored in the command buffer
-                .sType(VK_STRUCTURE_TYPE_PIPELINE_DYNAMIC_STATE_CREATE_INFO)
-                .pDynamicStates(pDynamicStates);
-
-        // Depth and stencil state
-        // Describes depth and stenctil test and compare ops
-        VkPipelineDepthStencilStateCreateInfo depthStencilState = VkPipelineDepthStencilStateCreateInfo.calloc()
-                // No depth test/write and no stencil used 
-                .sType(VK_STRUCTURE_TYPE_PIPELINE_DEPTH_STENCIL_STATE_CREATE_INFO)
-                .depthTestEnable(VK_FALSE)
-                .depthWriteEnable(VK_FALSE)
-                .depthCompareOp(VK_COMPARE_OP_ALWAYS)
-                .depthBoundsTestEnable(VK_FALSE)
-                .stencilTestEnable(VK_FALSE);
-        depthStencilState.back()
-                .failOp(VK_STENCIL_OP_KEEP)
-                .passOp(VK_STENCIL_OP_KEEP)
-                .compareOp(VK_COMPARE_OP_ALWAYS);
-        depthStencilState.front(depthStencilState.back());
-
-        // Multi sampling state
-        // No multi sampling used in this example
-        VkPipelineMultisampleStateCreateInfo multisampleState = VkPipelineMultisampleStateCreateInfo.calloc()
-                .sType(VK_STRUCTURE_TYPE_PIPELINE_MULTISAMPLE_STATE_CREATE_INFO)
-                .pSampleMask(null)
-                .rasterizationSamples(VK_SAMPLE_COUNT_1_BIT);
-
-        // Load shaders
-        final VK10Program program = new VK10Program(Arrays.asList(
-                (VK10Shader) new ShaderCreateInfo()
-                        .withType(ShaderType.VERTEX)
-                        .withSource("org/lwjgl/demo/vulkan/triangle.vert.spv")
-                        .allocate(),
-                (VK10Shader) new ShaderCreateInfo()
-                        .withType(ShaderType.FRAGMENT)
-                        .withSource("org/lwjgl/demo/vulkan/triangle.frag.spv")
-                        .allocate()
-        ));
-
-        // Create the pipeline layout that is used to generate the rendering pipelines that
-        // are based on this descriptor set layout
-        VkPipelineLayoutCreateInfo pPipelineLayoutCreateInfo = VkPipelineLayoutCreateInfo.calloc()
-                .sType(VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO)
-                .pNext(NULL)
-                .pSetLayouts(null);
-
-        LongBuffer pPipelineLayout = memAllocLong(1);
-        err = vkCreatePipelineLayout(device, pPipelineLayoutCreateInfo, null, pPipelineLayout);
-        long layout = pPipelineLayout.get(0);
-        memFree(pPipelineLayout);
-        pPipelineLayoutCreateInfo.free();
-        if (err != VK_SUCCESS) {
-            throw new AssertionError("Failed to create pipeline layout: " + translateVulkanResult(err));
-        }
-
-        // Assign states
-        VkGraphicsPipelineCreateInfo.Buffer pipelineCreateInfo = VkGraphicsPipelineCreateInfo.calloc(1)
-                .sType(VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO)
-                .layout(layout) // <- the layout used for this pipeline (NEEDS TO BE SET! even though it is basically empty)
-                .renderPass(renderPass) // <- renderpass this pipeline is attached to
-                .pVertexInputState(vi)
-                .pInputAssemblyState(inputAssemblyState)
-                .pRasterizationState(rasterizationState)
-                .pColorBlendState(colorBlendState)
-                .pMultisampleState(multisampleState)
-                .pViewportState(viewportState)
-                .pDepthStencilState(depthStencilState)
-                .pStages(program.createInfo)
-                .pDynamicState(dynamicState);
-
-        // Create rendering pipeline
-        LongBuffer pPipelines = memAllocLong(1);
-        err = vkCreateGraphicsPipelines(device, VK_NULL_HANDLE, pipelineCreateInfo, null, pPipelines);
-        long pipeline = pPipelines.get(0);
-        program.free();
-        multisampleState.free();
-        depthStencilState.free();
-        dynamicState.free();
-        memFree(pDynamicStates);
-        viewportState.free();
-        colorBlendState.free();
-        colorWriteMask.free();
-        rasterizationState.free();
-        inputAssemblyState.free();
-        if (err != VK_SUCCESS) {
-            throw new AssertionError("Failed to create pipeline: " + translateVulkanResult(err));
-        }
-        return pipeline;
-    }
+    }    
 
     private static VkCommandBuffer[] createRenderCommandBuffers(VkDevice device, long commandPool, long[] framebuffers, long renderPass, int width, int height,
             long pipeline, Buffer verticesBuf) {
@@ -1056,17 +926,29 @@ public class TriangleDemoGloop {
         final long commandPool = createCommandPool(device, queueFamilyIndex);
         final VkCommandBuffer setupCommandBuffer = createCommandBuffer(device, commandPool);
         final VkCommandBuffer postPresentCommandBuffer = createCommandBuffer(device, commandPool);
-        final VkQueue queue = createDeviceQueue(device, queueFamilyIndex);
-        final VK10RenderPass renderPass = new VK10RenderPass(colorFormatAndSpace.colorFormat);
+        final VkQueue queue = createDeviceQueue(device, queueFamilyIndex);        
         final long renderCommandPool = createCommandPool(device, queueFamilyIndex);
         final Vertices vertices = createVertices(memoryProperties, device);
-        final long pipeline = createPipeline(device, renderPass.id, new VKVertexInput(vertices.vertexArrayInput).info);
+                
+        final RasterPipeline pipeline = new RasterPipelineCreateInfo()
+                .withVertexInputs(vertices.vertexArrayInput)
+                .withShaderStage(new ShaderCreateInfo()
+                        .withType(ShaderType.VERTEX)
+                        .withSource("org/lwjgl/demo/vulkan/triangle.vert.spv")
+                        .allocate())
+                .withShaderStage(new ShaderCreateInfo()
+                        .withType(ShaderType.FRAGMENT)
+                        .withSource("org/lwjgl/demo/vulkan/triangle.frag.spv")
+                        .allocate())
+                .allocate();
 
         final class SwapchainRecreator {
 
             boolean mustRecreate = true;
 
             void recreate() {
+                final VKThreadContext ctx = VKThreadContext.getCurrentContext();
+                
                 // Begin the setup command buffer (the one we will use for swapchain/framebuffer creation)
                 VkCommandBufferBeginInfo cmdBufInfo = VkCommandBufferBeginInfo.calloc()
                         .sType(VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO)
@@ -1092,12 +974,12 @@ public class TriangleDemoGloop {
                         vkDestroyFramebuffer(device, framebuffers[i], null);
                     }
                 }
-                framebuffers = createFramebuffers(device, swapchain, renderPass.id, width, height);
+                framebuffers = createFramebuffers(device, swapchain, ctx.getRenderPass(colorFormatAndSpace.colorFormat).id, width, height);
                 // Create render command buffers
                 if (renderCommandBuffers != null) {
                     vkResetCommandPool(device, renderCommandPool, VK_FLAGS_NONE);
                 }
-                renderCommandBuffers = createRenderCommandBuffers(device, renderCommandPool, framebuffers, renderPass.id, width, height, pipeline,
+                renderCommandBuffers = createRenderCommandBuffers(device, renderCommandPool, framebuffers, ctx.getRenderPass(colorFormatAndSpace.colorFormat).id, width, height, ((VK10RasterPipeline) pipeline).pipeline,
                         vertices.buffer);
 
                 mustRecreate = false;

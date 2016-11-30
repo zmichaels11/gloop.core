@@ -7,20 +7,15 @@ package com.longlinkislong.gloop2.vkimpl;
 
 import com.longlinkislong.gloop2.AbstractRasterPipelineFactory;
 import com.longlinkislong.gloop2.RasterPipelineCreateInfo;
-import com.longlinkislong.gloop2.VertexArrayCreateInfo;
-import com.longlinkislong.gloop2.VertexAttribute;
 import static com.longlinkislong.gloop2.vkimpl.VKTranslate.toVKenum;
 import java.nio.IntBuffer;
 import java.nio.LongBuffer;
-import java.util.List;
 import java.util.stream.Collectors;
 import static org.lwjgl.demo.vulkan.VKUtil.translateVulkanResult;
 import org.lwjgl.system.MemoryStack;
 import org.lwjgl.system.MemoryUtil;
 import static org.lwjgl.system.MemoryUtil.NULL;
 import org.lwjgl.vulkan.VK10;
-import org.lwjgl.vulkan.VkAttachmentDescription;
-import org.lwjgl.vulkan.VkAttachmentReference;
 import org.lwjgl.vulkan.VkDevice;
 import org.lwjgl.vulkan.VkGraphicsPipelineCreateInfo;
 import org.lwjgl.vulkan.VkPipelineColorBlendAttachmentState;
@@ -32,12 +27,7 @@ import org.lwjgl.vulkan.VkPipelineLayoutCreateInfo;
 import org.lwjgl.vulkan.VkPipelineMultisampleStateCreateInfo;
 import org.lwjgl.vulkan.VkPipelineRasterizationStateCreateInfo;
 import org.lwjgl.vulkan.VkPipelineShaderStageCreateInfo;
-import org.lwjgl.vulkan.VkPipelineVertexInputStateCreateInfo;
 import org.lwjgl.vulkan.VkPipelineViewportStateCreateInfo;
-import org.lwjgl.vulkan.VkRenderPassCreateInfo;
-import org.lwjgl.vulkan.VkSubpassDescription;
-import org.lwjgl.vulkan.VkVertexInputAttributeDescription;
-import org.lwjgl.vulkan.VkVertexInputBindingDescription;
 
 /**
  *
@@ -45,7 +35,7 @@ import org.lwjgl.vulkan.VkVertexInputBindingDescription;
  */
 public class VK10PipelineFactory extends AbstractRasterPipelineFactory<VK10RasterPipeline> {
     
-    public static int colorFormat; //TODO: generate this!
+    public static int COLOR_FORMAT; //TODO: generate this!
 
     @Override
     protected VK10RasterPipeline newPipeline() {
@@ -53,8 +43,7 @@ public class VK10PipelineFactory extends AbstractRasterPipelineFactory<VK10Raste
     }
 
     @Override
-    protected void doAllocate(VK10RasterPipeline pipeline) {
-        pipeline.renderPass = new VK10RenderPass(colorFormat);
+    protected void doAllocate(VK10RasterPipeline pipeline) {        
         createPipeline(pipeline);
     }    
 
@@ -115,14 +104,15 @@ public class VK10PipelineFactory extends AbstractRasterPipelineFactory<VK10Raste
                 .pSampleMask(null)
                 .rasterizationSamples(VK10.VK_SAMPLE_COUNT_1_BIT);
 
-        final VkPipelineShaderStageCreateInfo.Buffer shaderStages = createShaderStages(pipeline);
+        final VkPipelineShaderStageCreateInfo.Buffer shaderStages = new VK10Program(pipeline.getInfo().shaderStages.stream().map(shader -> (VK10Shader) shader).collect(Collectors.toList())).createInfo;
 
         final VkPipelineLayoutCreateInfo pPipelineLayoutCreateInfo = VkPipelineLayoutCreateInfo.calloc()
                 .sType(VK10.VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO)
                 .pNext(NULL)
                 .pSetLayouts(null);
 
-        final VkDevice device = VKThreadContext.getCurrentContext().getDevice();
+        final VKThreadContext ctx = VKThreadContext.getCurrentContext();
+        final VkDevice device = ctx.getDevice();
         
         final long layout;
         try (MemoryStack stack = MemoryStack.stackPush()) {
@@ -138,12 +128,12 @@ public class VK10PipelineFactory extends AbstractRasterPipelineFactory<VK10Raste
             pPipelineLayoutCreateInfo.free();
         }
         
-        final VKVertexInput vertexInput = new VKVertexInput(pipeline.getInfo().attributes);
+        final VKVertexInput vertexInput = new VKVertexInput(pipeline.getInfo().vertexInputs);
 
         final VkGraphicsPipelineCreateInfo.Buffer pipelineCreateInfo = VkGraphicsPipelineCreateInfo.calloc(1)
                 .sType(VK10.VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO)
                 .layout(layout)
-                .renderPass(pipeline.renderPass.id)
+                .renderPass(ctx.getRenderPass(COLOR_FORMAT).id)
                 .pVertexInputState(vertexInput.info)                
                 .pInputAssemblyState(inputAssemblyState)
                 .pRasterizationState(rasterizationState)
@@ -175,27 +165,7 @@ public class VK10PipelineFactory extends AbstractRasterPipelineFactory<VK10Raste
             rasterizationState.free();
             inputAssemblyState.free();            
         }
-    }
-
-    private VkPipelineShaderStageCreateInfo.Buffer createShaderStages(VK10RasterPipeline pipeline) {
-        final List<VK10Shader> shaders = pipeline.getInfo().shaderStages.stream()
-                .map(shader -> (VK10Shader) shader)
-                .collect(Collectors.toList());
-
-        final VkPipelineShaderStageCreateInfo.Buffer shaderStages = VkPipelineShaderStageCreateInfo.calloc(shaders.size());
-
-        for (int i = 0; i < shaders.size(); i++) {
-            final VK10Shader shader = shaders.get(i);
-
-            shaderStages.get(i)
-                    .sType(VK10.VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO)
-                    .stage(toVKenum(shader.getShaderType()))
-                    .module(shader.module)
-                    .pName(MemoryUtil.memUTF8("main"));
-        }
-
-        return shaderStages;
-    }    
+    }      
 
     @Override
     public boolean isValid(VK10RasterPipeline pipeline) {
@@ -206,8 +176,7 @@ public class VK10PipelineFactory extends AbstractRasterPipelineFactory<VK10Raste
     protected void doFree(VK10RasterPipeline pipeline) {
         VkDevice device = VKThreadContext.getCurrentContext().getDevice();
         
-        VK10.vkDestroyPipeline(device, pipeline.pipeline, null);
-        VK10.vkDestroyRenderPass(device, pipeline.renderPass.id, null);
+        VK10.vkDestroyPipeline(device, pipeline.pipeline, null);        
     }
 
     @Override

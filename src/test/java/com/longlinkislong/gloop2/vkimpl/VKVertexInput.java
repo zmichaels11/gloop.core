@@ -5,7 +5,7 @@
  */
 package com.longlinkislong.gloop2.vkimpl;
 
-import com.longlinkislong.gloop2.VertexArrayCreateInfo;
+import com.longlinkislong.gloop2.VertexInputs;
 import com.longlinkislong.gloop2.VertexAttribute;
 import static com.longlinkislong.gloop2.vkimpl.VKTranslate.toVKenum;
 import java.util.List;
@@ -22,7 +22,7 @@ import org.lwjgl.vulkan.VkVertexInputBindingDescription;
 public class VKVertexInput {
     public final VkPipelineVertexInputStateCreateInfo info;
     
-    public VKVertexInput(VertexArrayCreateInfo info) {
+    public VKVertexInput(VertexInputs info) {
         final List<VertexAttribute> attribs = info.attributes;
         
         final VkVertexInputBindingDescription.Buffer bindings = VkVertexInputBindingDescription.calloc(attribs.size());

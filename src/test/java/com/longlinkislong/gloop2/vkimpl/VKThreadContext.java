@@ -5,6 +5,8 @@
  */
 package com.longlinkislong.gloop2.vkimpl;
 
+import java.util.HashMap;
+import java.util.Map;
 import org.lwjgl.vulkan.VkDevice;
 
 /**
@@ -13,6 +15,8 @@ import org.lwjgl.vulkan.VkDevice;
  */
 public class VKThreadContext {
     private static final ThreadLocal<VKThreadContext> INSTANCES = new ThreadLocal<>();
+    
+    private final Map<Integer, VK10RenderPass> renderPassDefinitions = new HashMap<>();
     
     public static void create(final VkDevice device) {
         INSTANCES.set(new VKThreadContext(device));
@@ -30,5 +34,9 @@ public class VKThreadContext {
     
     public static VKThreadContext getCurrentContext() {
         return INSTANCES.get();
+    }
+    
+    public VK10RenderPass getRenderPass(final int colorFormat) {
+        return renderPassDefinitions.computeIfAbsent(colorFormat, VK10RenderPass::new);
     }
 }

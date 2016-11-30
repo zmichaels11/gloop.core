@@ -9,7 +9,7 @@ package com.longlinkislong.gloop2;
  *
  * @author zmichaels
  */
-public enum VertexOrder {
+public enum FrontFace {
     CLOCKWISE,
     COUNTER_CLOCKWISE
 }

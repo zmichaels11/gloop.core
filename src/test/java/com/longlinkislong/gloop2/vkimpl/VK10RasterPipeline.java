@@ -14,8 +14,7 @@ import java.util.List;
  *
  * @author zmichaels
  */
-public class VK10RasterPipeline extends AbstractRasterPipeline {
-    public VK10RenderPass renderPass;
+public class VK10RasterPipeline extends AbstractRasterPipeline {    
     public long pipeline;    
     
     @Override
@@ -29,7 +28,7 @@ public class VK10RasterPipeline extends AbstractRasterPipeline {
     }
     
     public List<VertexAttribute> getAttributes() {
-        return this.info.attributes.attributes;
+        return this.info.vertexInputs.attributes;
     }
     
     public RasterPipelineCreateInfo getInfo() {
