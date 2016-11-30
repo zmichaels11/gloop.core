@@ -110,9 +110,8 @@ public class VK10PipelineFactory extends AbstractRasterPipelineFactory<VK10Raste
                 .sType(VK10.VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO)
                 .pNext(NULL)
                 .pSetLayouts(null);
-
-        final VKThreadConstantsOld ctx = VKThreadConstantsOld.getInstance();
-        final VkDevice device = ctx.device;
+        
+        final VkDevice device = VKThreadConstants.getInstance().physicalDevice.device;
         
         final long layout;
         try (MemoryStack stack = MemoryStack.stackPush()) {
@@ -133,7 +132,7 @@ public class VK10PipelineFactory extends AbstractRasterPipelineFactory<VK10Raste
         final VkGraphicsPipelineCreateInfo.Buffer pipelineCreateInfo = VkGraphicsPipelineCreateInfo.calloc(1)
                 .sType(VK10.VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO)
                 .layout(layout)
-                .renderPass(ctx.getRenderPass(COLOR_FORMAT).id)
+                .renderPass(VKGlobalConstants.getInstance().getRenderPass(COLOR_FORMAT).id)
                 .pVertexInputState(vertexInput.info)                
                 .pInputAssemblyState(inputAssemblyState)
                 .pRasterizationState(rasterizationState)
@@ -174,7 +173,7 @@ public class VK10PipelineFactory extends AbstractRasterPipelineFactory<VK10Raste
 
     @Override
     protected void doFree(VK10RasterPipeline pipeline) {
-        VkDevice device = VKThreadConstantsOld.getInstance().device;
+        final VkDevice device = VKThreadConstants.getInstance().physicalDevice.device;
         
         VK10.vkDestroyPipeline(device, pipeline.pipeline, null);        
     }

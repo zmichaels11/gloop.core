@@ -16,8 +16,8 @@ import com.longlinkislong.gloop2.VertexAttribute;
 import com.longlinkislong.gloop2.VertexAttributeFormat;
 import com.longlinkislong.gloop2.vkimpl.VK10Buffer;
 import com.longlinkislong.gloop2.vkimpl.VK10BufferFactory;
-import com.longlinkislong.gloop2.vkimpl.VKThreadConstantsOld;
 import com.longlinkislong.gloop2.vkimpl.VK10RasterPipeline;
+import com.longlinkislong.gloop2.vkimpl.VK10RenderPass;
 import com.longlinkislong.gloop2.vkimpl.VKGlobalConstants;
 import com.longlinkislong.gloop2.vkimpl.VKThreadConstants;
 import static org.lwjgl.system.MemoryUtil.*;
@@ -32,7 +32,6 @@ import java.io.IOException;
 import java.nio.FloatBuffer;
 import java.nio.IntBuffer;
 import java.nio.LongBuffer;
-import java.util.Arrays;
 import org.junit.Test;
 
 import org.lwjgl.PointerBuffer;
@@ -710,16 +709,16 @@ public class TriangleDemoGloop {
 
         // Create the Vulkan instance
         final VkInstance instance = VKGlobalConstants.getInstance().instance;
-        final VkPhysicalDevice physicalDevice = VKThreadConstants.getInstance().physicalDevice;
-        final int graphicsQueueIndex = VKThreadConstants.getInstance().getFirstGraphicsQueue().queueIndex;
-        final VKThreadConstantsOld.DeviceInfo deviceAndGraphicsQueueFamily = VKThreadConstantsOld.createDevice(physicalDevice, graphicsQueueIndex, Arrays.asList(VK_KHR_SWAPCHAIN_EXTENSION_NAME));
-        final VkDevice device = deviceAndGraphicsQueueFamily.device;
+        final VkPhysicalDevice physicalDevice = VKThreadConstants.getInstance().physicalDevice.physicalDevice;        
+        //final int graphicsQueueIndex = VKThreadConstants.getInstance().physicalDevice.getFirstGraphicsQueue().queueFamilyIndex;
+        //final VKThreadConstantsOld.DeviceInfo deviceAndGraphicsQueueFamily = VKThreadConstantsOld.createDevice(physicalDevice, graphicsQueueIndex, Arrays.asList(VK_KHR_SWAPCHAIN_EXTENSION_NAME));
+        final VkDevice device = VKThreadConstants.getInstance().physicalDevice.device;
 
         // bind the device context to the current thread...
-        VKThreadConstantsOld.create(device);
+        //VKThreadConstantsOld.create(device);
 
-        int queueFamilyIndex = deviceAndGraphicsQueueFamily.queueFamilyIndex;
-        final VkPhysicalDeviceMemoryProperties memoryProperties = deviceAndGraphicsQueueFamily.memoryProperties;
+        final int queueFamilyIndex = VKThreadConstants.getInstance().physicalDevice.getFirstGraphicsQueue().queueFamilyIndex;
+        final VkPhysicalDeviceMemoryProperties memoryProperties = VKThreadConstants.getInstance().physicalDevice.memoryProperties;
 
         // Create GLFW window
         glfwDefaultWindowHints();
@@ -770,7 +769,7 @@ public class TriangleDemoGloop {
             boolean mustRecreate = true;
 
             void recreate() {
-                final VKThreadConstantsOld ctx = VKThreadConstantsOld.getInstance();
+                final VkDevice device = VKThreadConstants.getInstance().physicalDevice.device;
 
                 // Begin the setup command buffer (the one we will use for swapchain/framebuffer creation)
                 VkCommandBufferBeginInfo cmdBufInfo = VkCommandBufferBeginInfo.calloc()
@@ -797,12 +796,15 @@ public class TriangleDemoGloop {
                         vkDestroyFramebuffer(device, framebuffers[i], null);
                     }
                 }
-                framebuffers = createFramebuffers(device, swapchain, ctx.getRenderPass(colorFormatAndSpace.colorFormat).id, width, height);
+                
+                final VK10RenderPass renderPass = VKGlobalConstants.getInstance().getRenderPass(colorFormatAndSpace.colorFormat);
+                
+                framebuffers = createFramebuffers(device, swapchain, renderPass.id, width, height);
                 // Create render command buffers
                 if (renderCommandBuffers != null) {
                     vkResetCommandPool(device, renderCommandPool, VK_FLAGS_NONE);
                 }
-                renderCommandBuffers = createRenderCommandBuffers(device, renderCommandPool, framebuffers, ctx.getRenderPass(colorFormatAndSpace.colorFormat).id, width, height, ((VK10RasterPipeline) pipeline).pipeline,
+                renderCommandBuffers = createRenderCommandBuffers(device, renderCommandPool, framebuffers, renderPass.id, width, height, ((VK10RasterPipeline) pipeline).pipeline,
                         vertices.buffer);
 
                 mustRecreate = false;

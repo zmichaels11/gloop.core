@@ -9,8 +9,11 @@ import com.longlinkislong.gloop2.GLTerminatedException;
 import java.nio.IntBuffer;
 import java.nio.LongBuffer;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import org.lwjgl.PointerBuffer;
@@ -23,6 +26,7 @@ import static org.lwjgl.vulkan.EXTDebugReport.VK_EXT_DEBUG_REPORT_EXTENSION_NAME
 import static org.lwjgl.vulkan.EXTDebugReport.VK_STRUCTURE_TYPE_DEBUG_REPORT_CALLBACK_CREATE_INFO_EXT;
 import static org.lwjgl.vulkan.EXTDebugReport.vkCreateDebugReportCallbackEXT;
 import static org.lwjgl.vulkan.EXTDebugReport.vkDestroyDebugReportCallbackEXT;
+import static org.lwjgl.vulkan.KHRSwapchain.VK_KHR_SWAPCHAIN_EXTENSION_NAME;
 import org.lwjgl.vulkan.VK10;
 import static org.lwjgl.vulkan.VKUtil.VK_MAKE_VERSION;
 import org.lwjgl.vulkan.VkApplicationInfo;
@@ -38,8 +42,8 @@ import org.slf4j.LoggerFactory;
  *
  * @author zmichaels
  */
-public final class VKGlobalConstants {
-
+public final class VKGlobalConstants {     
+    public static final List<String> EXTENSIONS = Arrays.asList(VK_KHR_SWAPCHAIN_EXTENSION_NAME);
     public static final List<String> LAYERS = new ArrayList<>();
     private static final Logger LOGGER = LoggerFactory.getLogger(VKGlobalConstants.class);
 
@@ -151,6 +155,8 @@ public final class VKGlobalConstants {
         this.instance = this.createInstance();
         this.debugCallbackHandle = this.setupDebug();
         this.physicalDevices = this.listPhysicalDevices();
+        this.extensions = Collections.unmodifiableList(new ArrayList<>(EXTENSIONS)); // create a copy
+        this.layers = Collections.unmodifiableList(new ArrayList<>(LAYERS));
     }
 
     public void free() {
@@ -169,7 +175,15 @@ public final class VKGlobalConstants {
     public static VKGlobalConstants getInstance() {
         return Holder.INSTANCE;
     }
-
+    
+    private final Map<Integer, VK10RenderPass> renderPassDefinitions = new HashMap<>();
+    
+    public VK10RenderPass getRenderPass(final int colorFormat) {
+        return renderPassDefinitions.computeIfAbsent(colorFormat, VK10RenderPass::new);
+    }
+        
+    public final List<String> layers;
+    public final List<String> extensions;
     public final List<VkPhysicalDevice> physicalDevices;
     private final long debugCallbackHandle;
     public final VkInstance instance;
