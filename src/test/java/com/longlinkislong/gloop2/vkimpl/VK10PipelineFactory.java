@@ -111,7 +111,7 @@ public class VK10PipelineFactory extends AbstractRasterPipelineFactory<VK10Raste
                 .pNext(NULL)
                 .pSetLayouts(null);
         
-        final VkDevice device = VKThreadConstants.getInstance().device.vkDevice;
+        final VkDevice device = VKGlobalConstants.getInstance().selectedDevice.vkDevice;
         
         final long layout;
         try (MemoryStack stack = MemoryStack.stackPush()) {
@@ -173,7 +173,7 @@ public class VK10PipelineFactory extends AbstractRasterPipelineFactory<VK10Raste
 
     @Override
     protected void doFree(VK10RasterPipeline pipeline) {
-        final VkDevice device = VKThreadConstants.getInstance().device.vkDevice;
+        final VkDevice device = VKGlobalConstants.getInstance().selectedDevice.vkDevice;
         
         VK10.vkDestroyPipeline(device, pipeline.pipeline, null);        
     }

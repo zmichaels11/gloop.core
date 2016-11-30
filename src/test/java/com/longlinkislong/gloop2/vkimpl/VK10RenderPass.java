@@ -63,7 +63,7 @@ public class VK10RenderPass {
                 .pSubpasses(subpass)
                 .pDependencies(null);
 
-        final VkDevice device = VKThreadConstants.getInstance().device.vkDevice;
+        final VkDevice device = VKGlobalConstants.getInstance().selectedDevice.vkDevice;
 
         try (MemoryStack stack = MemoryStack.stackPush()) {
             final LongBuffer pRenderPass = stack.callocLong(1);

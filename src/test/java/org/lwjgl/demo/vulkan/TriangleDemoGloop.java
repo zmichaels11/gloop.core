@@ -20,7 +20,7 @@ import com.longlinkislong.gloop2.vkimpl.VK10BufferFactory;
 import com.longlinkislong.gloop2.vkimpl.VK10RasterPipeline;
 import com.longlinkislong.gloop2.vkimpl.VK10RenderPass;
 import com.longlinkislong.gloop2.vkimpl.VKGlobalConstants;
-import com.longlinkislong.gloop2.vkimpl.VKThreadConstants;
+
 import static org.lwjgl.system.MemoryUtil.*;
 import static org.lwjgl.vulkan.KHRSwapchain.*;
 import static org.lwjgl.vulkan.KHRSurface.*;
@@ -40,7 +40,6 @@ import org.lwjgl.glfw.GLFWKeyCallback;
 import org.lwjgl.glfw.GLFWWindowSizeCallback;
 import org.lwjgl.vulkan.VkClearValue;
 import org.lwjgl.vulkan.VkCommandBuffer;
-import org.lwjgl.vulkan.VkCommandBufferAllocateInfo;
 import org.lwjgl.vulkan.VkCommandBufferBeginInfo;
 import org.lwjgl.vulkan.VkCommandPoolCreateInfo;
 import org.lwjgl.vulkan.VkDevice;
@@ -480,7 +479,7 @@ public class TriangleDemoGloop {
     private static VkCommandBuffer[] createRenderCommandBuffers(VkDevice device, long commandPool, long[] framebuffers, long renderPass, int width, int height,
             long pipeline, Buffer verticesBuf) {
         
-        VkCommandBuffer[] renderCommandBuffers = VKThreadConstants.getInstance().device.getFirstGraphicsCommandPool().newCommandBuffers(framebuffers.length);
+        VkCommandBuffer[] renderCommandBuffers = VKGlobalConstants.getInstance().selectedDevice.getFirstGraphicsCommandPool().newCommandBuffers(framebuffers.length);
         int err;
 
         // Create the command buffer begin structure
@@ -678,17 +677,15 @@ public class TriangleDemoGloop {
         }
 
         // Create the Vulkan instance
-        final VkInstance instance = VKGlobalConstants.getInstance().instance;
-        final VkPhysicalDevice physicalDevice = VKThreadConstants.getInstance().device.physicalDevice;        
-        //final int graphicsQueueIndex = VKThreadConstants.getInstance().physicalDevice.getFirstGraphicsQueue().queueFamilyIndex;
-        //final VKThreadConstantsOld.DeviceInfo deviceAndGraphicsQueueFamily = VKThreadConstantsOld.createDevice(physicalDevice, graphicsQueueIndex, Arrays.asList(VK_KHR_SWAPCHAIN_EXTENSION_NAME));
-        final VkDevice device = VKThreadConstants.getInstance().device.vkDevice;
+        final VkInstance instance = VKGlobalConstants.getInstance().instance;                
+        final VkDevice device = VKGlobalConstants.getInstance().selectedDevice.vkDevice;
 
         // bind the device context to the current thread...
         //VKThreadConstantsOld.create(device);
 
-        final int queueFamilyIndex = VKThreadConstants.getInstance().device.getFirstComputeQueue().queueFamilyIndex;
-        final VkPhysicalDeviceMemoryProperties memoryProperties = VKThreadConstants.getInstance().device.memoryProperties;
+        final int queueFamilyIndex = VKGlobalConstants.getInstance().selectedDevice.getFirstComputeQueue().queueFamilyIndex;
+        final VkPhysicalDevice physicalDevice = VKGlobalConstants.getInstance().selectedDevice.physicalDevice;
+        final VkPhysicalDeviceMemoryProperties memoryProperties = VKGlobalConstants.getInstance().selectedDevice.memoryProperties;
 
         // Create GLFW window
         glfwDefaultWindowHints();
@@ -715,7 +712,7 @@ public class TriangleDemoGloop {
 
         // Create static Vulkan resources
         final ColorFormatAndSpace colorFormatAndSpace = getColorFormatAndSpace(physicalDevice, surface);
-        final CommandPool commandPool = VKThreadConstants.getInstance().device.getFirstGraphicsCommandPool();
+        final CommandPool commandPool = VKGlobalConstants.getInstance().selectedDevice.getFirstGraphicsCommandPool();
         final VkCommandBuffer setupCommandBuffer = commandPool.newCommandBuffer();
         final VkCommandBuffer postPresentCommandBuffer = commandPool.newCommandBuffer();
         final VkQueue queue = createDeviceQueue(device, queueFamilyIndex);        
@@ -738,7 +735,7 @@ public class TriangleDemoGloop {
             boolean mustRecreate = true;
 
             void recreate() {
-                final VkDevice device = VKThreadConstants.getInstance().device.vkDevice;
+                final VkDevice device = VKGlobalConstants.getInstance().selectedDevice.vkDevice;
 
                 // Begin the setup command buffer (the one we will use for swapchain/framebuffer creation)
                 VkCommandBufferBeginInfo cmdBufInfo = VkCommandBufferBeginInfo.calloc()

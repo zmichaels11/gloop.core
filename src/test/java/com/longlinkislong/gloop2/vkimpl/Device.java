@@ -45,8 +45,9 @@ public final class Device {
     
     private Device(final VkPhysicalDevice physicalDevice) {
         this.physicalDevice = Objects.requireNonNull(physicalDevice);        
-        this.queueFamilies = this.listQueues();
+        this.queueFamilies = this.listQueues();        
         this.vkDevice = createDevice(this.queueFamilies);
+        System.out.println("created device");
         this.memoryProperties = getMemoryProperties();
         this.commandPools = createCommandPools(this.queueFamilies);
     }
@@ -107,7 +108,7 @@ public final class Device {
                         .pQueuePriorities(pQueuePriorities);                        
             }
             
-            final List<String> extensions = VKGlobalConstants.getInstance().extensions;
+            final List<String> extensions = VKGlobalConstants.EXTENSIONS;
             final PointerBuffer ppExtensionNames = stack.callocPointer(extensions.size());
             
             extensions.stream()
@@ -116,7 +117,7 @@ public final class Device {
             
             ppExtensionNames.flip();
             
-            final List<String> layers = VKGlobalConstants.getInstance().layers;
+            final List<String> layers = VKGlobalConstants.LAYERS;
             final PointerBuffer ppEnabledLayerNames = stack.callocPointer(layers.size());
             
             layers.stream()

@@ -48,7 +48,7 @@ public final class CommandPool {
                     .level(VK10.VK_COMMAND_BUFFER_LEVEL_PRIMARY)
                     .commandBufferCount(1);
             
-            final VkDevice device = VKThreadConstants.getInstance().device.vkDevice;
+            final VkDevice device = VKGlobalConstants.getInstance().selectedDevice.vkDevice;
             final PointerBuffer pCommandBuffer = stack.callocPointer(1);
             final int err = VK10.vkAllocateCommandBuffers(device, cmdBufAllocateInfo, pCommandBuffer);
             
@@ -68,7 +68,7 @@ public final class CommandPool {
                     .level(VK10.VK_COMMAND_BUFFER_LEVEL_PRIMARY)
                     .commandBufferCount(count);
             
-            final VkDevice device = VKThreadConstants.getInstance().device.vkDevice;
+            final VkDevice device = VKGlobalConstants.getInstance().selectedDevice.vkDevice;
             final PointerBuffer pCommandBuffer = stack.callocPointer(count);
             final int err = VK10.vkAllocateCommandBuffers(device, cmdBufAllocateInfo, pCommandBuffer);
             

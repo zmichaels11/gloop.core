@@ -14,6 +14,7 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import org.lwjgl.PointerBuffer;
@@ -43,6 +44,8 @@ import org.slf4j.LoggerFactory;
  * @author zmichaels
  */
 public final class VKGlobalConstants {     
+    //TODO: how would multiple devices be supported? Only really makes sense if they're similar power though...
+    public static final AtomicInteger DEFAULT_PHYSICAL_DEVICE_ID = new AtomicInteger(Integer.getInteger("com.longlinkislong.gloop.default_physical_device", 0));
     public static final List<String> EXTENSIONS = Arrays.asList(VK_KHR_SWAPCHAIN_EXTENSION_NAME);
     public static final List<String> LAYERS = new ArrayList<>();
     private static final Logger LOGGER = LoggerFactory.getLogger(VKGlobalConstants.class);
@@ -157,6 +160,10 @@ public final class VKGlobalConstants {
         this.physicalDevices = this.listPhysicalDevices();
         this.extensions = Collections.unmodifiableList(new ArrayList<>(EXTENSIONS)); // create a copy
         this.layers = Collections.unmodifiableList(new ArrayList<>(LAYERS));
+        
+        final int selectedDeviceId = DEFAULT_PHYSICAL_DEVICE_ID.get();
+                
+        this.selectedDevice = Device.getDevice(this.physicalDevices.get(selectedDeviceId));        
     }
 
     public void free() {
@@ -182,6 +189,7 @@ public final class VKGlobalConstants {
         return renderPassDefinitions.computeIfAbsent(colorFormat, VK10RenderPass::new);
     }
         
+    public final Device selectedDevice;
     public final List<String> layers;
     public final List<String> extensions;
     public final List<VkPhysicalDevice> physicalDevices;
