@@ -16,8 +16,9 @@ import com.longlinkislong.gloop2.VertexAttribute;
 import com.longlinkislong.gloop2.VertexAttributeFormat;
 import com.longlinkislong.gloop2.vkimpl.VK10Buffer;
 import com.longlinkislong.gloop2.vkimpl.VK10BufferFactory;
-import com.longlinkislong.gloop2.vkimpl.VKThreadContext;
+import com.longlinkislong.gloop2.vkimpl.VKThreadConstants;
 import com.longlinkislong.gloop2.vkimpl.VK10RasterPipeline;
+import com.longlinkislong.gloop2.vkimpl.VkGlobalConstants;
 import static org.lwjgl.system.MemoryUtil.*;
 import static org.lwjgl.vulkan.EXTDebugReport.*;
 import static org.lwjgl.vulkan.KHRSwapchain.*;
@@ -91,25 +92,7 @@ public class TriangleDemoGloop {
     /**
      * This is just -1L, but it is nicer as a symbolic constant.
      */
-    private static final long UINT64_MAX = 0xFFFFFFFFFFFFFFFFL;    
-
-    private static long setupDebugging(VkInstance instance, int flags, VkDebugReportCallbackEXT callback) {
-        VkDebugReportCallbackCreateInfoEXT dbgCreateInfo = VkDebugReportCallbackCreateInfoEXT.calloc()
-                .sType(VK_STRUCTURE_TYPE_DEBUG_REPORT_CALLBACK_CREATE_INFO_EXT)
-                .pNext(NULL)
-                .pfnCallback(callback)
-                .pUserData(NULL)
-                .flags(flags);
-        LongBuffer pCallback = memAllocLong(1);
-        int err = vkCreateDebugReportCallbackEXT(instance, dbgCreateInfo, null, pCallback);
-        long callbackHandle = pCallback.get(0);
-        memFree(pCallback);
-        dbgCreateInfo.free();
-        if (err != VK_SUCCESS) {
-            throw new AssertionError("Failed to create VkInstance: " + translateVulkanResult(err));
-        }
-        return callbackHandle;
-    }    
+    private static final long UINT64_MAX = 0xFFFFFFFFFFFFFFFFL;
 
     private static class DeviceAndGraphicsQueueFamily {
 
@@ -744,21 +727,14 @@ public class TriangleDemoGloop {
         }
 
         // Create the Vulkan instance
-        final VkInstance instance = VKThreadContext.createInstance(requiredExtensions);
-        final VkDebugReportCallbackEXT debugCallback = new VkDebugReportCallbackEXT() {
-            public int invoke(int flags, int objectType, long object, long location, int messageCode, long pLayerPrefix, long pMessage, long pUserData) {
-                System.err.println("ERROR OCCURED: " + VkDebugReportCallbackEXT.getString(pMessage));
-                return 0;
-            }
-        };
-        final long debugCallbackHandle = setupDebugging(instance, VK_DEBUG_REPORT_ERROR_BIT_EXT | VK_DEBUG_REPORT_WARNING_BIT_EXT, debugCallback);
-        final VkPhysicalDevice physicalDevice = VKThreadContext.getPhysicalDevice(instance, 0);
-        final int graphicsQueueIndex = VKThreadContext.getGraphicsQueueIndex(physicalDevice);
-        final VKThreadContext.DeviceInfo deviceAndGraphicsQueueFamily = VKThreadContext.createDevice(physicalDevice, graphicsQueueIndex, Arrays.asList(VK_KHR_SWAPCHAIN_EXTENSION_NAME));
+        final VkInstance instance = VkGlobalConstants.getInstance().instance;        
+        final VkPhysicalDevice physicalDevice = VKThreadConstants.getPhysicalDevice(instance, 0);
+        final int graphicsQueueIndex = VKThreadConstants.getGraphicsQueueIndex(physicalDevice);
+        final VKThreadConstants.DeviceInfo deviceAndGraphicsQueueFamily = VKThreadConstants.createDevice(physicalDevice, graphicsQueueIndex, Arrays.asList(VK_KHR_SWAPCHAIN_EXTENSION_NAME));
         final VkDevice device = deviceAndGraphicsQueueFamily.device;
 
         // bind the device context to the current thread...
-        VKThreadContext.create(device);
+        VKThreadConstants.create(device);
 
         int queueFamilyIndex = deviceAndGraphicsQueueFamily.queueFamilyIndex;
         final VkPhysicalDeviceMemoryProperties memoryProperties = deviceAndGraphicsQueueFamily.memoryProperties;
@@ -812,7 +788,7 @@ public class TriangleDemoGloop {
             boolean mustRecreate = true;
 
             void recreate() {
-                final VKThreadContext ctx = VKThreadContext.getCurrentContext();
+                final VKThreadConstants ctx = VKThreadConstants.getInstance();
                 
                 // Begin the setup command buffer (the one we will use for swapchain/framebuffer creation)
                 VkCommandBufferBeginInfo cmdBufInfo = VkCommandBufferBeginInfo.calloc()
@@ -962,9 +938,7 @@ public class TriangleDemoGloop {
         memFree(pRenderCompleteSemaphore);
         semaphoreCreateInfo.free();
         memFree(pSwapchains);
-        memFree(pCommandBuffers);
-
-        vkDestroyDebugReportCallbackEXT(instance, debugCallbackHandle, null);
+        memFree(pCommandBuffers);        
 
         windowSizeCallback.free();
         keyCallback.free();

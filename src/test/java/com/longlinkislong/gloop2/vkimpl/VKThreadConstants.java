@@ -32,7 +32,7 @@ import org.lwjgl.vulkan.VkQueueFamilyProperties;
  *
  * @author zmichaels
  */
-public class VKThreadContext {    
+public class VKThreadConstants {    
     public static final boolean VALIDATION = Boolean.getBoolean("vulkan.validation");
     public static final List<String> LAYERS = new ArrayList<>();
     public static final String APP_NAME = System.getProperty("com.longlinkislong.gloop2.app_name", "GLOOP TEST");
@@ -44,12 +44,12 @@ public class VKThreadContext {
         }
     }
     
-    private static final ThreadLocal<VKThreadContext> INSTANCES = new ThreadLocal<>();
+    private static final ThreadLocal<VKThreadConstants> INSTANCES = new ThreadLocal<>();
 
     private final Map<Integer, VK10RenderPass> renderPassDefinitions = new HashMap<>();
 
     public static void create(final VkDevice device) {
-        INSTANCES.set(new VKThreadContext(device));
+        INSTANCES.set(new VKThreadConstants(device));
     }
     
     public static class DeviceInfo {
@@ -105,50 +105,7 @@ public class VKThreadContext {
             
             return out;
         }
-    }
-    
-    public static VkInstance createInstance(final PointerBuffer requiredExtensions) {        
-        final VkInstanceCreateInfo pCreateInfo = VkInstanceCreateInfo.calloc();
-
-        try (MemoryStack stack = MemoryStack.stackPush()) {            
-            final VkApplicationInfo appInfo = VkApplicationInfo.callocStack(stack)
-                .sType(VK10.VK_STRUCTURE_TYPE_APPLICATION_INFO)
-                .pApplicationName(stack.UTF8(APP_NAME))
-                .pEngineName(stack.UTF8(ENGINE_NAME))
-                .apiVersion(VK_MAKE_VERSION(1, 0, 2));
-            
-            final PointerBuffer ppEnabledExtensionNames = stack.callocPointer(requiredExtensions.remaining() + 1);
-
-            ppEnabledExtensionNames.put(requiredExtensions);
-
-            final ByteBuffer debugReport = stack.UTF8(VK_EXT_DEBUG_REPORT_EXTENSION_NAME);
-
-            ppEnabledExtensionNames.put(debugReport).flip();
-
-            final PointerBuffer ppEnabledLayerNames = stack.callocPointer(LAYERS.size());
-
-            LAYERS.stream()                    
-                    .map(stack::UTF8)
-                    .forEach(ppEnabledLayerNames::put);
-
-            ppEnabledLayerNames.flip();
-
-            pCreateInfo.sType(VK10.VK_STRUCTURE_TYPE_INSTANCE_CREATE_INFO)
-                    .pApplicationInfo(appInfo)
-                    .ppEnabledExtensionNames(ppEnabledExtensionNames)
-                    .ppEnabledLayerNames(ppEnabledLayerNames);
-
-            final PointerBuffer pInstance = stack.callocPointer(1);
-
-            final int err = VK10.vkCreateInstance(pCreateInfo, null, pInstance);
-
-            if (err != VK10.VK_SUCCESS) {
-                throw new AssertionError("Failed to create VkInstance: " + translateVulkanResult(err));
-            }
-
-            return new VkInstance(pInstance.get(0), pCreateInfo);
-        }
-    }            
+    }          
     
     public static int getGraphicsQueueIndex(final VkPhysicalDevice physicalDevice) {
         try (MemoryStack stack = MemoryStack.stackPush()) {
@@ -201,7 +158,7 @@ public class VKThreadContext {
         }
     }
 
-    public VKThreadContext(final VkDevice device) {
+    public VKThreadConstants(final VkDevice device) {
         this.device = device;
     }
     
@@ -211,7 +168,7 @@ public class VKThreadContext {
         return this.device;
     }
 
-    public static VKThreadContext getCurrentContext() {
+    public static VKThreadConstants getInstance() {
         return INSTANCES.get();
     }
 
