@@ -745,11 +745,11 @@ public class TriangleDemoGloop {
 
         // Create static Vulkan resources
         final ColorFormatAndSpace colorFormatAndSpace = getColorFormatAndSpace(physicalDevice, surface);
-        final long commandPool = createCommandPool(device, queueFamilyIndex);
+        final long commandPool = VKThreadConstants.getInstance().device.getFirstGraphicsCommandPool().id;
         final VkCommandBuffer setupCommandBuffer = createCommandBuffer(device, commandPool);
         final VkCommandBuffer postPresentCommandBuffer = createCommandBuffer(device, commandPool);
         final VkQueue queue = createDeviceQueue(device, queueFamilyIndex);
-        final long renderCommandPool = createCommandPool(device, queueFamilyIndex);
+        //final long renderCommandPool = createCommandPool(device, queueFamilyIndex);
         final Vertices vertices = createVertices(memoryProperties, device);
 
         final RasterPipeline pipeline = new RasterPipelineCreateInfo()
@@ -802,9 +802,9 @@ public class TriangleDemoGloop {
                 framebuffers = createFramebuffers(device, swapchain, renderPass.id, width, height);
                 // Create render command buffers
                 if (renderCommandBuffers != null) {
-                    vkResetCommandPool(device, renderCommandPool, VK_FLAGS_NONE);
+                    vkResetCommandPool(device, commandPool, VK_FLAGS_NONE);
                 }
-                renderCommandBuffers = createRenderCommandBuffers(device, renderCommandPool, framebuffers, renderPass.id, width, height, ((VK10RasterPipeline) pipeline).pipeline,
+                renderCommandBuffers = createRenderCommandBuffers(device, commandPool, framebuffers, renderPass.id, width, height, ((VK10RasterPipeline) pipeline).pipeline,
                         vertices.buffer);
 
                 mustRecreate = false;

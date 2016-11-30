@@ -33,8 +33,9 @@ public final class Device {
     
     public final VkDevice vkDevice;
     public final VkPhysicalDevice physicalDevice;
-    public final List<QueueFamily> queues;
+    public final List<QueueFamily> queueFamilies;
     public final VkPhysicalDeviceMemoryProperties memoryProperties;
+    public final Map<QueueFamily, CommandPool> commandPools;
 
     private static final Map<VkPhysicalDevice, Device> DEVICE_MAP = new HashMap<>();
     
@@ -44,9 +45,23 @@ public final class Device {
     
     private Device(final VkPhysicalDevice physicalDevice) {
         this.physicalDevice = Objects.requireNonNull(physicalDevice);        
-        this.queues = this.listQueues();
-        this.vkDevice = createDevice(this.queues);
+        this.queueFamilies = this.listQueues();
+        this.vkDevice = createDevice(this.queueFamilies);
         this.memoryProperties = getMemoryProperties();
+        this.commandPools = createCommandPools(this.queueFamilies);
+    }
+    
+    public CommandPool getFirstGraphicsCommandPool() {
+        return this.commandPools.get(this.getFirstGraphicsQueue());
+    }
+    
+    public CommandPool getFirstComputeCommandPool() {
+        return this.commandPools.get(this.getFirstComputeQueue());
+    }
+    
+    private Map<QueueFamily, CommandPool> createCommandPools(final List<QueueFamily> queueFamilies) {
+        return queueFamilies.stream()
+                .collect(Collectors.toMap(family -> family, family -> new CommandPool(vkDevice, family)));
     }
     
     private VkPhysicalDeviceMemoryProperties getMemoryProperties() {
@@ -128,14 +143,14 @@ public final class Device {
     }
 
     public final QueueFamily getFirstGraphicsQueue() {
-        return this.queues.stream()
+        return this.queueFamilies.stream()
                 .filter(queue -> queue.isGraphicsQueue)
                 .findFirst()
                 .orElseThrow(() -> new UnsupportedOperationException("The physical device does not have a Graphics Queue!"));
     }
 
     public final QueueFamily getFirstComputeQueue() {
-        return this.queues.stream()
+        return this.queueFamilies.stream()
                 .filter(queue -> queue.isComputeQueue)
                 .findFirst()
                 .orElseThrow(() -> new UnsupportedOperationException("The physical device does not have a Compute Queue!"));
