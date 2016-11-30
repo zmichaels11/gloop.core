@@ -19,6 +19,7 @@ import com.longlinkislong.gloop2.vkimpl.VK10PipelineFactory;
 import com.longlinkislong.gloop2.vkimpl.VK10Program;
 import com.longlinkislong.gloop2.vkimpl.VK10RenderPass;
 import com.longlinkislong.gloop2.vkimpl.VK10Shader;
+import com.longlinkislong.gloop2.vkimpl.VKVertexInput;
 import static org.lwjgl.system.MemoryUtil.*;
 import static org.lwjgl.vulkan.EXTDebugReport.*;
 import static org.lwjgl.vulkan.KHRSwapchain.*;
@@ -632,8 +633,7 @@ public class TriangleDemoGloop {
     }
 
     private static Vertices createVertices(VkPhysicalDeviceMemoryProperties deviceMemoryProperties, VkDevice device) {
-        //TODO: these should not be globals.
-        VK10BufferFactory.DEVICE = device;
+        //TODO: these should not be globals.        
         VK10BufferFactory.deviceMemoryProperties = deviceMemoryProperties;
         ObjectFactoryManager.getInstance().initVK10();
 
@@ -1060,7 +1060,7 @@ public class TriangleDemoGloop {
         final VK10RenderPass renderPass = new VK10RenderPass(colorFormatAndSpace.colorFormat);
         final long renderCommandPool = createCommandPool(device, queueFamilyIndex);
         final Vertices vertices = createVertices(memoryProperties, device);
-        final long pipeline = createPipeline(device, renderPass.id, VK10PipelineFactory.createVertexArrayInput(vertices.vertexArrayInput));
+        final long pipeline = createPipeline(device, renderPass.id, new VKVertexInput(vertices.vertexArrayInput).info);
 
         final class SwapchainRecreator {
 

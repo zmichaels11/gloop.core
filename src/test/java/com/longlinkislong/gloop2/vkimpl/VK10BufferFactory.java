@@ -31,8 +31,7 @@ import org.lwjgl.vulkan.VkPhysicalDeviceMemoryProperties;
  */
 public class VK10BufferFactory extends AbstractBufferFactory<VK10Buffer> {
     private static final int GENERIC_BUFFER_HINT =            
-            VK10.VK_BUFFER_USAGE_VERTEX_BUFFER_BIT;
-    public static VkDevice DEVICE = null;
+            VK10.VK_BUFFER_USAGE_VERTEX_BUFFER_BIT;    
     public static VkPhysicalDeviceMemoryProperties deviceMemoryProperties;
     
     @Override
@@ -42,6 +41,7 @@ public class VK10BufferFactory extends AbstractBufferFactory<VK10Buffer> {
 
     @Override
     protected void doAllocate(VK10Buffer buffer, long size, BufferAccessHint accessHint, BufferMapHint mapHint, BufferStorageHint storageHint) {
+        final VkDevice device = VKThreadContext.getCurrentContext().getDevice();
         
         final VkBufferCreateInfo bufInfo = VkBufferCreateInfo.calloc()
                 .sType(VK10.VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO)
@@ -52,7 +52,7 @@ public class VK10BufferFactory extends AbstractBufferFactory<VK10Buffer> {
                 
         try (MemoryStack stack = MemoryStack.stackPush()) {
             final LongBuffer pBuffer = stack.callocLong(1);
-            final int err = VK10.vkCreateBuffer(DEVICE, bufInfo, null, pBuffer);            
+            final int err = VK10.vkCreateBuffer(device, bufInfo, null, pBuffer);            
             
             buffer.id = pBuffer.get(0);                        
             
@@ -68,7 +68,7 @@ public class VK10BufferFactory extends AbstractBufferFactory<VK10Buffer> {
                 .sType(VK10.VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO)
                 .pNext(NULL);
         
-        VK10.vkGetBufferMemoryRequirements(DEVICE, buffer.id, memReqs);
+        VK10.vkGetBufferMemoryRequirements(device, buffer.id, memReqs);
         
         memAlloc.allocationSize(memReqs.size());
         
@@ -84,7 +84,7 @@ public class VK10BufferFactory extends AbstractBufferFactory<VK10Buffer> {
         
         try (MemoryStack stack = MemoryStack.stackPush()) {
             final LongBuffer pMemory = stack.callocLong(1);
-            final int err = VK10.vkAllocateMemory(DEVICE, memAlloc, null, pMemory);
+            final int err = VK10.vkAllocateMemory(device, memAlloc, null, pMemory);
             
             buffer.memId = pMemory.get(0);
             
@@ -96,7 +96,7 @@ public class VK10BufferFactory extends AbstractBufferFactory<VK10Buffer> {
         }
         
         {
-            final int err = VK10.vkBindBufferMemory(DEVICE, buffer.id, buffer.memId, 0L);
+            final int err = VK10.vkBindBufferMemory(device, buffer.id, buffer.memId, 0L);
             
             if (err != VK10.VK_SUCCESS) {
                 throw new AssertionError("Failed to bind memory to vertex buffer: " + translateVulkanResult(err));
@@ -120,7 +120,9 @@ public class VK10BufferFactory extends AbstractBufferFactory<VK10Buffer> {
 
     @Override
     protected void doFree(VK10Buffer buffer) {
-        VK10.vkDestroyBuffer(DEVICE, buffer.id, null);
+        final VkDevice device = VKThreadContext.getCurrentContext().getDevice();
+        
+        VK10.vkDestroyBuffer(device, buffer.id, null);
     }
 
     @Override
@@ -135,9 +137,11 @@ public class VK10BufferFactory extends AbstractBufferFactory<VK10Buffer> {
 
     @Override
     protected long doMap(VK10Buffer buffer, long offset, long size, BufferMapHint mapHint, BufferMapInvalidationHint invalidHint, BufferMapSynchronizationHint syncHint, BufferUnmapHint unmapHint) {                
+        final VkDevice device = VKThreadContext.getCurrentContext().getDevice();
+        
         try (MemoryStack stack = MemoryStack.stackPush()) {
             final PointerBuffer pData = stack.callocPointer(1);
-            final int err = VK10.vkMapMemory(DEVICE, buffer.memId, offset, size, 0, pData);
+            final int err = VK10.vkMapMemory(device, buffer.memId, offset, size, 0, pData);
                         
             final long data = pData.get(0);
             
@@ -153,7 +157,9 @@ public class VK10BufferFactory extends AbstractBufferFactory<VK10Buffer> {
 
     @Override
     protected void doUnmap(VK10Buffer buffer) {
-        VK10.vkUnmapMemory(DEVICE, buffer.memId);                
+        final VkDevice device = VKThreadContext.getCurrentContext().getDevice();
+        
+        VK10.vkUnmapMemory(device, buffer.memId);                
         buffer.setMapInfo(0L, 0L, 0L);
     }
 

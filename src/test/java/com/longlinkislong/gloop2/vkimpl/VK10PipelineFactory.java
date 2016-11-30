@@ -44,8 +44,7 @@ import org.lwjgl.vulkan.VkVertexInputBindingDescription;
  * @author zmichaels
  */
 public class VK10PipelineFactory extends AbstractRasterPipelineFactory<VK10RasterPipeline> {
-
-    public static VkDevice DEVICE;
+    
     public static int colorFormat; //TODO: generate this!
 
     @Override
@@ -57,38 +56,7 @@ public class VK10PipelineFactory extends AbstractRasterPipelineFactory<VK10Raste
     protected void doAllocate(VK10RasterPipeline pipeline) {
         pipeline.renderPass = new VK10RenderPass(colorFormat);
         createPipeline(pipeline);
-    }
-
-    public static VkPipelineVertexInputStateCreateInfo createVertexArrayInput(VertexArrayCreateInfo info) {
-        final List<VertexAttribute> attribs = info.attributes;
-        
-        final VkVertexInputBindingDescription.Buffer bindings = VkVertexInputBindingDescription.calloc(attribs.size());
-        final VkVertexInputAttributeDescription.Buffer descriptions = VkVertexInputAttributeDescription.calloc(attribs.size());
-
-        for (int i = 0; i < attribs.size(); i++) {
-            final VertexAttribute attrib = attribs.get(i);
-            final int format = toVKenum(attrib.format);
-
-            bindings.get(i)
-                    .binding(i)
-                    .stride(attrib.stride)
-                    .inputRate(VK10.VK_VERTEX_INPUT_RATE_VERTEX);
-
-            descriptions.get(i)
-                    .binding(i)
-                    .location(attrib.location)
-                    .format(format)
-                    .offset(attrib.offset);
-        }
-
-        final VkPipelineVertexInputStateCreateInfo out = VkPipelineVertexInputStateCreateInfo.calloc()
-                .sType(VK10.VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO)
-                .pNext(NULL)
-                .pVertexAttributeDescriptions(descriptions)
-                .pVertexBindingDescriptions(bindings);
-
-        return out;
-    }
+    }    
 
     private void createPipeline(VK10RasterPipeline pipeline) {
         final RasterPipelineCreateInfo info = pipeline.getInfo();
@@ -154,10 +122,12 @@ public class VK10PipelineFactory extends AbstractRasterPipelineFactory<VK10Raste
                 .pNext(NULL)
                 .pSetLayouts(null);
 
+        final VkDevice device = VKThreadContext.getCurrentContext().getDevice();
+        
         final long layout;
         try (MemoryStack stack = MemoryStack.stackPush()) {
             final LongBuffer pPipelineLayout = stack.callocLong(1);
-            final int err = VK10.vkCreatePipelineLayout(DEVICE, pPipelineLayoutCreateInfo, null, pPipelineLayout);
+            final int err = VK10.vkCreatePipelineLayout(device, pPipelineLayoutCreateInfo, null, pPipelineLayout);
 
             if (err != VK10.VK_SUCCESS) {
                 throw new AssertionError("Failed to create pipeline layout: " + translateVulkanResult(err));
@@ -167,12 +137,14 @@ public class VK10PipelineFactory extends AbstractRasterPipelineFactory<VK10Raste
         } finally {
             pPipelineLayoutCreateInfo.free();
         }
+        
+        final VKVertexInput vertexInput = new VKVertexInput(pipeline.getInfo().attributes);
 
         final VkGraphicsPipelineCreateInfo.Buffer pipelineCreateInfo = VkGraphicsPipelineCreateInfo.calloc(1)
                 .sType(VK10.VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO)
                 .layout(layout)
                 .renderPass(pipeline.renderPass.id)
-                .pVertexInputState(createVertexArrayInput(pipeline.getInfo().attributes))                
+                .pVertexInputState(vertexInput.info)                
                 .pInputAssemblyState(inputAssemblyState)
                 .pRasterizationState(rasterizationState)
                 .pColorBlendState(colorBlendState)
@@ -184,7 +156,7 @@ public class VK10PipelineFactory extends AbstractRasterPipelineFactory<VK10Raste
 
         try (MemoryStack stack = MemoryStack.stackPush()) {
             final LongBuffer pPipelines = stack.callocLong(1);
-            final int err = VK10.vkCreateGraphicsPipelines(DEVICE, VK10.VK_NULL_HANDLE, pipelineCreateInfo, null, pPipelines);
+            final int err = VK10.vkCreateGraphicsPipelines(device, VK10.VK_NULL_HANDLE, pipelineCreateInfo, null, pPipelines);
 
             if (err != VK10.VK_SUCCESS) {
                 throw new AssertionError("Failed to create pipeline: " + translateVulkanResult(err));
@@ -232,8 +204,10 @@ public class VK10PipelineFactory extends AbstractRasterPipelineFactory<VK10Raste
 
     @Override
     protected void doFree(VK10RasterPipeline pipeline) {
-        VK10.vkDestroyPipeline(DEVICE, pipeline.pipeline, null);
-        VK10.vkDestroyRenderPass(DEVICE, pipeline.renderPass.id, null);
+        VkDevice device = VKThreadContext.getCurrentContext().getDevice();
+        
+        VK10.vkDestroyPipeline(device, pipeline.pipeline, null);
+        VK10.vkDestroyRenderPass(device, pipeline.renderPass.id, null);
     }
 
     @Override
