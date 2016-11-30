@@ -45,7 +45,7 @@ public final class VK10ShaderFactory extends AbstractShaderFactory<VK10Shader> {
     }
     
     private static long loadShader(String classPath) throws IOException {
-        final VkDevice device = VKThreadConstants.getInstance().physicalDevice.device;
+        final VkDevice device = VKThreadConstants.getInstance().device.vkDevice;
         final ByteBuffer shaderCode = ioResourceToByteBuffer(classPath, 8096);
                 
         final VkShaderModuleCreateInfo moduleCreateInfo = VkShaderModuleCreateInfo.calloc()
@@ -70,7 +70,7 @@ public final class VK10ShaderFactory extends AbstractShaderFactory<VK10Shader> {
 
     @Override
     protected void doFree(VK10Shader shader) {
-        final VkDevice device = VKThreadConstants.getInstance().physicalDevice.device;
+        final VkDevice device = VKThreadConstants.getInstance().device.vkDevice;
         
         VK10.vkDestroyShaderModule(device, shader.module, null);
     }

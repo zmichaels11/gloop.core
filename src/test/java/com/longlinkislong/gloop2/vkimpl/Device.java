@@ -31,7 +31,7 @@ import org.lwjgl.vulkan.VkQueueFamilyProperties;
  */
 public final class Device {
     
-    public final VkDevice device;
+    public final VkDevice vkDevice;
     public final VkPhysicalDevice physicalDevice;
     public final List<QueueFamily> queues;
     public final VkPhysicalDeviceMemoryProperties memoryProperties;
@@ -45,7 +45,7 @@ public final class Device {
     private Device(final VkPhysicalDevice physicalDevice) {
         this.physicalDevice = Objects.requireNonNull(physicalDevice);        
         this.queues = this.listQueues();
-        this.device = createDevice(this.queues);
+        this.vkDevice = createDevice(this.queues);
         this.memoryProperties = getMemoryProperties();
     }
     

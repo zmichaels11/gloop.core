@@ -32,7 +32,7 @@ public final class VKThreadConstants {
         final int vkPhysicalDeviceId = DEFAULT_PHYSICAL_DEVICE_ID.get();
         final VkPhysicalDevice vkPhysicalDevice = VKGlobalConstants.getInstance().physicalDevices.get(vkPhysicalDeviceId);
         
-        this.physicalDevice = Device.getDevice(vkPhysicalDevice);
+        this.device = Device.getDevice(vkPhysicalDevice);
     }
 
     public static VKThreadConstants getInstance() {
@@ -43,5 +43,5 @@ public final class VKThreadConstants {
 
               
         
-    public final Device physicalDevice;
+    public final Device device;
 }

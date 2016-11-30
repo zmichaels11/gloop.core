@@ -709,16 +709,16 @@ public class TriangleDemoGloop {
 
         // Create the Vulkan instance
         final VkInstance instance = VKGlobalConstants.getInstance().instance;
-        final VkPhysicalDevice physicalDevice = VKThreadConstants.getInstance().physicalDevice.physicalDevice;        
+        final VkPhysicalDevice physicalDevice = VKThreadConstants.getInstance().device.physicalDevice;        
         //final int graphicsQueueIndex = VKThreadConstants.getInstance().physicalDevice.getFirstGraphicsQueue().queueFamilyIndex;
         //final VKThreadConstantsOld.DeviceInfo deviceAndGraphicsQueueFamily = VKThreadConstantsOld.createDevice(physicalDevice, graphicsQueueIndex, Arrays.asList(VK_KHR_SWAPCHAIN_EXTENSION_NAME));
-        final VkDevice device = VKThreadConstants.getInstance().physicalDevice.device;
+        final VkDevice device = VKThreadConstants.getInstance().device.vkDevice;
 
         // bind the device context to the current thread...
         //VKThreadConstantsOld.create(device);
 
-        final int queueFamilyIndex = VKThreadConstants.getInstance().physicalDevice.getFirstGraphicsQueue().queueFamilyIndex;
-        final VkPhysicalDeviceMemoryProperties memoryProperties = VKThreadConstants.getInstance().physicalDevice.memoryProperties;
+        final int queueFamilyIndex = VKThreadConstants.getInstance().device.getFirstComputeQueue().queueFamilyIndex;
+        final VkPhysicalDeviceMemoryProperties memoryProperties = VKThreadConstants.getInstance().device.memoryProperties;
 
         // Create GLFW window
         glfwDefaultWindowHints();
@@ -769,7 +769,7 @@ public class TriangleDemoGloop {
             boolean mustRecreate = true;
 
             void recreate() {
-                final VkDevice device = VKThreadConstants.getInstance().physicalDevice.device;
+                final VkDevice device = VKThreadConstants.getInstance().device.vkDevice;
 
                 // Begin the setup command buffer (the one we will use for swapchain/framebuffer creation)
                 VkCommandBufferBeginInfo cmdBufInfo = VkCommandBufferBeginInfo.calloc()
