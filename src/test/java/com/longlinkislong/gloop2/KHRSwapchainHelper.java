@@ -9,7 +9,6 @@ import com.longlinkislong.gloop2.vkimpl.CommandQueue;
 import com.longlinkislong.gloop2.vkimpl.Device;
 import com.longlinkislong.gloop2.vkimpl.KHRSurface;
 import com.longlinkislong.gloop2.vkimpl.VK10Texture2D;
-import com.longlinkislong.gloop2.vkimpl.VKGLFWWindow;
 import com.longlinkislong.gloop2.vkimpl.VKGlobalConstants;
 import java.nio.IntBuffer;
 import java.nio.LongBuffer;
@@ -17,9 +16,6 @@ import org.lwjgl.demo.vulkan.TriangleDemoGloop;
 import static org.lwjgl.demo.vulkan.VKUtil.translateVulkanResult;
 import org.lwjgl.system.MemoryStack;
 import static org.lwjgl.system.MemoryUtil.NULL;
-import static org.lwjgl.system.MemoryUtil.memAllocInt;
-import static org.lwjgl.system.MemoryUtil.memAllocLong;
-import static org.lwjgl.system.MemoryUtil.memFree;
 import static org.lwjgl.vulkan.KHRSurface.VK_COMPOSITE_ALPHA_OPAQUE_BIT_KHR;
 import static org.lwjgl.vulkan.KHRSurface.VK_SURFACE_TRANSFORM_IDENTITY_BIT_KHR;
 import static org.lwjgl.vulkan.KHRSwapchain.VK_STRUCTURE_TYPE_SWAPCHAIN_CREATE_INFO_KHR;
@@ -41,13 +37,11 @@ import static org.lwjgl.vulkan.VK10.VK_NULL_HANDLE;
 import static org.lwjgl.vulkan.VK10.VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT;
 import static org.lwjgl.vulkan.VK10.VK_QUEUE_FAMILY_IGNORED;
 import static org.lwjgl.vulkan.VK10.VK_SHARING_MODE_EXCLUSIVE;
-import static org.lwjgl.vulkan.VK10.VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
 import static org.lwjgl.vulkan.VK10.VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
 import static org.lwjgl.vulkan.VK10.VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
 import static org.lwjgl.vulkan.VK10.VK_SUCCESS;
 import static org.lwjgl.vulkan.VK10.VK_TRUE;
 import static org.lwjgl.vulkan.VK10.vkCmdPipelineBarrier;
-import static org.lwjgl.vulkan.VK10.vkCreateImageView;
 import org.lwjgl.vulkan.VkCommandBuffer;
 import org.lwjgl.vulkan.VkCommandBufferBeginInfo;
 import org.lwjgl.vulkan.VkDevice;
@@ -62,40 +56,15 @@ import org.lwjgl.vulkan.VkSwapchainCreateInfoKHR;
  */
 public class KHRSwapchainHelper {
 
-    public static TriangleDemoGloop.Swapchain createSwapChain(VKGLFWWindow window, long oldSwapChain) {
-        final VkDevice device = VKGlobalConstants.getInstance().selectedDevice.vkDevice;
-        final KHRSurface.Format surfaceFormat = window.surface.supportedFormats.get(0);
-        final int colorFormat = surfaceFormat.colorFormat;
-        final int colorSpace = surfaceFormat.colorSpace;        
 
-        final KHRSurface surface = window.surface;        
 
-        VkExtent2D currentExtent = surface.capabilities.currentExtent();
-        int currentWidth = currentExtent.width();
-        int currentHeight = currentExtent.height();
-
-        if (currentWidth != -1 && currentHeight != -1) {
-            surface.width = currentWidth;
-            surface.height = currentHeight;
-        }
-        
-        final long swapChain = newSwapchain(surface, colorFormat, colorSpace, oldSwapChain, device);
-        final long[] images = getSwapchainImages(device, swapChain);
-        final VK10Texture2D[] imageViews = createImageViews(device, images, colorFormat, surface.width, surface.height);
-
-        TriangleDemoGloop.Swapchain ret = new TriangleDemoGloop.Swapchain();
-        ret.framebuffers = imageViews;
-        ret.swapchainHandle = swapChain;
-        return ret;
-    }
-
-    private static long newSwapchain(KHRSurface surface, int colorFormat, int colorSpace, long oldSwapChain, VkDevice device) {
+    public static long newSwapchain(KHRSurface surface, int colorFormat, int colorSpace, long oldSwapChain, VkDevice device) {
         // Determine the number of images
         int desiredNumberOfSwapchainImages = surface.capabilities.minImageCount() + 1;
         if ((surface.capabilities.maxImageCount() > 0) && (desiredNumberOfSwapchainImages > surface.capabilities.maxImageCount())) {
             desiredNumberOfSwapchainImages = surface.capabilities.maxImageCount();
         }
-        
+
         int preTransform;
         if ((surface.capabilities.supportedTransforms() & VK_SURFACE_TRANSFORM_IDENTITY_BIT_KHR) != 0) {
             preTransform = VK_SURFACE_TRANSFORM_IDENTITY_BIT_KHR;
@@ -103,35 +72,37 @@ public class KHRSwapchainHelper {
             preTransform = surface.capabilities.currentTransform();
         }
 
+        final long swapChain;
         try (MemoryStack stack = MemoryStack.stackPush()) {
-            
-        }
-        VkSwapchainCreateInfoKHR swapchainCI = VkSwapchainCreateInfoKHR.calloc()
-                .sType(VK_STRUCTURE_TYPE_SWAPCHAIN_CREATE_INFO_KHR)
-                .pNext(NULL)
-                .surface(surface.surface)
-                .minImageCount(desiredNumberOfSwapchainImages)
-                .imageFormat(colorFormat)
-                .imageColorSpace(colorSpace)
-                .imageUsage(VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT)
-                .preTransform(preTransform)
-                .imageArrayLayers(1)
-                .imageSharingMode(VK_SHARING_MODE_EXCLUSIVE)
-                .pQueueFamilyIndices(null)
-                .presentMode(surface.presentationMode)
-                .oldSwapchain(oldSwapChain)
-                .clipped(VK_TRUE)
-                .compositeAlpha(VK_COMPOSITE_ALPHA_OPAQUE_BIT_KHR);
-        swapchainCI.imageExtent()
-                .width(surface.width)
-                .height(surface.height);
-        LongBuffer pSwapChain = memAllocLong(1);
-        int err = vkCreateSwapchainKHR(device, swapchainCI, null, pSwapChain);
-        swapchainCI.free();
-        long swapChain = pSwapChain.get(0);
-        memFree(pSwapChain);
-        if (err != VK_SUCCESS) {
-            throw new AssertionError("Failed to create swap chain: " + translateVulkanResult(err));
+            final VkSwapchainCreateInfoKHR swapchainCI = VkSwapchainCreateInfoKHR.callocStack(stack)
+                    .sType(VK_STRUCTURE_TYPE_SWAPCHAIN_CREATE_INFO_KHR)
+                    .pNext(NULL)
+                    .surface(surface.surface)
+                    .minImageCount(desiredNumberOfSwapchainImages)
+                    .imageFormat(colorFormat)
+                    .imageColorSpace(colorSpace)
+                    .imageUsage(VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT)
+                    .preTransform(preTransform)
+                    .imageArrayLayers(1)
+                    .imageSharingMode(VK_SHARING_MODE_EXCLUSIVE)
+                    .pQueueFamilyIndices(null)
+                    .presentMode(surface.presentationMode)
+                    .oldSwapchain(oldSwapChain)
+                    .clipped(VK_TRUE)
+                    .compositeAlpha(VK_COMPOSITE_ALPHA_OPAQUE_BIT_KHR);
+
+            swapchainCI.imageExtent()
+                    .width(surface.width)
+                    .height(surface.height);
+
+            final LongBuffer pSwapChain = stack.callocLong(1);
+            final int err = vkCreateSwapchainKHR(device, swapchainCI, null, pSwapChain);
+
+            if (err != VK_SUCCESS) {
+                throw new AssertionError("Failed to create swap chain: " + translateVulkanResult(err));
+            }
+
+            swapChain = pSwapChain.get(0);
         }
 
         // If we just re-created an existing swapchain, we should destroy the old swapchain at this point.
@@ -143,7 +114,7 @@ public class KHRSwapchainHelper {
         return swapChain;
     }
 
-    private static long newSwapchain(final VkDevice device, final KHRSurface surface, final int desiredNumberOfSwapchainImages, long oldSwapChain) {
+    public static long newSwapchain(final VkDevice device, final KHRSurface surface, final int desiredNumberOfSwapchainImages, long oldSwapChain) {
         final KHRSurface.Format selectedFormat = surface.supportedFormats.get(0);
         final int colorFormat = selectedFormat.colorFormat;
         final int colorSpace = selectedFormat.colorSpace;
@@ -188,7 +159,7 @@ public class KHRSwapchainHelper {
         }
     }
 
-    private static VK10Texture2D[] createImageViews(VkDevice device, long[] images, int colorFormat, int width, int height) {
+    public static VK10Texture2D[] createImageViews(VkDevice device, long[] images, int colorFormat, int width, int height) {
         final VK10Texture2D[] imageViews;
 
         try (MemoryStack stack = MemoryStack.stackPush()) {
@@ -231,7 +202,7 @@ public class KHRSwapchainHelper {
         return imageViews;
     }
 
-    private static long[] getSwapchainImages(VkDevice device, long swapchain) {
+    public static long[] getSwapchainImages(VkDevice device, long swapchain) {
         final int imageCount;
         try (MemoryStack stack = MemoryStack.stackPush()) {
             final IntBuffer pImageCount = stack.callocInt(1);

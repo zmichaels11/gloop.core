@@ -8,7 +8,6 @@ import com.longlinkislong.gloop2.Buffer;
 import com.longlinkislong.gloop2.BufferCreateInfo;
 import com.longlinkislong.gloop2.Framebuffer;
 import com.longlinkislong.gloop2.FramebufferCreateInfo;
-import com.longlinkislong.gloop2.KHRSwapchainHelper;
 import com.longlinkislong.gloop2.ObjectFactoryManager;
 import com.longlinkislong.gloop2.RasterPipeline;
 import com.longlinkislong.gloop2.RasterPipelineCreateInfo;
@@ -26,7 +25,6 @@ import com.longlinkislong.gloop2.vkimpl.VK10BufferFactory;
 import com.longlinkislong.gloop2.vkimpl.VK10Framebuffer;
 import com.longlinkislong.gloop2.vkimpl.VK10RasterPipeline;
 import com.longlinkislong.gloop2.vkimpl.VK10RenderPass;
-import com.longlinkislong.gloop2.vkimpl.VK10Texture2D;
 import com.longlinkislong.gloop2.vkimpl.VKGLFWWindow;
 import com.longlinkislong.gloop2.vkimpl.VKGlobalConstants;
 
@@ -50,8 +48,6 @@ import org.lwjgl.vulkan.VkCommandBuffer;
 import org.lwjgl.vulkan.VkCommandBufferBeginInfo;
 import org.lwjgl.vulkan.VkDevice;
 import org.lwjgl.vulkan.VkImageMemoryBarrier;
-import org.lwjgl.vulkan.VkInstance;
-import org.lwjgl.vulkan.VkPhysicalDevice;
 import org.lwjgl.vulkan.VkPhysicalDeviceMemoryProperties;
 import org.lwjgl.vulkan.VkPresentInfoKHR;
 import org.lwjgl.vulkan.VkRect2D;
@@ -80,13 +76,7 @@ public class TriangleDemoGloop {
     /**
      * This is just -1L, but it is nicer as a symbolic constant.
      */
-    private static final long UINT64_MAX = 0xFFFFFFFFFFFFFFFFL;
-
-    public static class Swapchain {
-
-        public long swapchainHandle;
-        public VK10Texture2D[] framebuffers;
-    }
+    private static final long UINT64_MAX = 0xFFFFFFFFFFFFFFFFL;    
 
     private static class Vertices {
 
@@ -296,7 +286,7 @@ public class TriangleDemoGloop {
     /*
      * All resources that must be reallocated on window resize.
      */
-    private static Swapchain swapchain;
+    private static KHRSwapchain swapchain;
     private static Framebuffer[] framebuffers;
     private static VkCommandBuffer[] renderCommandBuffers;
 
@@ -349,11 +339,9 @@ public class TriangleDemoGloop {
 
             void recreate() {
                 final VkDevice device = VKGlobalConstants.getInstance().selectedDevice.vkDevice;
-
                
-                long oldChain = swapchain != null ? swapchain.swapchainHandle : VK_NULL_HANDLE;
                 // Create the swapchain (this will also add a memory barrier to initialize the framebuffer images)
-                swapchain = KHRSwapchainHelper.createSwapChain(window, oldChain);
+                swapchain = new KHRSwapchain(window.surface, swapchain);
 
                 if (framebuffers != null) {
                     for (int i = 0; i < framebuffers.length; i++) {
@@ -459,7 +447,7 @@ public class TriangleDemoGloop {
 
             // Get next image from the swap chain (back/front buffer).
             // This will setup the imageAquiredSemaphore to be signalled when the operation is complete
-            err = vkAcquireNextImageKHR(device, swapchain.swapchainHandle, UINT64_MAX, pImageAcquiredSemaphore.get(0), VK_NULL_HANDLE, pImageIndex);
+            err = vkAcquireNextImageKHR(device, swapchain.swapchain, UINT64_MAX, pImageAcquiredSemaphore.get(0), VK_NULL_HANDLE, pImageIndex);
             currentBuffer = pImageIndex.get(0);
             if (err != VK_SUCCESS) {
                 throw new AssertionError("Failed to acquire next swapchain image: " + translateVulkanResult(err));
@@ -476,7 +464,7 @@ public class TriangleDemoGloop {
 
             // Present the current buffer to the swap chain
             // This will display the image
-            pSwapchains.put(0, swapchain.swapchainHandle);
+            pSwapchains.put(0, swapchain.swapchain);
             err = vkQueuePresentKHR(queue.vkQueue, presentInfo);
             if (err != VK_SUCCESS) {
                 throw new AssertionError("Failed to present the swapchain image: " + translateVulkanResult(err));
