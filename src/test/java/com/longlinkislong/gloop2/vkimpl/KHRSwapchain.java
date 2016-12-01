@@ -20,6 +20,7 @@ import static org.lwjgl.vulkan.KHRSwapchain.VK_STRUCTURE_TYPE_SWAPCHAIN_CREATE_I
 import static org.lwjgl.vulkan.KHRSwapchain.vkCreateSwapchainKHR;
 import static org.lwjgl.vulkan.KHRSwapchain.vkDestroySwapchainKHR;
 import static org.lwjgl.vulkan.KHRSwapchain.vkGetSwapchainImagesKHR;
+import org.lwjgl.vulkan.VK10;
 import static org.lwjgl.vulkan.VK10.VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
 import static org.lwjgl.vulkan.VK10.VK_COMPONENT_SWIZZLE_A;
 import static org.lwjgl.vulkan.VK10.VK_COMPONENT_SWIZZLE_B;
@@ -34,6 +35,7 @@ import static org.lwjgl.vulkan.VK10.VK_NULL_HANDLE;
 import static org.lwjgl.vulkan.VK10.VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT;
 import static org.lwjgl.vulkan.VK10.VK_QUEUE_FAMILY_IGNORED;
 import static org.lwjgl.vulkan.VK10.VK_SHARING_MODE_EXCLUSIVE;
+import static org.lwjgl.vulkan.VK10.VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
 import static org.lwjgl.vulkan.VK10.VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
 import static org.lwjgl.vulkan.VK10.VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
 import static org.lwjgl.vulkan.VK10.VK_SUCCESS;
@@ -41,6 +43,7 @@ import static org.lwjgl.vulkan.VK10.VK_TRUE;
 import static org.lwjgl.vulkan.VK10.vkCmdPipelineBarrier;
 import static org.lwjgl.vulkan.VK10.vkCreateImageView;
 import org.lwjgl.vulkan.VkCommandBuffer;
+import org.lwjgl.vulkan.VkCommandBufferBeginInfo;
 import org.lwjgl.vulkan.VkDevice;
 import org.lwjgl.vulkan.VkExtent2D;
 import org.lwjgl.vulkan.VkImageMemoryBarrier;
@@ -57,7 +60,7 @@ public final class KHRSwapchain {
     public long swapchain;
 
     public KHRSwapchain(final KHRSurface surface, final int newWidth, final int newHeight, final KHRSwapchain oldSwapchain) {
-        
+
     }
 
     public boolean isValid() {
@@ -72,12 +75,15 @@ public final class KHRSwapchain {
             this.swapchain = VK_NULL_HANDLE;
         }
     }
-    
-    public static TriangleDemoGloop.Swapchain createSwapChain(
-            VkDevice device, VkPhysicalDevice physicalDevice, VKGLFWWindow window, long oldSwapChain, VkCommandBuffer commandBuffer, 
-            int colorFormat, int colorSpace) {
-        int err;
+
+    public static TriangleDemoGloop.Swapchain createSwapChain(VKGLFWWindow window, long oldSwapChain) {        
+        final VkDevice device = VKGlobalConstants.getInstance().selectedDevice.vkDevice;
+        final KHRSurface.Format surfaceFormat = window.surface.supportedFormats.get(0);
+        final int colorFormat = surfaceFormat.colorFormat;
+        final int colorSpace = surfaceFormat.colorSpace;
         
+        int err;
+
         final KHRSurface surface = window.surface;
 
         // Determine the number of images
@@ -94,7 +100,7 @@ public final class KHRSwapchain {
             surface.width = currentWidth;
             surface.height = currentHeight;
         }
-        
+
         int preTransform;
         if ((surface.capabilities.supportedTransforms() & VK_SURFACE_TRANSFORM_IDENTITY_BIT_KHR) != 0) {
             preTransform = VK_SURFACE_TRANSFORM_IDENTITY_BIT_KHR;
@@ -159,25 +165,23 @@ public final class KHRSwapchain {
                 .pNext(NULL)
                 .format(colorFormat)
                 .viewType(VK_IMAGE_VIEW_TYPE_2D);
-        
+
         colorAttachmentView.components()
                 .r(VK_COMPONENT_SWIZZLE_R)
                 .g(VK_COMPONENT_SWIZZLE_G)
                 .b(VK_COMPONENT_SWIZZLE_B)
                 .a(VK_COMPONENT_SWIZZLE_A);
-        
+
         colorAttachmentView.subresourceRange()
                 .aspectMask(VK_IMAGE_ASPECT_COLOR_BIT)
                 .baseMipLevel(0)
                 .levelCount(1)
                 .baseArrayLayer(0)
                 .layerCount(1);
+
         for (int i = 0; i < imageCount; i++) {
             images[i] = pSwapchainImages.get(i);
-            // Bring the image from an UNDEFINED state to the VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT state
-            imageBarrier(commandBuffer, images[i], VK_IMAGE_ASPECT_COLOR_BIT,
-                    VK_IMAGE_LAYOUT_UNDEFINED, 0,
-                    VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL, VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT);
+            // Bring the image from an UNDEFINED state to the VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT state        
             colorAttachmentView.image(images[i]);
             err = vkCreateImageView(device, colorAttachmentView, null, pBufferView);
             imageViews[i] = new VK10Texture2D(
@@ -189,7 +193,13 @@ public final class KHRSwapchain {
             if (err != VK_SUCCESS) {
                 throw new AssertionError("Failed to create image view: " + translateVulkanResult(err));
             }
+
+            imageBarrier(images[i], VK_IMAGE_ASPECT_COLOR_BIT,
+                    VK_IMAGE_LAYOUT_UNDEFINED, 0,
+                    VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL, VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT);
         }
+
+        VKGlobalConstants.getInstance().selectedDevice.getFirstGraphicsFamily().getQueue().waitIdle();
         colorAttachmentView.free();
         memFree(pBufferView);
         memFree(pSwapchainImages);
@@ -199,8 +209,8 @@ public final class KHRSwapchain {
         ret.swapchainHandle = swapChain;
         return ret;
     }
-    
-    private static void imageBarrier(VkCommandBuffer cmdbuffer, long image, int aspectMask, int oldImageLayout, int srcAccess, int newImageLayout, int dstAccess) {
+
+    private static void imageBarrier(long image, int aspectMask, int oldImageLayout, int srcAccess, int newImageLayout, int dstAccess) {
         // Create an image barrier object
         VkImageMemoryBarrier.Buffer imageMemoryBarrier = VkImageMemoryBarrier.calloc(1)
                 .sType(VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER)
@@ -222,12 +232,22 @@ public final class KHRSwapchain {
         int srcStageFlags = VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT;
         int destStageFlags = VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT;
 
+        final VkCommandBuffer cmdBuffer = VKGlobalConstants.getInstance().selectedDevice.getFirstGraphicsCommandPool().newCommandBuffer();
+        VkCommandBufferBeginInfo cmdBufInfo = VkCommandBufferBeginInfo.calloc()
+                        .sType(VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO)
+                        .pNext(NULL);
+        VK10.vkBeginCommandBuffer(cmdBuffer, cmdBufInfo);
+        
         // Put barrier inside setup command buffer
-        vkCmdPipelineBarrier(cmdbuffer, srcStageFlags, destStageFlags, 0,
+        vkCmdPipelineBarrier(cmdBuffer, srcStageFlags, destStageFlags, 0,
                 null, // no memory barriers
                 null, // no buffer memory barriers
                 imageMemoryBarrier); // one image memory barrier
+
+        VK10.vkEndCommandBuffer(cmdBuffer);
+        VKGlobalConstants.getInstance().selectedDevice.getFirstGraphicsFamily().getQueue().submit(cmdBuffer);
         imageMemoryBarrier.free();
+        cmdBufInfo.free();
     }
 
 }

@@ -352,25 +352,10 @@ public class TriangleDemoGloop {
             void recreate() {
                 final VkDevice device = VKGlobalConstants.getInstance().selectedDevice.vkDevice;
 
-                // Begin the setup command buffer (the one we will use for swapchain/framebuffer creation)
-                VkCommandBufferBeginInfo cmdBufInfo = VkCommandBufferBeginInfo.calloc()
-                        .sType(VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO)
-                        .pNext(NULL);
-                int err = vkBeginCommandBuffer(setupCommandBuffer, cmdBufInfo);
-                cmdBufInfo.free();
-                if (err != VK_SUCCESS) {
-                    throw new AssertionError("Failed to begin setup command buffer: " + translateVulkanResult(err));
-                }
+               
                 long oldChain = swapchain != null ? swapchain.swapchainHandle : VK_NULL_HANDLE;
                 // Create the swapchain (this will also add a memory barrier to initialize the framebuffer images)
-                swapchain = KHRSwapchain.createSwapChain(device, physicalDevice, window, oldChain, setupCommandBuffer, colorFormatAndSpace.colorFormat, colorFormatAndSpace.colorSpace);
-                err = vkEndCommandBuffer(setupCommandBuffer);
-                if (err != VK_SUCCESS) {
-                    throw new AssertionError("Failed to end setup command buffer: " + translateVulkanResult(err));
-                }
-
-                queue.submit(setupCommandBuffer);
-                queue.waitIdle();
+                swapchain = KHRSwapchain.createSwapChain(window, oldChain);
 
                 if (framebuffers != null) {
                     for (int i = 0; i < framebuffers.length; i++) {
