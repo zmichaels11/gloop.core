@@ -66,17 +66,9 @@ public class KHRSwapchainHelper {
         final VkDevice device = VKGlobalConstants.getInstance().selectedDevice.vkDevice;
         final KHRSurface.Format surfaceFormat = window.surface.supportedFormats.get(0);
         final int colorFormat = surfaceFormat.colorFormat;
-        final int colorSpace = surfaceFormat.colorSpace;
+        final int colorSpace = surfaceFormat.colorSpace;        
 
-        int err;
-
-        final KHRSurface surface = window.surface;
-
-        // Determine the number of images
-        int desiredNumberOfSwapchainImages = surface.capabilities.minImageCount() + 1;
-        if ((surface.capabilities.maxImageCount() > 0) && (desiredNumberOfSwapchainImages > surface.capabilities.maxImageCount())) {
-            desiredNumberOfSwapchainImages = surface.capabilities.maxImageCount();
-        }
+        final KHRSurface surface = window.surface;        
 
         VkExtent2D currentExtent = surface.capabilities.currentExtent();
         int currentWidth = currentExtent.width();
@@ -86,7 +78,24 @@ public class KHRSwapchainHelper {
             surface.width = currentWidth;
             surface.height = currentHeight;
         }
+        
+        final long swapChain = newSwapchain(surface, colorFormat, colorSpace, oldSwapChain, device);
+        final long[] images = getSwapchainImages(device, swapChain);
+        final VK10Texture2D[] imageViews = createImageViews(device, images, colorFormat, surface.width, surface.height);
 
+        TriangleDemoGloop.Swapchain ret = new TriangleDemoGloop.Swapchain();
+        ret.framebuffers = imageViews;
+        ret.swapchainHandle = swapChain;
+        return ret;
+    }
+
+    private static long newSwapchain(KHRSurface surface, int colorFormat, int colorSpace, long oldSwapChain, VkDevice device) {
+        // Determine the number of images
+        int desiredNumberOfSwapchainImages = surface.capabilities.minImageCount() + 1;
+        if ((surface.capabilities.maxImageCount() > 0) && (desiredNumberOfSwapchainImages > surface.capabilities.maxImageCount())) {
+            desiredNumberOfSwapchainImages = surface.capabilities.maxImageCount();
+        }
+        
         int preTransform;
         if ((surface.capabilities.supportedTransforms() & VK_SURFACE_TRANSFORM_IDENTITY_BIT_KHR) != 0) {
             preTransform = VK_SURFACE_TRANSFORM_IDENTITY_BIT_KHR;
@@ -94,6 +103,9 @@ public class KHRSwapchainHelper {
             preTransform = surface.capabilities.currentTransform();
         }
 
+        try (MemoryStack stack = MemoryStack.stackPush()) {
+            
+        }
         VkSwapchainCreateInfoKHR swapchainCI = VkSwapchainCreateInfoKHR.calloc()
                 .sType(VK_STRUCTURE_TYPE_SWAPCHAIN_CREATE_INFO_KHR)
                 .pNext(NULL)
@@ -114,7 +126,7 @@ public class KHRSwapchainHelper {
                 .width(surface.width)
                 .height(surface.height);
         LongBuffer pSwapChain = memAllocLong(1);
-        err = vkCreateSwapchainKHR(device, swapchainCI, null, pSwapChain);
+        int err = vkCreateSwapchainKHR(device, swapchainCI, null, pSwapChain);
         swapchainCI.free();
         long swapChain = pSwapChain.get(0);
         memFree(pSwapChain);
@@ -128,69 +140,124 @@ public class KHRSwapchainHelper {
             vkDestroySwapchainKHR(device, oldSwapChain, null);
         }
 
-        IntBuffer pImageCount = memAllocInt(1);
-        err = vkGetSwapchainImagesKHR(device, swapChain, pImageCount, null);
-        int imageCount = pImageCount.get(0);
-        if (err != VK_SUCCESS) {
-            throw new AssertionError("Failed to get number of swapchain images: " + translateVulkanResult(err));
+        return swapChain;
+    }
+
+    private static long newSwapchain(final VkDevice device, final KHRSurface surface, final int desiredNumberOfSwapchainImages, long oldSwapChain) {
+        final KHRSurface.Format selectedFormat = surface.supportedFormats.get(0);
+        final int colorFormat = selectedFormat.colorFormat;
+        final int colorSpace = selectedFormat.colorSpace;
+
+        final int preTransform;
+        if ((surface.capabilities.supportedTransforms() & VK_SURFACE_TRANSFORM_IDENTITY_BIT_KHR) != 0) {
+            preTransform = VK_SURFACE_TRANSFORM_IDENTITY_BIT_KHR;
+        } else {
+            preTransform = surface.capabilities.currentTransform();
         }
 
-        //NOTE: these will be "renderbuffers"
-        LongBuffer pSwapchainImages = memAllocLong(imageCount);
-        err = vkGetSwapchainImagesKHR(device, swapChain, pImageCount, pSwapchainImages);
-        if (err != VK_SUCCESS) {
-            throw new AssertionError("Failed to get swapchain images: " + translateVulkanResult(err));
+        try (MemoryStack stack = MemoryStack.stackPush()) {
+            final VkSwapchainCreateInfoKHR swapchainCI = VkSwapchainCreateInfoKHR.callocStack(stack)
+                    .sType(VK_STRUCTURE_TYPE_SWAPCHAIN_CREATE_INFO_KHR)
+                    .pNext(NULL)
+                    .surface(surface.surface)
+                    .minImageCount(desiredNumberOfSwapchainImages)
+                    .imageFormat(colorFormat)
+                    .imageColorSpace(colorSpace)
+                    .imageUsage(VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT)
+                    .preTransform(preTransform)
+                    .imageArrayLayers(1)
+                    .imageSharingMode(VK_SHARING_MODE_EXCLUSIVE)
+                    .pQueueFamilyIndices(null)
+                    .presentMode(surface.presentationMode)
+                    .oldSwapchain(oldSwapChain)
+                    .clipped(VK_TRUE)
+                    .compositeAlpha(VK_COMPOSITE_ALPHA_OPAQUE_BIT_KHR);
+
+            final LongBuffer pSwapChain = stack.callocLong(1);
+            final int err = vkCreateSwapchainKHR(device, swapchainCI, null, pSwapChain);
+
+            if (err != VK10.VK_SUCCESS) {
+                throw new AssertionError("Failed to create KHRSwapChain: " + translateVulkanResult(err));
+            }
+
+            if (oldSwapChain != VK10.VK_NULL_HANDLE) {
+                vkDestroySwapchainKHR(device, oldSwapChain, null);
+            }
+
+            return pSwapChain.get(0);
         }
-        memFree(pImageCount);
+    }
 
-        long[] images = new long[imageCount];
-        VK10Texture2D[] imageViews = new VK10Texture2D[imageCount];
-        LongBuffer pBufferView = memAllocLong(1);
-        VkImageViewCreateInfo colorAttachmentView = VkImageViewCreateInfo.calloc()
-                .sType(VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO)
-                .pNext(NULL)
-                .format(colorFormat)
-                .viewType(VK_IMAGE_VIEW_TYPE_2D);
+    private static VK10Texture2D[] createImageViews(VkDevice device, long[] images, int colorFormat, int width, int height) {
+        final VK10Texture2D[] imageViews;
 
-        colorAttachmentView.components()
-                .r(VK_COMPONENT_SWIZZLE_R)
-                .g(VK_COMPONENT_SWIZZLE_G)
-                .b(VK_COMPONENT_SWIZZLE_B)
-                .a(VK_COMPONENT_SWIZZLE_A);
+        try (MemoryStack stack = MemoryStack.stackPush()) {
+            final VkImageViewCreateInfo colorAttachmentView = VkImageViewCreateInfo.callocStack(stack)
+                    .sType(VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO)
+                    .pNext(NULL)
+                    .format(colorFormat)
+                    .viewType(VK_IMAGE_VIEW_TYPE_2D);
 
-        colorAttachmentView.subresourceRange()
-                .aspectMask(VK_IMAGE_ASPECT_COLOR_BIT)
-                .baseMipLevel(0)
-                .levelCount(1)
-                .baseArrayLayer(0)
-                .layerCount(1);
+            colorAttachmentView.components()
+                    .r(VK_COMPONENT_SWIZZLE_R)
+                    .g(VK_COMPONENT_SWIZZLE_G)
+                    .b(VK_COMPONENT_SWIZZLE_B)
+                    .a(VK_COMPONENT_SWIZZLE_A);
 
-        for (int i = 0; i < imageCount; i++) {
-            images[i] = pSwapchainImages.get(i);
-            // Bring the image from an UNDEFINED state to the VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT state        
-            colorAttachmentView.image(images[i]);
-            err = vkCreateImageView(device, colorAttachmentView, null, pBufferView);
-            imageViews[i] = new VK10Texture2D(
-                    pBufferView.get(0),
-                    images[i],
-                    TextureFormat.RGBA8,
-                    surface.width, surface.height);
+            colorAttachmentView.subresourceRange()
+                    .aspectMask(VK_IMAGE_ASPECT_COLOR_BIT)
+                    .baseMipLevel(0)
+                    .levelCount(1)
+                    .baseArrayLayer(0)
+                    .layerCount(1);
 
-            if (err != VK_SUCCESS) {
-                throw new AssertionError("Failed to create image view: " + translateVulkanResult(err));
-            }            
+            imageViews = new VK10Texture2D[images.length];
+            final LongBuffer pBufferView = stack.callocLong(1);
+
+            for (int i = 0; i < images.length; i++) {
+                colorAttachmentView.image(images[i]);
+                final int err = VK10.vkCreateImageView(device, colorAttachmentView, null, pBufferView);
+
+                if (err != VK10.VK_SUCCESS) {
+                    throw new AssertionError("Failed to create image view: " + translateVulkanResult(err));
+                }
+
+                imageViews[i] = new VK10Texture2D(pBufferView.get(0), images[i], TextureFormat.RGBA8, width, height);
+            }
         }
 
         waitOnImages(images);
-        
-        colorAttachmentView.free();
-        memFree(pBufferView);
-        memFree(pSwapchainImages);
 
-        TriangleDemoGloop.Swapchain ret = new TriangleDemoGloop.Swapchain();
-        ret.framebuffers = imageViews;
-        ret.swapchainHandle = swapChain;
-        return ret;
+        return imageViews;
+    }
+
+    private static long[] getSwapchainImages(VkDevice device, long swapchain) {
+        final int imageCount;
+        try (MemoryStack stack = MemoryStack.stackPush()) {
+            final IntBuffer pImageCount = stack.callocInt(1);
+            final int err = vkGetSwapchainImagesKHR(device, swapchain, pImageCount, null);
+
+            if (err != VK10.VK_SUCCESS) {
+                throw new AssertionError("Failed to retrieve number of KHRSwapchain images: " + translateVulkanResult(err));
+            }
+
+            imageCount = pImageCount.get(0);
+        }
+
+        final long[] images = new long[imageCount];
+        try (MemoryStack stack = MemoryStack.stackPush()) {
+            final IntBuffer pImageCount = stack.ints(imageCount);
+            final LongBuffer pSwapchainImages = stack.callocLong(imageCount);
+            final int err = vkGetSwapchainImagesKHR(device, swapchain, pImageCount, pSwapchainImages);
+
+            if (err != VK_SUCCESS) {
+                throw new AssertionError("Failed to get KHRSwapchain images: " + translateVulkanResult(err));
+            }
+
+            pSwapchainImages.get(images).position(0);
+        }
+
+        return images;
     }
 
     private static void waitOnImages(long[] images) {
@@ -238,53 +305,12 @@ public class KHRSwapchainHelper {
 
         final int err = VK10.vkEndCommandBuffer(cmdBuffer);
         if (err != VK10.VK_SUCCESS) {
-            throw new AssertionError("Failed to end KHRSwapchain image creation CommandBuffer!" + translateVulkanResult(err));            
+            throw new AssertionError("Failed to end KHRSwapchain image creation CommandBuffer!" + translateVulkanResult(err));
         }
-        
+
         final CommandQueue queue = device.getFirstGraphicsFamily().getQueue();
-        
+
         queue.submit(cmdBuffer);
         queue.waitIdle();
     }
-
-    private static void imageBarrier(long image, int aspectMask, int oldImageLayout, int srcAccess, int newImageLayout, int dstAccess) {
-        // Create an image barrier object
-        VkImageMemoryBarrier.Buffer imageMemoryBarrier = VkImageMemoryBarrier.calloc(1)
-                .sType(VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER)
-                .pNext(NULL)
-                .oldLayout(oldImageLayout)
-                .srcAccessMask(srcAccess)
-                .newLayout(newImageLayout)
-                .dstAccessMask(dstAccess)
-                .srcQueueFamilyIndex(VK_QUEUE_FAMILY_IGNORED)
-                .dstQueueFamilyIndex(VK_QUEUE_FAMILY_IGNORED)
-                .image(image);
-        imageMemoryBarrier.subresourceRange()
-                .aspectMask(aspectMask)
-                .baseMipLevel(0)
-                .levelCount(1)
-                .layerCount(1);
-
-        // Put barrier on top
-        int srcStageFlags = VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT;
-        int destStageFlags = VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT;
-
-        final VkCommandBuffer cmdBuffer = VKGlobalConstants.getInstance().selectedDevice.getFirstGraphicsCommandPool().newCommandBuffer();
-        VkCommandBufferBeginInfo cmdBufInfo = VkCommandBufferBeginInfo.calloc()
-                .sType(VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO)
-                .pNext(NULL);
-        VK10.vkBeginCommandBuffer(cmdBuffer, cmdBufInfo);
-
-        // Put barrier inside setup command buffer
-        vkCmdPipelineBarrier(cmdBuffer, srcStageFlags, destStageFlags, 0,
-                null, // no memory barriers
-                null, // no buffer memory barriers
-                imageMemoryBarrier); // one image memory barrier
-
-        VK10.vkEndCommandBuffer(cmdBuffer);
-        VKGlobalConstants.getInstance().selectedDevice.getFirstGraphicsFamily().getQueue().submit(cmdBuffer);
-        imageMemoryBarrier.free();
-        cmdBufInfo.free();
-    }
-
 }
