@@ -31,8 +31,7 @@ import org.lwjgl.vulkan.VkPhysicalDeviceMemoryProperties;
  */
 public class VK10BufferFactory extends AbstractBufferFactory<VK10Buffer> {
     private static final int GENERIC_BUFFER_HINT =            
-            VK10.VK_BUFFER_USAGE_VERTEX_BUFFER_BIT;    
-    public static VkPhysicalDeviceMemoryProperties deviceMemoryProperties;
+            VK10.VK_BUFFER_USAGE_VERTEX_BUFFER_BIT;        
     
     @Override
     protected VK10Buffer newBuffer() {
@@ -41,7 +40,7 @@ public class VK10BufferFactory extends AbstractBufferFactory<VK10Buffer> {
 
     @Override
     protected void doAllocate(VK10Buffer buffer, long size, BufferAccessHint accessHint, BufferMapHint mapHint, BufferStorageHint storageHint) {
-        final VkDevice device = VKGlobalConstants.getInstance().selectedDevice.vkDevice;
+        final Device device = VKGlobalConstants.getInstance().selectedDevice;
         
         final VkBufferCreateInfo bufInfo = VkBufferCreateInfo.calloc()
                 .sType(VK10.VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO)
@@ -52,7 +51,7 @@ public class VK10BufferFactory extends AbstractBufferFactory<VK10Buffer> {
                 
         try (MemoryStack stack = MemoryStack.stackPush()) {
             final LongBuffer pBuffer = stack.callocLong(1);
-            final int err = VK10.vkCreateBuffer(device, bufInfo, null, pBuffer);            
+            final int err = VK10.vkCreateBuffer(device.vkDevice, bufInfo, null, pBuffer);            
             
             buffer.id = pBuffer.get(0);                        
             
@@ -68,14 +67,14 @@ public class VK10BufferFactory extends AbstractBufferFactory<VK10Buffer> {
                 .sType(VK10.VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO)
                 .pNext(NULL);
         
-        VK10.vkGetBufferMemoryRequirements(device, buffer.id, memReqs);
+        VK10.vkGetBufferMemoryRequirements(device.vkDevice, buffer.id, memReqs);
         
         memAlloc.allocationSize(memReqs.size());
         
         try (MemoryStack stack = MemoryStack.stackPush()) {
             final IntBuffer memoryTypeIndex = stack.callocInt(1);
             
-            getMemoryType(deviceMemoryProperties, memReqs.memoryTypeBits(), VK10.VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT, memoryTypeIndex);
+            getMemoryType(device.memoryProperties, memReqs.memoryTypeBits(), VK10.VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT, memoryTypeIndex);
             
             memAlloc.memoryTypeIndex(memoryTypeIndex.get(0));            
         } finally {
@@ -84,7 +83,7 @@ public class VK10BufferFactory extends AbstractBufferFactory<VK10Buffer> {
         
         try (MemoryStack stack = MemoryStack.stackPush()) {
             final LongBuffer pMemory = stack.callocLong(1);
-            final int err = VK10.vkAllocateMemory(device, memAlloc, null, pMemory);
+            final int err = VK10.vkAllocateMemory(device.vkDevice, memAlloc, null, pMemory);
             
             buffer.memId = pMemory.get(0);
             
@@ -96,7 +95,7 @@ public class VK10BufferFactory extends AbstractBufferFactory<VK10Buffer> {
         }
         
         {
-            final int err = VK10.vkBindBufferMemory(device, buffer.id, buffer.memId, 0L);
+            final int err = VK10.vkBindBufferMemory(device.vkDevice, buffer.id, buffer.memId, 0L);
             
             if (err != VK10.VK_SUCCESS) {
                 throw new AssertionError("Failed to bind memory to vertex buffer: " + translateVulkanResult(err));

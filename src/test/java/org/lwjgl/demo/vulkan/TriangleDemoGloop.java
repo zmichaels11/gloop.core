@@ -66,6 +66,7 @@ public class TriangleDemoGloop {
 
     static {
         System.setProperty("org.slf4j.simpleLogger.defaultLogLevel", "debug");
+        ObjectFactoryManager.getInstance().initVK10();
     }
 
     /**
@@ -76,7 +77,7 @@ public class TriangleDemoGloop {
     /**
      * This is just -1L, but it is nicer as a symbolic constant.
      */
-    private static final long UINT64_MAX = 0xFFFFFFFFFFFFFFFFL;    
+    private static final long UINT64_MAX = 0xFFFFFFFFFFFFFFFFL;
 
     private static class Vertices {
 
@@ -84,11 +85,7 @@ public class TriangleDemoGloop {
         VertexInputs vertexArrayInput;
     }
 
-    private static Vertices createVertices(VkPhysicalDeviceMemoryProperties deviceMemoryProperties, VkDevice device) {
-        //TODO: these should not be globals.        
-        VK10BufferFactory.deviceMemoryProperties = deviceMemoryProperties;
-        ObjectFactoryManager.getInstance().initVK10();
-
+    private static Vertices createVertices() {
         final Buffer out = new BufferCreateInfo()
                 .withSize(Float.BYTES * 6)
                 .allocate();
@@ -310,16 +307,16 @@ public class TriangleDemoGloop {
         }
 
         // Create the Vulkan instance        
-        final VkDevice device = VKGlobalConstants.getInstance().selectedDevice.vkDevice;        
+        final VkDevice device = VKGlobalConstants.getInstance().selectedDevice.vkDevice;
         final VkPhysicalDeviceMemoryProperties memoryProperties = VKGlobalConstants.getInstance().selectedDevice.memoryProperties;
         final VKGLFWWindow window = new VKGLFWWindow("Triangle Test", 640, 480);
 
         // Create static Vulkan resources
         final KHRSurface.Format colorFormatAndSpace = window.surface.supportedFormats.get(0);
-        final CommandPool commandPool = VKGlobalConstants.getInstance().selectedDevice.getFirstGraphicsCommandPool();        
+        final CommandPool commandPool = VKGlobalConstants.getInstance().selectedDevice.getFirstGraphicsCommandPool();
         final VkCommandBuffer postPresentCommandBuffer = commandPool.newCommandBuffer();
         final CommandQueue queue = VKGlobalConstants.getInstance().selectedDevice.getFirstGraphicsFamily().getQueue();
-        final Vertices vertices = createVertices(memoryProperties, device);
+        final Vertices vertices = createVertices();
 
         final RasterPipeline pipeline = new RasterPipelineCreateInfo()
                 .withVertexInputs(vertices.vertexArrayInput)
@@ -339,7 +336,7 @@ public class TriangleDemoGloop {
 
             void recreate() {
                 final VkDevice device = VKGlobalConstants.getInstance().selectedDevice.vkDevice;
-               
+
                 // Create the swapchain (this will also add a memory barrier to initialize the framebuffer images)
                 swapchain = new KHRSwapchain(window.surface, swapchain);
 
