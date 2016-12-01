@@ -15,10 +15,11 @@ import com.longlinkislong.gloop2.ShaderType;
 import com.longlinkislong.gloop2.VertexInputs;
 import com.longlinkislong.gloop2.VertexAttribute;
 import com.longlinkislong.gloop2.VertexAttributeFormat;
+import com.longlinkislong.gloop2.vkimpl.CommandDependency;
 import com.longlinkislong.gloop2.vkimpl.CommandPool;
 import com.longlinkislong.gloop2.vkimpl.CommandQueue;
 import com.longlinkislong.gloop2.vkimpl.KHRSurface;
-import com.longlinkislong.gloop2.vkimpl.KHRSwapchain;
+import com.longlinkislong.gloop2.vkimpl.KSwapchain;
 import com.longlinkislong.gloop2.vkimpl.VK10Buffer;
 import com.longlinkislong.gloop2.vkimpl.VK10Framebuffer;
 import com.longlinkislong.gloop2.vkimpl.VK10RasterPipeline;
@@ -41,12 +42,13 @@ import org.junit.Test;
 
 import org.lwjgl.PointerBuffer;
 import org.lwjgl.glfw.GLFWWindowSizeCallback;
+import org.lwjgl.system.MemoryStack;
+import org.lwjgl.vulkan.VK10;
 import org.lwjgl.vulkan.VkClearValue;
 import org.lwjgl.vulkan.VkCommandBuffer;
 import org.lwjgl.vulkan.VkCommandBufferBeginInfo;
 import org.lwjgl.vulkan.VkDevice;
 import org.lwjgl.vulkan.VkImageMemoryBarrier;
-import org.lwjgl.vulkan.VkPhysicalDeviceMemoryProperties;
 import org.lwjgl.vulkan.VkPresentInfoKHR;
 import org.lwjgl.vulkan.VkRect2D;
 import org.lwjgl.vulkan.VkRenderPassBeginInfo;
@@ -275,13 +277,13 @@ public class TriangleDemoGloop {
         }
 
         // Submit the command buffer
-        queue.submit(commandBuffer);
+        queue.submit(CommandQueue.NO_DEPENDENCIES, CommandQueue.NO_SIGNALS, commandBuffer);
     }
 
     /*
      * All resources that must be reallocated on window resize.
      */
-    private static KHRSwapchain swapchain;
+    private static KSwapchain swapchain;
     //private static Framebuffer[] framebuffers;
     private static VkCommandBuffer[] renderCommandBuffers;
 
@@ -306,7 +308,6 @@ public class TriangleDemoGloop {
 
         // Create the Vulkan instance        
         final VkDevice device = VKGlobalConstants.getInstance().selectedDevice.vkDevice;
-        final VkPhysicalDeviceMemoryProperties memoryProperties = VKGlobalConstants.getInstance().selectedDevice.memoryProperties;
         final VKGLFWWindow window = new VKGLFWWindow("Triangle Test", 640, 480);
 
         // Create static Vulkan resources
@@ -336,9 +337,9 @@ public class TriangleDemoGloop {
                 final VkDevice device = VKGlobalConstants.getInstance().selectedDevice.vkDevice;
 
                 // Create the swapchain (this will also add a memory barrier to initialize the framebuffer images)
-                swapchain = new KHRSwapchain(window.surface, swapchain);                
+                swapchain = new KSwapchain(window.surface, swapchain);
 
-                final VK10RenderPass renderPass = VKGlobalConstants.getInstance().getRenderPass(colorFormatAndSpace.colorFormat);                
+                final VK10RenderPass renderPass = VKGlobalConstants.getInstance().getRenderPass(colorFormatAndSpace.colorFormat);
 
                 // Create render command buffers
                 if (renderCommandBuffers != null) {
@@ -370,42 +371,36 @@ public class TriangleDemoGloop {
         window.setVisible(true);
 
         // Pre-allocate everything needed in the render loop
-        IntBuffer pImageIndex = memAllocInt(1);
-        int currentBuffer = 0;
         PointerBuffer pCommandBuffers = memAllocPointer(1);
-        LongBuffer pSwapchains = memAllocLong(1);
-        LongBuffer pImageAcquiredSemaphore = memAllocLong(1);
-        LongBuffer pRenderCompleteSemaphore = memAllocLong(1);
 
-        // Info struct to create a semaphore
-        VkSemaphoreCreateInfo semaphoreCreateInfo = VkSemaphoreCreateInfo.calloc()
-                .sType(VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO)
-                .pNext(NULL)
-                .flags(VK_FLAGS_NONE);
+        final long imageAcquiredSemaphore;
+        try (MemoryStack stack = MemoryStack.stackPush()) {
+            final VkSemaphoreCreateInfo semaphoreCreateInfo = VkSemaphoreCreateInfo.callocStack(stack)
+                    .sType(VK10.VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO);
+            final LongBuffer pImageAcquiredSemaphore = stack.callocLong(1);
+            final int err = VK10.vkCreateSemaphore(device, semaphoreCreateInfo, null, pImageAcquiredSemaphore);
 
-        // Info struct to submit a command buffer which will wait on the semaphore
-        IntBuffer pWaitDstStageMask = memAllocInt(1);
-        pWaitDstStageMask.put(0, VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT);
-        VkSubmitInfo submitInfo = VkSubmitInfo.calloc()
-                .sType(VK_STRUCTURE_TYPE_SUBMIT_INFO)
-                .pNext(NULL)
-                .waitSemaphoreCount(pImageAcquiredSemaphore.remaining())
-                .pWaitSemaphores(pImageAcquiredSemaphore)
-                .pWaitDstStageMask(pWaitDstStageMask)
-                .pCommandBuffers(pCommandBuffers)
-                .pSignalSemaphores(pRenderCompleteSemaphore);
+            if (err != VK10.VK_SUCCESS) {
+                throw new AssertionError("Failed to create image acquired semaphore: " + translateVulkanResult(err));
+            }
 
-        // Info struct to present the current swapchain image to the display
-        VkPresentInfoKHR presentInfo = VkPresentInfoKHR.calloc()
-                .sType(VK_STRUCTURE_TYPE_PRESENT_INFO_KHR)
-                .pNext(NULL)
-                .pWaitSemaphores(pRenderCompleteSemaphore)
-                .swapchainCount(pSwapchains.remaining())
-                .pSwapchains(pSwapchains)
-                .pImageIndices(pImageIndex)
-                .pResults(null);
+            imageAcquiredSemaphore = pImageAcquiredSemaphore.get(0);
+        }
 
-        int err;
+        final long renderCompleteSemaphore;
+        try (MemoryStack stack = MemoryStack.stackPush()) {
+            final VkSemaphoreCreateInfo semaphoreCreateInfo = VkSemaphoreCreateInfo.callocStack(stack)
+                    .sType(VK10.VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO);
+            final LongBuffer pRenderCompleteSemaphore = stack.callocLong(1);
+            final int err = VK10.vkCreateSemaphore(device, semaphoreCreateInfo, null, pRenderCompleteSemaphore);
+
+            if (err != VK10.VK_SUCCESS) {
+                throw new AssertionError("Failed to create render complete semaphore: " + translateVulkanResult(err));
+            }
+
+            renderCompleteSemaphore = pRenderCompleteSemaphore.get(0);
+        }        
+
         // The render loop
         while (!glfwWindowShouldClose(window.window)) {
             // Handle window messages. Resize events happen exactly here.
@@ -415,59 +410,57 @@ public class TriangleDemoGloop {
                 swapchainRecreator.recreate();
             }
 
-            // Create a semaphore to wait for the swapchain to acquire the next image
-            err = vkCreateSemaphore(device, semaphoreCreateInfo, null, pImageAcquiredSemaphore);
-            if (err != VK_SUCCESS) {
-                throw new AssertionError("Failed to create image acquired semaphore: " + translateVulkanResult(err));
-            }
-
-            // Create a semaphore to wait for the render to complete, before presenting
-            err = vkCreateSemaphore(device, semaphoreCreateInfo, null, pRenderCompleteSemaphore);
-            if (err != VK_SUCCESS) {
-                throw new AssertionError("Failed to create render complete semaphore: " + translateVulkanResult(err));
-            }
-
             // Get next image from the swap chain (back/front buffer).
             // This will setup the imageAquiredSemaphore to be signalled when the operation is complete
-            err = vkAcquireNextImageKHR(device, swapchain.swapchain, UINT64_MAX, pImageAcquiredSemaphore.get(0), VK_NULL_HANDLE, pImageIndex);
-            currentBuffer = pImageIndex.get(0);
-            if (err != VK_SUCCESS) {
-                throw new AssertionError("Failed to acquire next swapchain image: " + translateVulkanResult(err));
-            }
+            final int currentBuffer;
+            try (MemoryStack stack = MemoryStack.stackPush()) {
+                final IntBuffer pImageIndex = stack.callocInt(1);
+                final int err = vkAcquireNextImageKHR(device, swapchain.swapchain, UINT64_MAX, imageAcquiredSemaphore, VK_NULL_HANDLE, pImageIndex);
+
+                if (err != VK_SUCCESS) {
+                    throw new AssertionError("Failed to acquire next swapchain image: " + translateVulkanResult(err));
+                }
+                
+                currentBuffer = pImageIndex.get(0);
+            }                                    
 
             // Select the command buffer for the current framebuffer image/attachment
             pCommandBuffers.put(0, renderCommandBuffers[currentBuffer]);
 
             // Submit to the graphics queue
-            err = vkQueueSubmit(queue.vkQueue, submitInfo, VK_NULL_HANDLE);
-            if (err != VK_SUCCESS) {
-                throw new AssertionError("Failed to submit render queue: " + translateVulkanResult(err));
-            }
+            final CommandDependency[] deps = {new CommandDependency(VK10.VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT, imageAcquiredSemaphore)};
+            final long[] signals = {renderCompleteSemaphore};
+
+            queue.submit(deps, signals, renderCommandBuffers);
 
             // Present the current buffer to the swap chain
             // This will display the image
-            pSwapchains.put(0, swapchain.swapchain);
-            err = vkQueuePresentKHR(queue.vkQueue, presentInfo);
-            if (err != VK_SUCCESS) {
-                throw new AssertionError("Failed to present the swapchain image: " + translateVulkanResult(err));
+            try (MemoryStack stack = MemoryStack.stackPush()) {
+                final LongBuffer pSwapchain = stack.longs(swapchain.swapchain);
+                final LongBuffer pRenderCompleteSemaphore = stack.longs(renderCompleteSemaphore);
+                final IntBuffer pImageIndex = stack.ints(currentBuffer);
+
+                final VkPresentInfoKHR presentInfo = VkPresentInfoKHR.callocStack(stack)
+                        .sType(VK_STRUCTURE_TYPE_PRESENT_INFO_KHR)
+                        .pWaitSemaphores(pRenderCompleteSemaphore)
+                        .swapchainCount(1)
+                        .pSwapchains(pSwapchain)
+                        .pImageIndices(pImageIndex)
+                        .pResults(null);
+
+                final int err = vkQueuePresentKHR(queue.vkQueue, presentInfo);
+                if (err != VK_SUCCESS) {
+                    throw new AssertionError("Failed to present the SwapChain image: " + translateVulkanResult(err));
+                }
             }
+
             // Create and submit post present barrier
             queue.waitIdle();
 
-            // Destroy this semaphore (we will create a new one in the next frame)
-            vkDestroySemaphore(device, pImageAcquiredSemaphore.get(0), null);
-            vkDestroySemaphore(device, pRenderCompleteSemaphore.get(0), null);
             submitPostPresentBarrier(swapchain.renderTextures[currentBuffer].image, postPresentCommandBuffer, queue);
         }
-        presentInfo.free();
-        memFree(pWaitDstStageMask);
-        submitInfo.free();
-        memFree(pImageAcquiredSemaphore);
-        memFree(pRenderCompleteSemaphore);
-        semaphoreCreateInfo.free();
-        memFree(pSwapchains);
+                  
         memFree(pCommandBuffers);
-
         windowSizeCallback.free();
 
         // We don't bother disposing of all Vulkan resources.

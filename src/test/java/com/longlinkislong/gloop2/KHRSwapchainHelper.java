@@ -8,7 +8,7 @@ package com.longlinkislong.gloop2;
 import com.longlinkislong.gloop2.vkimpl.CommandQueue;
 import com.longlinkislong.gloop2.vkimpl.Device;
 import com.longlinkislong.gloop2.vkimpl.KHRSurface;
-import com.longlinkislong.gloop2.vkimpl.KHRSwapchain;
+import com.longlinkislong.gloop2.vkimpl.KSwapchain;
 import com.longlinkislong.gloop2.vkimpl.VK10Texture2D;
 import com.longlinkislong.gloop2.vkimpl.VKGlobalConstants;
 import java.nio.IntBuffer;
@@ -56,7 +56,7 @@ public class KHRSwapchainHelper {
 
 
 
-    public static long newSwapchain(KHRSurface surface, int colorFormat, int colorSpace, KHRSwapchain oldSwapChain, VkDevice device) {
+    public static long newSwapchain(KHRSurface surface, int colorFormat, int colorSpace, KSwapchain oldSwapChain, VkDevice device) {
         // Determine the number of images
         int desiredNumberOfSwapchainImages = surface.capabilities.minImageCount() + 1;
         if ((surface.capabilities.maxImageCount() > 0) && (desiredNumberOfSwapchainImages > surface.capabilities.maxImageCount())) {
@@ -279,7 +279,7 @@ public class KHRSwapchainHelper {
 
         final CommandQueue queue = device.getFirstGraphicsFamily().getQueue();
 
-        queue.submit(cmdBuffer);
+        queue.submit(CommandQueue.NO_DEPENDENCIES, CommandQueue.NO_SIGNALS, cmdBuffer);
         queue.waitIdle();
     }
 }

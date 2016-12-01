@@ -5,6 +5,8 @@
  */
 package com.longlinkislong.gloop2.vkimpl;
 
+import java.nio.IntBuffer;
+import java.nio.LongBuffer;
 import org.lwjgl.PointerBuffer;
 import static org.lwjgl.demo.vulkan.VKUtil.translateVulkanResult;
 import org.lwjgl.system.MemoryStack;
@@ -39,11 +41,17 @@ public class CommandQueue {
     public void waitIdle() {
         VK10.vkQueueWaitIdle(vkQueue);
     }
+    
+    public static final CommandDependency[] NO_DEPENDENCIES = null;
+    public static final long[] NO_SIGNALS = null;       
 
-    public void submit(final VkCommandBuffer... bufs) {
+    public void submit(final CommandDependency[] dependencies, final long[] signals, final VkCommandBuffer... bufs) {
+        if (bufs == null || bufs.length == 0) {
+            return;
+        }
+        
         try (MemoryStack stack = MemoryStack.stackPush()) {
-            final VkSubmitInfo submitInfo = VkSubmitInfo.calloc()
-                    .sType(VK10.VK_STRUCTURE_TYPE_SUBMIT_INFO);
+            final VkSubmitInfo submitInfo = createSubmitInfo(stack, dependencies, signals);            
             final PointerBuffer pCommandBuffers = stack.callocPointer(bufs.length);
 
             for (VkCommandBuffer buf : bufs) {
@@ -62,5 +70,40 @@ public class CommandQueue {
                 throw new AssertionError("Failed to submit CommandBuffer(s): " + translateVulkanResult(err));
             }
         }
+    }
+    
+    private static VkSubmitInfo createSubmitInfo(final MemoryStack stack, final CommandDependency[] deps, final long[] signals) {
+        final VkSubmitInfo out = VkSubmitInfo.callocStack(stack)
+                .sType(VK10.VK_STRUCTURE_TYPE_SUBMIT_INFO);
+                
+        if (deps != null && deps.length > 0) {
+            final IntBuffer pStages = stack.callocInt(deps.length);
+            final LongBuffer pSemaphores = stack.callocLong(deps.length);
+                        
+            for (CommandDependency dep : deps) {
+                pStages.put(dep.stage);
+                pSemaphores.put(dep.semaphore);
+            }
+            
+            pStages.flip();
+            pSemaphores.flip();
+            
+            out.pWaitDstStageMask(pStages);
+            out.pWaitSemaphores(pSemaphores);
+        }
+        
+        if (signals != null) {
+            final LongBuffer pSemaphores = stack.callocLong(signals.length);
+            
+            for (long signal : signals) {
+                pSemaphores.put(signal);
+            }
+            
+            pSemaphores.flip();
+            
+            out.pSignalSemaphores(pSemaphores);
+        }
+        
+        return out;
     }
 }

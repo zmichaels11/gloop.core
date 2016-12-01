@@ -5,32 +5,38 @@
  */
 package com.longlinkislong.gloop2.vkimpl;
 
-import com.longlinkislong.gloop2.Framebuffer;
 import com.longlinkislong.gloop2.FramebufferCreateInfo;
 import static com.longlinkislong.gloop2.KHRSwapchainHelper.createImageViews;
 import static com.longlinkislong.gloop2.KHRSwapchainHelper.getSwapchainImages;
 import static com.longlinkislong.gloop2.KHRSwapchainHelper.newSwapchain;
+import java.nio.IntBuffer;
+import java.nio.LongBuffer;
+import static org.lwjgl.demo.vulkan.VKUtil.translateVulkanResult;
+import org.lwjgl.system.MemoryStack;
+import static org.lwjgl.vulkan.KHRSwapchain.vkAcquireNextImageKHR;
 import static org.lwjgl.vulkan.KHRSwapchain.vkDestroySwapchainKHR;
 import org.lwjgl.vulkan.VK10;
 import static org.lwjgl.vulkan.VK10.VK_NULL_HANDLE;
 import org.lwjgl.vulkan.VkDevice;
 import org.lwjgl.vulkan.VkExtent2D;
+import org.lwjgl.vulkan.VkSemaphoreCreateInfo;
 
 /**
  *
  * @author zmichaels
  */
-public final class KHRSwapchain {
+public final class KSwapchain {
 
     public long swapchain;
     public final VK10Texture2D[] renderTextures;
     public final VK10Framebuffer[] framebuffers;
+    private int currentBuffer;
 
-    public KHRSwapchain(final KHRSurface surface) {
+    public KSwapchain(final KHRSurface surface) {
         this(surface, null);
     }
     
-    public KHRSwapchain(final KHRSurface surface, final KHRSwapchain oldSwapchain) {
+    public KSwapchain(final KHRSurface surface, final KSwapchain oldSwapchain) {
         final VkDevice device = VKGlobalConstants.getInstance().selectedDevice.vkDevice;
         final KHRSurface.Format surfaceFormat = surface.supportedFormats.get(0);
         final int colorFormat = surfaceFormat.colorFormat;
@@ -81,6 +87,35 @@ public final class KHRSwapchain {
             this.swapchain = VK_NULL_HANDLE;
         }
     }
+       
 
-    
+    public void swapFrames() {
+        final Device device = VKGlobalConstants.getInstance().selectedDevice;
+        final long imageAcquireSemaphore;
+        
+        try (MemoryStack stack = MemoryStack.stackPush()) {
+            final LongBuffer pImageAcquireSemaphore = stack.callocLong(1);
+            final VkSemaphoreCreateInfo semaphoreCreateInfo = VkSemaphoreCreateInfo.callocStack(stack)
+                    .sType(VK10.VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO);
+            
+            final int err = VK10.vkCreateSemaphore(device.vkDevice, semaphoreCreateInfo, null, pImageAcquireSemaphore);
+            
+            if (err != VK10.VK_SUCCESS) {
+                throw new AssertionError("Failed to create image acquire semaphore: " + translateVulkanResult(err));
+            }
+            
+            imageAcquireSemaphore = pImageAcquireSemaphore.get(0);                        
+        }
+                
+        try (MemoryStack stack = MemoryStack.stackPush()) {
+            final IntBuffer pImageIndex = stack.callocInt(1);         
+            final int err = vkAcquireNextImageKHR(device.vkDevice, swapchain, Long.MAX_VALUE, imageAcquireSemaphore, VK_NULL_HANDLE, pImageIndex);
+            
+            if (err != VK10.VK_SUCCESS) {
+                throw new AssertionError("Failed to acquire next image: " + translateVulkanResult(err));
+            }
+            
+            this.currentBuffer = pImageIndex.get(0);
+        }        
+    }
 }
