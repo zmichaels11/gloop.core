@@ -39,4 +39,8 @@ public final class FramebufferCreateInfo {
         
         return new FramebufferCreateInfo(width, height, newAttachments);
     }
+    
+    public Framebuffer allocate() {
+        return ObjectFactoryManager.getInstance().getFramebufferFactory().allocate(this);
+    }
 }

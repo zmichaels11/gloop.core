@@ -6,12 +6,15 @@ package org.lwjgl.demo.vulkan;
 
 import com.longlinkislong.gloop2.Buffer;
 import com.longlinkislong.gloop2.BufferCreateInfo;
+import com.longlinkislong.gloop2.Framebuffer;
+import com.longlinkislong.gloop2.FramebufferCreateInfo;
 import com.longlinkislong.gloop2.ObjectFactoryManager;
 import com.longlinkislong.gloop2.RasterCommandCreateInfo;
 import com.longlinkislong.gloop2.RasterPipeline;
 import com.longlinkislong.gloop2.RasterPipelineCreateInfo;
 import com.longlinkislong.gloop2.ShaderCreateInfo;
 import com.longlinkislong.gloop2.ShaderType;
+import com.longlinkislong.gloop2.TextureFormat;
 import com.longlinkislong.gloop2.VertexInputs;
 import com.longlinkislong.gloop2.VertexAttribute;
 import com.longlinkislong.gloop2.VertexAttributeFormat;
@@ -19,6 +22,7 @@ import com.longlinkislong.gloop2.vkimpl.CommandPool;
 import com.longlinkislong.gloop2.vkimpl.Surface;
 import com.longlinkislong.gloop2.vkimpl.VK10Buffer;
 import com.longlinkislong.gloop2.vkimpl.VK10BufferFactory;
+import com.longlinkislong.gloop2.vkimpl.VK10Framebuffer;
 import com.longlinkislong.gloop2.vkimpl.VK10RasterPipeline;
 import com.longlinkislong.gloop2.vkimpl.VK10RenderPass;
 import com.longlinkislong.gloop2.vkimpl.VK10Texture2D;
@@ -72,7 +76,7 @@ public class TriangleDemoGloop {
     static {
         System.setProperty("org.slf4j.simpleLogger.defaultLogLevel", "debug");
     }
-    
+
     /**
      * Remove if added to spec.
      */
@@ -123,8 +127,7 @@ public class TriangleDemoGloop {
     private static Swapchain createSwapChain(VkDevice device, VkPhysicalDevice physicalDevice, Surface surface, long oldSwapChain, VkCommandBuffer commandBuffer, int newWidth,
             int newHeight, int colorFormat, int colorSpace) {
         int err;
-        
-        
+
         // Determine the number of images
         int desiredNumberOfSwapchainImages = surface.capabilities.minImageCount() + 1;
         if ((surface.capabilities.maxImageCount() > 0) && (desiredNumberOfSwapchainImages > surface.capabilities.maxImageCount())) {
@@ -134,7 +137,7 @@ public class TriangleDemoGloop {
         VkExtent2D currentExtent = surface.capabilities.currentExtent();
         int currentWidth = currentExtent.width();
         int currentHeight = currentExtent.height();
-                
+
         if (currentWidth != -1 && currentHeight != -1) {
             width = currentWidth;
             height = currentHeight;
@@ -148,7 +151,7 @@ public class TriangleDemoGloop {
             preTransform = VK_SURFACE_TRANSFORM_IDENTITY_BIT_KHR;
         } else {
             preTransform = surface.capabilities.currentTransform();
-        }        
+        }
 
         VkSwapchainCreateInfoKHR swapchainCI = VkSwapchainCreateInfoKHR.calloc()
                 .sType(VK_STRUCTURE_TYPE_SWAPCHAIN_CREATE_INFO_KHR)
@@ -227,8 +230,11 @@ public class TriangleDemoGloop {
                     VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL, VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT);
             colorAttachmentView.image(images[i]);
             err = vkCreateImageView(device, colorAttachmentView, null, pBufferView);
-            imageViews[i] = new VK10Texture2D();
-            imageViews[i].id = pBufferView.get(0);
+            imageViews[i] = new VK10Texture2D(
+                    pBufferView.get(0),
+                    TextureFormat.RGBA8,
+                    width, height);
+
             if (err != VK_SUCCESS) {
                 throw new AssertionError("Failed to create image view: " + translateVulkanResult(err));
             }
@@ -242,35 +248,6 @@ public class TriangleDemoGloop {
         ret.imageViews = imageViews;
         ret.swapchainHandle = swapChain;
         return ret;
-    }
-
-    private static long[] createFramebuffers(VkDevice device, Swapchain swapchain, long renderPass, int width, int height) {
-        LongBuffer attachments = memAllocLong(1);
-        VkFramebufferCreateInfo fci = VkFramebufferCreateInfo.calloc()
-                .sType(VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO)
-                .pAttachments(attachments)
-                .flags(VK_FLAGS_NONE)
-                .height(height)
-                .width(width)
-                .layers(1)
-                .pNext(NULL)
-                .renderPass(renderPass);
-        // Create a framebuffer for each swapchain image
-        long[] framebuffers = new long[swapchain.images.length];
-        LongBuffer pFramebuffer = memAllocLong(1);
-        for (int i = 0; i < swapchain.images.length; i++) {
-            attachments.put(0, swapchain.imageViews[i].id);
-            int err = vkCreateFramebuffer(device, fci, null, pFramebuffer);
-            long framebuffer = pFramebuffer.get(0);
-            if (err != VK_SUCCESS) {
-                throw new AssertionError("Failed to create framebuffer: " + translateVulkanResult(err));
-            }
-            framebuffers[i] = framebuffer;
-        }
-        memFree(attachments);
-        memFree(pFramebuffer);
-        fci.free();
-        return framebuffers;
     }
 
     private static void submitCommandBuffer(VkQueue queue, VkCommandBuffer commandBuffer) {
@@ -319,7 +296,7 @@ public class TriangleDemoGloop {
 
         Vertices ret = new Vertices();
         ret.vertexArrayInput = new VertexInputs()
-                .withAttribute(new VertexAttribute()                        
+                .withAttribute(new VertexAttribute()
                         .withStride(2 * 4)
                         .withFormat(VertexAttributeFormat.XY_32F)
                 );
@@ -328,10 +305,9 @@ public class TriangleDemoGloop {
         return ret;
     }
 
-    private static VkCommandBuffer[] createRenderCommandBuffers(long[] framebuffers, long renderPass, int width, int height,
+    private static VkCommandBuffer[] createRenderCommandBuffers(Framebuffer[] framebuffers, long renderPass, int width, int height,
             long pipeline, Buffer verticesBuf) {
-        
-                
+
         VkCommandBuffer[] renderCommandBuffers = VKGlobalConstants.getInstance().selectedDevice.getFirstGraphicsCommandPool().newCommandBuffers(framebuffers.length);
         int err;
 
@@ -352,7 +328,7 @@ public class TriangleDemoGloop {
         VkRenderPassBeginInfo renderPassBeginInfo = VkRenderPassBeginInfo.calloc()
                 .sType(VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO)
                 .pNext(NULL)
-                .renderPass(renderPass)                
+                .renderPass(renderPass)
                 .pClearValues(clearValues);
         VkRect2D renderArea = renderPassBeginInfo.renderArea();
         renderArea.offset().set(0, 0);
@@ -360,13 +336,13 @@ public class TriangleDemoGloop {
 
         for (int i = 0; i < renderCommandBuffers.length; ++i) {
             // Set target frame buffer
-            renderPassBeginInfo.framebuffer(framebuffers[i]);
+            renderPassBeginInfo.framebuffer(((VK10Framebuffer) framebuffers[i]).framebuffer);
 
             err = vkBeginCommandBuffer(renderCommandBuffers[i], cmdBufInfo);
             if (err != VK_SUCCESS) {
                 throw new AssertionError("Failed to begin render command buffer: " + translateVulkanResult(err));
             }
-            
+
             vkCmdBeginRenderPass(renderCommandBuffers[i], renderPassBeginInfo, VK_SUBPASS_CONTENTS_INLINE);
 
             // Update dynamic viewport state
@@ -393,7 +369,7 @@ public class TriangleDemoGloop {
             offsets.put(0, 0L);
             LongBuffer pBuffers = memAllocLong(1);
             pBuffers.put(0, ((VK10Buffer) verticesBuf).id);
-            
+
             vkCmdBindVertexBuffers(renderCommandBuffers[i], 0, pBuffers, offsets);
             memFree(pBuffers);
             memFree(offsets);
@@ -501,7 +477,7 @@ public class TriangleDemoGloop {
      * All resources that must be reallocated on window resize.
      */
     private static Swapchain swapchain;
-    private static long[] framebuffers;
+    private static Framebuffer[] framebuffers;
     private static int width, height;
     private static VkCommandBuffer[] renderCommandBuffers;
 
@@ -522,11 +498,11 @@ public class TriangleDemoGloop {
         }
         if (!glfwVulkanSupported()) {
             throw new AssertionError("GLFW failed to find the Vulkan loader");
-        }       
+        }
 
         // Create the Vulkan instance
-        final VkInstance instance = VKGlobalConstants.getInstance().instance;                
-        final VkDevice device = VKGlobalConstants.getInstance().selectedDevice.vkDevice;        
+        final VkInstance instance = VKGlobalConstants.getInstance().instance;
+        final VkDevice device = VKGlobalConstants.getInstance().selectedDevice.vkDevice;
         final VkPhysicalDevice physicalDevice = VKGlobalConstants.getInstance().selectedDevice.physicalDevice;
         final VkPhysicalDeviceMemoryProperties memoryProperties = VKGlobalConstants.getInstance().selectedDevice.memoryProperties;
 
@@ -602,13 +578,20 @@ public class TriangleDemoGloop {
 
                 if (framebuffers != null) {
                     for (int i = 0; i < framebuffers.length; i++) {
-                        vkDestroyFramebuffer(device, framebuffers[i], null);
+                        vkDestroyFramebuffer(device, ((VK10Framebuffer) framebuffers[i]).framebuffer, null);
                     }
                 }
-                
+
                 final VK10RenderPass renderPass = VKGlobalConstants.getInstance().getRenderPass(colorFormatAndSpace.colorFormat);
-                
-                framebuffers = createFramebuffers(device, swapchain, renderPass.id, width, height);
+
+                framebuffers = new Framebuffer[swapchain.imageViews.length];
+                for (int i = 0; i < framebuffers.length; i++) {
+                    framebuffers[i] = new FramebufferCreateInfo()
+                            .withSize(width, height)
+                            .withAttachment(0, swapchain.imageViews[i])
+                            .allocate();
+                }                
+
                 // Create render command buffers
                 if (renderCommandBuffers != null) {
                     vkResetCommandPool(device, commandPool.id, VK_FLAGS_NONE);

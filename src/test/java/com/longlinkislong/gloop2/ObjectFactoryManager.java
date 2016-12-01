@@ -10,8 +10,10 @@ import com.longlinkislong.gloop2.glimpl.GL45BufferFactory;
 import com.longlinkislong.gloop2.glimpl.GL45Image2DFactory;
 import com.longlinkislong.gloop2.glimpl.GL45Texture2DFactory;
 import com.longlinkislong.gloop2.vkimpl.VK10BufferFactory;
+import com.longlinkislong.gloop2.vkimpl.VK10FramebufferFactory;
 import com.longlinkislong.gloop2.vkimpl.VK10RasterPipelineFactory;
 import com.longlinkislong.gloop2.vkimpl.VK10ShaderFactory;
+import com.longlinkislong.gloop2.vkimpl.VK10Texture2DFactory;
 
 /**
  *
@@ -40,6 +42,8 @@ public final class ObjectFactoryManager {
         bufferFactory = new VK10BufferFactory();
         shaderFactory = new VK10ShaderFactory();
         pipelineFactory = new VK10RasterPipelineFactory();
+        framebufferFactory = new VK10FramebufferFactory();
+        texture2DFactory = new VK10Texture2DFactory();
     }
     
     //TODO: do a selector
@@ -51,6 +55,10 @@ public final class ObjectFactoryManager {
     private AbstractRasterPipelineFactory<?> pipelineFactory;
     private AbstractRasterCommandFactory<?> rasterCommandFactory;
     private AbstractFramebufferFactory<?> framebufferFactory;
+    
+    public AbstractFramebufferFactory getFramebufferFactory() {
+        return this.framebufferFactory;
+    }
     
     public AbstractRasterPipelineFactory<?> getRasterPipelineFactory() {
         return this.pipelineFactory;
