@@ -319,17 +319,14 @@ public class TriangleDemoGloop {
             throw new AssertionError("GLFW failed to find the Vulkan loader");
         }
 
-        // Create the Vulkan instance
-        final VkInstance instance = VKGlobalConstants.getInstance().instance;
-        final VkDevice device = VKGlobalConstants.getInstance().selectedDevice.vkDevice;
-        final VkPhysicalDevice physicalDevice = VKGlobalConstants.getInstance().selectedDevice.physicalDevice;
+        // Create the Vulkan instance        
+        final VkDevice device = VKGlobalConstants.getInstance().selectedDevice.vkDevice;        
         final VkPhysicalDeviceMemoryProperties memoryProperties = VKGlobalConstants.getInstance().selectedDevice.memoryProperties;
         final VKGLFWWindow window = new VKGLFWWindow("Triangle Test", 640, 480);
 
         // Create static Vulkan resources
         final KHRSurface.Format colorFormatAndSpace = window.surface.supportedFormats.get(0);
-        final CommandPool commandPool = VKGlobalConstants.getInstance().selectedDevice.getFirstGraphicsCommandPool();
-        final VkCommandBuffer setupCommandBuffer = commandPool.newCommandBuffer();
+        final CommandPool commandPool = VKGlobalConstants.getInstance().selectedDevice.getFirstGraphicsCommandPool();        
         final VkCommandBuffer postPresentCommandBuffer = commandPool.newCommandBuffer();
         final CommandQueue queue = VKGlobalConstants.getInstance().selectedDevice.getFirstGraphicsFamily().getQueue();
         final Vertices vertices = createVertices(memoryProperties, device);

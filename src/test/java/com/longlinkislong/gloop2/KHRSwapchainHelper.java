@@ -5,6 +5,8 @@
  */
 package com.longlinkislong.gloop2;
 
+import com.longlinkislong.gloop2.vkimpl.CommandQueue;
+import com.longlinkislong.gloop2.vkimpl.Device;
 import com.longlinkislong.gloop2.vkimpl.KHRSurface;
 import com.longlinkislong.gloop2.vkimpl.VK10Texture2D;
 import com.longlinkislong.gloop2.vkimpl.VKGLFWWindow;
@@ -13,6 +15,7 @@ import java.nio.IntBuffer;
 import java.nio.LongBuffer;
 import org.lwjgl.demo.vulkan.TriangleDemoGloop;
 import static org.lwjgl.demo.vulkan.VKUtil.translateVulkanResult;
+import org.lwjgl.system.MemoryStack;
 import static org.lwjgl.system.MemoryUtil.NULL;
 import static org.lwjgl.system.MemoryUtil.memAllocInt;
 import static org.lwjgl.system.MemoryUtil.memAllocLong;
@@ -58,12 +61,13 @@ import org.lwjgl.vulkan.VkSwapchainCreateInfoKHR;
  * @author zmichaels
  */
 public class KHRSwapchainHelper {
-    public static TriangleDemoGloop.Swapchain createSwapChain(VKGLFWWindow window, long oldSwapChain) {        
+
+    public static TriangleDemoGloop.Swapchain createSwapChain(VKGLFWWindow window, long oldSwapChain) {
         final VkDevice device = VKGlobalConstants.getInstance().selectedDevice.vkDevice;
         final KHRSurface.Format surfaceFormat = window.surface.supportedFormats.get(0);
         final int colorFormat = surfaceFormat.colorFormat;
         final int colorSpace = surfaceFormat.colorSpace;
-        
+
         int err;
 
         final KHRSurface surface = window.surface;
@@ -174,14 +178,11 @@ public class KHRSwapchainHelper {
 
             if (err != VK_SUCCESS) {
                 throw new AssertionError("Failed to create image view: " + translateVulkanResult(err));
-            }
-
-            imageBarrier(images[i], VK_IMAGE_ASPECT_COLOR_BIT,
-                    VK_IMAGE_LAYOUT_UNDEFINED, 0,
-                    VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL, VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT);
+            }            
         }
 
-        VKGlobalConstants.getInstance().selectedDevice.getFirstGraphicsFamily().getQueue().waitIdle();
+        waitOnImages(images);
+        
         colorAttachmentView.free();
         memFree(pBufferView);
         memFree(pSwapchainImages);
@@ -190,6 +191,60 @@ public class KHRSwapchainHelper {
         ret.framebuffers = imageViews;
         ret.swapchainHandle = swapChain;
         return ret;
+    }
+
+    private static void waitOnImages(long[] images) {
+        final Device device = VKGlobalConstants.getInstance().selectedDevice;
+        final VkCommandBuffer cmdBuffer = device.getFirstGraphicsCommandPool().newCommandBuffer();
+
+        try (MemoryStack stack = MemoryStack.stackPush()) {
+            final VkImageMemoryBarrier.Buffer imageMemoryBarrier = VkImageMemoryBarrier.callocStack(images.length, stack)
+                    .sType(VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER)
+                    .pNext(NULL)
+                    .oldLayout(VK_IMAGE_LAYOUT_UNDEFINED)
+                    .srcAccessMask(0)
+                    .newLayout(VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL)
+                    .dstAccessMask(VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT)
+                    .srcQueueFamilyIndex(VK_QUEUE_FAMILY_IGNORED)
+                    .dstQueueFamilyIndex(VK_QUEUE_FAMILY_IGNORED);
+
+            imageMemoryBarrier.subresourceRange()
+                    .aspectMask(VK_IMAGE_ASPECT_COLOR_BIT)
+                    .baseMipLevel(0)
+                    .levelCount(1)
+                    .layerCount(1);
+
+            for (int i = 0; i < images.length; i++) {
+                imageMemoryBarrier.get(i).image(images[i]);
+            }
+
+            final int srcStageFlags = VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT;
+            final int destStageFlags = VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT;
+            final VkCommandBufferBeginInfo cmdBufInfo = VkCommandBufferBeginInfo.callocStack(stack)
+                    .sType(VK10.VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO);
+
+            final int err = VK10.vkBeginCommandBuffer(cmdBuffer, cmdBufInfo);
+
+            if (err != VK10.VK_SUCCESS) {
+                throw new AssertionError("Failed to begin KHRSwapchain image creation CommandBuffer!" + translateVulkanResult(err));
+            }
+
+            // Put barrier inside setup command buffer
+            vkCmdPipelineBarrier(cmdBuffer, srcStageFlags, destStageFlags, 0,
+                    null, // no memory barriers
+                    null, // no buffer memory barriers
+                    imageMemoryBarrier); // one image memory barrier                        
+        }
+
+        final int err = VK10.vkEndCommandBuffer(cmdBuffer);
+        if (err != VK10.VK_SUCCESS) {
+            throw new AssertionError("Failed to end KHRSwapchain image creation CommandBuffer!" + translateVulkanResult(err));            
+        }
+        
+        final CommandQueue queue = device.getFirstGraphicsFamily().getQueue();
+        
+        queue.submit(cmdBuffer);
+        queue.waitIdle();
     }
 
     private static void imageBarrier(long image, int aspectMask, int oldImageLayout, int srcAccess, int newImageLayout, int dstAccess) {
@@ -216,10 +271,10 @@ public class KHRSwapchainHelper {
 
         final VkCommandBuffer cmdBuffer = VKGlobalConstants.getInstance().selectedDevice.getFirstGraphicsCommandPool().newCommandBuffer();
         VkCommandBufferBeginInfo cmdBufInfo = VkCommandBufferBeginInfo.calloc()
-                        .sType(VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO)
-                        .pNext(NULL);
+                .sType(VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO)
+                .pNext(NULL);
         VK10.vkBeginCommandBuffer(cmdBuffer, cmdBufInfo);
-        
+
         // Put barrier inside setup command buffer
         vkCmdPipelineBarrier(cmdBuffer, srcStageFlags, destStageFlags, 0,
                 null, // no memory barriers
