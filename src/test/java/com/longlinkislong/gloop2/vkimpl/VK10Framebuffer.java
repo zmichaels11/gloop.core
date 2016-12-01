@@ -18,5 +18,5 @@ public class VK10Framebuffer extends AbstractFramebuffer {
         
     protected FramebufferCreateInfo getInfo() {
         return info;
-    }
+    }        
 }

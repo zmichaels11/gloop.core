@@ -7,7 +7,6 @@ package org.lwjgl.demo.vulkan;
 import com.longlinkislong.gloop2.Buffer;
 import com.longlinkislong.gloop2.BufferCreateInfo;
 import com.longlinkislong.gloop2.Framebuffer;
-import com.longlinkislong.gloop2.FramebufferCreateInfo;
 import com.longlinkislong.gloop2.ObjectFactoryManager;
 import com.longlinkislong.gloop2.RasterPipeline;
 import com.longlinkislong.gloop2.RasterPipelineCreateInfo;
@@ -21,7 +20,6 @@ import com.longlinkislong.gloop2.vkimpl.CommandQueue;
 import com.longlinkislong.gloop2.vkimpl.KHRSurface;
 import com.longlinkislong.gloop2.vkimpl.KHRSwapchain;
 import com.longlinkislong.gloop2.vkimpl.VK10Buffer;
-import com.longlinkislong.gloop2.vkimpl.VK10BufferFactory;
 import com.longlinkislong.gloop2.vkimpl.VK10Framebuffer;
 import com.longlinkislong.gloop2.vkimpl.VK10RasterPipeline;
 import com.longlinkislong.gloop2.vkimpl.VK10RenderPass;
@@ -189,7 +187,7 @@ public class TriangleDemoGloop {
             // Add a present memory barrier to the end of the command buffer
             // This will transform the frame buffer color attachment to a
             // new layout for presenting it to the windowing system integration 
-            VkImageMemoryBarrier.Buffer prePresentBarrier = createPrePresentBarrier(swapchain.framebuffers[i].image);
+            VkImageMemoryBarrier.Buffer prePresentBarrier = createPrePresentBarrier(swapchain.renderTextures[i].image);
             vkCmdPipelineBarrier(renderCommandBuffers[i],
                     VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT,
                     VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT,
@@ -284,7 +282,7 @@ public class TriangleDemoGloop {
      * All resources that must be reallocated on window resize.
      */
     private static KHRSwapchain swapchain;
-    private static Framebuffer[] framebuffers;
+    //private static Framebuffer[] framebuffers;
     private static VkCommandBuffer[] renderCommandBuffers;
 
     @Test
@@ -338,29 +336,15 @@ public class TriangleDemoGloop {
                 final VkDevice device = VKGlobalConstants.getInstance().selectedDevice.vkDevice;
 
                 // Create the swapchain (this will also add a memory barrier to initialize the framebuffer images)
-                swapchain = new KHRSwapchain(window.surface, swapchain);
+                swapchain = new KHRSwapchain(window.surface, swapchain);                
 
-                if (framebuffers != null) {
-                    for (int i = 0; i < framebuffers.length; i++) {
-                        vkDestroyFramebuffer(device, ((VK10Framebuffer) framebuffers[i]).framebuffer, null);
-                    }
-                }
-
-                final VK10RenderPass renderPass = VKGlobalConstants.getInstance().getRenderPass(colorFormatAndSpace.colorFormat);
-
-                framebuffers = new Framebuffer[swapchain.framebuffers.length];
-                for (int i = 0; i < framebuffers.length; i++) {
-                    framebuffers[i] = new FramebufferCreateInfo()
-                            .withSize(window.surface.width, window.surface.height)
-                            .withAttachment(0, swapchain.framebuffers[i])
-                            .allocate();
-                }
+                final VK10RenderPass renderPass = VKGlobalConstants.getInstance().getRenderPass(colorFormatAndSpace.colorFormat);                
 
                 // Create render command buffers
                 if (renderCommandBuffers != null) {
                     vkResetCommandPool(device, commandPool.id, VK_FLAGS_NONE);
                 }
-                renderCommandBuffers = createRenderCommandBuffers(framebuffers, renderPass.id, window.surface.width, window.surface.height, ((VK10RasterPipeline) pipeline).pipeline,
+                renderCommandBuffers = createRenderCommandBuffers(swapchain.framebuffers, renderPass.id, window.surface.width, window.surface.height, ((VK10RasterPipeline) pipeline).pipeline,
                         vertices.buffer);
 
                 mustRecreate = false;
@@ -370,6 +354,7 @@ public class TriangleDemoGloop {
 
         // Handle canvas resize
         GLFWWindowSizeCallback windowSizeCallback = new GLFWWindowSizeCallback() {
+            @Override
             public void invoke(long w, int width, int height) {
                 if (width <= 0 || height <= 0) {
                     return;
@@ -472,7 +457,7 @@ public class TriangleDemoGloop {
             // Destroy this semaphore (we will create a new one in the next frame)
             vkDestroySemaphore(device, pImageAcquiredSemaphore.get(0), null);
             vkDestroySemaphore(device, pRenderCompleteSemaphore.get(0), null);
-            submitPostPresentBarrier(swapchain.framebuffers[currentBuffer].image, postPresentCommandBuffer, queue);
+            submitPostPresentBarrier(swapchain.renderTextures[currentBuffer].image, postPresentCommandBuffer, queue);
         }
         presentInfo.free();
         memFree(pWaitDstStageMask);

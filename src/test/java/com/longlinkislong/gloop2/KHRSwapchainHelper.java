@@ -8,11 +8,11 @@ package com.longlinkislong.gloop2;
 import com.longlinkislong.gloop2.vkimpl.CommandQueue;
 import com.longlinkislong.gloop2.vkimpl.Device;
 import com.longlinkislong.gloop2.vkimpl.KHRSurface;
+import com.longlinkislong.gloop2.vkimpl.KHRSwapchain;
 import com.longlinkislong.gloop2.vkimpl.VK10Texture2D;
 import com.longlinkislong.gloop2.vkimpl.VKGlobalConstants;
 import java.nio.IntBuffer;
 import java.nio.LongBuffer;
-import org.lwjgl.demo.vulkan.TriangleDemoGloop;
 import static org.lwjgl.demo.vulkan.VKUtil.translateVulkanResult;
 import org.lwjgl.system.MemoryStack;
 import static org.lwjgl.system.MemoryUtil.NULL;
@@ -33,7 +33,6 @@ import static org.lwjgl.vulkan.VK10.VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
 import static org.lwjgl.vulkan.VK10.VK_IMAGE_LAYOUT_UNDEFINED;
 import static org.lwjgl.vulkan.VK10.VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
 import static org.lwjgl.vulkan.VK10.VK_IMAGE_VIEW_TYPE_2D;
-import static org.lwjgl.vulkan.VK10.VK_NULL_HANDLE;
 import static org.lwjgl.vulkan.VK10.VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT;
 import static org.lwjgl.vulkan.VK10.VK_QUEUE_FAMILY_IGNORED;
 import static org.lwjgl.vulkan.VK10.VK_SHARING_MODE_EXCLUSIVE;
@@ -45,7 +44,6 @@ import static org.lwjgl.vulkan.VK10.vkCmdPipelineBarrier;
 import org.lwjgl.vulkan.VkCommandBuffer;
 import org.lwjgl.vulkan.VkCommandBufferBeginInfo;
 import org.lwjgl.vulkan.VkDevice;
-import org.lwjgl.vulkan.VkExtent2D;
 import org.lwjgl.vulkan.VkImageMemoryBarrier;
 import org.lwjgl.vulkan.VkImageViewCreateInfo;
 import org.lwjgl.vulkan.VkSwapchainCreateInfoKHR;
@@ -58,7 +56,7 @@ public class KHRSwapchainHelper {
 
 
 
-    public static long newSwapchain(KHRSurface surface, int colorFormat, int colorSpace, long oldSwapChain, VkDevice device) {
+    public static long newSwapchain(KHRSurface surface, int colorFormat, int colorSpace, KHRSwapchain oldSwapChain, VkDevice device) {
         // Determine the number of images
         int desiredNumberOfSwapchainImages = surface.capabilities.minImageCount() + 1;
         if ((surface.capabilities.maxImageCount() > 0) && (desiredNumberOfSwapchainImages > surface.capabilities.maxImageCount())) {
@@ -87,7 +85,7 @@ public class KHRSwapchainHelper {
                     .imageSharingMode(VK_SHARING_MODE_EXCLUSIVE)
                     .pQueueFamilyIndices(null)
                     .presentMode(surface.presentationMode)
-                    .oldSwapchain(oldSwapChain)
+                    .oldSwapchain(oldSwapChain == null ? VK10.VK_NULL_HANDLE : oldSwapChain.swapchain)
                     .clipped(VK_TRUE)
                     .compositeAlpha(VK_COMPOSITE_ALPHA_OPAQUE_BIT_KHR);
 
@@ -107,8 +105,8 @@ public class KHRSwapchainHelper {
 
         // If we just re-created an existing swapchain, we should destroy the old swapchain at this point.
         // Note: destroying the swapchain also cleans up all its associated presentable images once the platform is done with them.
-        if (oldSwapChain != VK_NULL_HANDLE) {
-            vkDestroySwapchainKHR(device, oldSwapChain, null);
+        if (oldSwapChain != null) {
+            oldSwapChain.free();
         }
 
         return swapChain;
