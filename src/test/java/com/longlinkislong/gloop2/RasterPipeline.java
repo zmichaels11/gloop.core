@@ -9,6 +9,6 @@ package com.longlinkislong.gloop2;
  *
  * @author zmichaels
  */
-public interface RasterPipeline extends BaseObject {
+public interface RasterPipeline {
     
 }

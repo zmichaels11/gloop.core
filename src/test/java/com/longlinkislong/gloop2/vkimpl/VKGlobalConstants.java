@@ -189,6 +189,7 @@ public final class VKGlobalConstants {
         return renderPassDefinitions.computeIfAbsent(colorFormat, VK10RenderPass::new);
     }
         
+    VK10Framebuffer currentFramebuffer;
     public final Device selectedDevice;
     public final List<String> layers;
     public final List<String> extensions;

@@ -6,21 +6,17 @@
 package com.longlinkislong.gloop2.vkimpl;
 
 import com.longlinkislong.gloop2.AbstractFramebuffer;
+import com.longlinkislong.gloop2.FramebufferCreateInfo;
 
 /**
  *
  * @author zmichaels
  */
 public class VK10Framebuffer extends AbstractFramebuffer {
-    
-    @Override
-    protected int newAttachmentId() {
-        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+    public long framebuffer;
+    public long renderpass;
+        
+    protected FramebufferCreateInfo getInfo() {
+        return info;
     }
-
-    @Override
-    protected void recycleAttachmentId(int attachmentId) {
-        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
-    }
-    
 }

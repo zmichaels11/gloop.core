@@ -5,22 +5,14 @@
  */
 package com.longlinkislong.gloop2;
 
-import java.util.HashMap;
-import java.util.Map;
-
 /**
  *
  * @author zmichaels
  */
 public abstract class AbstractFramebuffer implements Framebuffer {
-    protected final Map<String, AbstractFramebufferAttachment> attachments = new HashMap<>();
-    
-    protected void clear() {
-        this.attachments.clear();
-    }
-    
-    protected abstract int newAttachmentId();
-    
-    protected abstract void recycleAttachmentId(int attachmentId);
-    
+   protected FramebufferCreateInfo info;
+   
+   protected void clear() {
+       info = null;
+   }
 }

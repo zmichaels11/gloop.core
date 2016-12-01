@@ -9,7 +9,7 @@ package com.longlinkislong.gloop2;
  *
  * @author zmichaels 
  */
-public abstract class AbstractTexture2D implements Texture2D {    
+public abstract class AbstractTexture2D implements Texture2D, FramebufferAttachment {    
     protected int width;
     protected int height;
     protected Sampler2DCreateInfo sampler;

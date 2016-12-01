@@ -34,7 +34,7 @@ public class VK10RenderPass {
     
     public VK10RenderPass(final int colorFormat) {
         VkAttachmentDescription.Buffer attachments = VkAttachmentDescription.calloc(1)
-                .format(colorFormat)
+                .format(colorFormat)                
                 .samples(VK_SAMPLE_COUNT_1_BIT)
                 .loadOp(VK_ATTACHMENT_LOAD_OP_CLEAR)
                 .storeOp(VK_ATTACHMENT_STORE_OP_STORE)
@@ -49,18 +49,18 @@ public class VK10RenderPass {
 
         VkSubpassDescription.Buffer subpass = VkSubpassDescription.calloc(1)
                 .pipelineBindPoint(VK_PIPELINE_BIND_POINT_GRAPHICS)
-                .pInputAttachments(null)
+                .pInputAttachments(null)                
                 .colorAttachmentCount(colorReference.remaining())
                 .pColorAttachments(colorReference) // <- only color attachment
                 .pResolveAttachments(null)
-                .pDepthStencilAttachment(null)
-                .pPreserveAttachments(null);
+                .pDepthStencilAttachment(null)                
+                .pPreserveAttachments(null);                
 
         VkRenderPassCreateInfo renderPassInfo = VkRenderPassCreateInfo.calloc()
                 .sType(VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO)
                 .pNext(NULL)
                 .pAttachments(attachments)
-                .pSubpasses(subpass)
+                .pSubpasses(subpass)                
                 .pDependencies(null);
 
         final VkDevice device = VKGlobalConstants.getInstance().selectedDevice.vkDevice;

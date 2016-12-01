@@ -13,12 +13,7 @@ import com.longlinkislong.gloop2.RasterPipelineCreateInfo;
  * @author zmichaels
  */
 public class VK10RasterPipeline extends AbstractRasterPipeline {    
-    public long pipeline;    
-    
-    @Override
-    public boolean isValid() {
-        return pipeline != 0L;
-    }   
+    public long pipeline;         
     
     public RasterPipelineCreateInfo getInfo() {
         return this.info;

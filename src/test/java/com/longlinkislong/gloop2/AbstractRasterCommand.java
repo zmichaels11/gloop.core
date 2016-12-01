@@ -3,14 +3,14 @@
  * To change this template file, choose Tools | Templates
  * and open the template in the editor.
  */
-package com.longlinkislong.gloop2.vkimpl;
-
-import com.longlinkislong.gloop2.Framebuffer;
+package com.longlinkislong.gloop2;
 
 /**
  *
  * @author zmichaels
  */
-public class VK10DefaultFramebuffer implements Framebuffer {
-    public int colorFromat;
+public abstract class AbstractRasterCommand {
+    protected RasterCommandCreateInfo info;
+    
+    public abstract void draw();
 }

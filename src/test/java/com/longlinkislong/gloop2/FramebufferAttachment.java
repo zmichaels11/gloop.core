@@ -9,10 +9,10 @@ package com.longlinkislong.gloop2;
  *
  * @author zmichaels
  */
-public interface Renderbuffer {
+public interface FramebufferAttachment {
+    TextureFormat getFormat();
+    
     int getWidth();
     
     int getHeight();
-    
-    RenderbufferFormat getFormat();
 }

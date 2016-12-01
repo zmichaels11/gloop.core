@@ -7,6 +7,7 @@ package org.lwjgl.demo.vulkan;
 import com.longlinkislong.gloop2.Buffer;
 import com.longlinkislong.gloop2.BufferCreateInfo;
 import com.longlinkislong.gloop2.ObjectFactoryManager;
+import com.longlinkislong.gloop2.RasterCommandCreateInfo;
 import com.longlinkislong.gloop2.RasterPipeline;
 import com.longlinkislong.gloop2.RasterPipelineCreateInfo;
 import com.longlinkislong.gloop2.ShaderCreateInfo;
@@ -80,12 +81,6 @@ public class TriangleDemoGloop {
      * This is just -1L, but it is nicer as a symbolic constant.
      */
     private static final long UINT64_MAX = 0xFFFFFFFFFFFFFFFFL;
-
-    private static class ColorFormatAndSpace {
-
-        int colorFormat;
-        int colorSpace;
-    }    
 
     private static void imageBarrier(VkCommandBuffer cmdbuffer, long image, int aspectMask, int oldImageLayout, int srcAccess, int newImageLayout, int dstAccess) {
         // Create an image barrier object
@@ -322,8 +317,7 @@ public class TriangleDemoGloop {
 
         Vertices ret = new Vertices();
         ret.vertexArrayInput = new VertexInputs()
-                .withAttribute(new VertexAttribute()
-                        .withBuffer(out)
+                .withAttribute(new VertexAttribute()                        
                         .withStride(2 * 4)
                         .withFormat(VertexAttributeFormat.XY_32F)
                 );
@@ -335,6 +329,7 @@ public class TriangleDemoGloop {
     private static VkCommandBuffer[] createRenderCommandBuffers(long[] framebuffers, long renderPass, int width, int height,
             long pipeline, Buffer verticesBuf) {
         
+                
         VkCommandBuffer[] renderCommandBuffers = VKGlobalConstants.getInstance().selectedDevice.getFirstGraphicsCommandPool().newCommandBuffers(framebuffers.length);
         int err;
 
@@ -355,7 +350,7 @@ public class TriangleDemoGloop {
         VkRenderPassBeginInfo renderPassBeginInfo = VkRenderPassBeginInfo.calloc()
                 .sType(VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO)
                 .pNext(NULL)
-                .renderPass(renderPass)
+                .renderPass(renderPass)                
                 .pClearValues(clearValues);
         VkRect2D renderArea = renderPassBeginInfo.renderArea();
         renderArea.offset().set(0, 0);
@@ -369,7 +364,7 @@ public class TriangleDemoGloop {
             if (err != VK_SUCCESS) {
                 throw new AssertionError("Failed to begin render command buffer: " + translateVulkanResult(err));
             }
-
+            
             vkCmdBeginRenderPass(renderCommandBuffers[i], renderPassBeginInfo, VK_SUBPASS_CONTENTS_INLINE);
 
             // Update dynamic viewport state
@@ -396,6 +391,7 @@ public class TriangleDemoGloop {
             offsets.put(0, 0L);
             LongBuffer pBuffers = memAllocLong(1);
             pBuffers.put(0, ((VK10Buffer) verticesBuf).id);
+            
             vkCmdBindVertexBuffers(renderCommandBuffers[i], 0, pBuffers, offsets);
             memFree(pBuffers);
             memFree(offsets);
