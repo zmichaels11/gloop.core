@@ -13,13 +13,13 @@ import com.longlinkislong.gloop2.RasterPipeline;
 import com.longlinkislong.gloop2.RasterPipelineCreateInfo;
 import com.longlinkislong.gloop2.ShaderCreateInfo;
 import com.longlinkislong.gloop2.ShaderType;
-import com.longlinkislong.gloop2.TextureFormat;
 import com.longlinkislong.gloop2.VertexInputs;
 import com.longlinkislong.gloop2.VertexAttribute;
 import com.longlinkislong.gloop2.VertexAttributeFormat;
 import com.longlinkislong.gloop2.vkimpl.CommandPool;
 import com.longlinkislong.gloop2.vkimpl.CommandQueue;
 import com.longlinkislong.gloop2.vkimpl.KHRSurface;
+import com.longlinkislong.gloop2.vkimpl.KHRSwapchain;
 import com.longlinkislong.gloop2.vkimpl.VK10Buffer;
 import com.longlinkislong.gloop2.vkimpl.VK10BufferFactory;
 import com.longlinkislong.gloop2.vkimpl.VK10Framebuffer;
@@ -31,7 +31,6 @@ import com.longlinkislong.gloop2.vkimpl.VKGlobalConstants;
 
 import static org.lwjgl.system.MemoryUtil.*;
 import static org.lwjgl.vulkan.KHRSwapchain.*;
-import static org.lwjgl.vulkan.KHRSurface.*;
 import static org.lwjgl.vulkan.VK10.*;
 import static org.lwjgl.demo.vulkan.VKUtil.*;
 import static org.lwjgl.glfw.GLFW.*;
@@ -44,25 +43,20 @@ import java.nio.LongBuffer;
 import org.junit.Test;
 
 import org.lwjgl.PointerBuffer;
-import org.lwjgl.glfw.GLFWKeyCallback;
 import org.lwjgl.glfw.GLFWWindowSizeCallback;
 import org.lwjgl.vulkan.VkClearValue;
 import org.lwjgl.vulkan.VkCommandBuffer;
 import org.lwjgl.vulkan.VkCommandBufferBeginInfo;
 import org.lwjgl.vulkan.VkDevice;
-import org.lwjgl.vulkan.VkExtent2D;
 import org.lwjgl.vulkan.VkImageMemoryBarrier;
-import org.lwjgl.vulkan.VkImageViewCreateInfo;
 import org.lwjgl.vulkan.VkInstance;
 import org.lwjgl.vulkan.VkPhysicalDevice;
 import org.lwjgl.vulkan.VkPhysicalDeviceMemoryProperties;
 import org.lwjgl.vulkan.VkPresentInfoKHR;
-import org.lwjgl.vulkan.VkQueue;
 import org.lwjgl.vulkan.VkRect2D;
 import org.lwjgl.vulkan.VkRenderPassBeginInfo;
 import org.lwjgl.vulkan.VkSemaphoreCreateInfo;
 import org.lwjgl.vulkan.VkSubmitInfo;
-import org.lwjgl.vulkan.VkSwapchainCreateInfoKHR;
 import org.lwjgl.vulkan.VkViewport;
 
 /**
@@ -87,166 +81,10 @@ public class TriangleDemoGloop {
      */
     private static final long UINT64_MAX = 0xFFFFFFFFFFFFFFFFL;
 
-    private static void imageBarrier(VkCommandBuffer cmdbuffer, long image, int aspectMask, int oldImageLayout, int srcAccess, int newImageLayout, int dstAccess) {
-        // Create an image barrier object
-        VkImageMemoryBarrier.Buffer imageMemoryBarrier = VkImageMemoryBarrier.calloc(1)
-                .sType(VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER)
-                .pNext(NULL)
-                .oldLayout(oldImageLayout)
-                .srcAccessMask(srcAccess)
-                .newLayout(newImageLayout)
-                .dstAccessMask(dstAccess)
-                .srcQueueFamilyIndex(VK_QUEUE_FAMILY_IGNORED)
-                .dstQueueFamilyIndex(VK_QUEUE_FAMILY_IGNORED)
-                .image(image);
-        imageMemoryBarrier.subresourceRange()
-                .aspectMask(aspectMask)
-                .baseMipLevel(0)
-                .levelCount(1)
-                .layerCount(1);
+    public static class Swapchain {
 
-        // Put barrier on top
-        int srcStageFlags = VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT;
-        int destStageFlags = VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT;
-
-        // Put barrier inside setup command buffer
-        vkCmdPipelineBarrier(cmdbuffer, srcStageFlags, destStageFlags, VK_FLAGS_NONE,
-                null, // no memory barriers
-                null, // no buffer memory barriers
-                imageMemoryBarrier); // one image memory barrier
-        imageMemoryBarrier.free();
-    }
-
-    private static class Swapchain {
-
-        long swapchainHandle;
-        VK10Texture2D[] framebuffers;
-    }
-
-    private static Swapchain createSwapChain(VkDevice device, VkPhysicalDevice physicalDevice, KHRSurface surface, long oldSwapChain, VkCommandBuffer commandBuffer, int newWidth,
-            int newHeight, int colorFormat, int colorSpace) {
-        int err;
-
-        // Determine the number of images
-        int desiredNumberOfSwapchainImages = surface.capabilities.minImageCount() + 1;
-        if ((surface.capabilities.maxImageCount() > 0) && (desiredNumberOfSwapchainImages > surface.capabilities.maxImageCount())) {
-            desiredNumberOfSwapchainImages = surface.capabilities.maxImageCount();
-        }
-
-        VkExtent2D currentExtent = surface.capabilities.currentExtent();
-        int currentWidth = currentExtent.width();
-        int currentHeight = currentExtent.height();
-
-        if (currentWidth != -1 && currentHeight != -1) {
-            width = currentWidth;
-            height = currentHeight;
-        } else {
-            width = newWidth;
-            height = newHeight;
-        }
-
-        int preTransform;
-        if ((surface.capabilities.supportedTransforms() & VK_SURFACE_TRANSFORM_IDENTITY_BIT_KHR) != 0) {
-            preTransform = VK_SURFACE_TRANSFORM_IDENTITY_BIT_KHR;
-        } else {
-            preTransform = surface.capabilities.currentTransform();
-        }
-
-        VkSwapchainCreateInfoKHR swapchainCI = VkSwapchainCreateInfoKHR.calloc()
-                .sType(VK_STRUCTURE_TYPE_SWAPCHAIN_CREATE_INFO_KHR)
-                .pNext(NULL)
-                .surface(surface.surface)
-                .minImageCount(desiredNumberOfSwapchainImages)
-                .imageFormat(colorFormat)
-                .imageColorSpace(colorSpace)
-                .imageUsage(VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT)
-                .preTransform(preTransform)
-                .imageArrayLayers(1)
-                .imageSharingMode(VK_SHARING_MODE_EXCLUSIVE)
-                .pQueueFamilyIndices(null)
-                .presentMode(surface.presentationMode)
-                .oldSwapchain(oldSwapChain)
-                .clipped(VK_TRUE)
-                .compositeAlpha(VK_COMPOSITE_ALPHA_OPAQUE_BIT_KHR);
-        swapchainCI.imageExtent()
-                .width(width)
-                .height(height);
-        LongBuffer pSwapChain = memAllocLong(1);
-        err = vkCreateSwapchainKHR(device, swapchainCI, null, pSwapChain);
-        swapchainCI.free();
-        long swapChain = pSwapChain.get(0);
-        memFree(pSwapChain);
-        if (err != VK_SUCCESS) {
-            throw new AssertionError("Failed to create swap chain: " + translateVulkanResult(err));
-        }
-
-        // If we just re-created an existing swapchain, we should destroy the old swapchain at this point.
-        // Note: destroying the swapchain also cleans up all its associated presentable images once the platform is done with them.
-        if (oldSwapChain != VK_NULL_HANDLE) {
-            vkDestroySwapchainKHR(device, oldSwapChain, null);
-        }
-
-        IntBuffer pImageCount = memAllocInt(1);
-        err = vkGetSwapchainImagesKHR(device, swapChain, pImageCount, null);
-        int imageCount = pImageCount.get(0);
-        if (err != VK_SUCCESS) {
-            throw new AssertionError("Failed to get number of swapchain images: " + translateVulkanResult(err));
-        }
-
-        //NOTE: these will be "renderbuffers"
-        LongBuffer pSwapchainImages = memAllocLong(imageCount);
-        err = vkGetSwapchainImagesKHR(device, swapChain, pImageCount, pSwapchainImages);
-        if (err != VK_SUCCESS) {
-            throw new AssertionError("Failed to get swapchain images: " + translateVulkanResult(err));
-        }
-        memFree(pImageCount);
-
-        long[] images = new long[imageCount];
-        VK10Texture2D[] imageViews = new VK10Texture2D[imageCount];
-        LongBuffer pBufferView = memAllocLong(1);
-        VkImageViewCreateInfo colorAttachmentView = VkImageViewCreateInfo.calloc()
-                .sType(VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO)
-                .pNext(NULL)
-                .format(colorFormat)
-                .viewType(VK_IMAGE_VIEW_TYPE_2D)
-                .flags(VK_FLAGS_NONE);
-        colorAttachmentView.components()
-                .r(VK_COMPONENT_SWIZZLE_R)
-                .g(VK_COMPONENT_SWIZZLE_G)
-                .b(VK_COMPONENT_SWIZZLE_B)
-                .a(VK_COMPONENT_SWIZZLE_A);
-        colorAttachmentView.subresourceRange()
-                .aspectMask(VK_IMAGE_ASPECT_COLOR_BIT)
-                .baseMipLevel(0)
-                .levelCount(1)
-                .baseArrayLayer(0)
-                .layerCount(1);
-        for (int i = 0; i < imageCount; i++) {
-            images[i] = pSwapchainImages.get(i);
-            // Bring the image from an UNDEFINED state to the VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT state
-            imageBarrier(commandBuffer, images[i], VK_IMAGE_ASPECT_COLOR_BIT,
-                    VK_IMAGE_LAYOUT_UNDEFINED, 0,
-                    VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL, VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT);
-            colorAttachmentView.image(images[i]);
-            err = vkCreateImageView(device, colorAttachmentView, null, pBufferView);
-            imageViews[i] = new VK10Texture2D(
-                    pBufferView.get(0),
-                    images[i],
-                    TextureFormat.RGBA8,
-                    width, height);
-
-            if (err != VK_SUCCESS) {
-                throw new AssertionError("Failed to create image view: " + translateVulkanResult(err));
-            }
-        }
-        colorAttachmentView.free();
-        memFree(pBufferView);
-        memFree(pSwapchainImages);
-
-        Swapchain ret = new Swapchain();
-        ret.framebuffers = imageViews;
-        ret.swapchainHandle = swapChain;
-        return ret;
+        public long swapchainHandle;
+        public VK10Texture2D[] framebuffers;
     }
 
     private static class Vertices {
@@ -459,7 +297,6 @@ public class TriangleDemoGloop {
      */
     private static Swapchain swapchain;
     private static Framebuffer[] framebuffers;
-    private static int width, height;
     private static VkCommandBuffer[] renderCommandBuffers;
 
     @Test
@@ -526,13 +363,12 @@ public class TriangleDemoGloop {
                 }
                 long oldChain = swapchain != null ? swapchain.swapchainHandle : VK_NULL_HANDLE;
                 // Create the swapchain (this will also add a memory barrier to initialize the framebuffer images)
-                swapchain = createSwapChain(device, physicalDevice, window.surface, oldChain, setupCommandBuffer,
-                        width, height, colorFormatAndSpace.colorFormat, colorFormatAndSpace.colorSpace);
+                swapchain = KHRSwapchain.createSwapChain(device, physicalDevice, window, oldChain, setupCommandBuffer, colorFormatAndSpace.colorFormat, colorFormatAndSpace.colorSpace);
                 err = vkEndCommandBuffer(setupCommandBuffer);
                 if (err != VK_SUCCESS) {
                     throw new AssertionError("Failed to end setup command buffer: " + translateVulkanResult(err));
                 }
-                
+
                 queue.submit(setupCommandBuffer);
                 queue.waitIdle();
 
@@ -547,16 +383,16 @@ public class TriangleDemoGloop {
                 framebuffers = new Framebuffer[swapchain.framebuffers.length];
                 for (int i = 0; i < framebuffers.length; i++) {
                     framebuffers[i] = new FramebufferCreateInfo()
-                            .withSize(width, height)
+                            .withSize(window.surface.width, window.surface.height)
                             .withAttachment(0, swapchain.framebuffers[i])
                             .allocate();
-                }                
+                }
 
                 // Create render command buffers
                 if (renderCommandBuffers != null) {
                     vkResetCommandPool(device, commandPool.id, VK_FLAGS_NONE);
                 }
-                renderCommandBuffers = createRenderCommandBuffers(framebuffers, renderPass.id, width, height, ((VK10RasterPipeline) pipeline).pipeline,
+                renderCommandBuffers = createRenderCommandBuffers(framebuffers, renderPass.id, window.surface.width, window.surface.height, ((VK10RasterPipeline) pipeline).pipeline,
                         vertices.buffer);
 
                 mustRecreate = false;
@@ -566,12 +402,14 @@ public class TriangleDemoGloop {
 
         // Handle canvas resize
         GLFWWindowSizeCallback windowSizeCallback = new GLFWWindowSizeCallback() {
-            public void invoke(long window, int width, int height) {
+            public void invoke(long w, int width, int height) {
                 if (width <= 0 || height <= 0) {
                     return;
                 }
-                TriangleDemoGloop.width = width;
-                TriangleDemoGloop.height = height;
+
+                //TODO: this is MESSY                
+                window.surface.width = width;
+                window.surface.height = height;
                 swapchainRecreator.mustRecreate = true;
             }
         };
@@ -677,9 +515,8 @@ public class TriangleDemoGloop {
         memFree(pSwapchains);
         memFree(pCommandBuffers);
 
-        windowSizeCallback.free();                
+        windowSizeCallback.free();
 
-        
         // We don't bother disposing of all Vulkan resources.
         // Let the OS process manager take care of it.
     }
