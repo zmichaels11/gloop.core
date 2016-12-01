@@ -9,14 +9,11 @@ import java.nio.IntBuffer;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicInteger;
-import org.lwjgl.PointerBuffer;
 import static org.lwjgl.demo.vulkan.VKUtil.translateVulkanResult;
 import org.lwjgl.system.MemoryStack;
 import static org.lwjgl.vulkan.KHRSurface.vkGetPhysicalDeviceSurfaceSupportKHR;
 import org.lwjgl.vulkan.VK10;
-import org.lwjgl.vulkan.VkDevice;
 import org.lwjgl.vulkan.VkPhysicalDevice;
-import org.lwjgl.vulkan.VkQueue;
 
 /**
  *
@@ -40,7 +37,7 @@ public class QueueFamily implements Comparable<QueueFamily> {
         this.queueCount = count;
     }
     
-    public boolean canPresent(final Surface surface) {
+    public boolean canPresent(final KHRSurface surface) {
         try (MemoryStack stack = MemoryStack.stackPush()) {
             final VkPhysicalDevice physicalDevice = VKGlobalConstants.getInstance().selectedDevice.physicalDevice;
             final IntBuffer pSupportsPresent = stack.callocInt(1);
@@ -54,19 +51,9 @@ public class QueueFamily implements Comparable<QueueFamily> {
         }                
     }
 
-    private final Map<Integer, VkQueue> queues = new HashMap<>();
+    private final Map<Integer, CommandQueue> queues = new HashMap<>();
 
-    private VkQueue newQueue(int id) {
-        try (MemoryStack stack = MemoryStack.stackPush()) {
-            final PointerBuffer pQueue = stack.callocPointer(1);
-            final VkDevice device = VKGlobalConstants.getInstance().selectedDevice.vkDevice;
-
-            VK10.vkGetDeviceQueue(device, queueFamilyIndex, id, pQueue);
-
-            return new VkQueue(pQueue.get(0), device);
-        }
-    }
-
+   
     private final AtomicInteger queueIncrementor = new AtomicInteger(0);
     private final ThreadLocal<Integer> queueSelector = new ThreadLocal<Integer>() {
         @Override
@@ -75,12 +62,12 @@ public class QueueFamily implements Comparable<QueueFamily> {
         }
     };
     
-    public VkQueue getQueue() {
+    public CommandQueue getQueue() {
         return getQueue(queueSelector.get());
     }
 
-    public VkQueue getQueue(int id) {
-        return queues.computeIfAbsent(id, this::newQueue);
+    public CommandQueue getQueue(int id) {
+        return queues.computeIfAbsent(id, queueId -> new CommandQueue(this, queueId));
     }
 
     @Override

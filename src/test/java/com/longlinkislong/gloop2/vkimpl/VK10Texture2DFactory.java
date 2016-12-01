@@ -25,7 +25,7 @@ public class VK10Texture2DFactory extends AbstractTexture2DFactory<VK10Texture2D
 
     @Override
     public boolean isValid(VK10Texture2D texture) {
-        return texture.id != 0L;
+        return texture.view != 0L;
     }
 
     @Override

@@ -33,11 +33,11 @@ import org.slf4j.LoggerFactory;
  *
  * @author zmichaels
  */
-public final class Surface {
+public final class KHRSurface {
 
     public static final List<Integer> PREFERRED_PRESENTATION_MODE = Arrays.asList(VK_PRESENT_MODE_MAILBOX_KHR, VK_PRESENT_MODE_IMMEDIATE_KHR, VK_PRESENT_MODE_FIFO_KHR);
 
-    private static final Logger LOGGER = LoggerFactory.getLogger(Surface.class);
+    private static final Logger LOGGER = LoggerFactory.getLogger(KHRSurface.class);
 
     public final long surface;
     //TODO: this needs to be refreshed every time the swapchain is lost? (or is it the surface that is lost)
@@ -45,7 +45,7 @@ public final class Surface {
     public final int presentationMode;
     public final List<Format> supportedFormats;
 
-    public Surface(final long surface) {
+    public KHRSurface(final long surface) {
         this.surface = surface;
         this.capabilities = this.getCapabilities();
         this.presentationMode = this.selectPresentationMode();

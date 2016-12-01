@@ -15,14 +15,16 @@ import com.longlinkislong.gloop2.TextureFormat;
  */
 public class VK10Texture2D extends AbstractTexture2D {
 
-    public long id;
+    public long view;
+    public long image;
 
     public VK10Texture2D() {
 
     }
 
-    public VK10Texture2D(long id, TextureFormat format, final int width, final int height) {
-        this.id = id;
+    public VK10Texture2D(long view, long image, TextureFormat format, final int width, final int height) {
+        this.view = view;
+        this.image = image;
         this.format = format;
         this.width = width;
         this.height = height;

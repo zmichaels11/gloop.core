@@ -49,7 +49,7 @@ public class VK10FramebufferFactory extends AbstractFramebufferFactory<VK10Frame
             final LongBuffer pAttachments = stack.callocLong(attachmentCount);
 
             for (int i = 0; i < attachmentCount; i++) {
-                pAttachments.put(i, ((VK10Texture2D) attachments.get(i)).id);
+                pAttachments.put(i, ((VK10Texture2D) attachments.get(i)).view);
             }
 
             final VkFramebufferCreateInfo fbCreateInfo = VkFramebufferCreateInfo.calloc()
