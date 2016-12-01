@@ -249,24 +249,6 @@ public class TriangleDemoGloop {
         return ret;
     }
 
-    private static void submitCommandBuffer(VkQueue queue, VkCommandBuffer commandBuffer) {
-        if (commandBuffer == null || commandBuffer.address() == NULL) {
-            return;
-        }
-        VkSubmitInfo submitInfo = VkSubmitInfo.calloc()
-                .sType(VK_STRUCTURE_TYPE_SUBMIT_INFO);
-        PointerBuffer pCommandBuffers = memAllocPointer(1)
-                .put(commandBuffer)
-                .flip();
-        submitInfo.pCommandBuffers(pCommandBuffers);
-        int err = vkQueueSubmit(queue, submitInfo, VK_NULL_HANDLE);
-        memFree(pCommandBuffers);
-        submitInfo.free();
-        if (err != VK_SUCCESS) {
-            throw new AssertionError("Failed to submit command buffer: " + translateVulkanResult(err));
-        }
-    }
-
     private static class Vertices {
 
         Buffer buffer;
@@ -442,7 +424,7 @@ public class TriangleDemoGloop {
         return imageMemoryBarrier;
     }
 
-    private static void submitPostPresentBarrier(long image, VkCommandBuffer commandBuffer, VkQueue queue) {
+    private static void submitPostPresentBarrier(long image, VkCommandBuffer commandBuffer, CommandQueue queue) {
         VkCommandBufferBeginInfo cmdBufInfo = VkCommandBufferBeginInfo.calloc()
                 .sType(VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO)
                 .pNext(NULL);
@@ -469,7 +451,7 @@ public class TriangleDemoGloop {
         }
 
         // Submit the command buffer
-        submitCommandBuffer(queue, commandBuffer);
+        queue.submit(commandBuffer);
     }
 
     /*
@@ -550,8 +532,8 @@ public class TriangleDemoGloop {
                 if (err != VK_SUCCESS) {
                     throw new AssertionError("Failed to end setup command buffer: " + translateVulkanResult(err));
                 }
-                submitCommandBuffer(queue.vkQueue, setupCommandBuffer);
                 
+                queue.submit(setupCommandBuffer);
                 queue.waitIdle();
 
                 if (framebuffers != null) {
@@ -684,7 +666,7 @@ public class TriangleDemoGloop {
             // Destroy this semaphore (we will create a new one in the next frame)
             vkDestroySemaphore(device, pImageAcquiredSemaphore.get(0), null);
             vkDestroySemaphore(device, pRenderCompleteSemaphore.get(0), null);
-            submitPostPresentBarrier(swapchain.framebuffers[currentBuffer].image, postPresentCommandBuffer, queue.vkQueue);
+            submitPostPresentBarrier(swapchain.framebuffers[currentBuffer].image, postPresentCommandBuffer, queue);
         }
         presentInfo.free();
         memFree(pWaitDstStageMask);

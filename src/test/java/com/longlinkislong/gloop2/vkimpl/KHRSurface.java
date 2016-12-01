@@ -44,6 +44,8 @@ public final class KHRSurface {
     public final VkSurfaceCapabilitiesKHR capabilities;
     public final int presentationMode;
     public final List<Format> supportedFormats;
+    public int width;
+    public int height;
 
     public KHRSurface(final long surface) {
         this.surface = surface;
