@@ -21,6 +21,7 @@ import com.longlinkislong.gloop2.vkimpl.VK10Buffer;
 import com.longlinkislong.gloop2.vkimpl.VK10BufferFactory;
 import com.longlinkislong.gloop2.vkimpl.VK10RasterPipeline;
 import com.longlinkislong.gloop2.vkimpl.VK10RenderPass;
+import com.longlinkislong.gloop2.vkimpl.VK10Texture2D;
 import com.longlinkislong.gloop2.vkimpl.VKGlobalConstants;
 
 import static org.lwjgl.system.MemoryUtil.*;
@@ -116,7 +117,7 @@ public class TriangleDemoGloop {
 
         long swapchainHandle;
         long[] images;
-        long[] imageViews;
+        VK10Texture2D[] imageViews;
     }
 
     private static Swapchain createSwapChain(VkDevice device, VkPhysicalDevice physicalDevice, Surface surface, long oldSwapChain, VkCommandBuffer commandBuffer, int newWidth,
@@ -199,7 +200,7 @@ public class TriangleDemoGloop {
         memFree(pImageCount);
 
         long[] images = new long[imageCount];
-        long[] imageViews = new long[imageCount];
+        VK10Texture2D[] imageViews = new VK10Texture2D[imageCount];
         LongBuffer pBufferView = memAllocLong(1);
         VkImageViewCreateInfo colorAttachmentView = VkImageViewCreateInfo.calloc()
                 .sType(VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO)
@@ -226,7 +227,8 @@ public class TriangleDemoGloop {
                     VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL, VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT);
             colorAttachmentView.image(images[i]);
             err = vkCreateImageView(device, colorAttachmentView, null, pBufferView);
-            imageViews[i] = pBufferView.get(0);
+            imageViews[i] = new VK10Texture2D();
+            imageViews[i].id = pBufferView.get(0);
             if (err != VK_SUCCESS) {
                 throw new AssertionError("Failed to create image view: " + translateVulkanResult(err));
             }
@@ -257,7 +259,7 @@ public class TriangleDemoGloop {
         long[] framebuffers = new long[swapchain.images.length];
         LongBuffer pFramebuffer = memAllocLong(1);
         for (int i = 0; i < swapchain.images.length; i++) {
-            attachments.put(0, swapchain.imageViews[i]);
+            attachments.put(0, swapchain.imageViews[i].id);
             int err = vkCreateFramebuffer(device, fci, null, pFramebuffer);
             long framebuffer = pFramebuffer.get(0);
             if (err != VK_SUCCESS) {
