@@ -8,6 +8,7 @@ import com.longlinkislong.gloop2.Buffer;
 import com.longlinkislong.gloop2.BufferCreateInfo;
 import com.longlinkislong.gloop2.Framebuffer;
 import com.longlinkislong.gloop2.FramebufferCreateInfo;
+import com.longlinkislong.gloop2.KHRSwapchainHelper;
 import com.longlinkislong.gloop2.ObjectFactoryManager;
 import com.longlinkislong.gloop2.RasterPipeline;
 import com.longlinkislong.gloop2.RasterPipelineCreateInfo;
@@ -355,7 +356,7 @@ public class TriangleDemoGloop {
                
                 long oldChain = swapchain != null ? swapchain.swapchainHandle : VK_NULL_HANDLE;
                 // Create the swapchain (this will also add a memory barrier to initialize the framebuffer images)
-                swapchain = KHRSwapchain.createSwapChain(window, oldChain);
+                swapchain = KHRSwapchainHelper.createSwapChain(window, oldChain);
 
                 if (framebuffers != null) {
                     for (int i = 0; i < framebuffers.length; i++) {
