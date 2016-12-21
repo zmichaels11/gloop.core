@@ -37,6 +37,10 @@ import javax.sound.sampled.AudioInputStream;
 import javax.sound.sampled.AudioSystem;
 import javax.sound.sampled.UnsupportedAudioFileException;
 import org.lwjgl.system.MemoryUtil;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.slf4j.Marker;
+import org.slf4j.MarkerFactory;
 
 /**
  * ALInputStream is an adapter for java InputStream objects to a form that uses
@@ -46,7 +50,8 @@ import org.lwjgl.system.MemoryUtil;
  * @since 16.03.21
  */
 public class ALInputStream implements Closeable {
-
+    private static final Logger LOGGER = LoggerFactory.getLogger(ALInputStream.class);
+    private static final Marker MARKER = MarkerFactory.getMarker("GLOOP");
     private static final int DEFAULT_BUFFER_MS = Integer.getInteger("com.longlinkislong.gloop.alinputstream.buffer_size", 16);
     private final AudioInputStream ain;
     public final ALSoundFormat format;
@@ -123,7 +128,8 @@ public class ALInputStream implements Closeable {
         
         final int bytesPerSecond = channels * (sampleSize / 8) * this.sampleRate;
         
-        this.bufferSize = bytesPerSecond * ms / 1000;        
+        this.bufferSize = bytesPerSecond * ms / 1000;   
+        LOGGER.trace(MARKER, "Buffer Size: {} (channels: {} sampleSize: {} sampleRate: {} ms: {})", bufferSize, channels, sampleSize, sampleRate, ms);
     }
 
     @Override
