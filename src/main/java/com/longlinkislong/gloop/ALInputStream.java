@@ -47,7 +47,7 @@ import org.lwjgl.system.MemoryUtil;
  */
 public class ALInputStream implements Closeable {
 
-    private static final int DEFAULT_BUFFER_SIZE = Integer.getInteger("com.longlinkislong.gloop.alinputstream.buffer_size", 16 * 1024);
+    private static final int DEFAULT_BUFFER_MS = Integer.getInteger("com.longlinkislong.gloop.alinputstream.buffer_size", 16);
     private final AudioInputStream ain;
     public final ALSoundFormat format;
     private final boolean is16bit;
@@ -65,33 +65,32 @@ public class ALInputStream implements Closeable {
      * @since 16.03.21
      */
     public ALInputStream(final InputStream in) throws UnsupportedAudioFileException, IOException {
-        this(in, DEFAULT_BUFFER_SIZE);
+        this(in, DEFAULT_BUFFER_MS);
     }
 
     /**
      * Constructs a new ALInputStream.
      *
      * @param in the InputStream to wrap. Must support mark.
-     * @param bufferSize the buffer size to use.
+     * @param ms The length of the buffer in milliseconds.
      * @throws UnsupportedAudioFileException if the audio format is not
      * supported.
      * @throws IOException if the InputStream cannot be opened.
      * @since 16.03.21
      */
-    public ALInputStream(final InputStream in, final int bufferSize) throws UnsupportedAudioFileException, IOException {
-        this.bufferSize = bufferSize;
+    public ALInputStream(final InputStream in, final int ms) throws UnsupportedAudioFileException, IOException {        
         this.ain = AudioSystem.getAudioInputStream(in);
 
         final AudioFormat fmt = this.ain.getFormat();
         final int channels = fmt.getChannels();
-        final int sampleSize = fmt.getSampleSizeInBits();
+        final int sampleSize = fmt.getSampleSizeInBits();        
 
         switch (channels) {
             case 1:
                 switch (sampleSize) {
                     case 8:
-                        this.format = ALSoundFormat.AL_FORMAT_MONO8;
-                        this.is16bit = false;
+                        this.format = ALSoundFormat.AL_FORMAT_MONO8;                        
+                        this.is16bit = false;                        
                         break;
                     case 16:
                         this.format = ALSoundFormat.AL_FORMAT_MONO16;
@@ -117,10 +116,14 @@ public class ALInputStream implements Closeable {
                 break;
             default:
                 throw new UnsupportedOperationException("Unsupported channel count: " + channels);
-        }
-
+        }        
+        
         this.byteOrder = fmt.isBigEndian() ? ByteOrder.BIG_ENDIAN : ByteOrder.LITTLE_ENDIAN;
         this.sampleRate = (int) fmt.getSampleRate();
+        
+        final int bytesPerSecond = channels * (sampleSize / 8) * this.sampleRate;
+        
+        this.bufferSize = bytesPerSecond * ms / 1000;        
     }
 
     @Override
