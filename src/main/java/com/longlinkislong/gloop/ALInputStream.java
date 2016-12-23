@@ -50,9 +50,10 @@ import org.slf4j.MarkerFactory;
  * @since 16.03.21
  */
 public class ALInputStream implements Closeable {
+
     private static final Logger LOGGER = LoggerFactory.getLogger(ALInputStream.class);
     private static final Marker MARKER = MarkerFactory.getMarker("GLOOP");
-    private static final int DEFAULT_BUFFER_MS = Integer.getInteger("com.longlinkislong.gloop.alinputstream.buffer_size", 16);
+    private static final int DEFAULT_BUFFER_MS = Integer.getInteger("com.longlinkislong.gloop.alinputstream.buffer_size", 50);
     private final AudioInputStream ain;
     public final ALSoundFormat format;
     private final boolean is16bit;
@@ -83,19 +84,19 @@ public class ALInputStream implements Closeable {
      * @throws IOException if the InputStream cannot be opened.
      * @since 16.03.21
      */
-    public ALInputStream(final InputStream in, final int ms) throws UnsupportedAudioFileException, IOException {        
+    public ALInputStream(final InputStream in, final int ms) throws UnsupportedAudioFileException, IOException {
         this.ain = AudioSystem.getAudioInputStream(in);
 
         final AudioFormat fmt = this.ain.getFormat();
         final int channels = fmt.getChannels();
-        final int sampleSize = fmt.getSampleSizeInBits();        
+        final int sampleSize = fmt.getSampleSizeInBits();
 
         switch (channels) {
             case 1:
                 switch (sampleSize) {
                     case 8:
-                        this.format = ALSoundFormat.AL_FORMAT_MONO8;                        
-                        this.is16bit = false;                        
+                        this.format = ALSoundFormat.AL_FORMAT_MONO8;
+                        this.is16bit = false;
                         break;
                     case 16:
                         this.format = ALSoundFormat.AL_FORMAT_MONO16;
@@ -121,16 +122,24 @@ public class ALInputStream implements Closeable {
                 break;
             default:
                 throw new UnsupportedOperationException("Unsupported channel count: " + channels);
-        }        
-        
+        }
+
         this.byteOrder = fmt.isBigEndian() ? ByteOrder.BIG_ENDIAN : ByteOrder.LITTLE_ENDIAN;
         this.sampleRate = (int) fmt.getSampleRate();
-        
+
         final int bytesPerSecond = channels * (sampleSize / 8) * this.sampleRate;
-        
-        this.bufferSize = bytesPerSecond * ms / 1000;   
+
+        this.bufferSize = bytesPerSecond * ms / 1000;
         LOGGER.trace(MARKER, "Buffer Size: {} (channels: {} sampleSize: {} sampleRate: {} ms: {})", bufferSize, channels, sampleSize, sampleRate, ms);
     }
+
+    private static final int TEMP_BUFFER_SIZE = 16 * 1024;
+    private static final ThreadLocal<ByteBuffer> TEMP_BUFFERS = new ThreadLocal<ByteBuffer>() {
+        @Override
+        protected ByteBuffer initialValue() {
+            return MemoryUtil.memAlloc(TEMP_BUFFER_SIZE).order(ByteOrder.nativeOrder());
+        }
+    };
 
     @Override
     public void close() throws IOException {
@@ -148,14 +157,21 @@ public class ALInputStream implements Closeable {
      * @since 16.03.21
      */
     public void stream(final ALBuffer buffer) throws IOException {
-        final ByteBuffer outBuffer = MemoryUtil.memAlloc(this.bufferSize).order(ByteOrder.nativeOrder());
+        final boolean useTempBuffer = this.bufferSize > TEMP_BUFFER_SIZE;
+        final ByteBuffer outBuffer;
+
+        if (useTempBuffer) {
+            outBuffer = TEMP_BUFFERS.get();
+        } else {
+            outBuffer = MemoryUtil.memAlloc(this.bufferSize).order(ByteOrder.nativeOrder());
+        }
 
         final byte[] inBuffer = new byte[bufferSize];
         final int readCount = this.ain.read(inBuffer, 0, this.bufferSize);
 
         if (readCount == -1) {
             MemoryUtil.memFree(outBuffer);
-            
+
             throw new EOFException("End of stream reached!") {
                 @Override
                 public Throwable fillInStackTrace() {
@@ -177,6 +193,9 @@ public class ALInputStream implements Closeable {
 
         outBuffer.position(0).limit(readCount);
         buffer.upload(this.format, outBuffer, this.sampleRate);
-        ALTask.create(() -> MemoryUtil.memFree(outBuffer)).alRun(); // free on the OpenAL thread
+
+        if (!useTempBuffer) {
+            ALTask.create(() -> MemoryUtil.memFree(outBuffer)).alRun(); // free on the OpenAL thread
+        }
     }
 }
