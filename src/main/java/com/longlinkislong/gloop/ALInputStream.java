@@ -37,6 +37,10 @@ import javax.sound.sampled.AudioInputStream;
 import javax.sound.sampled.AudioSystem;
 import javax.sound.sampled.UnsupportedAudioFileException;
 import org.lwjgl.system.MemoryUtil;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.slf4j.Marker;
+import org.slf4j.MarkerFactory;
 
 /**
  * ALInputStream is an adapter for java InputStream objects to a form that uses
@@ -47,7 +51,9 @@ import org.lwjgl.system.MemoryUtil;
  */
 public class ALInputStream implements Closeable {
 
-    private static final int DEFAULT_BUFFER_SIZE = Integer.getInteger("com.longlinkislong.gloop.alinputstream.buffer_size", 16 * 1024);
+    private static final Logger LOGGER = LoggerFactory.getLogger(ALInputStream.class);
+    private static final Marker MARKER = MarkerFactory.getMarker("GLOOP");
+    private static final int DEFAULT_BUFFER_MS = Integer.getInteger("com.longlinkislong.gloop.alinputstream.buffer_size", 50);
     private final AudioInputStream ain;
     public final ALSoundFormat format;
     private final boolean is16bit;
@@ -65,21 +71,20 @@ public class ALInputStream implements Closeable {
      * @since 16.03.21
      */
     public ALInputStream(final InputStream in) throws UnsupportedAudioFileException, IOException {
-        this(in, DEFAULT_BUFFER_SIZE);
+        this(in, DEFAULT_BUFFER_MS);
     }
 
     /**
      * Constructs a new ALInputStream.
      *
      * @param in the InputStream to wrap. Must support mark.
-     * @param bufferSize the buffer size to use.
+     * @param ms The length of the buffer in milliseconds.
      * @throws UnsupportedAudioFileException if the audio format is not
      * supported.
      * @throws IOException if the InputStream cannot be opened.
      * @since 16.03.21
      */
-    public ALInputStream(final InputStream in, final int bufferSize) throws UnsupportedAudioFileException, IOException {
-        this.bufferSize = bufferSize;
+    public ALInputStream(final InputStream in, final int ms) throws UnsupportedAudioFileException, IOException {
         this.ain = AudioSystem.getAudioInputStream(in);
 
         final AudioFormat fmt = this.ain.getFormat();
@@ -121,7 +126,20 @@ public class ALInputStream implements Closeable {
 
         this.byteOrder = fmt.isBigEndian() ? ByteOrder.BIG_ENDIAN : ByteOrder.LITTLE_ENDIAN;
         this.sampleRate = (int) fmt.getSampleRate();
+
+        final int bytesPerSecond = channels * (sampleSize / 8) * this.sampleRate;
+
+        this.bufferSize = bytesPerSecond * ms / 1000;
+        LOGGER.trace(MARKER, "Buffer Size: {} (channels: {} sampleSize: {} sampleRate: {} ms: {})", bufferSize, channels, sampleSize, sampleRate, ms);
     }
+
+    private static final int TEMP_BUFFER_SIZE = 16 * 1024;
+    private static final ThreadLocal<ByteBuffer> TEMP_BUFFERS = new ThreadLocal<ByteBuffer>() {
+        @Override
+        protected ByteBuffer initialValue() {
+            return MemoryUtil.memAlloc(TEMP_BUFFER_SIZE).order(ByteOrder.nativeOrder());
+        }
+    };
 
     @Override
     public void close() throws IOException {
@@ -139,14 +157,21 @@ public class ALInputStream implements Closeable {
      * @since 16.03.21
      */
     public void stream(final ALBuffer buffer) throws IOException {
-        final ByteBuffer outBuffer = MemoryUtil.memAlloc(this.bufferSize).order(ByteOrder.nativeOrder());
+        final boolean useTempBuffer = this.bufferSize > TEMP_BUFFER_SIZE;
+        final ByteBuffer outBuffer;
+
+        if (useTempBuffer) {
+            outBuffer = TEMP_BUFFERS.get();
+        } else {
+            outBuffer = MemoryUtil.memAlloc(this.bufferSize).order(ByteOrder.nativeOrder());
+        }
 
         final byte[] inBuffer = new byte[bufferSize];
         final int readCount = this.ain.read(inBuffer, 0, this.bufferSize);
 
         if (readCount == -1) {
             MemoryUtil.memFree(outBuffer);
-            
+
             throw new EOFException("End of stream reached!") {
                 @Override
                 public Throwable fillInStackTrace() {
@@ -168,6 +193,9 @@ public class ALInputStream implements Closeable {
 
         outBuffer.position(0).limit(readCount);
         buffer.upload(this.format, outBuffer, this.sampleRate);
-        ALTask.create(() -> MemoryUtil.memFree(outBuffer)).alRun(); // free on the OpenAL thread
+
+        if (!useTempBuffer) {
+            ALTask.create(() -> MemoryUtil.memFree(outBuffer)).alRun(); // free on the OpenAL thread
+        }
     }
 }
