@@ -88,7 +88,16 @@ public enum GLVertexAttributeType {
      *
      * @since 15.06.24
      */
-    GL_UNSIGNED_INT(5125, Integer.BYTES);
+    GL_UNSIGNED_INT(5125, Integer.BYTES),
+    
+    /**
+     * 8 byte unsigned long
+     * 
+     * @since 16.01.04
+     */
+    GL_UNSIGNED_LONG(0x140F, Long.BYTES);
+    
+    
 
     final int value;
     final int width;
