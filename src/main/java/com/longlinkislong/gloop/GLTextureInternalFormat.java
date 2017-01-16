@@ -34,6 +34,9 @@ import java.util.Optional;
  * @since 15.12.18
  */
 public enum GLTextureInternalFormat {
+    GL_ALPHA(6406),
+    GL_LUMINANCE_ALPHA(6410),
+    GL_LUMINANCE(6409),
     GL_COMPRESSED_RGB_S3TC_DXT1(33776),
     GL_COMPRESSED_RGBA_S3TC_DXT1(33777),
     GL_COMPRESSED_RGBA_S3TC_DXT3(33778),
