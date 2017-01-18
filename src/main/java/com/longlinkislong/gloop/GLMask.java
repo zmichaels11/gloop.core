@@ -227,20 +227,11 @@ public class GLMask extends GLObject {
 
         @Override
         public void run() {
-            LOGGER.trace(GLOOP_MARKER, "############### Start GLMask Apply Task ###############");
-            LOGGER.trace(GLOOP_MARKER, "\tApplying GLMask[{}]", GLMask.this.getName());
-            LOGGER.trace(GLOOP_MARKER, "\tRed: {} Green: {}, Blue: {}", red, green, blue);
-            LOGGER.trace(GLOOP_MARKER, "\tAlpha: {}", alpha);
-            LOGGER.trace(GLOOP_MARKER, "\tDepth: {}", depth);
-            LOGGER.trace("\tStencil bitfield: {}", stencil);
-
             final GLThread thread = GLThread.getCurrent().orElseThrow(GLException::new);
 
             thread.runOnMaskChangeCallback(thread.currentMask, GLMask.this);
             thread.currentMask = GLMask.this.withGLThread(thread);
-            GLTools.getDriverInstance().maskApply(red, green, blue, alpha, depth, stencil);
-            
-            LOGGER.trace(GLOOP_MARKER, "############### End GLMask Apply Task ###############");
+            GLTools.getDriverInstance().maskApply(red, green, blue, alpha, depth, stencil);            
         }
     }
 }

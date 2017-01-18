@@ -149,10 +149,7 @@ public class GLProgram extends GLObject {
 
         @SuppressWarnings("unchecked")
         @Override
-        public void run() {
-            LOGGER.trace(GL_MARKER, "############### Start GLProgram Use Task ###############");
-            LOGGER.trace(GL_MARKER, "\tUsing GLProgram[{}]", GLProgram.this.getName());
-
+        public void run() {            
             if (!GLProgram.this.isValid()) {
                 throw new GLException.InvalidStateException("Invalid GLProgram!");
             }
@@ -160,8 +157,7 @@ public class GLProgram extends GLObject {
             GLThread.getCurrent().orElseThrow(GLException.InvalidThreadException::new).currentProgramUse = this;
 
             GLTools.getDriverInstance().programUse(GLProgram.this.program);
-            GLProgram.this.program.updateTime();
-            LOGGER.trace(GL_MARKER, "############### End GLProgram Use Task ###############");
+            GLProgram.this.program.updateTime();            
         }
     }
 
@@ -212,10 +208,7 @@ public class GLProgram extends GLObject {
         @SuppressWarnings({"rawtypes", "unchecked"})
         @Override
         public void run() {
-            LOGGER.trace(GL_MARKER, "############### Start GLProgram Set Vertex Attributes Task ###############");
-            LOGGER.trace(GL_MARKER, "\tSetting attributes for GLProgram[{}]", getName());
-            LOGGER.trace(GL_MARKER, "\tAttributes: GLVertexAttributes[{}]", attribs.getName());
-
+            
             final Driver driver = GLTools.getDriverInstance();
 
             if (!GLProgram.this.isValid()) {
@@ -254,10 +247,6 @@ public class GLProgram extends GLObject {
 
             GLProgram.this.buildInstructions.add(this);
             GLProgram.this.program.updateTime();
-
-            LOGGER.trace(
-                    GL_MARKER,
-                    "############### End GLProgram Set Vertex Attributes Task ###############");
         }
     }
 
@@ -402,9 +391,6 @@ public class GLProgram extends GLObject {
         @SuppressWarnings("unchecked")
         @Override
         public void run() {
-            LOGGER.trace(GL_MARKER, "############### Start GLProgram Set Uniform MatrixD Task ###############");
-            LOGGER.trace(GL_MARKER, "\tSetting uniform matrix of GLProgram[{}]", getName());
-            LOGGER.trace(GL_MARKER, "\tUniform name: {}", this.uName);
 
             if (!GLProgram.this.isValid()) {
                 throw new GLException.InvalidStateException("GLProgram is not valid!");
@@ -419,7 +405,6 @@ public class GLProgram extends GLObject {
             }
 
             GLProgram.this.program.updateTime();
-            LOGGER.trace(GL_MARKER, "############### End GLProgram Set Uniform MatrixD Task ###############");
         }
     }
 
@@ -538,10 +523,7 @@ public class GLProgram extends GLObject {
         @SuppressWarnings("unchecked")
         @Override
         public void run() {
-            LOGGER.trace(GL_MARKER, "############### Start GLProgram Set Uniform MatrixF Task ###############");
-            LOGGER.trace(GL_MARKER, "\tSetting uniform matrix for GLProgram[{}]", getName());
-            LOGGER.trace(GL_MARKER, "\tUniform matrix location: {}", this.uName);
-
+            
             if (!GLProgram.this.isValid()) {
                 throw new GLException.InvalidStateException("GLProgram is not valid!");
             }
@@ -555,7 +537,6 @@ public class GLProgram extends GLObject {
             }
 
             GLProgram.this.program.updateTime();
-            LOGGER.trace(GL_MARKER, "############### End GLProgram Set Uniform MatrixF Task ###############");
         }
     }
 
@@ -722,10 +703,6 @@ public class GLProgram extends GLObject {
         @SuppressWarnings("unchecked")
         @Override
         public void run() {
-            LOGGER.trace(GL_MARKER, "############### Start GLProgram Set UniformF Task ###############");
-            LOGGER.trace(GL_MARKER, "\tSetting uniform of GLProgram[{}]", getName());
-            LOGGER.trace(GL_MARKER, "\tUniform location: {}", this.uName);
-
             if (!GLProgram.this.isValid()) {
                 throw new GLException.InvalidStateException("GLProgram is not valid!");
             }
@@ -734,7 +711,6 @@ public class GLProgram extends GLObject {
 
             GLProgram.this.program.updateTime();
             GLTools.getDriverInstance().programSetUniformD(program, uLoc, values);
-            LOGGER.trace(GL_MARKER, "############### End GLProgram Set UniformF Task ###############");
         }
     }
 
@@ -847,9 +823,6 @@ public class GLProgram extends GLObject {
         @SuppressWarnings("unchecked")
         @Override
         public void run() {
-            LOGGER.trace(GL_MARKER, "############### Start GLProgram Set UniformI Task ###############");
-            LOGGER.trace(GL_MARKER, "\tSetting uniform of GLProgram[{}]", getName());
-            LOGGER.trace(GL_MARKER, "\tUniform location: {}", this.uName);
 
             if (!GLProgram.this.isValid()) {
                 throw new GLException.InvalidStateException("GLProgram is not valid!");
@@ -859,7 +832,6 @@ public class GLProgram extends GLObject {
 
             GLTools.getDriverInstance().programSetUniformI(program, uLoc, values);
             GLProgram.this.program.updateTime();
-            LOGGER.trace(GL_MARKER, "############### End GLProgram Set UniformI Task ###############");
         }
     }
 
@@ -1023,9 +995,6 @@ public class GLProgram extends GLObject {
         @SuppressWarnings("unchecked")
         @Override
         public void run() {
-            LOGGER.trace(GL_MARKER, "############### Start GLProgram Set UniformF Task ###############");
-            LOGGER.trace(GL_MARKER, "\tSetting uniform of GLProgram[{}]", getName());
-            LOGGER.trace(GL_MARKER, "\tUniform location: {}", this.uName);
 
             if (!GLProgram.this.isValid()) {
                 throw new GLException.InvalidStateException("GLProgram is not valid!");
@@ -1035,7 +1004,6 @@ public class GLProgram extends GLObject {
 
             GLProgram.this.program.updateTime();
             GLTools.getDriverInstance().programSetUniformF(program, uLoc, values);
-            LOGGER.trace(GL_MARKER, "############### End GLProgram Set UniformF Task ###############");
         }
 
         @Override
@@ -1127,9 +1095,6 @@ public class GLProgram extends GLObject {
         @SuppressWarnings({"rawtypes", "unchecked"})
         @Override
         public void run() {
-            LOGGER.trace(GL_MARKER, "############### Start GLProgram Link Shaders Task ###############");
-            LOGGER.trace(GL_MARKER, "\tLinking shaders for GLProgram[{}]", GLProgram.this.getName());
-
             if (!GLProgram.this.isValid()) {
                 throw new GLException.InvalidStateException("GLProgram is not valid!");
             }
@@ -1139,18 +1104,16 @@ public class GLProgram extends GLObject {
             driver.programLinkShaders(
                     program,
                     Arrays.stream(shaders)
-                    .map(shader -> {
-                        shader.updateTimeUsed();
-                        return shader;
-                    })
-                    .map(shader -> shader.shader)
-                    .collect(Collectors.toList())
-                    .toArray(new Shader[shaders.length]));
+                            .map(shader -> {
+                                shader.updateTimeUsed();
+                                return shader;
+                            })
+                            .map(shader -> shader.shader)
+                            .collect(Collectors.toList())
+                            .toArray(new Shader[shaders.length]));
 
             GLProgram.this.buildInstructions.add(this);
             GLProgram.this.updateTimeUsed();
-            LOGGER.trace(GL_MARKER, "Linked shaders for GLProgram[{}]!", GLProgram.this.getName());
-            LOGGER.trace(GL_MARKER, "############### End GLProgram Link Shaders Task ###############");
         }
     }
 
@@ -1174,8 +1137,6 @@ public class GLProgram extends GLObject {
 
         @Override
         public void run() {
-            LOGGER.trace(GL_MARKER, "############### Start GLProgram Init Task ###############");
-
             if (GLProgram.this.isValid()) {
                 throw new GLException.InvalidStateException("Cannot reinit GLProgram!");
             }
@@ -1189,8 +1150,7 @@ public class GLProgram extends GLObject {
             thread.containerObjects.add(new WeakReference<>(GLProgram.this));
 
             GLProgram.this.updateTimeUsed();
-            LOGGER.trace(GL_MARKER, "Initialized GLProgram[{}]!", GLProgram.this.name);
-            LOGGER.trace(GL_MARKER, "############### End GLProgram Init Task ###############");
+
         }
     }
 
@@ -1213,9 +1173,6 @@ public class GLProgram extends GLObject {
         @SuppressWarnings("unchecked")
         @Override
         public void run() {
-            LOGGER.trace(GL_MARKER, "############### Start GLProgram Delete Task ###############");
-            LOGGER.trace(GL_MARKER, "\tDeleting GLProgram[{}]", GLProgram.this.getName());
-
             if (!GLProgram.this.isValid()) {
                 LOGGER.warn(GL_MARKER, "Attempted to delete invalid GLProgram!");
             } else {
@@ -1224,7 +1181,6 @@ public class GLProgram extends GLObject {
                 GLProgram.this.program = null;
                 GLProgram.this.uniforms.clear();
             }
-            LOGGER.trace(GL_MARKER, "############### End GLProgram Delete Task ###############");
         }
     }
 
@@ -1345,17 +1301,12 @@ public class GLProgram extends GLObject {
 
         @Override
         public void run() {
-            LOGGER.trace(GL_MARKER, "############### Start GLProgram Set Uniform Block Binding Task ###############");
-            LOGGER.trace(GL_MARKER, "\tAssigning uniform block: [{}] to uniform buffer binding: [{}]!", this.ublockName, this.binding);
-
             if (!GLProgram.this.isValid()) {
                 throw new GLException.InvalidStateException("Invalid GLProgram!");
             } else {
                 GLTools.getDriverInstance().programSetUniformBlockBinding(program, this.ublockName, this.binding);
                 GLProgram.this.program.updateTime();
             }
-
-            LOGGER.trace(GL_MARKER, "############### End GLProgram Set Uniform Block Binding Task ###############");
         }
     }
 
@@ -1388,19 +1339,14 @@ public class GLProgram extends GLObject {
 
         @Override
         public void run() {
-            LOGGER.trace(GL_MARKER, "############### Start GLProgram Set Storage Block Binding Task ###############");
-            LOGGER.trace(GL_MARKER, "\tAssigning uniform block: [{}] to storage binding: [{}]!", this.sblockName, this.binding);
-
             if (!GLProgram.this.isValid()) {
                 throw new GLException.InvalidStateException("Invalid GLProgram!");
             } else {
                 GLTools.getDriverInstance().programSetStorageBlockBinding(program, this.sblockName, this.binding);
                 GLProgram.this.program.updateTime();
             }
-
-            LOGGER.trace(GL_MARKER, "############### End GLProgram Set Storage Block Binding Task ###############");
         }
-    }    
+    }
 
     /**
      * A GLTask that sets a Shader Storage block.
@@ -1437,12 +1383,6 @@ public class GLProgram extends GLObject {
         @SuppressWarnings("unchecked")
         @Override
         public void run() {
-            LOGGER.trace(GL_MARKER, "############### Start GLProgram Set Shader Storage Task ###############");
-            LOGGER.trace(GL_MARKER, "\tSetting shader storage for GLProgram[{}]", getName());
-            LOGGER.trace(GL_MARKER, "\tStorage Name: {}", storageName);
-            LOGGER.trace(GL_MARKER, "\tShader storage: GLBuffer[{}]\n", buffer.getName());
-            LOGGER.trace(GL_MARKER, "\tBinding point: {}", bindingPoint);
-
             if (!GLProgram.this.isValid()) {
                 throw new GLException.InvalidStateException("Invalid GLProgram object!");
             } else if (!this.buffer.isValid()) {
@@ -1451,7 +1391,6 @@ public class GLProgram extends GLObject {
 
             GLProgram.this.updateTimeUsed();
             GLTools.getDriverInstance().programSetStorage(program, storageName, buffer.buffer, bindingPoint);
-            LOGGER.trace(GL_MARKER, "############### End GLProgram Set Shader Storage Task ###############");
         }
     }
 
@@ -1510,12 +1449,6 @@ public class GLProgram extends GLObject {
         @SuppressWarnings("unchecked")
         @Override
         public void run() {
-            LOGGER.trace(GL_MARKER, "############### Start GLProgram Set Uniform Block Task ###############");
-            LOGGER.trace(GL_MARKER, "\tSetting uniform block of GLProgram[{}]", getName());
-            LOGGER.trace(GL_MARKER, "\tUniform block name: {}", blockName);
-            LOGGER.trace(GL_MARKER, "\tUniform block: GLBuffer[{}]", buffer.getName());
-            LOGGER.trace(GL_MARKER, "\tBinding Point: {}", this.bindingPoint);
-
             if (!GLProgram.this.isValid()) {
                 throw new GLException.InvalidStateException("Invalid GLProgram object!");
             } else if (!this.buffer.isValid()) {
@@ -1524,7 +1457,6 @@ public class GLProgram extends GLObject {
 
             GLProgram.this.program.updateTime();
             GLTools.getDriverInstance().programSetUniformBlock(program, blockName, buffer.buffer, bindingPoint);
-            LOGGER.trace(GL_MARKER, "############### End GLProgram Set Uniform Block Task ###############");
         }
     }
 
@@ -1628,19 +1560,14 @@ public class GLProgram extends GLObject {
         @SuppressWarnings("unchecked")
         @Override
         public void run() {
-            LOGGER.trace(GL_MARKER, "############### Start GLProgram Compute Task ###############");
-            LOGGER.trace(GL_MARKER, "\tComputing GLProgram[{}]", getName());
-            LOGGER.trace(GL_MARKER, "\tGroup size: <{}, {}, {}>", this.numX, this.numY, this.numZ);
-
             if (!GLProgram.this.isValid()) {
                 throw new GLException.InvalidStateException("Invalid GLProgram!");
             }
 
             GLTools.getDriverInstance().programDispatchCompute(program, numX, numY, numZ);
             GLProgram.this.updateTimeUsed();
-            LOGGER.trace(GL_MARKER, "############### End GLProgram Compute Task ###############");
         }
-    }        
+    }
 
     @Override
     public long getTimeSinceLastUsed() {

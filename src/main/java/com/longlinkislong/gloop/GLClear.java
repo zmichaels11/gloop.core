@@ -313,19 +313,10 @@ public class GLClear extends GLObject {
 
         @Override
         public void run() {
-            LOGGER.trace(GLOOP_MARKER, "############### Start GLClear Clear Task ###############");
-            LOGGER.trace(GLOOP_MARKER, "\tApplying GLClear[{}]", GLClear.this.getName());
-            LOGGER.trace(GLOOP_MARKER, "\t<red={}, green={}, blue={}, alpha={}>", GLClear.this.red, GLClear.this.green, GLClear.this.blue, GLClear.this.alpha);
-            LOGGER.trace(GLOOP_MARKER, "\tdepth={}", GLClear.this.depth);
-            LOGGER.trace(GLOOP_MARKER, "\tClear bitfield: {}", GLClear.this.clearBitField);
-
             final GLThread thread = GLThread.getCurrent().orElseThrow(GLException::new);
-           
+
             thread.currentClear = GLClear.this.withGLThread(thread);
             GLTools.getDriverInstance().clear(clearBitField, red, green, blue, alpha, depth);
-            
-            LOGGER.trace(GLOOP_MARKER, "############### End GLClear Clear Task ###############");
         }
-
     }
 }

@@ -181,9 +181,7 @@ public class GLRenderbuffer extends GLObject {
     public final class InitTask extends GLTask {
 
         @Override
-        public void run() {
-            LOGGER.trace(GL_MARKER, "############### Start GLRenderbuffer Init Task ###############");
-
+        public void run() {            
             if (GLRenderbuffer.this.isValid()) {
                 throw new GLException("GLRenderbuffer already initialized!");
             }
@@ -195,9 +193,6 @@ public class GLRenderbuffer extends GLObject {
 
             GLRenderbuffer.this.name = "id=" + renderbuffer.hashCode();
             GLRenderbuffer.this.updateTimeUsed();
-
-            LOGGER.trace(GL_MARKER, "Initialized GLRenderbuffer[{}]!", GLRenderbuffer.this.name);
-            LOGGER.trace(GL_MARKER, "############### End GLRenderer Init Task ###############");
         }
     }
 
@@ -211,18 +206,13 @@ public class GLRenderbuffer extends GLObject {
 
         @Override
         public void run() {
-            LOGGER.trace(GL_MARKER, "############### Start GLRenderbuffer Delete Task ###############");
-            LOGGER.trace(GL_MARKER, "\tDeleting GLRenderbuffer[{}]", GLRenderbuffer.this.getName());
-
             if (!GLRenderbuffer.this.isValid()) {
                 LOGGER.warn(GL_MARKER, "Attempted to delete invalid GLRenderbuffer!");
             } else {
                 GLTools.getDriverInstance().renderbufferDelete(GLRenderbuffer.this.renderbuffer);
                 GLRenderbuffer.this.renderbuffer = null;
                 GLRenderbuffer.this.lastUsedTime = 0L;
-            }
-
-            LOGGER.trace(GL_MARKER, "############### End GLRendebruffer Delete Task ###############");
+            }           
         }
     }
 

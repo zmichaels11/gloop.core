@@ -238,8 +238,6 @@ public class GLFramebuffer extends GLObject {
 
         @Override
         public void run() {
-            LOGGER.trace(GL_MARKER, "############### Start GLFramebuffer Init Task ###############");
-
             checkThread();
 
             if (GLFramebuffer.this.isLocked) {
@@ -251,9 +249,6 @@ public class GLFramebuffer extends GLObject {
             framebuffer = GLTools.getDriverInstance().framebufferCreate();
             GLFramebuffer.this.name = "id=" + framebuffer.hashCode();
             GLFramebuffer.this.updateTimeUsed();
-
-            LOGGER.trace(GL_MARKER, "Initialized GLFramebuffer[{}]!", GLFramebuffer.this.name);
-            LOGGER.trace(GL_MARKER, "############### End GLFramebuffer Init Task ###############");
         }
 
     }
@@ -277,9 +272,6 @@ public class GLFramebuffer extends GLObject {
         @SuppressWarnings("unchecked")
         @Override
         public void run() {
-            LOGGER.trace(GL_MARKER, "############### Start GLFramebuffer Delete Task ###############");
-            LOGGER.trace(GL_MARKER, "\tDeleting GLFramebuffer[{}]", GLFramebuffer.this.getName());
-
             checkThread();
 
             if (GLFramebuffer.this.isLocked) {
@@ -293,9 +285,7 @@ public class GLFramebuffer extends GLObject {
                 GLFramebuffer.this.colorAttachments.clear();
                 GLFramebuffer.this.attachments.clear();
                 GLFramebuffer.this.nextColorAttachment = 36064 /* GL_COLOR_ATTACHMENT0 */;
-            }
-
-            LOGGER.trace(GL_MARKER, "############### End GLFramebuffer Delete Task ###############");
+            }            
         }
     }
 
@@ -383,9 +373,6 @@ public class GLFramebuffer extends GLObject {
         @SuppressWarnings("unchecked")
         @Override
         public void run() {
-            LOGGER.trace(GL_MARKER, "############### Start GLFramebuffer Bind Task ###############");
-            LOGGER.trace(GL_MARKER, "\tBinding GLFramebuffer[{}]", GLFramebuffer.this.getName());
-
             checkThread();
 
             if (!GLFramebuffer.this.isValid()) {
@@ -419,8 +406,7 @@ public class GLFramebuffer extends GLObject {
                 }
             }            
 
-            GLFramebuffer.this.updateTimeUsed();
-            LOGGER.trace(GL_MARKER, "############### End GLFramebuffer Bind Task ###############");
+            GLFramebuffer.this.updateTimeUsed();            
         }
     }
 
@@ -501,11 +487,6 @@ public class GLFramebuffer extends GLObject {
         @SuppressWarnings("unchecked")
         @Override
         public void run() {
-            LOGGER.trace(GL_MARKER, "############### Start GLFramebuffer Add Depth Stencil Attachment Task ###############");
-            LOGGER.trace(GL_MARKER, "\tAdding depth stencil attachment to GLFramebuffer[{}]", GLFramebuffer.this.getName());
-            LOGGER.trace(GL_MARKER, "\tDepth stencil attachment: GLTexture[{}]", this.depthStencilAttachment.getName());
-            LOGGER.trace(GL_MARKER, "\tMipmap level: {}", this.level);
-
             checkThread();
 
             if (!GLFramebuffer.this.isValid()) {
@@ -518,7 +499,6 @@ public class GLFramebuffer extends GLObject {
 
             GLFramebuffer.this.buildInstructions.add(this);
             GLFramebuffer.this.updateTimeUsed();
-            LOGGER.trace(GL_MARKER, "############### End GLFramebuffer Add Depth Stencil Attachment Task ###############");
         }
     }
 
@@ -596,11 +576,6 @@ public class GLFramebuffer extends GLObject {
         @SuppressWarnings("unchecked")
         @Override
         public void run() {
-            LOGGER.trace(GL_MARKER, "############### Start GLFramebuffer Add Depth Attachment Task ###############");
-            LOGGER.trace(GL_MARKER, "\tAdding depth attachment to GLFramebuffer[{}]", GLFramebuffer.this.getName());
-            LOGGER.trace(GL_MARKER, "\tDepth attachment: GLTexture[{}]", this.depthAttachment.getName());
-            LOGGER.trace(GL_MARKER, "\tMipmap level: {}", this.level);
-
             checkThread();
 
             if (GLFramebuffer.this.isLocked) {
@@ -613,8 +588,7 @@ public class GLFramebuffer extends GLObject {
             GLTools.getDriverInstance().framebufferAddAttachment(framebuffer, GL30.GL_DEPTH_ATTACHMENT, depthAttachment.texture, level);
 
             GLFramebuffer.this.buildInstructions.add(this);
-            GLFramebuffer.this.updateTimeUsed();
-            LOGGER.trace(GL_MARKER, "############### End GLFramebuffer Add Depth Attachment Task ###############");
+            GLFramebuffer.this.updateTimeUsed();            
         }
     }
 
@@ -722,11 +696,6 @@ public class GLFramebuffer extends GLObject {
 
         @Override
         public void run() {
-            LOGGER.trace(GL_MARKER, "############### Start GLFramebuffer AddRenderbufferAttachment Task ###############");
-            LOGGER.trace(GL_MARKER, "\tGLFramebuffer: {}", GLFramebuffer.this.getName());
-            LOGGER.trace(GL_MARKER, "\tGLRenderbuffer: {}", this.renderbuffer.getName());
-            LOGGER.trace(GL_MARKER, "\tAttachment type: {}", this.renderbuffer.target);
-
             if (GLFramebuffer.this.isLocked) {
                 throw new GLException("Cannot add attachment to locked GLFramebuffer!");
             } else if (!GLFramebuffer.this.isValid()) {
@@ -744,8 +713,7 @@ public class GLFramebuffer extends GLObject {
             this.renderbuffer.updateTimeUsed();
 
             GLFramebuffer.this.buildInstructions.add(this);
-            GLFramebuffer.this.updateTimeUsed();
-            LOGGER.trace(GL_MARKER, "############### End GLFramebuffer AddRenderbufferAttachment Task ###############");
+            GLFramebuffer.this.updateTimeUsed();           
         }
     }
 
@@ -803,12 +771,6 @@ public class GLFramebuffer extends GLObject {
         @SuppressWarnings("unchecked")
         @Override
         public void run() {
-            LOGGER.trace(GL_MARKER, "############### Start GLFramebuffer Add Color Attachment Task ###############");
-            LOGGER.trace(GL_MARKER, "\tAdding color attachment to GLFramebuffer[{}]", GLFramebuffer.this.getName());
-            LOGGER.trace(GL_MARKER, "\tAttachment name: {}", this.attachmentName);
-            LOGGER.trace(GL_MARKER, "\tColor attachment: GLTexture[{}]", this.colorAttachment.getName());
-            LOGGER.trace(GL_MARKER, "\tMipmap level: {}", this.level);
-
             checkThread();
 
             if (GLFramebuffer.this.isLocked) {
@@ -823,8 +785,7 @@ public class GLFramebuffer extends GLObject {
             GLTools.getDriverInstance().framebufferAddAttachment(framebuffer, attachmentId, colorAttachment.texture, level);
 
             GLFramebuffer.this.buildInstructions.add(this);
-            GLFramebuffer.this.updateTimeUsed();
-            LOGGER.trace(GL_MARKER, "############### End GLFramebuffer Add Color Attachment Task ###############");
+            GLFramebuffer.this.updateTimeUsed();            
         }
     }
 
@@ -920,14 +881,6 @@ public class GLFramebuffer extends GLObject {
         @SuppressWarnings("unchecked")
         @Override
         public void run() {
-            LOGGER.trace(GL_MARKER, "############### Start GLFramebuffer Blit Task ###############");
-            LOGGER.trace(GL_MARKER, "\tRead GLFramebuffer[{}]", readFB.getName());
-            LOGGER.trace(GL_MARKER, "\tWrite GLFramebuffer[{}]", writeFB.getName());
-            LOGGER.trace(GL_MARKER, "\tRead rectangle: <{}, {}, {}, {}>", this.srcX0, this.srcY0, this.srcX1, this.srcY1);
-            LOGGER.trace(GL_MARKER, "\tWrite rectangle: <{}, {}, {}, {}>", this.dstX0, this.dstY0, this.dstX1, this.dstY1);
-            LOGGER.trace(GL_MARKER, "\tMask bitfield: {}", this.bitfield);
-            LOGGER.trace(GL_MARKER, "\tFilter: {}", this.filter);
-
             this.readFB.checkThread();
             this.writeFB.checkThread();
 
@@ -942,8 +895,7 @@ public class GLFramebuffer extends GLObject {
                     writeFB.framebuffer, dstX0, dstY0, dstX1, dstY1,
                     bitfield, filter.value);
             readFB.updateTimeUsed();
-            writeFB.updateTimeUsed();
-            LOGGER.trace(GL_MARKER, "############### End GLFramebuffer Blit task ###############");
+            writeFB.updateTimeUsed();            
         }
     }
 
@@ -1054,13 +1006,7 @@ public class GLFramebuffer extends GLObject {
 
         @SuppressWarnings("unchecked")
         @Override
-        public void run() {
-            LOGGER.trace(GL_MARKER, "############### Start GLFramebuffer Read Pixels Task ###############");
-            LOGGER.trace(GL_MARKER, "\tRead start: <{}, {}>", this.x, this.y);
-            LOGGER.trace(GL_MARKER, "\tRead size: <{}, {}>", this.width, this.height);
-            LOGGER.trace(GL_MARKER, "\tFormat: {}", this.format);
-            LOGGER.trace(GL_MARKER, "\tType: {}", this.type);
-
+        public void run() {            
             checkThread();
 
             if (pixels != null) {
@@ -1070,7 +1016,6 @@ public class GLFramebuffer extends GLObject {
             }
 
             GLFramebuffer.this.updateTimeUsed();
-            LOGGER.trace(GL_MARKER, "############### End GLFramebuffer Read Pixels Task ###############");
         }
     }
 

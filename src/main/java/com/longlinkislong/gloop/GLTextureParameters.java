@@ -381,24 +381,12 @@ public class GLTextureParameters {
 
         @Override
         public Float call() throws Exception {
-            LOGGER.trace(
-                    GLOOP_MARKER,
-                    "############### Start GLTextureParameters Max Anisotropy Query ###############");
-
             if (checked) {
                 return this.maxLevel;
             }
 
             this.maxLevel = GLTools.getDriverInstance().textureGetMaxAnisotropy();
-            this.checked = true;
-
-            LOGGER.trace(
-                    GLOOP_MARKER,
-                    "Max anisotropy: {}x", this.maxLevel);
-
-            LOGGER.trace(
-                    GLOOP_MARKER,
-                    "############### End GLTextureParameters Max Anisotropic Query ###############");
+            this.checked = true;            
 
             return this.maxLevel;
         }

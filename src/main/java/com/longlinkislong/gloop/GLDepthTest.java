@@ -169,10 +169,6 @@ public class GLDepthTest extends GLObject {
 
         @Override
         public void run() {
-            LOGGER.trace(GLOOP_MARKER, "############### Start GLDepthTest Apply Depth Func Task ###############");
-            LOGGER.trace(GLOOP_MARKER, "\tApplying GLDepthTest[{}]", GLDepthTest.this.getName());
-            LOGGER.trace(GLOOP_MARKER, "\tEnabled: {} Function: {}", GLDepthTest.this.depthTestEnabled, GLDepthTest.this.depthFunc);                        
-
             final GLThread thread = GLThread.getCurrent().orElseThrow(GLException::new);            
 
             thread.runOnDepthTestChangeCallback(thread.currentDepthTest, GLDepthTest.this);
@@ -185,9 +181,7 @@ public class GLDepthTest extends GLObject {
                 case GL_DISABLED:
                     GLTools.getDriverInstance().depthTestDisable();                    
                     break;
-            }
-
-            LOGGER.trace(GLOOP_MARKER, "############### End GLDepthTest Apply Depth Func Task ###############");
+            }            
         }
     }
 }

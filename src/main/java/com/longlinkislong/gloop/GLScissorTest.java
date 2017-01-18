@@ -188,11 +188,7 @@ public class GLScissorTest extends GLObject {
 
         @Override
         public void run() {
-            LOGGER.trace(GLOOP_MARKER, "############### Start GLScissorTest Begin Scissor Test Task ###############");
-            LOGGER.trace("\tAppying GLScissorTest[{}]", GLScissorTest.this.getName());
-            
-            GLTools.getDriverInstance().scissorTestEnable(left, bottom, width, height);
-            LOGGER.trace(GLOOP_MARKER, "############### End GLScissorTest Begin Scissor Test Task ###############");
+            GLTools.getDriverInstance().scissorTestEnable(left, bottom, width, height);            
         }
     }
 

@@ -179,9 +179,7 @@ public class GLSampler extends GLObject {
 
         @SuppressWarnings({"rawtypes", "unchecked"})
         @Override
-        public void run() {
-            LOGGER.trace(GL_MARKER, "############### Start GLSampler Init Task ###############");
-
+        public void run() {            
             if (GLSampler.this.isLocked) {
                 throw new GLException.InvalidStateException("Cannot initialize the null instance of the GLSampler object!");
             } else if (GLSampler.this.isValid()) {
@@ -201,14 +199,7 @@ public class GLSampler extends GLObject {
             driver.samplerSetParameter(sampler, 10240 /* GL_TEXTURE_MAG_FILTER */, GLSampler.this.parameters.magFilter.value);
             driver.samplerSetParameter(sampler, 34046 /* GL_TEXTURE_MAX_ANISOTROPY_EXT */, GLSampler.this.parameters.anisotropicLevel);
 
-            GLSampler.this.updateTimeUsed();
-            
-            LOGGER.trace(
-                    GL_MARKER,
-                    "Initialized GLSampler[{}]!",
-                    GLSampler.this.getName());
-
-            LOGGER.trace(GL_MARKER, "############### End GLSampler Init Task ###############");
+            GLSampler.this.updateTimeUsed();            
         }
     }
 
@@ -246,18 +237,13 @@ public class GLSampler extends GLObject {
 
         @SuppressWarnings("unchecked")
         @Override
-        public void run() {
-            LOGGER.trace(GL_MARKER, "############### Start GLSampler Bind Task ###############");
-            LOGGER.trace(GL_MARKER, "\tBinding GLSampler[{}]", getName());
-            LOGGER.trace(GL_MARKER, "\tTexture unit: {}", this.unit);
-
+        public void run() {            
             if (!GLSampler.this.isValid()) {
                 throw new GLException.InvalidStateException("Invalid GLSampler!");
             }
 
             GLTools.getDriverInstance().samplerBind(unit, sampler);
-            GLSampler.this.updateTimeUsed();
-            LOGGER.trace(GL_MARKER, "############### End GLSampler Bind Task ###############");
+            GLSampler.this.updateTimeUsed();            
         }
     }
 
@@ -280,10 +266,7 @@ public class GLSampler extends GLObject {
 
         @SuppressWarnings("unchecked")
         @Override
-        public void run() {
-            LOGGER.trace(GL_MARKER, "############### Start GLSampler Delete Task ###############");
-            LOGGER.trace(GL_MARKER, "\tDeleting GLSampler[{}]", GLSampler.this.getName());
-
+        public void run() {            
             if (!GLSampler.this.isValid()) {
                 LOGGER.warn(GL_MARKER, "Attempted to delete invalid GLSampler!");
             } else if (GLSampler.this.isLocked) {
@@ -292,9 +275,7 @@ public class GLSampler extends GLObject {
                 GLTools.getDriverInstance().samplerDelete(sampler);
                 GLSampler.this.lastUsedTime = 0L;
                 GLSampler.this.sampler = null;
-            }
-            
-            LOGGER.trace(GL_MARKER, "############### End GLSampler Delete Task ###############");
+            }            
         }
     }
 

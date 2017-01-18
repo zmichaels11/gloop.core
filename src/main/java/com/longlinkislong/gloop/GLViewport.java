@@ -196,10 +196,6 @@ public class GLViewport extends GLObject {
 
         @Override
         public void run() {
-            LOGGER.trace(GLOOP_MARKER, "############### Start GLViewport Apply Viewport Task ##############");
-            LOGGER.trace(GLOOP_MARKER, "\tApplying GLViewport[{}]", getName());
-            LOGGER.trace(GLOOP_MARKER, "\tX: {}, Y: {}, Width: {}, Height: {}", GLViewport.this.x, GLViewport.this.y, GLViewport.this.width, GLViewport.this.height);
-
             final GLThread thread = GLThread.getCurrent().orElseThrow(GLException.InvalidThreadException::new);
 
             if (thread == GLViewport.this.getThread()) {
@@ -209,7 +205,6 @@ public class GLViewport extends GLObject {
             }
 
             GLTools.getDriverInstance().viewportApply(x, y, width, height);
-            LOGGER.trace(GLOOP_MARKER, "############### End GLViewport Apply Viewport Task ##############");
         }
     }
 }

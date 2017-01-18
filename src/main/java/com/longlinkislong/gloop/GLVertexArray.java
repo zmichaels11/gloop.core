@@ -141,8 +141,6 @@ public class GLVertexArray extends GLObject {
 
         @Override
         public void run() {
-            LOGGER.trace(GLOOP_MARKER, "############### Start GLVertexArray Init Task ###############");
-
             checkThread();
 
             if (GLVertexArray.this.isValid()) {
@@ -154,9 +152,6 @@ public class GLVertexArray extends GLObject {
 
             GLThread.getCurrent().get().containerObjects.add(new WeakReference<>(GLVertexArray.this));
             GLVertexArray.this.updateTimeUsed();
-
-            LOGGER.trace(GLOOP_MARKER, "Initialized GLVertexArray[{}]", GLVertexArray.this.name);
-            LOGGER.trace(GLOOP_MARKER, "############## End GLVertexArray Init Task ###############");
         }
     }
 
@@ -251,14 +246,6 @@ public class GLVertexArray extends GLObject {
         @SuppressWarnings("unchecked")
         @Override
         public void run() {
-            LOGGER.trace(GLOOP_MARKER, "############### Start GLVertexArray Draw Elements Indirect Task ##############");
-            LOGGER.trace(GLOOP_MARKER, "\tDrawing GLVertexArray[{}]", getName());
-            LOGGER.trace(GLOOP_MARKER, "\tDraw mode: {}", drawMode);
-            LOGGER.trace(GLOOP_MARKER, "\tIndex type: {}", indexType);
-            LOGGER.trace(GLOOP_MARKER, "\tIndirect command buffer: GLBuffer[{}]", indirectCommandBuffer.getName());
-            LOGGER.trace(GLOOP_MARKER, "\tOffset: {} bytes", this.offset);
-            LOGGER.trace(GLOOP_MARKER, "\tisTransformFeedback: {}", this.isTransformFeedback);
-
             checkThread();
 
             if (!GLVertexArray.this.isValid()) {
@@ -283,7 +270,6 @@ public class GLVertexArray extends GLObject {
                     .filter(Objects::nonNull)
                     .forEach(GLObject::updateTimeUsed);
 
-            LOGGER.trace(GLOOP_MARKER, "############ End GLVertexArray Draw Elements Indirect Task ###########");
         }
     }
 
@@ -363,12 +349,6 @@ public class GLVertexArray extends GLObject {
         @SuppressWarnings("unchecked")
         @Override
         public void run() {
-            LOGGER.trace(GLOOP_MARKER, "############### Start GLVertexArray Draw Arrays Indirect Task ###############");
-            LOGGER.trace(GLOOP_MARKER, "\tDrawing GLVertexArray[{}]", getName());
-            LOGGER.trace(GLOOP_MARKER, "\tDraw mode: {}", drawMode);
-            LOGGER.trace(GLOOP_MARKER, "\tIndirect command buffer: GLBuffer[{}]", this.indirectCommandBuffer.getName());
-            LOGGER.trace(GLOOP_MARKER, "\tisTransformFeedback: {}", this.isTransformFeedback);
-
             checkThread();
 
             if (!GLVertexArray.this.isValid()) {
@@ -391,9 +371,7 @@ public class GLVertexArray extends GLObject {
             GLVertexArray.this.attributes.stream()
                     .map(WeakReference::get)
                     .filter(Objects::nonNull)
-                    .forEach(GLObject::updateTimeUsed);
-
-            LOGGER.trace(GLOOP_MARKER, "############### End GLVertexArray Draw Arrays Indirect Task ###############");
+                    .forEach(GLObject::updateTimeUsed);           
         }
     }
 
@@ -483,15 +461,6 @@ public class GLVertexArray extends GLObject {
         @SuppressWarnings("unchecked")
         @Override
         public void run() {
-            LOGGER.trace(GLOOP_MARKER, "############### Start GLVertexArray Draw Elements Instanced Task ###############");
-            LOGGER.trace(GLOOP_MARKER, "\tDrawing GLVertexArray[{}]", getName());
-            LOGGER.trace(GLOOP_MARKER, "\tDraw mode: {}", drawMode);
-            LOGGER.trace(GLOOP_MARKER, "\tCount: {}", count);
-            LOGGER.trace(GLOOP_MARKER, "\tIndex type: {}", type);
-            LOGGER.trace(GLOOP_MARKER, "\tOffset: {} bytes", offset);
-            LOGGER.trace(GLOOP_MARKER, "\tInstance count: {}", this.instanceCount);
-            LOGGER.trace(GLOOP_MARKER, "\tisTransformFeedback: {}", this.isTransformFeedback);
-
             checkThread();
 
             if (!GLVertexArray.this.isValid()) {
@@ -512,9 +481,7 @@ public class GLVertexArray extends GLObject {
             GLVertexArray.this.attributes.stream()
                     .map(WeakReference::get)
                     .filter(Objects::nonNull)
-                    .forEach(GLObject::updateTimeUsed);
-
-            LOGGER.trace(GLOOP_MARKER, "############### End GLVertexArray Draw Elements Instanced Task ###############");
+                    .forEach(GLObject::updateTimeUsed);            
         }
 
     }
@@ -599,14 +566,6 @@ public class GLVertexArray extends GLObject {
         @SuppressWarnings("unchecked")
         @Override
         public void run() {
-            LOGGER.trace(GLOOP_MARKER, "############### Start GLVertexArray Draw Arrays Instanced Task ###############");
-            LOGGER.trace(GLOOP_MARKER, "\tDrawing GLVertexArray[{}]", getName());
-            LOGGER.trace(GLOOP_MARKER, "\tDraw mode: {}", mode);
-            LOGGER.trace(GLOOP_MARKER, "\tFirst: {}", first);
-            LOGGER.trace(GLOOP_MARKER, "\tCount: {}", count);
-            LOGGER.trace(GLOOP_MARKER, "\tInstance count: {}", this.instanceCount);
-            LOGGER.trace(GLOOP_MARKER, "\tisTransformFeedback: {}", this.isTransformFeedback);
-
             checkThread();
 
             if (!GLVertexArray.this.isValid()) {
@@ -627,9 +586,7 @@ public class GLVertexArray extends GLObject {
             GLVertexArray.this.attributes.stream()
                     .map(WeakReference::get)
                     .filter(Objects::nonNull)
-                    .forEach(GLObject::updateTimeUsed);
-
-            LOGGER.trace(GLOOP_MARKER, "############### End GLVertexArray Draw Arrays Instanced Task ###############");
+                    .forEach(GLObject::updateTimeUsed);           
         }
     }
 
@@ -708,14 +665,6 @@ public class GLVertexArray extends GLObject {
         @SuppressWarnings("unchecked")
         @Override
         public void run() {
-            LOGGER.trace(GLOOP_MARKER, "############### Start GLVertexArray Draw Elements Task ###############");
-            LOGGER.trace(GLOOP_MARKER, "\tDrawing GLVertexArray[{}]", getName());
-            LOGGER.trace(GLOOP_MARKER, "\tDraw mode: {}", mode);
-            LOGGER.trace(GLOOP_MARKER, "\tCount: {}", count);
-            LOGGER.trace(GLOOP_MARKER, "\tIndex type: {}", type);
-            LOGGER.trace(GLOOP_MARKER, "\tOffset: {} bytes", this.offset);
-            LOGGER.trace(GLOOP_MARKER, "\tisTransformFeedback: {}", this.isTransformFeedback);
-
             checkThread();
 
             if (!GLVertexArray.this.isValid()) {
@@ -738,7 +687,6 @@ public class GLVertexArray extends GLObject {
                     .filter(Objects::nonNull)
                     .forEach(GLObject::updateTimeUsed);
 
-            LOGGER.trace(GLOOP_MARKER, "############### End GLVertexArray Draw Elements Task ###############");
         }
     }
 
@@ -807,13 +755,6 @@ public class GLVertexArray extends GLObject {
         @SuppressWarnings("unchecked")
         @Override
         public void run() {
-            LOGGER.trace(GLOOP_MARKER, "############### Start GLVertexArray Draw Arrays Task ###############");
-            LOGGER.trace(GLOOP_MARKER, "Drawing GLVertexArray[{}]", getName());
-            LOGGER.trace(GLOOP_MARKER, "\tDraw mode: {}", mode);
-            LOGGER.trace(GLOOP_MARKER, "\tStart: {}", start);
-            LOGGER.trace(GLOOP_MARKER, "\tCount: {}", this.count);
-            LOGGER.trace(GLOOP_MARKER, "\tisTransformFeedback: {}", this.isTransformFeedback);
-
             checkThread();
 
             if (!GLVertexArray.this.isValid()) {
@@ -834,9 +775,7 @@ public class GLVertexArray extends GLObject {
             GLVertexArray.this.attributes.stream()
                     .map(WeakReference::get)
                     .filter(Objects::nonNull)
-                    .forEach(GLObject::updateTimeUsed);
-
-            LOGGER.trace(GLOOP_MARKER, "############### End GLVertexArray Draw Arrays Task ###############");
+                    .forEach(GLObject::updateTimeUsed);            
         }
 
     }
@@ -860,9 +799,6 @@ public class GLVertexArray extends GLObject {
         @SuppressWarnings("unchecked")
         @Override
         public void run() {
-            LOGGER.trace(GLOOP_MARKER, "############### Start GLVertexArray Delete Task ###############");
-            LOGGER.trace(GLOOP_MARKER, "\tDeleting GLVertexArray[{}]", GLVertexArray.this.getName());
-
             checkThread();
 
             if (GLVertexArray.this.isValid()) {
@@ -872,9 +808,7 @@ public class GLVertexArray extends GLObject {
                 GLVertexArray.this.vao = null;
             } else {
                 LOGGER.warn(GLOOP_MARKER, "Attempted to delete invalid GLVertexArray!");
-            }
-
-            LOGGER.trace(GLOOP_MARKER, "############### End GLVertexArray Delete Task ###############");
+            }           
         }
     }
 
@@ -904,10 +838,6 @@ public class GLVertexArray extends GLObject {
         @SuppressWarnings("unchecked")
         @Override
         public void run() {
-            LOGGER.trace(GLOOP_MARKER, "############### Start GLVertexArray Attach Index Buffer Task ###############");
-            LOGGER.trace(GLOOP_MARKER, "\tAttaching to GLVertexArray[{}]", getName());
-            LOGGER.trace(GLOOP_MARKER, "\tIndex buffer: GLBuffer[{}]", this.buffer.getName());
-
             if (!GLVertexArray.this.isValid()) {
                 throw new GLException("Invalid GLVertexArray!");
             } else if (!this.buffer.isValid()) {
@@ -918,8 +848,7 @@ public class GLVertexArray extends GLObject {
             GLTools.getDriverInstance().vertexArrayAttachIndexBuffer(vao, buffer.buffer);
             GLVertexArray.this.attributes.add(new WeakReference<>(this.buffer));
             GLVertexArray.this.updateTimeUsed();
-            this.buffer.updateTimeUsed();
-            LOGGER.trace(GLOOP_MARKER, "############### End GLVertexArray Attach Index Buffer Task ###############");
+            this.buffer.updateTimeUsed();            
         }
     }
 
@@ -1103,17 +1032,6 @@ public class GLVertexArray extends GLObject {
         @SuppressWarnings("unchecked")
         @Override
         public void run() {
-            LOGGER.trace(GLOOP_MARKER, "############### Start GLVertexArray Attach Buffer Task ###############");
-            LOGGER.trace(GLOOP_MARKER, "\tAttaching buffer to GLVertexArray[{}]", getName());
-            LOGGER.trace(GLOOP_MARKER, "\tIndex: {}", index);
-            LOGGER.trace(GLOOP_MARKER, "\tVertex buffer: GLBuffer[{}]", buffer.getName());
-            LOGGER.trace(GLOOP_MARKER, "\tType: {}", type);
-            LOGGER.trace(GLOOP_MARKER, "\tSize: {}", size);
-            LOGGER.trace(GLOOP_MARKER, "\tNormalized: {}", normalized);
-            LOGGER.trace(GLOOP_MARKER, "\tStride: {}", stride);
-            LOGGER.trace(GLOOP_MARKER, "\tOffset: {}", offset);
-            LOGGER.trace(GLOOP_MARKER, "\tDivisor: {}", this.divisor);
-
             checkThread();
 
             if (!GLVertexArray.this.isValid()) {
@@ -1129,8 +1047,7 @@ public class GLVertexArray extends GLObject {
             GLVertexArray.this.buildInstructions.add(this);
             GLVertexArray.this.attributes.add(new WeakReference<>(this.buffer));
             GLVertexArray.this.updateTimeUsed();
-            this.buffer.updateTimeUsed();
-            LOGGER.trace(GLOOP_MARKER, "############### End GLVertexArray Attach Buffer Task ###############");
+            this.buffer.updateTimeUsed();            
         }
     }
 

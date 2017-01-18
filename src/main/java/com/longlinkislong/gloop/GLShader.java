@@ -229,9 +229,6 @@ public class GLShader extends GLObject {
         @SuppressWarnings({"rawtypes", "unchecked"})
         @Override
         public void run() {
-            LOGGER.trace(GLOOP_MARKER, "############### Start GLShader Compile Task ###############");
-            LOGGER.trace(GLOOP_MARKER, "\tShader Type: {}", GLShader.this.type);
-
             final Driver driver = GLTools.getDriverInstance();
 
             if (!GLShader.this.isValid()) {
@@ -244,10 +241,7 @@ public class GLShader extends GLObject {
                     throw new GLSLCompileException(info);
                 }
 
-                GLShader.this.updateTimeUsed();
-                LOGGER.trace(
-                        GLOOP_MARKER,
-                        "############### End GLShader Compile Task ###############");
+                GLShader.this.updateTimeUsed();            
             }
         }
     }
@@ -290,18 +284,13 @@ public class GLShader extends GLObject {
         @SuppressWarnings("unchecked")
         @Override
         public void run() {
-            LOGGER.trace(GLOOP_MARKER, "############### Start GLShader Delete Task ###############");
-            LOGGER.trace(GLOOP_MARKER, "\tDeleting GLShader[{}]", GLShader.this.getName());
-
             if (GLShader.this.isValid()) {
                 GLTools.getDriverInstance().shaderDelete(shader);
                 GLShader.this.lastUsedTime = 0L;
                 GLShader.this.shader = null;
             } else {
                 LOGGER.warn(GLOOP_MARKER, "Attempted to delete invalid GLShader!");
-            }
-
-            LOGGER.trace(GLOOP_MARKER, "############### End GLShader Delete Task ###############");
+            }            
         }
     }
 
@@ -333,27 +322,13 @@ public class GLShader extends GLObject {
         @SuppressWarnings("unchecked")
         @Override
         public Integer call() throws Exception {
-            LOGGER.trace(GLOOP_MARKER, "############### Start GLShader Parameter Query ###############");
-            LOGGER.trace(GLOOP_MARKER, "\tQuerying GLShader[{}]", getName());
-            LOGGER.trace(GLOOP_MARKER, "\tParameter: {}", this.pName);
-
             if (!GLShader.this.isValid()) {
                 throw new GLException.InvalidStateException("Invalid GLShader!");
             }
 
             final int res = GLTools.getDriverInstance().shaderGetParameterI(shader, pName.value);
-
-            LOGGER.trace(
-                    GLOOP_MARKER,
-                    "GLShader[{}].{} = {}",
-                    GLShader.this.getName(),
-                    this.pName,
-                    res);
-
-            GLShader.this.updateTimeUsed();
-            LOGGER.trace(
-                    GLOOP_MARKER,
-                    "############### End GLShader Parameter Query ###############");
+            
+            GLShader.this.updateTimeUsed();            
 
             return res;
         }
@@ -379,23 +354,13 @@ public class GLShader extends GLObject {
         @SuppressWarnings("unchecked")
         @Override
         public String call() throws Exception {
-            LOGGER.trace(GLOOP_MARKER, "############### Start GLShader Info Log Query ###############");
-            LOGGER.trace(GLOOP_MARKER, "\tQuerying GLShader[{}]", GLShader.this.getName());
-
             if (!GLShader.this.isValid()) {
                 throw new GLException.InvalidStateException("Invalid GLShader!");
             }
 
             final String infoLog = GLTools.getDriverInstance().shaderGetInfoLog(shader);
-
-            LOGGER.trace(
-                    GLOOP_MARKER,
-                    "GLShader[{}].infoLog = {}",
-                    GLShader.this.getName(),
-                    infoLog);
-
-            GLShader.this.updateTimeUsed();
-            LOGGER.trace(GLOOP_MARKER, "############### End GLShader Info Log Query ###############");
+            
+            GLShader.this.updateTimeUsed();            
             return infoLog;
         }
     }

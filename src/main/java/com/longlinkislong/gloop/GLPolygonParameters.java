@@ -370,15 +370,6 @@ public class GLPolygonParameters extends GLObject {
 
         @Override
         public void run() {
-            LOGGER.trace(GLOOP_MARKER, "############### Start GLPolygonParameters Apply Polygon Parameters Task ###############");
-            LOGGER.trace(GLOOP_MARKER, "\tApplying GLPolygonParameters[{}]", getName());
-            LOGGER.trace(GLOOP_MARKER, "\tPoint size: {}", pointSize);
-            LOGGER.trace(GLOOP_MARKER, "\tLine size: {}", lineSize);
-            LOGGER.trace(GLOOP_MARKER, "\tFront face: {}", frontFace);
-            LOGGER.trace(GLOOP_MARKER, "\tPolygon mode: {}", mode);
-            LOGGER.trace(GLOOP_MARKER, "\tPolygon offset factor{} Polygon offset units: {}", polygonOffsetFactor, polygonOffsetUnits);
-            LOGGER.trace(GLOOP_MARKER, "\tFace culling: {}, {}", GLPolygonParameters.this.cullEnabled, GLPolygonParameters.this.cullMode);
-
             final GLThread thread = GLThread
                     .getCurrent()
                     .orElseThrow(GLException::new);
@@ -393,7 +384,6 @@ public class GLPolygonParameters extends GLObject {
                     mode.value,
                     polygonOffsetFactor, polygonOffsetUnits);
 
-            LOGGER.trace(GLOOP_MARKER, "############### End GLPolygonParameters Apply Polygon Parameters Task ###############");
         }
     }
 }

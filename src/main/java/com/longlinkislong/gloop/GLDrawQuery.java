@@ -160,22 +160,15 @@ public class GLDrawQuery extends GLObject {
         @SuppressWarnings({"rawtypes", "unchecked"})
         @Override
         public void run() {
-            LOGGER.trace(GLOOP_MARKER, "############### Start DrawQueryTask ###############");
-            LOGGER.trace(GLOOP_MARKER, "\tApplying GLDrawQuery[{}]", GLDrawQuery.this.getName());
-            LOGGER.trace(GLOOP_MARKER, "\tConditional: {}", this.condition);
-            LOGGER.trace(GLOOP_MARKER, "\tDraw Task: {}", this.testDraw);
-
             if (!GLDrawQuery.this.isValid()) {
                 throw new GLException.InvalidStateException("Invalid GLDrawQuery!");
             }
 
             final Driver driver = GLTools.getDriverInstance();
-            
 
-            driver.drawQueryEnable(condition.value, query);            
+            driver.drawQueryEnable(condition.value, query);
             this.testDraw.run();
-            driver.drawQueryDisable(condition.value);            
-            LOGGER.trace(GLOOP_MARKER, "############### End DrawQueryTask ###############");
+            driver.drawQueryDisable(condition.value);
         }
     }
 
@@ -221,21 +214,15 @@ public class GLDrawQuery extends GLObject {
         @SuppressWarnings({"rawtypes", "unchecked"})
         @Override
         public void run() {
-            LOGGER.trace(GLOOP_MARKER, "############### Start GLDrawQuery ConditionTask ###############");
-            LOGGER.trace(GLOOP_MARKER, "\tApplying conditional GLDrawQuery[{}]", GLDrawQuery.this.getName());
-            LOGGER.trace(GLOOP_MARKER, "\tConditional: {}", this.mode);
-            LOGGER.trace(GLOOP_MARKER, "\tDraw task: {}", this.fullDraw);
-
             if (!GLDrawQuery.this.isValid()) {
                 throw new GLException.InvalidStateException("Invalid GLDrawQuery!");
             }
 
-            final Driver driver = GLTools.getDriverInstance();            
+            final Driver driver = GLTools.getDriverInstance();
 
-            driver.drawQueryBeginConditionalRender(query, mode.value);            
+            driver.drawQueryBeginConditionalRender(query, mode.value);
             this.fullDraw.run();
-            driver.drawQueryEndConditionRender();            
-            LOGGER.trace(GLOOP_MARKER, "############### End GLDrawQuery Condition Task ###############");
+            driver.drawQueryEndConditionRender();
         }
     }
 
@@ -243,18 +230,13 @@ public class GLDrawQuery extends GLObject {
 
         @Override
         public void run() {
-            LOGGER.trace(GLOOP_MARKER, "############### Start GLDrawQuery Init Task ###############");
-
             if (!GLDrawQuery.this.isValid()) {
                 throw new GLException.InvalidStateException("Invalid GLDrawQuery!");
             }
 
-            query = GLTools.getDriverInstance().drawQueryCreate();            
-            
-            GLDrawQuery.this.name = "id=" + query.hashCode();
+            query = GLTools.getDriverInstance().drawQueryCreate();
 
-            LOGGER.trace(GLOOP_MARKER, "Initialized GLDrawQuery[{}]", GLDrawQuery.this.name);
-            LOGGER.trace(GLOOP_MARKER, "############### End GLDrawQuery Init Task ###############");
+            GLDrawQuery.this.name = "id=" + query.hashCode();
         }
     }
 
@@ -263,16 +245,12 @@ public class GLDrawQuery extends GLObject {
         @SuppressWarnings("unchecked")
         @Override
         public void run() {
-            LOGGER.trace(GLOOP_MARKER, "############### Start GLDrawQuery Delete Task ###############");
-            LOGGER.trace(GLOOP_MARKER, "\tDeleting GLDrawQuery[{}]", GLDrawQuery.this.getName());
-
             if (!GLDrawQuery.this.isValid()) {
                 throw new GLException.InvalidStateException("Invalid GLDrawQuery!");
             }
 
             GLTools.getDriverInstance().drawQueryDelete(query);
             query = null;
-            LOGGER.trace(GLOOP_MARKER, "############### End GLDrawQuery Delete Task ###############");
         }
     }
 }

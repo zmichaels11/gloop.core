@@ -46,7 +46,7 @@ public class GLBuffer extends GLObject {
 
     private static final Marker GLOOP_MARKER = MarkerFactory.getMarker("GLOOP");
     private static final Logger LOGGER = LoggerFactory.getLogger("GLBuffer");
-    
+
     transient volatile Buffer buffer;
     private String name = "";
 
@@ -243,25 +243,17 @@ public class GLBuffer extends GLObject {
 
         @Override
         public void run() {
-            LOGGER.trace(GLOOP_MARKER, "############### Start GLBuffer Bind Uniform Task ###############");
-
             if (!GLBuffer.this.isValid()) {
                 throw new GLException("Invalid GLBuffer!");
             } else {
                 if (this.size == -1) {
-                    LOGGER.trace(GLOOP_MARKER, "\tBinding GLBuffer[{}] at uniform buffer binding: [{}]!", GLBuffer.this.getName(), this.binding);
-
                     GLTools.getDriverInstance().bufferBindUniform(buffer, this.binding);
                 } else {
-                    LOGGER.trace(GLOOP_MARKER, "\tBinding GLBuffer[{}],off={},size={} at uniform buffer binding: [{}]!", GLBuffer.this.getName(), this.offset, this.size, this.binding);
-
                     GLTools.getDriverInstance().bufferBindUniform(buffer, this.binding, this.offset, this.size);
                 }
 
                 GLBuffer.this.updateTimeUsed();
             }
-
-            LOGGER.trace(GLOOP_MARKER, "############### End GLBuffer Bind Uniform Task ###############");
         }
     }
 
@@ -317,8 +309,6 @@ public class GLBuffer extends GLObject {
 
         @Override
         public void run() {
-            LOGGER.trace(GLOOP_MARKER, "############### Start GLBuffer Bind Storage Task ###############");
-
             if (!GLBuffer.this.isValid()) {
                 throw new GLException("Invalid GLBuffer!");
             } else {
@@ -330,8 +320,6 @@ public class GLBuffer extends GLObject {
 
                 GLBuffer.this.updateTimeUsed();
             }
-
-            LOGGER.trace(GLOOP_MARKER, "############### End GLBuffer Bind Storage Task ###############");
         }
     }
 
@@ -345,19 +333,14 @@ public class GLBuffer extends GLObject {
 
         @Override
         public void run() {
-            LOGGER.trace(GLOOP_MARKER, "############### Start GLBuffer Init Task ###############");
-
             if (!GLBuffer.this.isValid()) {
                 buffer = GLTools.getDriverInstance().bufferCreate();
                 GLBuffer.this.name = "id=" + buffer.hashCode();
-
-                LOGGER.trace(GLOOP_MARKER, "Initialized GLBuffer[{}]!", GLBuffer.this.getName());
             } else {
                 throw new GLException("GLBuffer is already initialized!");
             }
 
             GLBuffer.this.updateTimeUsed();
-            LOGGER.trace(GLOOP_MARKER, "############### End GLBuffer Init Task ###############");
         }
     }
 
@@ -396,10 +379,6 @@ public class GLBuffer extends GLObject {
         @SuppressWarnings("unchecked")
         @Override
         public Integer call() throws Exception {
-            LOGGER.trace(GLOOP_MARKER, "############### Start GLBuffer Parameter Query ###############");
-            LOGGER.trace(GLOOP_MARKER, "\tQuerying parameter of GLBuffer[{}]", GLBuffer.this.getName());
-            LOGGER.trace(GLOOP_MARKER, "\tParameter name: {}", this.pName);
-
             if (!GLBuffer.this.isValid()) {
                 throw new GLException("Invalid GLBuffer!");
             }
@@ -407,9 +386,6 @@ public class GLBuffer extends GLObject {
             final int result = GLTools.getDriverInstance().bufferGetParameterI(buffer, this.pName.value);
 
             GLBuffer.this.updateTimeUsed();
-            LOGGER.trace(GLOOP_MARKER, "GLBuffer[{}].{} = {}!", GLBuffer.this.getName(), this.pName, result);
-            LOGGER.trace(GLOOP_MARKER, "############### End GLBuffer Parameter Query ###############");
-
             return result;
         }
 
@@ -441,16 +417,11 @@ public class GLBuffer extends GLObject {
         @SuppressWarnings("unchecked")
         @Override
         public void run() {
-            LOGGER.trace(GLOOP_MARKER, "############### Start GLBuffer Delete Task ###############");
-            LOGGER.trace(GLOOP_MARKER, "\tDeleting GLBuffer[{}]", GLBuffer.this.getName());
-
             if (GLBuffer.this.isValid()) {
                 GLTools.getDriverInstance().bufferDelete(buffer);
                 GLBuffer.this.lastUsedTime = 0L;
                 GLBuffer.this.buffer = null;
             }
-
-            LOGGER.trace(GLOOP_MARKER, "############### End GLBuffer Delete Task ###############");
         }
     }
 
@@ -523,18 +494,12 @@ public class GLBuffer extends GLObject {
         @SuppressWarnings("unchecked")
         @Override
         public void run() {
-            LOGGER.trace(GLOOP_MARKER, "############### Start GLBuffer Upload Task ###############");
-            LOGGER.trace(GLOOP_MARKER, "\tUploading data to GLBuffer[{}]", GLBuffer.this.getName());
-            LOGGER.trace(GLOOP_MARKER, "\tUploading {} bytes", this.data.remaining());
-            LOGGER.trace(GLOOP_MARKER, "\tSetting buffer usage hint: {}", this.usage);
-
             if (!GLBuffer.this.isValid()) {
                 throw new GLException("GLBuffer is invalid!");
             }
 
             GLTools.getDriverInstance().bufferSetData(buffer, data, this.usage.value);
             GLBuffer.this.updateTimeUsed();
-            LOGGER.trace(GLOOP_MARKER, "############### End GLBuffer Upload Task ###############");
         }
     }
 
@@ -625,19 +590,12 @@ public class GLBuffer extends GLObject {
         @SuppressWarnings("unchecked")
         @Override
         public void run() {
-            LOGGER.trace(GLOOP_MARKER, "############### Start GLBuffer Allocate Immutable Task ###############");
-            LOGGER.trace(GLOOP_MARKER, "\tApplying allocate to GLBuffer[{}]", GLBuffer.this.getName());
-            LOGGER.trace(GLOOP_MARKER, "\tAllocating {} bytes", this.size);
-            LOGGER.trace(GLOOP_MARKER, "\tBuffer storage bitfield: {}", this.flags);
-
             if (!GLBuffer.this.isValid()) {
                 throw new GLException("Invalid GLBuffer!");
             }
 
             GLTools.getDriverInstance().bufferAllocateImmutable(buffer, size, this.flags);
             GLBuffer.this.updateTimeUsed();
-
-            LOGGER.trace(GLOOP_MARKER, "############# End GLBuffer Allocate Immutable Task ##############");
         }
 
     }
@@ -683,18 +641,12 @@ public class GLBuffer extends GLObject {
         @SuppressWarnings("unchecked")
         @Override
         public void run() {
-            LOGGER.trace(GLOOP_MARKER, "############### Start GLBuffer Allocate Task ###############");
-            LOGGER.trace(GLOOP_MARKER, "\tApplying allocate on GLBuffer[{}]", GLBuffer.this.getName());
-            LOGGER.trace(GLOOP_MARKER, "\tAllocating {} bytes", this.size);
-            LOGGER.trace(GLOOP_MARKER, "\tSetting buffer usage hint: {}", this.usage);
-
             if (!GLBuffer.this.isValid()) {
                 throw new GLException("Invalid GLBuffer!");
             }
 
             GLTools.getDriverInstance().bufferAllocate(buffer, size, this.usage.value);
-            GLBuffer.this.updateTimeUsed();
-            LOGGER.trace(GLOOP_MARKER, "############### End GLBuffer Allocate Task ###############");
+            GLBuffer.this.updateTimeUsed();            
         }
 
     }
@@ -796,10 +748,6 @@ public class GLBuffer extends GLObject {
         @SuppressWarnings("unchecked")
         @Override
         public ByteBuffer call() throws Exception {
-            LOGGER.trace(GLOOP_MARKER, "############### Start GLBuffer Download Query ###############");
-            LOGGER.trace(GLOOP_MARKER, "\tDownloading GLBuffer[{}]", GLBuffer.this.getName());
-            LOGGER.trace(GLOOP_MARKER, "\tOffset: {} bytes", this.offset);
-
             if (!GLBuffer.this.isValid()) {
                 throw new GLException("Invalid GLBuffer!");
             }
@@ -813,12 +761,10 @@ public class GLBuffer extends GLObject {
             } else {
                 out = this.writeBuffer;
             }
-
-            LOGGER.trace(GLOOP_MARKER, "GLBuffer[{}]: download {} bytes", GLBuffer.this.name, out.capacity());
+            
             GLTools.getDriverInstance().bufferGetData(buffer, offset, out);
             GLBuffer.this.updateTimeUsed();
-            LOGGER.trace(GLOOP_MARKER, "############### End GLBuffer Download Query ###############");
-
+            
             return out;
         }
 
@@ -870,11 +816,6 @@ public class GLBuffer extends GLObject {
         @SuppressWarnings("unchecked")
         @Override
         public ByteBuffer call() throws Exception {
-            LOGGER.trace(GLOOP_MARKER, "############### Start GLBuffer Map Query ###############");
-            LOGGER.trace(GLOOP_MARKER, "\tMapping GLBuffer[{}]", GLBuffer.this.getName());
-            LOGGER.trace(GLOOP_MARKER, "\tOffset: {} bytes", this.offset);
-            LOGGER.trace(GLOOP_MARKER, "\tSize: {} bytes", this.length);
-
             if (!GLBuffer.this.isValid()) {
                 throw new GLException("Invalid GLBuffer!");
             }
@@ -888,8 +829,7 @@ public class GLBuffer extends GLObject {
                         buffer, offset, length, access);
             }
 
-            GLBuffer.this.updateTimeUsed();
-            LOGGER.trace(GLOOP_MARKER, "############### End GLBuffer Map Query ###############");
+            GLBuffer.this.updateTimeUsed();            
 
             return out;
         }
@@ -923,16 +863,12 @@ public class GLBuffer extends GLObject {
         @SuppressWarnings("unchecked")
         @Override
         public void run() {
-            LOGGER.trace(GLOOP_MARKER, "############### Start GLBuffer Unmap Task ###############");
-            LOGGER.trace(GLOOP_MARKER, "\tUnmapping GLBuffer[{}]", GLBuffer.this.getName());
-
             if (!GLBuffer.this.isValid()) {
                 throw new GLException("Invalid GLBuffer!");
             }
 
             GLTools.getDriverInstance().bufferUnmapData(buffer);
-            GLBuffer.this.updateTimeUsed();
-            LOGGER.trace(GLOOP_MARKER, "############### End GLBuffer Unmap Task ###############");
+            GLBuffer.this.updateTimeUsed();            
         }
     }
 
@@ -993,23 +929,14 @@ public class GLBuffer extends GLObject {
         @SuppressWarnings("unchecked")
         @Override
         public void run() {
-            LOGGER.trace(GLOOP_MARKER, "############### Start GLBuffer Copy Task ###############");
-            LOGGER.trace(GLOOP_MARKER, "\tSrc GLBuffer[{}]", this.src.getName());
-            LOGGER.trace(GLOOP_MARKER, "\tDest GLBUffer[{}]", this.dest.getName());
-            LOGGER.trace(GLOOP_MARKER, "\tSrc offset: {} bytes", this.srcOffset);
-            LOGGER.trace(GLOOP_MARKER, "\tDest offset: {} bytes", this.destOffset);
-            LOGGER.trace(GLOOP_MARKER, "\tSize: {} bytes", this.size);
-
             if (!src.isValid() || !dest.isValid()) {
                 throw new GLException("Invalid GLBuffer!");
             }
 
-            GLTools.getDriverInstance().bufferCopyData(src.buffer, srcOffset, dest.buffer, destOffset, size);
-            final GLThread thread = GLThread.getCurrent().get();
+            GLTools.getDriverInstance().bufferCopyData(src.buffer, srcOffset, dest.buffer, destOffset, size);            
 
             src.updateTimeUsed();
-            dest.updateTimeUsed();
-            LOGGER.trace(GLOOP_MARKER, "############### End GLBuffer Copy Task ###############");
+            dest.updateTimeUsed();            
         }
     }
 
@@ -1076,14 +1003,12 @@ public class GLBuffer extends GLObject {
         @SuppressWarnings("unchecked")
         @Override
         public void run() {
-            LOGGER.trace(GLOOP_MARKER, "############### Start GLBuffer InvalidateSubData Task ###############");
             if (!GLBuffer.this.isValid()) {
                 throw new GLException("Invalid GLBuffer!");
             }
 
             GLTools.getDriverInstance().bufferInvalidateRange(buffer, offset, length);
-            GLBuffer.this.updateTimeUsed();
-            LOGGER.trace(GLOOP_MARKER, "############### End GLBuffer InvalidateSubData Task ###############");
+            GLBuffer.this.updateTimeUsed();            
         }
     }
 
@@ -1106,15 +1031,12 @@ public class GLBuffer extends GLObject {
         @SuppressWarnings("unchecked")
         @Override
         public void run() {
-            LOGGER.trace(GLOOP_MARKER, "############### Start GLBuffer Invalidate Task ###############");
-
             if (!GLBuffer.this.isValid()) {
                 throw new GLException("Invalid GLBuffer!");
             }
 
             GLTools.getDriverInstance().bufferInvalidateData(buffer);
             GLBuffer.this.updateTimeUsed();
-            LOGGER.trace(GLOOP_MARKER, "############### End GLBuffer Invalidate Task ###############");
         }
     }
 

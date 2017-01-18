@@ -276,17 +276,12 @@ public class GLTexture extends GLObject {
         @SuppressWarnings("unchecked")
         @Override
         public void run() {
-            LOGGER.trace(GLOOP_MARKER, "############### Start GLTexture Bind Task ###############");
-            LOGGER.trace(GLOOP_MARKER, "\tBinding GLTexture[{}]", getName());
-            LOGGER.trace(GLOOP_MARKER, "\tActive texture: {}", this.activeTexture);
-
             if (!GLTexture.this.isValid()) {
                 throw new GLException.InvalidStateException("GLTexture is not valid! You must allocate a texture prior to binding it.");
             }
 
             GLTools.getDriverInstance().textureBind(texture, activeTexture);
-            GLTexture.this.updateTimeUsed();
-            LOGGER.trace(GLOOP_MARKER, "############### End GLTexture Bind Task ###############");
+            GLTexture.this.updateTimeUsed();            
         }
     }
 
@@ -311,9 +306,6 @@ public class GLTexture extends GLObject {
         @SuppressWarnings("unchecked")
         @Override
         public void run() {
-            LOGGER.trace(GLOOP_MARKER, "############### Start GLTexture Delete Task ###############");
-            LOGGER.trace(GLOOP_MARKER, "\tDeleting GLTexture[{}]", getName());
-
             if (GLTexture.this.isValid()) {
                 GLTools.getDriverInstance().textureDelete(texture);
                 GLTexture.this.lastUsedTime = 0L;
@@ -324,10 +316,6 @@ public class GLTexture extends GLObject {
             } else {
                 LOGGER.warn(GLOOP_MARKER, "Attempted to delete invalid GLTexture!");
             }
-
-            LOGGER.trace(
-                    GLOOP_MARKER,
-                    "############### End GLTexture Delete Task ###############");
         }
     }
 
@@ -464,13 +452,6 @@ public class GLTexture extends GLObject {
         @SuppressWarnings("unchecked")
         @Override
         public void run() {
-            LOGGER.trace(GLOOP_MARKER, "############### Start GLTexture Update Image 3D Task ###############");
-            LOGGER.trace(GLOOP_MARKER, "\tUpdating GLTexture[{}]", getName());
-            LOGGER.trace(GLOOP_MARKER, "\tMipmap level: {}", level);
-            LOGGER.trace(GLOOP_MARKER, "\tOffsets: <{}, {}, {}>", xOffset, yOffset, zOffset);
-            LOGGER.trace(GLOOP_MARKER, "\tSize: <{}, {}, {}>", width, height, depth);
-            LOGGER.trace(GLOOP_MARKER, "\tFormat: {}", format);
-            LOGGER.trace(GLOOP_MARKER, "\tType: {}", this.type);
 
             if (!GLTexture.this.isValid()) {
                 throw new GLException.InvalidStateException("GLTexture is not valid!");
@@ -484,7 +465,6 @@ public class GLTexture extends GLObject {
                     format.value, type.value, data);
 
             GLTexture.this.updateTimeUsed();
-            LOGGER.trace(GLOOP_MARKER, "############### End GLTexture Update Image 3D Task ###############");
         }
     }
 
@@ -594,14 +574,6 @@ public class GLTexture extends GLObject {
         @SuppressWarnings("unchecked")
         @Override
         public void run() {
-            LOGGER.trace(GLOOP_MARKER, "############### Start GLTexture Update Image 2D Task ###############");
-            LOGGER.trace(GLOOP_MARKER, "\tUpdating GLTexture: {}", getName());
-            LOGGER.trace(GLOOP_MARKER, "\tMipmap level: {}", level);
-            LOGGER.trace(GLOOP_MARKER, "\tOffsets: <{}, {}>", xOffset, yOffset);
-            LOGGER.trace(GLOOP_MARKER, "\tSize: <{}, {}>", width, height);
-            LOGGER.trace(GLOOP_MARKER, "\tFormat: {}", format);
-            LOGGER.trace(GLOOP_MARKER, "\tType: {}", type);
-
             if (!GLTexture.this.isValid()) {
                 throw new GLException.InvalidStateException("GLTexture is not valid!");
             }
@@ -615,9 +587,6 @@ public class GLTexture extends GLObject {
                     data);
 
             GLTexture.this.updateTimeUsed();
-            LOGGER.trace(
-                    GLOOP_MARKER,
-                    "############### End GLTexture Update Image 2D Task ###############");
         }
 
     }
@@ -716,14 +685,6 @@ public class GLTexture extends GLObject {
         @SuppressWarnings("unchecked")
         @Override
         public void run() {
-            LOGGER.trace(GLOOP_MARKER, "############### Start GLTexture Update 1D Task ###############");
-            LOGGER.trace(GLOOP_MARKER, "\tUpdating GLTexture[{}]", getName());
-            LOGGER.trace(GLOOP_MARKER, "\tMipmap level: {}", level);
-            LOGGER.trace(GLOOP_MARKER, "\tOffset: {}", xOffset);
-            LOGGER.trace(GLOOP_MARKER, "\tWidth: {}", width);
-            LOGGER.trace(GLOOP_MARKER, "\tFormat: {}", format);
-            LOGGER.trace(GLOOP_MARKER, "\tType: {}", this.type);
-
             if (!GLTexture.this.isValid()) {
                 throw new GLException.InvalidStateException("GLTexture is not valid!");
             }
@@ -736,7 +697,6 @@ public class GLTexture extends GLObject {
                     format.value, type.value, data);
 
             GLTexture.this.updateTimeUsed();
-            LOGGER.trace(GLOOP_MARKER, "############### End GLTexture Update 1D Task ###############");
         }
     }
 
@@ -823,11 +783,6 @@ public class GLTexture extends GLObject {
 
         @Override
         public void run() {
-            LOGGER.trace(GLOOP_MARKER, "############### Start GLTexture Allocate Image 3D Task ###############");
-            LOGGER.trace(GLOOP_MARKER, "\tMipmap Levels: {}", mipmaps);
-            LOGGER.trace(GLOOP_MARKER, "\tInternal texture format: {}", internalFormat);
-            LOGGER.trace(GLOOP_MARKER, "\tSize: <{}, {}, {}>", this.width, this.height, this.depth);
-
             if (!GLTexture.this.isValid()) {
                 throw new GLException.InvalidStateException("GLTexture is not valid!");
             }
@@ -837,9 +792,6 @@ public class GLTexture extends GLObject {
             GLTexture.this.setAttributes(GLTextureParameters.DEFAULT_PARAMETERS);
             GLTexture.this.name = "id=" + texture.hashCode();
             GLTexture.this.updateTimeUsed();
-
-            LOGGER.trace(GLOOP_MARKER, "Initialized GLTexture[{}]!", GLTexture.this.name);
-            LOGGER.trace(GLOOP_MARKER, "############### End GLTexture Allocate Image 3D Task ###############");
         }
     }
 
@@ -921,11 +873,6 @@ public class GLTexture extends GLObject {
 
         @Override
         public void run() {
-            LOGGER.trace(GLOOP_MARKER, "############### Start GLTexture Allocate Image 2D Task ###############");
-            LOGGER.trace(GLOOP_MARKER, "\tMipmap Levels: {}", mipmaps);
-            LOGGER.trace(GLOOP_MARKER, "\tInternal texture format: {}", internalFormat);
-            LOGGER.trace(GLOOP_MARKER, "\tSize: <{}, {}>", this.width, this.height);
-
             if (GLTexture.this.isValid()) {
                 throw new GLException.InvalidStateException("GLTexture has already been allocated!");
             }
@@ -935,9 +882,6 @@ public class GLTexture extends GLObject {
             GLTexture.this.setAttributes(GLTextureParameters.DEFAULT_PARAMETERS);
             GLTexture.this.name = "id=" + texture.hashCode();
             GLTexture.this.updateTimeUsed();
-
-            LOGGER.trace(GLOOP_MARKER, "Initialized GLTexture[{}]!", GLTexture.this.getName());
-            LOGGER.trace(GLOOP_MARKER, "############### End GLTexture Allocate 2D Task ###############");
         }
     }
 
@@ -1012,11 +956,6 @@ public class GLTexture extends GLObject {
 
         @Override
         public void run() {
-            LOGGER.trace(GLOOP_MARKER, "############### Start GLTexture Allocate Image 1D Task ###############");
-            LOGGER.trace(GLOOP_MARKER, "\tMipmap levels: {}", mipmaps);
-            LOGGER.trace(GLOOP_MARKER, "\tInternal texture format: {}", internalFormat);
-            LOGGER.trace(GLOOP_MARKER, "\tWidth: {}", this.width);
-
             if (GLTexture.this.isValid()) {
                 throw new GLException.InvalidStateException("GLTexture has already been allocated!");
             }
@@ -1026,9 +965,6 @@ public class GLTexture extends GLObject {
             GLTexture.this.setAttributes(GLTextureParameters.DEFAULT_PARAMETERS);
             GLTexture.this.name = "id=" + texture.hashCode();
             GLTexture.this.updateTimeUsed();
-
-            LOGGER.trace(GLOOP_MARKER, "Initialized GLTexture[{}]!", GLTexture.this.getName());
-            LOGGER.trace(GLOOP_MARKER, "############### End GLTexture Allocate Image 1D Task ###############");
         }
     }
 
@@ -1053,16 +989,12 @@ public class GLTexture extends GLObject {
         @SuppressWarnings("unchecked")
         @Override
         public void run() {
-            LOGGER.trace(GLOOP_MARKER, "############### Start GLTexture Generate Mipmap Task ###############");
-            LOGGER.trace(GLOOP_MARKER, "\tGenerating mipmaps for GLTexture[{}]", getName());
-
             if (!GLTexture.this.isValid()) {
                 throw new GLException.InvalidStateException("Invalid GLTexture object!");
             }
 
             GLTools.getDriverInstance().textureGenerateMipmap(texture);
-            GLTexture.this.updateTimeUsed();
-            LOGGER.trace(GLOOP_MARKER, "############### End GLTexture Generate Mipmap Task ###############");
+            GLTexture.this.updateTimeUsed();            
         }
 
     }
@@ -1112,14 +1044,6 @@ public class GLTexture extends GLObject {
 
         @Override
         public void run() {
-            LOGGER.trace(GLOOP_MARKER, "############### Start GLTexture Set Pixel Buffer 2D Task ###############");
-            LOGGER.trace(GLOOP_MARKER, "\tSetting pixel buffer of GLTexture[{}]", getName());
-            LOGGER.trace(GLOOP_MARKER, "\tMipmap level: {}", level);
-            LOGGER.trace(GLOOP_MARKER, "\tOffsets: <{}, {}>", xOffset, yOffset);
-            LOGGER.trace(GLOOP_MARKER, "\tSize: <{}, {}>", width, height);
-            LOGGER.trace(GLOOP_MARKER, "\tFormat: {}", format);
-            LOGGER.trace(GLOOP_MARKER, "\tType: {}", type);
-
             if (!GLTexture.this.isValid()) {
                 throw new GLException.InvalidValueException("Invalid GLTexture!");
             } else if (!this.buffer.isValid()) {
@@ -1144,12 +1068,7 @@ public class GLTexture extends GLObject {
         }
 
         @Override
-        public void run() {
-            LOGGER.trace(GLOOP_MARKER, "############### Start GLTexture Set Texture Buffer Task ###############");
-            LOGGER.trace(GLOOP_MARKER, "\tSetting texture buffer for GLTexture[{}]", getName());
-            LOGGER.trace(GLOOP_MARKER, "\tTexture buffer: GLBuffer[{}]", buffer.getName());
-            LOGGER.trace(GLOOP_MARKER, "\tFormat: {}", this.internalFormat);
-
+        public void run() {            
             throw new UnsupportedOperationException("not yet implemented.");            
         }
     }
@@ -1189,10 +1108,6 @@ public class GLTexture extends GLObject {
         @SuppressWarnings({"rawtypes", "unchecked"})
         @Override
         public void run() {
-            LOGGER.trace(GLOOP_MARKER, "############### Start GLTexture Set Attributes Task ###############");
-            LOGGER.trace(GLOOP_MARKER, "\tSetting attributes of GLTexture[{}]", getName());
-            LOGGER.trace(GLOOP_MARKER, "\tAttributes: GLTextureParameters[{}]", this.params.getName());
-
             if (!GLTexture.this.isValid()) {
                 throw new GLException("Invalid GLTexture! GLTexture must be allocated prior to setting attributes.");
             }
@@ -1219,8 +1134,7 @@ public class GLTexture extends GLObject {
                 GLTexture.this.vpageDepth = driver.textureGetPageDepth(texture);
             }
 
-            GLTexture.this.updateTimeUsed();
-            LOGGER.trace(GLOOP_MARKER, "############### End GLTexture Set Attributes Task ###############");
+            GLTexture.this.updateTimeUsed();            
         }
     }
 
@@ -1248,17 +1162,13 @@ public class GLTexture extends GLObject {
 
         @Override
         public Integer call() throws Exception {
-            LOGGER.trace(GLOOP_MARKER, "############### Start GLTexture Max Texture Unit Query ###############");
-
             if (this.checked) {
                 return this.maxUnits;
             }
 
             this.maxUnits = GLTools.getDriverInstance().textureGetMaxBoundTextures();
 
-            assert this.maxUnits > 0;
-
-            LOGGER.trace(GLOOP_MARKER, "############### End GLTexture Max Texture Unit Query ###############");
+            assert this.maxUnits > 0;            
 
             return this.maxUnits;
         }
@@ -1294,15 +1204,11 @@ public class GLTexture extends GLObject {
 
         @Override
         public Integer call() throws Exception {
-            LOGGER.trace(GLOOP_MARKER, "############### Start GLTexture Max Texture Size Query ###############");
-
             if (this.checked) {
                 return this.maxSize;
             }
 
             this.maxSize = GLTools.getDriverInstance().textureGetMaxSize();
-
-            LOGGER.trace(GLOOP_MARKER, "############### End GLTexture Max Texture Size Query ###############");
 
             return this.maxSize;
         }
@@ -1528,20 +1434,12 @@ public class GLTexture extends GLObject {
         @SuppressWarnings("unchecked")
         @Override
         public ByteBuffer call() throws Exception {
-            LOGGER.trace(GLOOP_MARKER, "############### Start GLTexture Download Image Query ###############");
-            LOGGER.trace(GLOOP_MARKER, "\tDownloading GLTexture[{}]", getName());
-            LOGGER.trace(GLOOP_MARKER, "\tMipmap level: {}", level);
-            LOGGER.trace(GLOOP_MARKER, "\tFormat: {}", format);
-            LOGGER.trace(GLOOP_MARKER, "\tType: {}", type);
-            LOGGER.trace(GLOOP_MARKER, "\tBuffer size: {} bytes", this.bufferSize);
-
             if (!GLTexture.this.isValid()) {
                 throw new GLException("Invalid GLTexture!");
             }
 
             GLTools.getDriverInstance().textureGetData(texture, level, format.value, type.value, buffer);
-            GLTexture.this.updateTimeUsed();
-            LOGGER.trace(GLOOP_MARKER, "############### End GLTexture Download Image Query ###############");
+            GLTexture.this.updateTimeUsed();            
 
             return this.buffer; // does this need flip?
         }
@@ -1582,18 +1480,13 @@ public class GLTexture extends GLObject {
         @SuppressWarnings("unchecked")
         @Override
         public void run() {
-            LOGGER.trace(GLOOP_MARKER,
-                    "############### Begin GLTexture Invalidate Task ###############");
-            LOGGER.trace(GLOOP_MARKER, "Mipmap level: {}", this.level);
-
             if (!GLTexture.this.isValid()) {
                 throw new GLException("Invalid GLTexture!");
             } else {
                 GLTools.getDriverInstance().textureInvalidateData(texture, level);
             }
 
-            GLTexture.this.updateTimeUsed();
-            LOGGER.trace(GLOOP_MARKER, "############### End GLTexture Invalidate Task ###############");
+            GLTexture.this.updateTimeUsed();            
         }
     }
 
