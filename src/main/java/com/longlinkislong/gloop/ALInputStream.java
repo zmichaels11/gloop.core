@@ -168,12 +168,10 @@ public class ALInputStream implements Closeable {
                     return this;
                 }
             };
-        }
-
-        LOGGER.trace(MARKER, "streaming {} bytes", readCount);
+        }        
         
         final ByteBuffer readBuffer = ByteBuffer.wrap(inBuffer).order(this.byteOrder);
-        final boolean useTempBuffer = readCount > TEMP_BUFFER_SIZE;
+        final boolean useTempBuffer = readCount < TEMP_BUFFER_SIZE;
         
         if (useTempBuffer) {
             outBuffer = TEMP_BUFFERS.get();
@@ -186,8 +184,6 @@ public class ALInputStream implements Closeable {
             final ShortBuffer src = readBuffer.asShortBuffer();
             final ShortBuffer dst = outBuffer.asShortBuffer();
 
-            LOGGER.trace("dst: {}", dst);
-            LOGGER.trace("src: {}", src);
             for (int i = 0; i < readCount; i += 2) {
                 dst.put(src.get());
             }
