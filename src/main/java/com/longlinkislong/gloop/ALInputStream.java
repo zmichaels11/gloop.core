@@ -156,8 +156,7 @@ public class ALInputStream implements Closeable {
      * InputStream.
      * @since 16.03.21
      */
-    public void stream(final ALBuffer buffer) throws IOException {
-        final boolean useTempBuffer = this.bufferSize > TEMP_BUFFER_SIZE;
+    public void stream(final ALBuffer buffer) throws IOException {        
         final ByteBuffer outBuffer;        
         final byte[] inBuffer = new byte[bufferSize];
         final int readCount = this.ain.read(inBuffer, 0, this.bufferSize);
@@ -171,20 +170,25 @@ public class ALInputStream implements Closeable {
             };
         }
 
+        LOGGER.trace(MARKER, "streaming {} bytes", readCount);
+        
         final ByteBuffer readBuffer = ByteBuffer.wrap(inBuffer).order(this.byteOrder);
+        final boolean useTempBuffer = readCount > TEMP_BUFFER_SIZE;
         
         if (useTempBuffer) {
             outBuffer = TEMP_BUFFERS.get();
             outBuffer.clear();            
         } else {
-            outBuffer = MemoryUtil.memAlloc(this.bufferSize).order(ByteOrder.nativeOrder());
+            outBuffer = MemoryUtil.memAlloc(readCount).order(ByteOrder.nativeOrder());
         }
 
         if (this.is16bit) {
             final ShortBuffer src = readBuffer.asShortBuffer();
             final ShortBuffer dst = outBuffer.asShortBuffer();
 
-            dst.put(src);
+            for (int i = 0; i < readCount; i += 2) {
+                dst.put(src.get());
+            }
         } else {
             outBuffer.put(readBuffer);
         }
