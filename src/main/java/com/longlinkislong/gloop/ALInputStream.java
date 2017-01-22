@@ -177,7 +177,7 @@ public class ALInputStream implements Closeable {
         
         if (useTempBuffer) {
             outBuffer = TEMP_BUFFERS.get();
-            outBuffer.clear();            
+            outBuffer.clear();                   
         } else {
             outBuffer = MemoryUtil.memAlloc(readCount).order(ByteOrder.nativeOrder());
         }
@@ -186,6 +186,8 @@ public class ALInputStream implements Closeable {
             final ShortBuffer src = readBuffer.asShortBuffer();
             final ShortBuffer dst = outBuffer.asShortBuffer();
 
+            LOGGER.trace("dst: {}", dst);
+            LOGGER.trace("src: {}", src);
             for (int i = 0; i < readCount; i += 2) {
                 dst.put(src.get());
             }
