@@ -129,7 +129,7 @@ public class ALInputStream implements Closeable {
 
         final int bytesPerSecond = channels * (sampleSize / 8) * this.sampleRate;
 
-        this.bufferSize = bytesPerSecond * ms / 1000;
+        this.bufferSize = bytesPerSecond / 1000 * ms;
         LOGGER.trace(MARKER, "Buffer Size: {} (channels: {} sampleSize: {} sampleRate: {} ms: {})", bufferSize, channels, sampleSize, sampleRate, ms);
     }
 
@@ -175,6 +175,7 @@ public class ALInputStream implements Closeable {
         
         if (useTempBuffer) {
             outBuffer = TEMP_BUFFERS.get();
+            outBuffer.clear();            
         } else {
             outBuffer = MemoryUtil.memAlloc(this.bufferSize).order(ByteOrder.nativeOrder());
         }
