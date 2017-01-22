@@ -158,20 +158,11 @@ public class ALInputStream implements Closeable {
      */
     public void stream(final ALBuffer buffer) throws IOException {
         final boolean useTempBuffer = this.bufferSize > TEMP_BUFFER_SIZE;
-        final ByteBuffer outBuffer;
-
-        if (useTempBuffer) {
-            outBuffer = TEMP_BUFFERS.get();
-        } else {
-            outBuffer = MemoryUtil.memAlloc(this.bufferSize).order(ByteOrder.nativeOrder());
-        }
-
+        final ByteBuffer outBuffer;        
         final byte[] inBuffer = new byte[bufferSize];
         final int readCount = this.ain.read(inBuffer, 0, this.bufferSize);
 
-        if (readCount == -1) {
-            MemoryUtil.memFree(outBuffer);
-
+        if (readCount == -1) {           
             throw new EOFException("End of stream reached!") {
                 @Override
                 public Throwable fillInStackTrace() {
@@ -181,6 +172,12 @@ public class ALInputStream implements Closeable {
         }
 
         final ByteBuffer readBuffer = ByteBuffer.wrap(inBuffer).order(this.byteOrder);
+        
+        if (useTempBuffer) {
+            outBuffer = TEMP_BUFFERS.get();
+        } else {
+            outBuffer = MemoryUtil.memAlloc(this.bufferSize).order(ByteOrder.nativeOrder());
+        }
 
         if (this.is16bit) {
             final ShortBuffer src = readBuffer.asShortBuffer();
