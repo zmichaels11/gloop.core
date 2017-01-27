@@ -32,6 +32,8 @@ import java.util.Objects;
 import java.util.PriorityQueue;
 import java.util.Queue;
 import java.util.WeakHashMap;
+import java.util.concurrent.atomic.AtomicBoolean;
+import org.lwjgl.openal.AL10;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.slf4j.Marker;
@@ -55,7 +57,7 @@ public class ALSource extends ALObject {
     private final GLVec3F position = GLVec3F.create().asStaticVec();
     private final GLVec3F velocity = GLVec3F.create().asStaticVec();
     private boolean isLooping = false;
-    private boolean isPlaying = false;
+    private final AtomicBoolean isPlaying = new AtomicBoolean(false);
     private float referenceDistance = 1f;
     private float rolloffFactor = 1f;
     private float maxDistance = Float.MAX_VALUE;
@@ -716,7 +718,7 @@ public class ALSource extends ALObject {
      * @since 16.03.21
      */
     public boolean isPlaying() {
-        return ALSource.this.isPlaying;
+        return ALSource.this.isPlaying.get();
     }
 
     /**
@@ -739,7 +741,7 @@ public class ALSource extends ALObject {
         @Override
         public void run() {
             if (isValid()) {
-                ALSource.this.isPlaying = true;
+                ALSource.this.isPlaying.set(true);
                 ALTools.getDriverInstance().sourcePlay(source);
             } else {
                 throw new ALException.InvalidStateException("Invalid source!");
@@ -838,6 +840,14 @@ public class ALSource extends ALObject {
                 for (ALBuffer buffer : buffers) {
                     if (buffer.isValid()) {
                         ALTools.getDriverInstance().sourceEnqueueBuffer(source, buffer.buffer);
+
+                        // restart the source if it stopped itself due to underflow
+                        if (ALSource.this.isPlaying.get()) {
+                            if (ALTools.getDriverInstance().sourceGetState(source) == AL10.AL_STOPPED) {
+                                LOGGER.warn("Buffer underflow detected; restarting sound!");
+                                ALTools.getDriverInstance().sourcePlay(source);
+                            }
+                        }
                     } else {
                         throw new ALException.InvalidStateException("Invalid ALBuffer!");
                     }
