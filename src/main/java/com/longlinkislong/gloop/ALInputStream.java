@@ -25,6 +25,7 @@
  */
 package com.longlinkislong.gloop;
 
+import java.io.ByteArrayOutputStream;
 import java.io.Closeable;
 import java.io.EOFException;
 import java.io.IOException;
@@ -127,10 +128,15 @@ public class ALInputStream implements Closeable {
         this.byteOrder = fmt.isBigEndian() ? ByteOrder.BIG_ENDIAN : ByteOrder.LITTLE_ENDIAN;
         this.sampleRate = (int) fmt.getSampleRate();
 
-        final int bytesPerSecond = channels * (sampleSize / 8) * this.sampleRate;
+        if (ms == -1) {
+            this.bufferSize = -1;
+            LOGGER.trace(MARKER, "Buffer size: -1 (channels: {} sampleSize: {} sampleRate: {} ms: -1)", channels, sampleSize, sampleRate);
+        } else {
+            final int bytesPerSecond = channels * (sampleSize / 8) * this.sampleRate;
 
-        this.bufferSize = (bytesPerSecond / 1000 * ms);
-        LOGGER.trace(MARKER, "Buffer Size: {} (channels: {} sampleSize: {} sampleRate: {} ms: {})", bufferSize, channels, sampleSize, sampleRate, ms);
+            this.bufferSize = (bytesPerSecond / 1000 * ms);
+            LOGGER.trace(MARKER, "Buffer Size: {} (channels: {} sampleSize: {} sampleRate: {} ms: {})", bufferSize, channels, sampleSize, sampleRate, ms);
+        }
     }
 
     @Override
@@ -149,6 +155,71 @@ public class ALInputStream implements Closeable {
      * @since 16.03.21
      */
     public void stream(final ALBuffer buffer) throws IOException {
+        if (this.bufferSize == -1) {
+            this.streamPrivileged(buffer);
+        } else {
+            this.streamNormal(buffer);
+        }
+    }
+
+    private boolean hasReadPrivileged = false;
+
+    private void streamPrivileged(final ALBuffer buffer) throws IOException {
+        // enforce that this method can only be read once.
+        if (hasReadPrivileged) {
+            throw new EOFException("End of stream reached!") {
+                @Override
+                public Throwable fillInStackTrace() {
+                    return this;
+                }
+            };
+        } else {
+            hasReadPrivileged = true;
+        }
+        
+        final byte[] inBuffer = new byte[8 * 1024];
+        final ByteArrayOutputStream bOut = new ByteArrayOutputStream(1024 * 1024); //1MiB
+        int readCount;
+
+        while ((readCount = this.ain.read(inBuffer)) != -1) {
+            bOut.write(inBuffer, 0, readCount);
+
+        }
+
+        final int size = bOut.size();
+        final int adjustedSize;
+        
+        if (size == 0) {
+            buffer.upload(this.format, MemoryUtil.memAlloc(0), this.sampleRate);
+            return;
+        } else if (size % 2 == 0) {
+            adjustedSize = size;
+        } else {
+            adjustedSize = size - 1;
+        }
+        
+        final ByteBuffer readBuffer = ByteBuffer.wrap(bOut.toByteArray()).order(this.byteOrder);
+        final ByteBuffer writeBuffer = MemoryUtil.memAlloc(adjustedSize).order(ByteOrder.nativeOrder());
+        
+        if (this.is16bit) {
+            final ShortBuffer src = readBuffer.asShortBuffer();
+            final ShortBuffer dst = writeBuffer.asShortBuffer();
+            
+            for (int i = 0; i < adjustedSize; i += 2) {
+                dst.put(src.get());
+            }
+        } else {
+            writeBuffer.put(readBuffer);
+        }
+        
+        writeBuffer.position(0).limit(adjustedSize);
+        
+        buffer.upload(this.format, writeBuffer, this.sampleRate);
+        
+        ALTask.create(() -> MemoryUtil.memFree(writeBuffer)).alRun();
+    }
+
+    private void streamNormal(final ALBuffer buffer) throws IOException {
         final byte[] inBuffer = new byte[bufferSize];
         final int readCount = this.ain.read(inBuffer, 0, this.bufferSize);
 
@@ -160,7 +231,8 @@ public class ALInputStream implements Closeable {
                 }
             };
         } else if (readCount == 0) {
-            // somehow nothing happened...
+            // somehow nothing happened; upload an empty buffer and exit                        
+            buffer.upload(this.format, MemoryUtil.memAlloc(0), this.sampleRate);
             return;
         }
 
