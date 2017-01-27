@@ -129,17 +129,9 @@ public class ALInputStream implements Closeable {
 
         final int bytesPerSecond = channels * (sampleSize / 8) * this.sampleRate;
 
-        this.bufferSize = bytesPerSecond / 1000 * ms;
+        this.bufferSize = (bytesPerSecond / 1000 * ms);
         LOGGER.trace(MARKER, "Buffer Size: {} (channels: {} sampleSize: {} sampleRate: {} ms: {})", bufferSize, channels, sampleSize, sampleRate, ms);
     }
-
-    private static final int TEMP_BUFFER_SIZE = 16 * 1024;
-    private static final ThreadLocal<ByteBuffer> TEMP_BUFFERS = new ThreadLocal<ByteBuffer>() {
-        @Override
-        protected ByteBuffer initialValue() {
-            return MemoryUtil.memAlloc(TEMP_BUFFER_SIZE).order(ByteOrder.nativeOrder());
-        }
-    };
 
     @Override
     public void close() throws IOException {
@@ -156,29 +148,24 @@ public class ALInputStream implements Closeable {
      * InputStream.
      * @since 16.03.21
      */
-    public void stream(final ALBuffer buffer) throws IOException {        
-        final ByteBuffer outBuffer;        
+    public void stream(final ALBuffer buffer) throws IOException {
         final byte[] inBuffer = new byte[bufferSize];
         final int readCount = this.ain.read(inBuffer, 0, this.bufferSize);
 
-        if (readCount == -1) {           
+        if (readCount == -1) {
             throw new EOFException("End of stream reached!") {
                 @Override
                 public Throwable fillInStackTrace() {
                     return this;
                 }
             };
-        }        
-        
-        final ByteBuffer readBuffer = ByteBuffer.wrap(inBuffer).order(this.byteOrder);
-        final boolean useTempBuffer = readCount < TEMP_BUFFER_SIZE;
-        
-        if (useTempBuffer) {
-            outBuffer = TEMP_BUFFERS.get();
-            outBuffer.clear();                   
-        } else {
-            outBuffer = MemoryUtil.memAlloc(readCount).order(ByteOrder.nativeOrder());
+        } else if (readCount == 0) {
+            // somehow nothing happened...
+            return;
         }
+
+        final ByteBuffer readBuffer = ByteBuffer.wrap(inBuffer).order(this.byteOrder);
+        final ByteBuffer outBuffer = MemoryUtil.memAlloc(readCount).order(ByteOrder.nativeOrder());
 
         if (this.is16bit) {
             final ShortBuffer src = readBuffer.asShortBuffer();
@@ -191,11 +178,14 @@ public class ALInputStream implements Closeable {
             outBuffer.put(readBuffer);
         }
 
-        outBuffer.position(0).limit(readCount);
+        if (readCount % 2 == 1) {
+            // skip the last byte if we somehow read an odd amount of bytes 
+            outBuffer.position(0).limit(readCount - 1);
+        } else {
+            outBuffer.position(0).limit(readCount);
+        }
         buffer.upload(this.format, outBuffer, this.sampleRate);
 
-        if (!useTempBuffer) {
-            ALTask.create(() -> MemoryUtil.memFree(outBuffer)).alRun(); // free on the OpenAL thread
-        }
+        ALTask.create(() -> MemoryUtil.memFree(outBuffer)).alRun(); // free on the OpenAL thread
     }
 }
