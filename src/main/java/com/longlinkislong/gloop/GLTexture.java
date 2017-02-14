@@ -55,12 +55,7 @@ public class GLTexture extends GLObject {
     private volatile int height = 0;
     private volatile int depth = 0;
 
-    private volatile boolean isSparse;
     private String name = "";
-
-    private volatile int vpageWidth;
-    private volatile int vpageHeight;
-    private volatile int vpageDepth;
 
     private GLTextureInternalFormat internalFormat;
 
@@ -79,53 +74,6 @@ public class GLTexture extends GLObject {
         }
 
         return this.internalFormat;
-    }
-
-    /**
-     * Retrieves the virtual page width. This only has meaningful data if
-     * GL_ARB_sparse_texture is supported and the texture was allocated as a
-     * sparse texture.
-     *
-     * @return the width of the virtual page.
-     * @since 16.01.05
-     */
-    public int getVirtualPageWidth() {
-        return this.vpageWidth;
-    }
-
-    /**
-     * Retrieves the virtual page height. This only has meaningful data if
-     * GL_ARB_sparse_texture is supported and the texture was allocated as a
-     * sparse texture.
-     *
-     * @return the height of the virtual page.
-     * @since 16.01.05
-     */
-    public int getVirtualPageHeight() {
-        return this.vpageHeight;
-    }
-
-    /**
-     * Retrieves the virtual page depth. This only has meaningful data if
-     * GL_ARB_sparse_texture is supported and the texture was allocated as a
-     * sparse texture.
-     *
-     * @return the depth of the virtual page.
-     * @since 16.01.05
-     */
-    public int getVirtualPageDepth() {
-        return this.vpageDepth;
-    }
-
-    /**
-     * Checks if the GLTexture is marked as sparse. This may return an invalid
-     * state if the texture is not complete yet.
-     *
-     * @return true if the texture is sparse.
-     * @since 16.01.05
-     */
-    public boolean isSparse() {
-        return this.isSparse;
     }
 
     /**
@@ -281,7 +229,7 @@ public class GLTexture extends GLObject {
             }
 
             GLTools.getDriverInstance().textureBind(texture, activeTexture);
-            GLTexture.this.updateTimeUsed();            
+            GLTexture.this.updateTimeUsed();
         }
     }
 
@@ -311,7 +259,6 @@ public class GLTexture extends GLObject {
                 GLTexture.this.lastUsedTime = 0L;
                 GLTexture.this.texture = null;
                 GLTexture.this.width = GLTexture.this.height = GLTexture.this.depth = 0;
-                GLTexture.this.isSparse = false;
                 GLTexture.this.name = "";
             } else {
                 LOGGER.warn(GLOOP_MARKER, "Attempted to delete invalid GLTexture!");
@@ -360,9 +307,23 @@ public class GLTexture extends GLObject {
                 level,
                 xOffset, yOffset, zOffset,
                 width, height, depth,
-                format,
-                type,
-                data).glRun(this.getThread());
+                format, type, data, null).glRun(this.getThread());
+
+        return this;
+    }
+
+    public GLTexture updateImage(
+            final int level,
+            final int xOffset, final int yOffset, final int zOffset,
+            final int width, final int height, final int depth,
+            final GLTextureFormat format,
+            final GLType type, final GLBuffer pbo) {
+
+        new UpdateImage3DTask(
+                level,
+                xOffset, yOffset, zOffset,
+                width, height, depth,
+                format, type, null, pbo).glRun(this.getThread());
 
         return this;
     }
@@ -384,6 +345,7 @@ public class GLTexture extends GLObject {
         private final GLTextureFormat format;
         private final GLType type;
         private final ByteBuffer data;
+        private final GLBuffer pbo;
 
         /**
          * Constructs a new UpdateImage3DTask.
@@ -398,6 +360,7 @@ public class GLTexture extends GLObject {
          * @param format the pixel format type.
          * @param type the data type.
          * @param data the pixel data.
+         * @param pbo the pixel buffer object
          * @throws GLException if the level is less than 0.
          * @throws GLException if xOffset is less than 0.
          * @throws GLException if yOffset is less than 0.
@@ -414,7 +377,8 @@ public class GLTexture extends GLObject {
                 final int xOffset, final int yOffset, final int zOffset,
                 final int width, final int height, final int depth,
                 final GLTextureFormat format,
-                final GLType type, final ByteBuffer data) {
+                final GLType type, final ByteBuffer data,
+                final GLBuffer pbo) {
 
             if (level < 0) {
                 throw new GLException.InvalidValueException("Level cannot be less than 0!");
@@ -433,8 +397,14 @@ public class GLTexture extends GLObject {
             this.format = Objects.requireNonNull(format);
             this.type = Objects.requireNonNull(type);
 
-            this.data = GLTools.checkBuffer(
-                    data.asReadOnlyBuffer().order(ByteOrder.nativeOrder()));
+            if (data != null) {
+                this.data = GLTools.checkBuffer(
+                        data.asReadOnlyBuffer().order(ByteOrder.nativeOrder()));
+                this.pbo = null;
+            } else {
+                this.data = null;
+                this.pbo = Objects.requireNonNull(pbo, "Pixel Buffer storage cannot be null if Data buffer is also null!");
+            }
 
             if ((this.width = width) < 0) {
                 throw new GLException.InvalidValueException("Width cannot be less than 0!");
@@ -457,12 +427,20 @@ public class GLTexture extends GLObject {
                 throw new GLException.InvalidStateException("GLTexture is not valid!");
             }
 
-            GLTools.getDriverInstance().textureSetData(
-                    texture,
-                    level,
-                    xOffset, yOffset, zOffset,
-                    width, height, depth,
-                    format.value, type.value, data);
+            if (this.pbo == null) {
+                GLTools.getDriverInstance().textureSetData(
+                        texture, level,
+                        xOffset, yOffset, zOffset,
+                        width, height, depth,
+                        format.value, type.value, data);
+            } else {
+                GLTools.getDriverInstance().textureSetData(
+                        texture, level,
+                        xOffset, yOffset, zOffset,
+                        width, height, depth,
+                        format.value, type.value,
+                        pbo.buffer, 0);
+            }
 
             GLTexture.this.updateTimeUsed();
         }
@@ -493,7 +471,23 @@ public class GLTexture extends GLObject {
                 level,
                 xOffset, yOffset,
                 width, height,
-                format, type, data).glRun(this.getThread());
+                format, type, data, null).glRun(this.getThread());
+
+        return this;
+    }
+
+    public GLTexture updateImage(
+            final int level,
+            final int xOffset, final int yOffset,
+            final int width, final int height,
+            final GLTextureFormat format,
+            final GLType type, final GLBuffer pbo) {
+
+        new UpdateImage2DTask(
+                level,
+                xOffset, yOffset,
+                width, height,
+                format, type, null, pbo).glRun(this.getThread());
 
         return this;
     }
@@ -513,6 +507,7 @@ public class GLTexture extends GLObject {
         private final GLTextureFormat format;
         private final GLType type;
         private final ByteBuffer data;
+        private final GLBuffer pbo;
 
         /**
          * Constructs a new UpdateImage2DTask
@@ -525,6 +520,7 @@ public class GLTexture extends GLObject {
          * @param format the pixel format the data is stored as.
          * @param type the data type the data is stored as.
          * @param data the pixel data.
+         * @param pbo the pixel buffer object
          * @throws GLException if mipmaps is less than 0.
          * @throws GLException if xOffset is less than 0.
          * @throws GLException if yOffset is less than 0.
@@ -540,7 +536,8 @@ public class GLTexture extends GLObject {
                 final int xOffset, final int yOffset,
                 final int width, final int height,
                 final GLTextureFormat format,
-                final GLType type, final ByteBuffer data) {
+                final GLType type, final ByteBuffer data,
+                final GLBuffer pbo) {
 
             if (level < 0) {
                 throw new GLException.InvalidValueException("Mipmap level cannot be less than 0!");
@@ -558,9 +555,15 @@ public class GLTexture extends GLObject {
             this.format = Objects.requireNonNull(format);
             this.type = Objects.requireNonNull(type);
 
-            this.data = GLTools.checkBuffer(
-                    data.asReadOnlyBuffer()
-                    .order(ByteOrder.nativeOrder()));
+            if (pbo == null) {
+                this.data = GLTools.checkBuffer(
+                        data.asReadOnlyBuffer()
+                                .order(ByteOrder.nativeOrder()));
+                this.pbo = null;
+            } else {
+                this.pbo = Objects.requireNonNull(pbo, "Pixel Buffer storage cannot be null if Data buffer is also null!");
+                this.data = null;
+            }
 
             if ((this.width = width) < 0) {
                 throw new GLException.InvalidValueException("Width cannot be less than 0!");
@@ -578,13 +581,22 @@ public class GLTexture extends GLObject {
                 throw new GLException.InvalidStateException("GLTexture is not valid!");
             }
 
-            GLTools.getDriverInstance().textureSetData(
-                    texture,
-                    level,
-                    xOffset, yOffset, 1,
-                    width, height, 1,
-                    format.value, type.value,
-                    data);
+            if (this.pbo == null) {
+                GLTools.getDriverInstance().textureSetData(
+                        texture,
+                        level,
+                        xOffset, yOffset, 1,
+                        width, height, 1,
+                        format.value, type.value,
+                        data);
+            } else {
+                GLTools.getDriverInstance().textureSetData(
+                        texture, level,
+                        xOffset, yOffset, 1,
+                        width, height, 1,
+                        format.value, type.value,
+                        pbo.buffer, 0L);
+            }
 
             GLTexture.this.updateTimeUsed();
         }
@@ -613,7 +625,19 @@ public class GLTexture extends GLObject {
                 level,
                 xOffset,
                 width,
-                format, type, data).glRun(this.getThread());
+                format, type, data, null).glRun(this.getThread());
+
+        return this;
+    }
+
+    public GLTexture updateImage(
+            final int level,
+            final int xOffset, final int width,
+            final GLTextureFormat format,
+            final GLType type, final GLBuffer pbo) {
+
+        new UpdateImage1DTask(
+                level, xOffset, width, format, type, null, pbo).glRun(this.getThread());
 
         return this;
     }
@@ -631,6 +655,7 @@ public class GLTexture extends GLObject {
         private final GLTextureFormat format;
         private final GLType type;
         private final ByteBuffer data;
+        private final GLBuffer pbo;
 
         /**
          * Constructs a new Update1DTask.
@@ -641,6 +666,7 @@ public class GLTexture extends GLObject {
          * @param format the pixel format the data is stored in.
          * @param type the data type the data is stored in.
          * @param data the pixel data.
+         * @param pbo the pixel buffer object.
          * @throws GLException if mipmaps is less than 0.
          * @throws GLException if xOffset is less than 0.
          * @throws GLException if width is less than 0.
@@ -656,7 +682,7 @@ public class GLTexture extends GLObject {
                 final int xOffset, final int width,
                 final GLTextureFormat format,
                 final GLType type,
-                final ByteBuffer data) {
+                final ByteBuffer data, final GLBuffer pbo) {
 
             if (level < 0) {
                 throw new GLException.InvalidValueException("Level cannot be less than 0!");
@@ -679,7 +705,13 @@ public class GLTexture extends GLObject {
             this.format = Objects.requireNonNull(format);
             this.type = Objects.requireNonNull(type);
 
-            this.data = GLTools.checkBuffer(data.asReadOnlyBuffer().order(ByteOrder.nativeOrder()));
+            if (pbo == null) {
+                this.data = GLTools.checkBuffer(data.asReadOnlyBuffer().order(ByteOrder.nativeOrder()));
+                this.pbo = null;
+            } else {
+                this.data = null;
+                this.pbo = Objects.requireNonNull(pbo, "Pixel Buffer storage cannot be null if Data buffer is also null!");
+            }
         }
 
         @SuppressWarnings("unchecked")
@@ -689,12 +721,21 @@ public class GLTexture extends GLObject {
                 throw new GLException.InvalidStateException("GLTexture is not valid!");
             }
 
-            GLTools.getDriverInstance().textureSetData(
-                    texture,
-                    level,
-                    xOffset, 1, 1,
-                    width, 1, 1,
-                    format.value, type.value, data);
+            if (this.pbo == null) {
+                GLTools.getDriverInstance().textureSetData(
+                        texture,
+                        level,
+                        xOffset, 1, 1,
+                        width, 1, 1,
+                        format.value, type.value, data);
+            } else {
+                GLTools.getDriverInstance().textureSetData(
+                        texture, level,
+                        xOffset, 1, 1,
+                        width, 1, 1,
+                        format.value, type.value,
+                        pbo.buffer, 0L);
+            }
 
             GLTexture.this.updateTimeUsed();
         }
@@ -994,7 +1035,7 @@ public class GLTexture extends GLObject {
             }
 
             GLTools.getDriverInstance().textureGenerateMipmap(texture);
-            GLTexture.this.updateTimeUsed();            
+            GLTexture.this.updateTimeUsed();
         }
 
     }
@@ -1050,7 +1091,7 @@ public class GLTexture extends GLObject {
                 throw new GLException.InvalidValueException("Invalid GLBuffer!");
             }
 
-            throw new UnsupportedOperationException("not implemented...");            
+            throw new UnsupportedOperationException("not implemented...");
         }
     }
 
@@ -1068,8 +1109,8 @@ public class GLTexture extends GLObject {
         }
 
         @Override
-        public void run() {            
-            throw new UnsupportedOperationException("not yet implemented.");            
+        public void run() {
+            throw new UnsupportedOperationException("not yet implemented.");
         }
     }
 
@@ -1123,18 +1164,7 @@ public class GLTexture extends GLObject {
             driver.textureSetParameter(texture, 33083 /* GL_TEXTURE_MAX_LOD */, params.maxLOD);
             driver.textureSetParameter(texture, 34046 /* GL_TEXTURE_MAX_ANISOTROPY_EXT */, params.anisotropicLevel);
 
-            if (params.isSparse) {
-                driver.textureSetParameter(texture, 37286 /* GL_SPARSE_TEXTURE_ARB */, 1);
-                isSparse = true;
-            }
-
-            if (GLTexture.this.isSparse) {
-                GLTexture.this.vpageWidth = driver.textureGetPageWidth(texture);
-                GLTexture.this.vpageHeight = driver.textureGetPageHeight(texture);
-                GLTexture.this.vpageDepth = driver.textureGetPageDepth(texture);
-            }
-
-            GLTexture.this.updateTimeUsed();            
+            GLTexture.this.updateTimeUsed();
         }
     }
 
@@ -1168,7 +1198,7 @@ public class GLTexture extends GLObject {
 
             this.maxUnits = GLTools.getDriverInstance().textureGetMaxBoundTextures();
 
-            assert this.maxUnits > 0;            
+            assert this.maxUnits > 0;
 
             return this.maxUnits;
         }
@@ -1312,6 +1342,10 @@ public class GLTexture extends GLObject {
     public ByteBuffer downloadImage(final int level, final GLTextureFormat format, final GLType type, final ByteBuffer buffer) {
         return new DownloadImageQuery(level, format, type, buffer).glCall(this.getThread());
     }
+    
+    public void downloadImage(final int level, final GLTextureFormat format, final GLType type, final GLBuffer pbo) {
+        new DownloadImageQuery(level, format, type, pbo).glCall(this.getThread());
+    }
 
     /**
      * A GLQuery that copies the data of a GLTexture into a ByteBuffer.
@@ -1325,6 +1359,80 @@ public class GLTexture extends GLObject {
         private final GLType type;
         private final int bufferSize;
         private final ByteBuffer buffer;
+        private final GLBuffer pbo;
+
+        public DownloadImageQuery(final int level, final GLTextureFormat format, final GLType type, final GLBuffer pbo) {
+            assert (level >= 0) : "Level cannot be less than 0!";
+            assert (format != null) : "Format cannot be null!";
+            assert (type != null) : "Type cannot be null!";
+            assert (pbo != null) : "Pixel Buffer Object cannot be null!";
+
+            this.level = level;
+            this.format = format;
+            this.type = type;            
+            this.buffer = null;
+            this.pbo = pbo;
+            
+            final int pixelSize;
+
+            switch (format) {
+                case GL_RED:
+                case GL_GREEN:
+                case GL_BLUE:
+                case GL_ALPHA:
+                case GL_DEPTH_COMPONENT:
+                case GL_STENCIL_INDEX:
+                    pixelSize = 1;
+                    break;
+                case GL_RGB:
+                case GL_BGR:
+                    pixelSize = 3;
+                    break;
+                case GL_BGRA:
+                case GL_RGBA:
+                    pixelSize = 4;
+                    break;
+                default:
+                    throw new GLException("Unable to infer pixel width! Invalid pixel format for operation: " + format);
+            }
+            final int pixels = GLTexture.this.getDepth() * GLTexture.this.getHeight() * GLTexture.this.getWidth();
+
+            switch (type) {
+                case GL_UNSIGNED_BYTE:
+                case GL_BYTE:
+                    this.bufferSize = pixels * pixelSize;
+                    break;
+                case GL_UNSIGNED_SHORT:
+                case GL_SHORT:
+                    this.bufferSize = pixels * pixelSize * 2;
+                    break;
+                case GL_UNSIGNED_INT:
+                case GL_INT:
+                case GL_FLOAT:
+                    this.bufferSize = pixels * pixelSize * 4;
+                    break;
+                case GL_UNSIGNED_BYTE_3_3_2:
+                case GL_UNSIGNED_BYTE_2_3_3_REV:
+                    this.bufferSize = pixels;
+                    break;
+                case GL_UNSIGNED_SHORT_5_6_5:
+                case GL_UNSIGNED_SHORT_5_6_5_REV:
+                case GL_UNSIGNED_SHORT_4_4_4_4:
+                case GL_UNSIGNED_SHORT_4_4_4_4_REV:
+                case GL_UNSIGNED_SHORT_5_5_5_1:
+                case GL_UNSIGNED_SHORT_1_5_5_5_REV:
+                    this.bufferSize = pixels * 2;
+                    break;
+                case GL_UNSIGNED_INT_8_8_8_8:
+                case GL_UNSIGNED_INT_8_8_8_8_REV:
+                case GL_UNSIGNED_INT_10_10_10_2:
+                case GL_UNSIGNED_INT_2_10_10_10_REV:
+                    this.bufferSize = pixels * 4;
+                    break;
+                default:
+                    throw new GLException("Unable to infer image size! Invalid type for operation: " + type);
+            }
+        }
 
         /**
          * Constructs a new DownloadImageQuery. The storage ByteBuffer will be
@@ -1408,6 +1516,7 @@ public class GLTexture extends GLObject {
             }
 
             this.buffer = ByteBuffer.allocateDirect(this.bufferSize).order(ByteOrder.nativeOrder());
+            this.pbo = null;
         }
 
         /**
@@ -1429,6 +1538,7 @@ public class GLTexture extends GLObject {
             this.type = Objects.requireNonNull(type);
             this.buffer = Objects.requireNonNull(buffer);
             this.bufferSize = buffer.limit();
+            this.pbo = null;
         }
 
         @SuppressWarnings("unchecked")
@@ -1438,8 +1548,12 @@ public class GLTexture extends GLObject {
                 throw new GLException("Invalid GLTexture!");
             }
 
-            GLTools.getDriverInstance().textureGetData(texture, level, format.value, type.value, buffer);
-            GLTexture.this.updateTimeUsed();            
+            if (this.pbo == null) {
+                GLTools.getDriverInstance().textureGetData(texture, level, format.value, type.value, buffer);
+            } else {
+                GLTools.getDriverInstance().textureGetData(texture, level, format.value, type.value, pbo.buffer, 0, this.bufferSize);
+            }
+            GLTexture.this.updateTimeUsed();
 
             return this.buffer; // does this need flip?
         }
@@ -1486,7 +1600,7 @@ public class GLTexture extends GLObject {
                 GLTools.getDriverInstance().textureInvalidateData(texture, level);
             }
 
-            GLTexture.this.updateTimeUsed();            
+            GLTexture.this.updateTimeUsed();
         }
     }
 
@@ -1572,203 +1686,6 @@ public class GLTexture extends GLObject {
             }
         }
     }
-
-    /**
-     * Marks a section of the texture for deallocation. This is only applicable
-     * to sparse textures.
-     *
-     * @param level the mipmap level.
-     * @param xOffset the xOffset in virtual page units.
-     * @param yOffset the yOffset in virtual page units.
-     * @param zOffset the zOffset in virtual page units.
-     * @param width the width in virtual page units.
-     * @param height the height in virtual page units.
-     * @param depth the depth in virtual page units.
-     * @return self reference.
-     * @since 16.01.05
-     */
-    public GLTexture deallocateRegion(
-            final int level,
-            final int xOffset, final int yOffset, final int zOffset,
-            final int width, final int height, final int depth) {
-
-        new DeallocateRegionTask(
-                level,
-                xOffset, yOffset, zOffset,
-                width, height, depth).glRun(this.getThread());
-
-        return this;
-    }
-
-    /**
-     * A GLTask that marks a section of the texture for deallocation. This is
-     * only applicable to sparse textures.
-     *
-     * @since 16.01.05
-     */
-    public final class DeallocateRegionTask extends GLTask {
-
-        private final int level;
-        private final int xOffset;
-        private final int yOffset;
-        private final int zOffset;
-        private final int width;
-        private final int height;
-        private final int depth;
-
-        /**
-         * Constructs a new DeleteRegionTask.
-         *
-         * @param level the mipmap level.
-         * @param xOffset the xoffset
-         * @param yOffset the yoffset
-         * @param zOffset the zoffset
-         * @param width the width.
-         * @param height the height.
-         * @param depth the depth.
-         * @since 16.01.05
-         */
-        public DeallocateRegionTask(
-                final int level,
-                final int xOffset, final int yOffset, final int zOffset,
-                final int width, final int height, final int depth) {
-
-            if ((this.level = level) < 0) {
-                throw new GLException("Mipmap level cannot be less than 0!");
-            } else if ((this.xOffset = xOffset) < 0) {
-                throw new GLException("XOffset cannot be less than 0!");
-            } else if ((this.yOffset = yOffset) < 0) {
-                throw new GLException("YOffset cannot be less than 0!");
-            } else if ((this.zOffset = zOffset) < 0) {
-                throw new GLException("ZOffset cannot be less than 0!");
-            } else if ((this.width = width) < 0) {
-                throw new GLException("Width cannot be less than 0!");
-            } else if ((this.height = height) < 0) {
-                throw new GLException("Height cannot be less than 0!");
-            } else if ((this.depth = depth) < 0) {
-                throw new GLException("Depth cannot be less than 0!");
-            }
-        }
-
-        @SuppressWarnings("unchecked")
-        @Override
-        public void run() {
-            if (!GLTexture.this.isValid()) {
-                throw new GLException("Invalid GLTexture!");
-            } else if (GLTexture.this.isSparse) {
-                GLTools.getDriverInstance().textureDeallocatePage(
-                        texture, level,
-                        xOffset, yOffset, zOffset,
-                        width, height, depth);
-                GLTexture.this.updateTimeUsed();
-            }
-        }
-    }
-
-    /**
-     * Allocates all of the pages required for the specified region of the
-     * texture. No operations are performed if the section is already allocated.
-     * This call is ignored if the texture is not allocated as a sparse texture.
-     *
-     * @param level the mipmap level.
-     * @param xOffset the xOffset in virtual page units.
-     * @param yOffset the yOffset in virtual page units.
-     * @param zOffset the zOffset in virtual page units.
-     * @param width the width of the region in virtual page units.
-     * @param height the height of the region in virtual page units.
-     * @param depth the depth of the region in virtual page units.
-     * @return self reference.
-     * @since 16.01.05
-     */
-    public GLTexture allocateRegion(
-            final int level,
-            final int xOffset, final int yOffset, final int zOffset,
-            final int width, final int height, final int depth) {
-
-        new AllocateRegionTask(
-                level,
-                xOffset, yOffset, zOffset,
-                width, height, depth).glRun(this.getThread());
-        return this;
-    }
-
-    /**
-     * Allocates all the pages required for the specified region of the sparse
-     * texture.
-     *
-     * @since 16.01.05
-     */
-    public final class AllocateRegionTask extends GLTask {
-
-        private final int level;
-        private final int xOffset;
-        private final int yOffset;
-        private final int zOffset;
-        private final int width;
-        private final int height;
-        private final int depth;
-
-        /**
-         * Constructs a new AllocateRegionTask.
-         *
-         * @param level the mipmap level.
-         * @param xOffset the x offset.
-         * @param yOffset the y offset
-         * @param zOffset the z offset
-         * @param width the width.
-         * @param height the height.
-         * @param depth the depth.
-         * @since 16.01.05
-         */
-        public AllocateRegionTask(
-                final int level,
-                final int xOffset, final int yOffset, final int zOffset,
-                final int width, final int height, final int depth) {
-
-            if ((this.level = level) < 0) {
-                throw new GLException("Mipmap level cannot be less than 0!");
-            } else if ((this.xOffset = xOffset) < 0) {
-                throw new GLException("XOffset cannot be less than 0!");
-            } else if ((this.yOffset = yOffset) < 0) {
-                throw new GLException("YOffset cannot be less than 0!");
-            } else if ((this.zOffset = zOffset) < 0) {
-                throw new GLException("ZOffset cannot be less than 0!");
-            } else if ((this.width = width) < 0) {
-                throw new GLException("Width cannot be less than 0!");
-            } else if ((this.height = height) < 0) {
-                throw new GLException("Height cannot be less than 0!");
-            } else if ((this.depth = depth) < 0) {
-                throw new GLException("Depth cannot be less than 0!");
-            }
-        }
-
-        @SuppressWarnings("unchecked")
-        @Override
-        public void run() {
-            if (!GLTexture.this.isValid()) {
-                throw new GLException("Invalid GLTexture!");
-            } else if (GLTexture.this.isSparse) {
-                GLTools.getDriverInstance().textureAllocatePage(
-                        texture, level,
-                        xOffset, yOffset, zOffset,
-                        width, height, depth);
-                GLTexture.this.updateTimeUsed();
-            }
-        }
-
-    }
-
-    /**
-     * Retrieves the virtual page size for the GLTexture object.
-     *
-     * @return the dimensions of the virtual page size. All dimensions will be 0
-     * if GL_ARB_sparse_texture is not supported.
-     *
-     * @since 16.01.05
-     */
-    public int[] getVirtualPageSize() {
-        return new int[]{this.vpageWidth, this.vpageHeight, this.vpageDepth};
-    }    
 
     /**
      * Retrieves the pointer to the texture. This can be passed into shaders as

@@ -255,8 +255,7 @@ public class GLThread implements ExecutorService {
      *
      * @since 15.07.01
      */
-    public void pushBlend() {
-        LOGGER.trace(GLOOP_MARKER, "Pushing GLBlend stack!");
+    public void pushBlend() {        
         this.blendStack.push(this.currentBlend);
     }
 
@@ -266,8 +265,7 @@ public class GLThread implements ExecutorService {
      * @return the previous mode.
      * @since 15.07.01
      */
-    public GLBlending popBlend() {
-        LOGGER.trace(GLOOP_MARKER, "Popping GLBlend stack!");
+    public GLBlending popBlend() {        
         final GLBlending blend = this.blendStack.pop();
         blend.applyBlending();
         return blend;
@@ -307,8 +305,7 @@ public class GLThread implements ExecutorService {
      *
      * @since 15.07.16
      */
-    public void pushClear() {
-        LOGGER.trace(GLOOP_MARKER, "Pushing GLClear stack!");
+    public void pushClear() {        
         this.clearStack.push(this.currentClear);
     }
 
@@ -318,8 +315,7 @@ public class GLThread implements ExecutorService {
      * @return the previous clear.
      * @since 15.07.01
      */
-    public GLClear popClear() {
-        LOGGER.trace(GLOOP_MARKER, "Poping GLClear stack!");
+    public GLClear popClear() {        
         final GLClear clear = this.clearStack.pop();
         clear.clear();
         return clear;
@@ -346,7 +342,6 @@ public class GLThread implements ExecutorService {
      * @since 15.07.01
      */
     public void pushDepthTest() {
-        LOGGER.trace(GLOOP_MARKER, "Pushing GLDepthTest stack!");
         this.depthTestStack.push(this.currentDepthTest);
     }
 
@@ -356,8 +351,7 @@ public class GLThread implements ExecutorService {
      * @return the previous depth test.
      * @since 15.07.01
      */
-    public GLDepthTest popDepthTest() {
-        LOGGER.trace(GLOOP_MARKER, "Poping GLDepthTest stack!");
+    public GLDepthTest popDepthTest() {        
         final GLDepthTest depthTest = this.depthTestStack.pop();
         depthTest.applyDepthFunc();
         return depthTest;
@@ -383,8 +377,7 @@ public class GLThread implements ExecutorService {
      *
      * @since 15.07.01
      */
-    public void pushMask() {
-        LOGGER.trace(GLOOP_MARKER, "Pushing GLMask stack!");
+    public void pushMask() {        
         this.maskStack.push(this.currentMask);
     }
 
@@ -394,8 +387,7 @@ public class GLThread implements ExecutorService {
      * @return the previous mask.
      * @since 15.07.01
      */
-    public GLMask popMask() {
-        LOGGER.trace(GLOOP_MARKER, "Popping GLMask stack!");
+    public GLMask popMask() {        
         final GLMask mask = this.maskStack.pop();
         mask.applyMask();
         return mask;
@@ -421,8 +413,7 @@ public class GLThread implements ExecutorService {
      *
      * @since 15.07.16
      */
-    public void pushPolygonParameters() {
-        LOGGER.trace(GLOOP_MARKER, "Pushing GLPolygonParameters stack!");
+    public void pushPolygonParameters() {        
         this.polygonParameterStack.push(this.currentPolygonParameters);
     }
 
@@ -432,8 +423,7 @@ public class GLThread implements ExecutorService {
      * @return the previous polygon parameters.
      * @since 15.07.16
      */
-    public GLPolygonParameters popPolygonParameters() {
-        LOGGER.trace(GLOOP_MARKER, "Popping GLPolygonParameters stack!");
+    public GLPolygonParameters popPolygonParameters() {        
         final GLPolygonParameters params = this.polygonParameterStack.pop();
         params.applyParameters();
         return params;
@@ -459,8 +449,7 @@ public class GLThread implements ExecutorService {
      *
      * @since 15.07.01
      */
-    public void pushViewport() {
-        LOGGER.trace(GLOOP_MARKER, "Pushing GLViewport stack!");
+    public void pushViewport() {        
         this.viewportStack.push(this.currentViewport);
     }
 
@@ -513,8 +502,7 @@ public class GLThread implements ExecutorService {
      * @return the previous viewport.
      * @since 15.07.01
      */
-    public GLViewport popViewport() {
-        LOGGER.trace(GLOOP_MARKER, "Popping GLViewport stack!");
+    public GLViewport popViewport() {        
         final GLViewport viewport = this.viewportStack.pop();
         viewport.applyViewport();
         return viewport;
@@ -682,8 +670,7 @@ public class GLThread implements ExecutorService {
         if (Thread.currentThread() == this.internalThread) {
             throw new RuntimeException("Attempted barrier insertion on OpenGL thread!");
         }
-
-        LOGGER.trace(SYS_MARKER, "************** Inserting barrier **************");
+        
         return new BarrierQuery().glCall(this);
     }
 
@@ -760,8 +747,7 @@ public class GLThread implements ExecutorService {
     public class BarrierQuery extends GLQuery<Void> {
 
         @Override
-        public Void call() throws Exception {
-            LOGGER.trace(SYS_MARKER, "*************** BARRIER *************");
+        public Void call() throws Exception {            
             return null;
         }
 

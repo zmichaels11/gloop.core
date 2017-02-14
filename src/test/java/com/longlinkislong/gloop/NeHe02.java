@@ -21,7 +21,7 @@ public class NeHe02 {
     public void test() {        
         new TestFramework("NeHe 02", this::init, this::redraw)
                 .showWindow()
-                .runFor(5);
+                .runFor(5000);
     }
 
     private final GLClear clear = new GLClear()
