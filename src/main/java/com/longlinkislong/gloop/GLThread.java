@@ -77,6 +77,7 @@ public class GLThread implements ExecutorService {
     final Deque<GLScissorTest> scissorStack = new ArrayDeque<>(4);
     final Deque<GLFramebuffer.BindTask> framebufferStack = new ArrayDeque<>(4);
     final Deque<GLProgram.UseTask> programStack = new ArrayDeque<>(4);
+    long pHandle;
 
     private BiConsumer<GLBlending, GLBlending> onBlendChange = null;
 
