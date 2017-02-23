@@ -118,6 +118,7 @@ public final class ALThread {
 
     private void init() {
         internalThread = Thread.currentThread();
+        internalThread.setName("OpenAL Thread");
         device = ALTools.getDriverInstance().deviceCreate();
         THREAD_MAP.put(internalThread, this);
     }
