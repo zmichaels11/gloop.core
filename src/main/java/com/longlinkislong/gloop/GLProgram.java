@@ -149,7 +149,7 @@ public class GLProgram extends GLObject {
 
         @SuppressWarnings("unchecked")
         @Override
-        public void run() {            
+        public void run() {
             if (!GLProgram.this.isValid()) {
                 throw new GLException.InvalidStateException("Invalid GLProgram!");
             }
@@ -157,7 +157,7 @@ public class GLProgram extends GLObject {
             GLThread.getCurrent().orElseThrow(GLException.InvalidThreadException::new).currentProgramUse = this;
 
             GLTools.getDriverInstance().programUse(GLProgram.this.program);
-            GLProgram.this.program.updateTime();            
+            GLProgram.this.program.updateTime();
         }
     }
 
@@ -208,7 +208,7 @@ public class GLProgram extends GLObject {
         @SuppressWarnings({"rawtypes", "unchecked"})
         @Override
         public void run() {
-            
+
             final Driver driver = GLTools.getDriverInstance();
 
             if (!GLProgram.this.isValid()) {
@@ -350,16 +350,21 @@ public class GLProgram extends GLObject {
                 throw new GLException.InvalidValueException("Invalid uniform count!");
             }
 
-            final GLMatD<?, ?> matD = mat.asGLMatD();
-
-            this.uName = uName.toString();
             this.count = sz * sz;
-            this.values = new double[this.count];
+            this.uName = uName.toString();
 
-            System.arraycopy(
-                    matD.data(), matD.offset(),
-                    this.values, 0,
-                    this.count);
+            if (mat instanceof StaticMat && mat instanceof GLMatD) {
+                this.values = ((GLMatD) mat).data();
+            } else {
+                final GLMatD<?, ?> matD = mat.asGLMatD();
+
+                this.values = new double[this.count];
+
+                System.arraycopy(
+                        matD.data(), matD.offset(),
+                        this.values, 0,
+                        this.count);
+            }
         }
 
         /**
@@ -381,11 +386,15 @@ public class GLProgram extends GLObject {
                 throw new GLException.InvalidValueException("Invalid uniform count!");
             }
 
-            this.uName = uName.toString();
-            this.values = new double[length];
-            this.count = length;
+            if (offset == 0) {
+                this.values = data;
+            } else {
+                this.values = new double[length];
+                System.arraycopy(data, offset, this.values, 0, length);
+            }
 
-            System.arraycopy(data, offset, this.values, 0, length);
+            this.uName = uName.toString();
+            this.count = length;
         }
 
         @SuppressWarnings("unchecked")
@@ -485,13 +494,17 @@ public class GLProgram extends GLObject {
                 throw new GLException.InvalidValueException("Invalid uniform count!");
             }
 
-            final GLMatF<?, ?> mf = mat.asGLMatF();
-
             this.uName = uName.toString();
             this.count = sz * sz;
-            this.values = new float[this.count];
 
-            System.arraycopy(mf.data(), mf.offset(), this.values, 0, this.count);
+            if (mat instanceof StaticMat && mat instanceof GLMatF) {
+                this.values = ((GLMatF) mat).data();
+            } else {
+                final GLMatF<?, ?> mf = mat.asGLMatF();
+
+                this.values = new float[this.count];
+                System.arraycopy(mf.data(), mf.offset(), this.values, 0, this.count);
+            }
         }
 
         /**
@@ -513,17 +526,21 @@ public class GLProgram extends GLObject {
                 throw new GLException.InvalidValueException("Invalid uniform count!");
             }
 
+            if (offset == 0) {
+                this.values = values;
+            } else {
+                this.values = new float[length];
+                System.arraycopy(values, offset, this.values, 0, length);
+            }
+
             this.uName = uName.toString();
             this.count = length;
-            this.values = new float[length];
-
-            System.arraycopy(values, offset, this.values, 0, length);
         }
 
         @SuppressWarnings("unchecked")
         @Override
         public void run() {
-            
+
             if (!GLProgram.this.isValid()) {
                 throw new GLException.InvalidStateException("GLProgram is not valid!");
             }
@@ -655,13 +672,18 @@ public class GLProgram extends GLObject {
                 throw new GLException.InvalidValueException("Invalid uniform count!");
             }
 
-            this.values = new double[sz];
             this.uName = uName.toString();
             this.count = sz;
 
-            final GLVecD<?> vd = v.asGLVecD();
+            if (v instanceof StaticVec && v instanceof GLVecD) {
+                this.values = ((GLVecD) v).data();
+            } else {
+                this.values = new double[sz];
 
-            System.arraycopy(vd.data(), vd.offset(), this.values, 0, this.count);
+                final GLVecD<?> vd = v.asGLVecD();
+
+                System.arraycopy(vd.data(), vd.offset(), this.values, 0, this.count);
+            }
         }
 
         /**
@@ -694,8 +716,13 @@ public class GLProgram extends GLObject {
                 throw new GLException.InvalidValueException("Invalid uniform count!");
             }
 
-            this.values = new double[length];
-            System.arraycopy(data, offset, this.values, 0, length);
+            if (offset == 0) {
+                this.values = data;
+            } else {
+                this.values = new double[length];
+                System.arraycopy(data, offset, this.values, 0, length);
+            }
+
             this.uName = uName.toString();
             this.count = length;
         }
@@ -814,8 +841,13 @@ public class GLProgram extends GLObject {
                 throw new GLException.InvalidStateException("Invalid uniform count!");
             }
 
-            this.values = new int[length];
-            System.arraycopy(data, offset, this.values, 0, length);
+            if (offset == 0) {
+                this.values = data;
+            } else {
+                this.values = new int[length];
+                System.arraycopy(data, offset, this.values, 0, length);
+            }
+
             this.count = length;
             this.uName = uName.toString();
         }
@@ -948,12 +980,17 @@ public class GLProgram extends GLObject {
                 throw new GLException.InvalidValueException("Invalid uniform vector size!");
             }
 
-            final GLVecF<?> vecF = vec.asGLVecF();
-
-            this.values = new float[sz];
-            System.arraycopy(vecF.data(), vecF.offset(), this.values, 0, sz);
             this.count = sz;
             this.uName = uName.toString();
+
+            if (vec instanceof StaticMat && vec instanceof GLVecF) {
+                this.values = ((GLVecF) vec).data();
+            } else {
+                final GLVecF<?> vecF = vec.asGLVecF();
+
+                this.values = new float[sz];
+                System.arraycopy(vecF.data(), vecF.offset(), this.values, 0, sz);
+            }
         }
 
         /**

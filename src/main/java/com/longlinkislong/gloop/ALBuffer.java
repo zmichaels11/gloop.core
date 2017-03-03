@@ -40,6 +40,7 @@ import org.slf4j.MarkerFactory;
  * @since 16.03.21
  */
 public class ALBuffer extends ALObject {
+
     private static final Marker GL_MARKER = MarkerFactory.getMarker("GLOOP");
     private static final Logger LOGGER = LoggerFactory.getLogger("ALBuffer");
 
@@ -75,6 +76,18 @@ public class ALBuffer extends ALObject {
     public void upload(final ALSoundFormat format, final ByteBuffer data, final int frequency) {
         new UploadTask(format, data, frequency).alRun();
     }
+    
+    public void upload(final ALSoundFormat format, final short[] data, final int frequency) {
+        new UploadTask(format, data, frequency).alRun();
+    }
+    
+    public void upload(final ALSoundFormat format, final int[] data, final int frequency) {
+        new UploadTask(format, data, frequency).alRun();
+    }
+    
+    public void upload(final ALSoundFormat format, final float[] data, final int frequency) {
+        new UploadTask(format, data, frequency).alRun();
+    }
 
     /**
      * Deletes the ALBuffer. This will also mark the ALBuffer as invalid
@@ -105,6 +118,9 @@ public class ALBuffer extends ALObject {
         private final ByteBuffer dataBuffer;
         private final int format;
         private final int frequency;
+        private final float[] fData;
+        private final short[] sData;
+        private final int[] iData;
 
         /**
          * Constructs a new UploadTask.
@@ -118,13 +134,53 @@ public class ALBuffer extends ALObject {
             this.dataBuffer = Objects.requireNonNull(data);
             this.format = format.value;
             this.frequency = frequency;
+            this.fData = null;
+            this.sData = null;
+            this.iData = null;
+        }
+
+        public UploadTask(final ALSoundFormat format, final int[] data, final int frequency) {
+            this.dataBuffer = null;
+            this.format = format.value;
+            this.frequency = frequency;
+            this.fData = null;
+            this.sData = null;
+            this.iData = Objects.requireNonNull(data);
+        }
+        
+        public UploadTask(final ALSoundFormat format, final float[] data, final int frequency) {
+            this.dataBuffer = null;
+            this.format = format.value;
+            this.frequency = frequency;
+            this.fData = Objects.requireNonNull(data);
+            this.sData = null;
+            this.iData = null;
+        }
+        
+        public UploadTask(final ALSoundFormat format, final short[] data, final int frequency) {
+            this.dataBuffer = null;
+            this.format = format.value;
+            this.frequency = frequency;
+            this.fData = null;
+            this.sData = Objects.requireNonNull(data);
+            this.iData = null;
         }
 
         @SuppressWarnings("unchecked")
         @Override
         public void run() {
             if (isValid()) {
-                ALTools.getDriverInstance().bufferSetData(buffer, format, dataBuffer, frequency);
+                if (this.sData != null) {
+                    ALTools.getDriverInstance().bufferSetData(buffer, format, sData, frequency);
+                } else if (this.iData != null) {
+                    ALTools.getDriverInstance().bufferSetData(buffer, format, iData, frequency);
+                } else if (this.fData != null) {
+                    ALTools.getDriverInstance().bufferSetData(buffer, format, fData, frequency);
+                } else if (this.dataBuffer != null) {
+                    ALTools.getDriverInstance().bufferSetData(buffer, format, dataBuffer, frequency);
+                } else {
+                    LOGGER.warn("No data passed to buffer upload!");
+                }
             } else {
                 throw new ALException.InvalidStateException("Invalid ALBuffer!");
             }

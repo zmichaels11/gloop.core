@@ -307,7 +307,8 @@ public class GLTexture extends GLObject {
                 level,
                 xOffset, yOffset, zOffset,
                 width, height, depth,
-                format, type, data, null).glRun(this.getThread());
+                format, type, 
+                data, null, null, null).glRun(this.getThread());
 
         return this;
     }
@@ -323,7 +324,42 @@ public class GLTexture extends GLObject {
                 level,
                 xOffset, yOffset, zOffset,
                 width, height, depth,
-                format, type, null, pbo).glRun(this.getThread());
+                format, type, 
+                null, pbo, null, null).glRun(this.getThread());
+
+        return this;
+    }
+    
+    public GLTexture updateImage(
+            final int level,
+            final int xOffset, final int yOffset, final int zOffset,
+            final int width, final int height, final int depth,
+            final GLTextureFormat format,
+            final GLType type, final int[] data) {
+
+        new UpdateImage3DTask(
+                level,
+                xOffset, yOffset, zOffset,
+                width, height, depth,
+                format, type, 
+                null, null, data, null).glRun(this.getThread());
+
+        return this;
+    }
+    
+    public GLTexture updateImage(
+            final int level,
+            final int xOffset, final int yOffset, final int zOffset,
+            final int width, final int height, final int depth,
+            final GLTextureFormat format,
+            final GLType type, final float[] data) {
+
+        new UpdateImage3DTask(
+                level,
+                xOffset, yOffset, zOffset,
+                width, height, depth,
+                format, type, 
+                null, null, null, data).glRun(this.getThread());
 
         return this;
     }
@@ -346,6 +382,8 @@ public class GLTexture extends GLObject {
         private final GLType type;
         private final ByteBuffer data;
         private final GLBuffer pbo;
+        private final int[] iData;
+        private final float[] fData;
 
         /**
          * Constructs a new UpdateImage3DTask.
@@ -361,6 +399,8 @@ public class GLTexture extends GLObject {
          * @param type the data type.
          * @param data the pixel data.
          * @param pbo the pixel buffer object
+         * @param iData the pixel data (int array)
+         * @param fData the pixel data (float array)
          * @throws GLException if the level is less than 0.
          * @throws GLException if xOffset is less than 0.
          * @throws GLException if yOffset is less than 0.
@@ -378,7 +418,7 @@ public class GLTexture extends GLObject {
                 final int width, final int height, final int depth,
                 final GLTextureFormat format,
                 final GLType type, final ByteBuffer data,
-                final GLBuffer pbo) {
+                final GLBuffer pbo, final int[] iData, final float[] fData) {
 
             if (level < 0) {
                 throw new GLException.InvalidValueException("Level cannot be less than 0!");
@@ -397,15 +437,33 @@ public class GLTexture extends GLObject {
             this.format = Objects.requireNonNull(format);
             this.type = Objects.requireNonNull(type);
 
-            if (data != null) {
-                this.data = GLTools.checkBuffer(
-                        data.asReadOnlyBuffer().order(ByteOrder.nativeOrder()));
-                this.pbo = null;
-            } else {
+            if (pbo != null) {
+                this.pbo = pbo;
+                this.iData = null;
+                this.fData = null;
                 this.data = null;
-                this.pbo = Objects.requireNonNull(pbo, "Pixel Buffer storage cannot be null if Data buffer is also null!");
+            } else if (iData != null) {
+                this.pbo = null;
+                this.iData = iData;
+                this.fData = null;
+                this.data = null;
+            } else if (fData != null) {
+                this.pbo = null;
+                this.iData = null;
+                this.fData = fData;
+                this.data = null;
+            } else if (data != null) {
+                this.pbo = null;
+                this.iData = null;
+                this.fData = null;
+                this.data = data;
+            } else {
+                this.pbo = null;
+                this.iData = null;
+                this.fData = null;
+                this.data = null;
             }
-
+            
             if ((this.width = width) < 0) {
                 throw new GLException.InvalidValueException("Width cannot be less than 0!");
             }
@@ -426,20 +484,37 @@ public class GLTexture extends GLObject {
             if (!GLTexture.this.isValid()) {
                 throw new GLException.InvalidStateException("GLTexture is not valid!");
             }
-
-            if (this.pbo == null) {
-                GLTools.getDriverInstance().textureSetData(
-                        texture, level,
-                        xOffset, yOffset, zOffset,
-                        width, height, depth,
-                        format.value, type.value, data);
-            } else {
+            
+            if (this.pbo != null) {
                 GLTools.getDriverInstance().textureSetData(
                         texture, level,
                         xOffset, yOffset, zOffset,
                         width, height, depth,
                         format.value, type.value,
                         pbo.buffer, 0);
+            } else if (this.iData != null) {
+                GLTools.getDriverInstance().textureSetData(
+                        texture, level,
+                        xOffset, yOffset, zOffset,
+                        width, height, depth,
+                        format.value, type.value,
+                        iData);
+            } else if (this.fData != null) {
+                GLTools.getDriverInstance().textureSetData(
+                        texture, level,
+                        xOffset, yOffset, zOffset,
+                        width, height, depth,
+                        format.value, type.value,
+                        fData);
+            } else if (this.data != null) {
+                GLTools.getDriverInstance().textureSetData(
+                        texture, level,
+                        xOffset, yOffset, zOffset,
+                        width, height, depth,
+                        format.value, type.value,
+                        data);
+            } else {
+                LOGGER.warn("No data passed to texture upload!");
             }
 
             GLTexture.this.updateTimeUsed();
@@ -471,7 +546,8 @@ public class GLTexture extends GLObject {
                 level,
                 xOffset, yOffset,
                 width, height,
-                format, type, data, null).glRun(this.getThread());
+                format, type, 
+                data, null, null, null).glRun(this.getThread());
 
         return this;
     }
@@ -487,7 +563,42 @@ public class GLTexture extends GLObject {
                 level,
                 xOffset, yOffset,
                 width, height,
-                format, type, null, pbo).glRun(this.getThread());
+                format, type, 
+                null, pbo, null, null).glRun(this.getThread());
+
+        return this;
+    }
+    
+    public GLTexture updateImage(
+            final int level,
+            final int xOffset, final int yOffset,
+            final int width, final int height,
+            final GLTextureFormat format,
+            final GLType type, final int[] data) {
+
+        new UpdateImage2DTask(
+                level,
+                xOffset, yOffset,
+                width, height,
+                format, type, 
+                null, null, null, data).glRun(this.getThread());
+
+        return this;
+    }
+    
+    public GLTexture updateImage(
+            final int level,
+            final int xOffset, final int yOffset,
+            final int width, final int height,
+            final GLTextureFormat format,
+            final GLType type, final float[] data) {
+
+        new UpdateImage2DTask(
+                level,
+                xOffset, yOffset,
+                width, height,
+                format, type, 
+                null, null, data, null).glRun(this.getThread());
 
         return this;
     }
@@ -508,6 +619,8 @@ public class GLTexture extends GLObject {
         private final GLType type;
         private final ByteBuffer data;
         private final GLBuffer pbo;
+        private final float[] fData;
+        private final int[] iData;
 
         /**
          * Constructs a new UpdateImage2DTask
@@ -537,7 +650,7 @@ public class GLTexture extends GLObject {
                 final int width, final int height,
                 final GLTextureFormat format,
                 final GLType type, final ByteBuffer data,
-                final GLBuffer pbo) {
+                final GLBuffer pbo, final float[] fData, final int[] iData) {
 
             if (level < 0) {
                 throw new GLException.InvalidValueException("Mipmap level cannot be less than 0!");
@@ -555,14 +668,26 @@ public class GLTexture extends GLObject {
             this.format = Objects.requireNonNull(format);
             this.type = Objects.requireNonNull(type);
 
-            if (pbo == null) {
-                this.data = GLTools.checkBuffer(
-                        data.asReadOnlyBuffer()
-                                .order(ByteOrder.nativeOrder()));
-                this.pbo = null;
-            } else {
-                this.pbo = Objects.requireNonNull(pbo, "Pixel Buffer storage cannot be null if Data buffer is also null!");
+            if (pbo != null) {
+                this.pbo = pbo;
                 this.data = null;
+                this.iData = null;
+                this.fData = null;
+            } else if (iData != null) {
+                this.pbo = null;
+                this.data = null;
+                this.iData = iData;
+                this.fData = null;
+            } else if (fData != null) {
+                this.pbo = null;
+                this.data = null;
+                this.iData = null;
+                this.fData = fData;
+            } else {
+                this.pbo = null;
+                this.data = null;
+                this.iData = null;
+                this.fData = null;
             }
 
             if ((this.width = width) < 0) {
@@ -581,21 +706,36 @@ public class GLTexture extends GLObject {
                 throw new GLException.InvalidStateException("GLTexture is not valid!");
             }
 
-            if (this.pbo == null) {
-                GLTools.getDriverInstance().textureSetData(
-                        texture,
-                        level,
-                        xOffset, yOffset, 1,
-                        width, height, 1,
-                        format.value, type.value,
-                        data);
-            } else {
+            if (this.pbo != null) {
                 GLTools.getDriverInstance().textureSetData(
                         texture, level,
                         xOffset, yOffset, 1,
                         width, height, 1,
                         format.value, type.value,
                         pbo.buffer, 0L);
+            } else if (this.iData != null) {
+                GLTools.getDriverInstance().textureSetData(
+                        texture, level,
+                        xOffset, yOffset, 1,
+                        width, height, 1,
+                        format.value, type.value,
+                        iData);
+            } else if (this.fData != null) {
+                GLTools.getDriverInstance().textureSetData(
+                        texture, level,
+                        xOffset, yOffset, 1,
+                        width, height, 1,
+                        format.value, type.value,
+                        fData);
+            } else if (this.data != null) {
+                GLTools.getDriverInstance().textureSetData(
+                        texture, level,
+                        xOffset, yOffset, 1,
+                        width, height, 1,
+                        format.value, type.value,
+                        iData);
+            } else {
+                LOGGER.warn("No data passed to texture upload!");
             }
 
             GLTexture.this.updateTimeUsed();
@@ -625,7 +765,7 @@ public class GLTexture extends GLObject {
                 level,
                 xOffset,
                 width,
-                format, type, data, null).glRun(this.getThread());
+                format, type, data, null, null, null).glRun(this.getThread());
 
         return this;
     }
@@ -637,7 +777,31 @@ public class GLTexture extends GLObject {
             final GLType type, final GLBuffer pbo) {
 
         new UpdateImage1DTask(
-                level, xOffset, width, format, type, null, pbo).glRun(this.getThread());
+                level, xOffset, width, format, type, null, pbo, null, null).glRun(this.getThread());
+
+        return this;
+    }
+
+    public GLTexture updateImage(
+            final int level,
+            final int xOffset, final int width,
+            final GLTextureFormat format,
+            final GLType type, final int[] data) {
+
+        new UpdateImage1DTask(
+                level, xOffset, width, format, type, null, null, null, data).glRun(this.getThread());
+
+        return this;
+    }
+
+    public GLTexture updateImage(
+            final int level,
+            final int xOffset, final int width,
+            final GLTextureFormat format,
+            final GLType type, final float[] data) {
+
+        new UpdateImage1DTask(
+                level, xOffset, width, format, type, null, null, data, null).glRun(this.getThread());
 
         return this;
     }
@@ -655,6 +819,8 @@ public class GLTexture extends GLObject {
         private final GLTextureFormat format;
         private final GLType type;
         private final ByteBuffer data;
+        private final int[] iData;
+        private final float[] fData;
         private final GLBuffer pbo;
 
         /**
@@ -667,6 +833,8 @@ public class GLTexture extends GLObject {
          * @param type the data type the data is stored in.
          * @param data the pixel data.
          * @param pbo the pixel buffer object.
+         * @param fData the pixel data (float array)
+         * @param iData the pixel data (int array)
          * @throws GLException if mipmaps is less than 0.
          * @throws GLException if xOffset is less than 0.
          * @throws GLException if width is less than 0.
@@ -682,7 +850,8 @@ public class GLTexture extends GLObject {
                 final int xOffset, final int width,
                 final GLTextureFormat format,
                 final GLType type,
-                final ByteBuffer data, final GLBuffer pbo) {
+                final ByteBuffer data, final GLBuffer pbo,
+                final float[] fData, final int[] iData) {
 
             if (level < 0) {
                 throw new GLException.InvalidValueException("Level cannot be less than 0!");
@@ -705,12 +874,26 @@ public class GLTexture extends GLObject {
             this.format = Objects.requireNonNull(format);
             this.type = Objects.requireNonNull(type);
 
-            if (pbo == null) {
-                this.data = GLTools.checkBuffer(data.asReadOnlyBuffer().order(ByteOrder.nativeOrder()));
-                this.pbo = null;
-            } else {
+            if (pbo != null) {
+                this.pbo = pbo;
                 this.data = null;
-                this.pbo = Objects.requireNonNull(pbo, "Pixel Buffer storage cannot be null if Data buffer is also null!");
+                this.iData = null;
+                this.fData = null;
+            } else if (iData != null) {
+                this.pbo = null;
+                this.data = null;
+                this.iData = iData;
+                this.fData = null;
+            } else if (fData != null) {
+                this.pbo = null;
+                this.data = null;
+                this.iData = null;
+                this.fData = fData;
+            } else {
+                this.pbo = null;
+                this.data = null;
+                this.iData = null;
+                this.fData = null;
             }
         }
 
@@ -721,7 +904,28 @@ public class GLTexture extends GLObject {
                 throw new GLException.InvalidStateException("GLTexture is not valid!");
             }
 
-            if (this.pbo == null) {
+            if (this.pbo != null) {
+                GLTools.getDriverInstance().textureSetData(
+                        texture, level,
+                        xOffset, 1, 1,
+                        width, 1, 1,
+                        format.value, type.value,
+                        pbo.buffer, 0L);
+            } else if (this.iData != null) {
+                GLTools.getDriverInstance().textureSetData(
+                        texture, level, 
+                        xOffset, 1, 1, 
+                        width, 1, 1, 
+                        format.value, type.value, 
+                        iData);
+            } else if (this.fData != null) {
+                GLTools.getDriverInstance().textureSetData(
+                        texture, level, 
+                        xOffset, 1, 1, 
+                        width, 1, 1, 
+                        format.value, type.value, 
+                        fData);
+            } else if (this.data != null) {
                 GLTools.getDriverInstance().textureSetData(
                         texture,
                         level,
@@ -729,12 +933,7 @@ public class GLTexture extends GLObject {
                         width, 1, 1,
                         format.value, type.value, data);
             } else {
-                GLTools.getDriverInstance().textureSetData(
-                        texture, level,
-                        xOffset, 1, 1,
-                        width, 1, 1,
-                        format.value, type.value,
-                        pbo.buffer, 0L);
+                LOGGER.warn("No data was passed for texture upload!");
             }
 
             GLTexture.this.updateTimeUsed();
@@ -1342,7 +1541,7 @@ public class GLTexture extends GLObject {
     public ByteBuffer downloadImage(final int level, final GLTextureFormat format, final GLType type, final ByteBuffer buffer) {
         return new DownloadImageQuery(level, format, type, buffer).glCall(this.getThread());
     }
-    
+
     public void downloadImage(final int level, final GLTextureFormat format, final GLType type, final GLBuffer pbo) {
         new DownloadImageQuery(level, format, type, pbo).glCall(this.getThread());
     }
@@ -1369,10 +1568,10 @@ public class GLTexture extends GLObject {
 
             this.level = level;
             this.format = format;
-            this.type = type;            
+            this.type = type;
             this.buffer = null;
             this.pbo = pbo;
-            
+
             final int pixelSize;
 
             switch (format) {

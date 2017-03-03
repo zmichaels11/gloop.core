@@ -433,20 +433,34 @@ public class GLBuffer extends GLObject {
      * @since 15.05.13
      */
     public void upload(final ByteBuffer data) {
-        this.upload(data, GLBufferUsage.GL_STATIC_DRAW);
+        this.upload(0, data);
     }
+    
+    public void upload(final int... data) {
+        this.upload(0, data);
+    }
+    
+    public void upload(final float... data) {
+        this.upload(0, data);
+    }
+    
+    public void upload(final long offset, final float... data) {
+        new UploadTask(data, offset).glRun(this.getThread());
+    }
+    
+    public void upload(final long offset, final int... data) {
+        new UploadTask(data, offset).glRun(this.getThread());
+    }        
 
     /**
      * Uploads the supplied data to the GLBuffer.
      *
      * @param data the data to upload
-     * @param usage the usage of the data. Under most circumstances, this should
-     * be GL_STATIC_DRAW. GL_DYNAMIC_DRAW should be used if the GLBuffer is ever
-     * mapped.
+     * @param offset the offset to write the data to
      * @since 15.05.13
      */
-    public void upload(final ByteBuffer data, final GLBufferUsage usage) {
-        new UploadTask(data, usage).glRun(this.getThread());
+    public void upload(final long offset, final ByteBuffer data) {
+        new UploadTask(data, offset).glRun(this.getThread());
     }
 
     /**
@@ -456,9 +470,11 @@ public class GLBuffer extends GLObject {
      * @since 15.05.13
      */
     public class UploadTask extends GLTask {
-
-        final GLBufferUsage usage;
+        
+        final int[] iData;
+        final float[] fData;
         final ByteBuffer data;
+        final long offset;
 
         /**
          * Constructs a new UploadTask. The GLBuffer is bound to the specified
@@ -468,7 +484,29 @@ public class GLBuffer extends GLObject {
          * @since 15.05.13
          */
         public UploadTask(final ByteBuffer data) {
-            this(data, GLBufferUsage.GL_STATIC_DRAW);
+            this(data, 0);
+        }
+        
+        public UploadTask(final int[] iData) {
+            this(iData, 0);
+        }
+        
+        public UploadTask(final float[] data) {
+            this(data, 0);
+        }
+        
+        public UploadTask(final int[] iData, final long offset) {
+            this.iData = Objects.requireNonNull(iData);
+            this.data = null;
+            this.fData = null;
+            this.offset = offset;
+        }
+        
+        public UploadTask(final float[] fData, final long offset) {
+            this.fData = Objects.requireNonNull(fData);
+            this.data = null;
+            this.iData = null;
+            this.offset = offset;
         }
 
         /**
@@ -476,19 +514,20 @@ public class GLBuffer extends GLObject {
          * target for upload.
          *
          * @param data the data to upload
-         * @param usage the mode to set the data to. GL_STATIC_DRAW or
-         * GL_DYNAMIC_DRAW are satisfactory for most tasks.
+         * @param offset the offset to write the data to
          * @since 15.05.13
          */
-        public UploadTask(final ByteBuffer data, final GLBufferUsage usage) {
+        public UploadTask(final ByteBuffer data, final long offset) {
             if (!data.isDirect()) {
                 throw new GLException("Backing data buffer is not direct!");
             } else if (data.order() != ByteOrder.nativeOrder()) {
                 throw new GLException("Data is not in native order!");
             }
 
-            this.usage = usage;
+            this.iData = null;
+            this.fData = null;
             this.data = data;
+            this.offset = offset;
         }
 
         @SuppressWarnings("unchecked")
@@ -498,7 +537,16 @@ public class GLBuffer extends GLObject {
                 throw new GLException("GLBuffer is invalid!");
             }
 
-            GLTools.getDriverInstance().bufferSetData(buffer, data, this.usage.value);
+            if (data != null) {
+                GLTools.getDriverInstance().bufferSetData(buffer, offset, data);
+            } else if (fData != null) {
+                GLTools.getDriverInstance().bufferSetData(buffer, offset, fData);
+            } else if (iData != null) {
+                GLTools.getDriverInstance().bufferSetData(buffer, offset, iData);
+            } else {
+                LOGGER.warn("Unsupported data type!");
+            }
+            
             GLBuffer.this.updateTimeUsed();
         }
     }
