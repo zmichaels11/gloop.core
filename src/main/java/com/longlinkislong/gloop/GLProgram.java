@@ -407,12 +407,7 @@ public class GLProgram extends GLObject {
 
             final int uLoc = GLProgram.this.getUniformLoc(uName);
 
-            try (MemoryStack mem = MemoryStack.stackPush()) {
-                final DoubleBuffer buffer = mem.doubles(this.values);
-
-                GLTools.getDriverInstance().programSetUniformMatD(program, uLoc, buffer);
-            }
-
+            GLTools.getDriverInstance().programSetUniformMatD(program, uLoc, values);
             GLProgram.this.program.updateTime();
         }
     }
@@ -547,12 +542,7 @@ public class GLProgram extends GLObject {
 
             final int uLoc = GLProgram.this.getUniformLoc(this.uName);
 
-            try (MemoryStack mem = MemoryStack.stackPush()) {
-                final FloatBuffer buffer = mem.floats(this.values);
-
-                GLTools.getDriverInstance().programSetUniformMatF(program, uLoc, buffer);
-            }
-
+            GLTools.getDriverInstance().programSetUniformMatF(program, uLoc, values);
             GLProgram.this.program.updateTime();
         }
     }
