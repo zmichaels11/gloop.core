@@ -71,9 +71,10 @@ dependencies {
     compile "com.longlinkislong:gloop-vectors:${getVersion('gloop-vectors')}"
     compile "com.longlinkislong:gloop-spi:${getVersion('gloop-spi')}"
     
+    compile "org.lwjgl:lwjgl:3.1.1"
     compile "org.lwjgl:lwjgl-glfw:3.1.1"
     compile "org.lwjgl:lwjgl-opengl:3.1.1"
-    compile "org.lwjgl:lwjgl-openal:3.1.1"
+    compile "org.lwjgl:lwjgl-openal:3.1.1"        
     
     runtime "org.lwjgl:lwjgl-glfw:3.1.1:natives-windows"
     runtime "org.lwjgl:lwjgl-glfw:3.1.1:natives-linux"

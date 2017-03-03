@@ -29,8 +29,5 @@ package com.longlinkislong.gloop;
  *
  * @author zmichaels
  */
-public class ALObject {
-    static {
-        NativeTools.getInstance().autoLoad();
-    }
+public class ALObject {    
 }

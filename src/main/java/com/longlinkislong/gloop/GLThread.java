@@ -1031,10 +1031,6 @@ public class GLThread implements ExecutorService {
         return GLThread.getCurrent().orElseGet(GLThread::getDefaultInstance);
     }
 
-    static {
-        NativeTools.getInstance().autoLoad();
-    }
-
     @Override
     public String toString() {
         if (this.getThread() == null) {

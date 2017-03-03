@@ -35,11 +35,6 @@ import java.util.Objects;
  * @since 15.05.27
  */
 public abstract class GLObject {
-
-    static {
-        NativeTools.getInstance().autoLoad();
-    }
-
     private final GLThread thread;
 
     /**
