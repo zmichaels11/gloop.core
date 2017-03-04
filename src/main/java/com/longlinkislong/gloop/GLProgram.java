@@ -353,18 +353,14 @@ public class GLProgram extends GLObject {
             this.count = sz * sz;
             this.uName = uName.toString();
 
-            if (mat instanceof StaticMat && mat instanceof GLMatD) {
-                this.values = ((GLMatD) mat).data();
-            } else {
-                final GLMatD<?, ?> matD = mat.asGLMatD();
+            final GLMatD<?, ?> matD = mat.asGLMatD();
 
-                this.values = new double[this.count];
+            this.values = new double[this.count];
 
-                System.arraycopy(
-                        matD.data(), matD.offset(),
-                        this.values, 0,
-                        this.count);
-            }
+            System.arraycopy(
+                    matD.data(), matD.offset(),
+                    this.values, 0,
+                    this.count);
         }
 
         /**
@@ -386,12 +382,8 @@ public class GLProgram extends GLObject {
                 throw new GLException.InvalidValueException("Invalid uniform count!");
             }
 
-            if (offset == 0) {
-                this.values = data;
-            } else {
-                this.values = new double[length];
-                System.arraycopy(data, offset, this.values, 0, length);
-            }
+            this.values = new double[length];
+            System.arraycopy(data, offset, this.values, 0, length);
 
             this.uName = uName.toString();
             this.count = length;
@@ -407,7 +399,12 @@ public class GLProgram extends GLObject {
 
             final int uLoc = GLProgram.this.getUniformLoc(uName);
 
-            GLTools.getDriverInstance().programSetUniformMatD(program, uLoc, values);
+            try (MemoryStack stack = MemoryStack.stackPush()) {
+                final DoubleBuffer data = stack.doubles(values);
+
+                GLTools.getDriverInstance().programSetUniformMatD(program, uLoc, data);
+            }
+
             GLProgram.this.program.updateTime();
         }
     }
@@ -492,14 +489,10 @@ public class GLProgram extends GLObject {
             this.uName = uName.toString();
             this.count = sz * sz;
 
-            if (mat instanceof StaticMat && mat instanceof GLMatF) {
-                this.values = ((GLMatF) mat).data();
-            } else {
-                final GLMatF<?, ?> mf = mat.asGLMatF();
+            final GLMatF<?, ?> mf = mat.asGLMatF();
 
-                this.values = new float[this.count];
-                System.arraycopy(mf.data(), mf.offset(), this.values, 0, this.count);
-            }
+            this.values = new float[this.count];
+            System.arraycopy(mf.data(), mf.offset(), this.values, 0, this.count);
         }
 
         /**
@@ -521,12 +514,8 @@ public class GLProgram extends GLObject {
                 throw new GLException.InvalidValueException("Invalid uniform count!");
             }
 
-            if (offset == 0) {
-                this.values = values;
-            } else {
-                this.values = new float[length];
-                System.arraycopy(values, offset, this.values, 0, length);
-            }
+            this.values = new float[length];
+            System.arraycopy(values, offset, this.values, 0, length);
 
             this.uName = uName.toString();
             this.count = length;
@@ -542,7 +531,10 @@ public class GLProgram extends GLObject {
 
             final int uLoc = GLProgram.this.getUniformLoc(this.uName);
 
-            GLTools.getDriverInstance().programSetUniformMatF(program, uLoc, values);
+            try (MemoryStack stack = MemoryStack.stackPush()) {
+                FloatBuffer data = stack.floats(values);
+                GLTools.getDriverInstance().programSetUniformMatF(program, uLoc, data);
+            }            
             GLProgram.this.program.updateTime();
         }
     }
