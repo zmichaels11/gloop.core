@@ -894,6 +894,11 @@ public class GLTexture extends GLObject {
                 this.data = null;
                 this.iData = null;
                 this.fData = fData;
+            } else if (data != null) {
+                this.pbo = null;
+                this.data = data;
+                this.iData = null;
+                this.fData = null;
             } else {
                 this.pbo = null;
                 this.data = null;
