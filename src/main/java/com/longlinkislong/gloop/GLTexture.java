@@ -738,7 +738,7 @@ public class GLTexture extends GLObject {
                         xOffset, yOffset, 1,
                         width, height, 1,
                         format.value, type.value,
-                        iData);
+                        data);
             } else {
                 LOGGER.warn("No data passed to texture upload!");
             }
@@ -936,7 +936,8 @@ public class GLTexture extends GLObject {
                         level,
                         xOffset, 1, 1,
                         width, 1, 1,
-                        format.value, type.value, data);
+                        format.value, type.value, 
+                        data);
             } else {
                 LOGGER.warn("No data was passed for texture upload!");
             }
