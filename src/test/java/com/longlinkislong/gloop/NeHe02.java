@@ -68,17 +68,17 @@ public class NeHe02 {
         depthTest.applyDepthFunc();
 
         vTriangle.allocate(3 * GLVec3F.VECTOR_WIDTH, GLBufferUsage.GL_STATIC_DRAW)
-                .upload(GLTools.wrapFloat(
+                .upload(
                         0f, 1f, 0f,
                         -1f, -1f, 0f,
-                        1f, -1f, 0f));
+                        1f, -1f, 0f);
 
         vSquare.allocate(4 * GLVec3F.VECTOR_WIDTH, GLBufferUsage.GL_STATIC_DRAW)
-                .upload(GLTools.wrapFloat(
+                .upload(
                     -1f, 1f, 0f,
                     -1f, -1f, 0f,
                     1f, 1f, 0f,
-                    1f, -1f, 0f));
+                    1f, -1f, 0f);
 
         vaoTriangle.attachBuffer(0, vTriangle, GLVertexAttributeType.GL_FLOAT, GLVertexAttributeSize.VEC3);
         vaoSquare.attachBuffer(0, vSquare, GLVertexAttributeType.GL_FLOAT, GLVertexAttributeSize.VEC3);
