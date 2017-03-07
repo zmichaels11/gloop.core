@@ -29,9 +29,17 @@ import com.longlinkislong.gloop.glspi.Driver;
 import com.longlinkislong.gloop.glspi.Texture;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
+import java.util.ArrayDeque;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Queue;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.Future;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.logging.Level;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.slf4j.Marker;
@@ -54,6 +62,7 @@ public class GLTexture extends GLObject {
     private volatile int width = 0;
     private volatile int height = 0;
     private volatile int depth = 0;
+    private transient Queue<Future<GLTexture>> asyncUploads = new ArrayDeque<>();
 
     private String name = "";
 
@@ -193,6 +202,7 @@ public class GLTexture extends GLObject {
      * @since 15.07.08
      */
     public void bind(final int textureUnit) {
+        syncUpload();
         new BindTask(textureUnit).glRun(this.getThread());
     }
 
@@ -240,6 +250,10 @@ public class GLTexture extends GLObject {
      * @since 15.07.08
      */
     public void delete() {
+        while (!this.asyncUploads.isEmpty()) {
+            this.asyncUploads.poll().cancel(true);
+        }
+
         new DeleteTask().glRun(this.getThread());
     }
 
@@ -307,7 +321,7 @@ public class GLTexture extends GLObject {
                 level,
                 xOffset, yOffset, zOffset,
                 width, height, depth,
-                format, type, 
+                format, type,
                 data, null, null, null).glRun(this.getThread());
 
         return this;
@@ -324,12 +338,12 @@ public class GLTexture extends GLObject {
                 level,
                 xOffset, yOffset, zOffset,
                 width, height, depth,
-                format, type, 
+                format, type,
                 null, pbo, null, null).glRun(this.getThread());
 
         return this;
     }
-    
+
     public GLTexture updateImage(
             final int level,
             final int xOffset, final int yOffset, final int zOffset,
@@ -341,12 +355,12 @@ public class GLTexture extends GLObject {
                 level,
                 xOffset, yOffset, zOffset,
                 width, height, depth,
-                format, type, 
+                format, type,
                 null, null, data, null).glRun(this.getThread());
 
         return this;
     }
-    
+
     public GLTexture updateImage(
             final int level,
             final int xOffset, final int yOffset, final int zOffset,
@@ -358,7 +372,7 @@ public class GLTexture extends GLObject {
                 level,
                 xOffset, yOffset, zOffset,
                 width, height, depth,
-                format, type, 
+                format, type,
                 null, null, null, data).glRun(this.getThread());
 
         return this;
@@ -463,7 +477,7 @@ public class GLTexture extends GLObject {
                 this.fData = null;
                 this.data = null;
             }
-            
+
             if ((this.width = width) < 0) {
                 throw new GLException.InvalidValueException("Width cannot be less than 0!");
             }
@@ -484,7 +498,7 @@ public class GLTexture extends GLObject {
             if (!GLTexture.this.isValid()) {
                 throw new GLException.InvalidStateException("GLTexture is not valid!");
             }
-            
+
             if (this.pbo != null) {
                 GLTools.getDriverInstance().textureSetData(
                         texture, level,
@@ -546,7 +560,7 @@ public class GLTexture extends GLObject {
                 level,
                 xOffset, yOffset,
                 width, height,
-                format, type, 
+                format, type,
                 data, null, null, null).glRun(this.getThread());
 
         return this;
@@ -563,12 +577,12 @@ public class GLTexture extends GLObject {
                 level,
                 xOffset, yOffset,
                 width, height,
-                format, type, 
+                format, type,
                 null, pbo, null, null).glRun(this.getThread());
 
         return this;
     }
-    
+
     public GLTexture updateImage(
             final int level,
             final int xOffset, final int yOffset,
@@ -580,12 +594,12 @@ public class GLTexture extends GLObject {
                 level,
                 xOffset, yOffset,
                 width, height,
-                format, type, 
+                format, type,
                 null, null, null, data).glRun(this.getThread());
 
         return this;
     }
-    
+
     public GLTexture updateImage(
             final int level,
             final int xOffset, final int yOffset,
@@ -597,7 +611,7 @@ public class GLTexture extends GLObject {
                 level,
                 xOffset, yOffset,
                 width, height,
-                format, type, 
+                format, type,
                 null, null, data, null).glRun(this.getThread());
 
         return this;
@@ -773,6 +787,153 @@ public class GLTexture extends GLObject {
                 format, type, data, null, null, null).glRun(this.getThread());
 
         return this;
+    }    
+    
+    public Future<GLTexture> updateImageAsync(
+            final int level, 
+            final int xOffset,
+            final int width,
+            final GLTextureFormat format,
+            final GLType type, final Future<GLBuffer> pbo) {
+
+        final Future<GLTexture> out = new Future<GLTexture>() {
+            @Override
+            public boolean cancel(boolean mayInterruptIfRunning) {
+                return pbo.cancel(mayInterruptIfRunning);
+            }
+
+            @Override
+            public boolean isCancelled() {
+                return pbo.isCancelled();
+            }
+
+            private final AtomicBoolean got = new AtomicBoolean(false);
+
+            @Override
+            public boolean isDone() {
+                return got.get();
+            }
+
+            @Override
+            public GLTexture get() throws InterruptedException, ExecutionException {
+                if (!got.getAndSet(true)) {                    
+                    updateImage(level, xOffset, width, format, type, pbo.get());
+                }
+
+                return GLTexture.this;
+            }
+
+            @Override
+            public GLTexture get(long timeout, TimeUnit unit) throws InterruptedException, ExecutionException, TimeoutException {
+                if (!got.getAndSet(true)) {                    
+                    updateImage(level, xOffset, width, format, type, pbo.get(timeout, unit));
+                }
+
+                return GLTexture.this;
+            }
+
+        };
+
+        this.asyncUploads.offer(out);
+
+        return out;
+    }
+    
+    public Future<GLTexture> updateImageAsync(
+    final int level, 
+            final int xOffset, final int yOffset,
+            final int width, final int height,
+            final GLTextureFormat format,
+            final GLType type, final Future<GLBuffer> pbo) {
+        
+        final Future<GLTexture> out = new Future<GLTexture>() {
+            @Override
+            public boolean cancel(boolean mayInterruptIfRunning) {
+                return pbo.cancel(mayInterruptIfRunning);
+            }
+
+            @Override
+            public boolean isCancelled() {
+                return pbo.isCancelled();
+            }
+
+            @Override
+            public boolean isDone() {
+                return pbo.isDone();
+            }
+
+            private final AtomicBoolean got = new AtomicBoolean(false);
+            
+            @Override
+            public GLTexture get() throws InterruptedException, ExecutionException {
+                if (!got.getAndSet(true)) {                    
+                    updateImage(level, xOffset, yOffset, width, height, format, type, pbo.get());
+                }
+                
+                return GLTexture.this;
+            }
+
+            @Override
+            public GLTexture get(long timeout, TimeUnit unit) throws InterruptedException, ExecutionException, TimeoutException {
+                if (!got.getAndSet(true)) {
+                    updateImage(level, xOffset, yOffset, width, height, format, type, pbo.get());
+                }
+                
+                return GLTexture.this;
+            }            
+        };
+        
+        this.asyncUploads.offer(out);
+        
+        return out;
+    }
+    
+    public Future<GLTexture> updateImageAsync(
+    final int level,
+            final int xOffset, final int yOffset, final int zOffset,
+            final int width, final int height, final int depth,
+            final GLTextureFormat format,
+            final GLType type, final Future<GLBuffer> pbo) {
+        
+        final Future<GLTexture> out = new Future<GLTexture> () {
+            @Override
+            public boolean cancel(boolean mayInterruptIfRunning) {
+                return pbo.cancel(mayInterruptIfRunning);
+            }
+
+            @Override
+            public boolean isCancelled() {
+                return pbo.isCancelled();
+            }
+
+            @Override
+            public boolean isDone() {
+                return pbo.isDone();
+            }                        
+
+            private final AtomicBoolean got = new AtomicBoolean(false);
+            
+            @Override
+            public GLTexture get() throws InterruptedException, ExecutionException {
+                if (!got.getAndSet(false)) {                    
+                    updateImage(level, xOffset, yOffset, zOffset, width, height, depth, format, type, pbo.get());
+                }
+                
+                return GLTexture.this;
+            }
+
+            @Override
+            public GLTexture get(long timeout, TimeUnit unit) throws InterruptedException, ExecutionException, TimeoutException {
+                if (!got.getAndSet(false)) {
+                    updateImage(level, xOffset, yOffset, zOffset, width, height, depth, format, type, pbo.get(timeout, unit));
+                }
+                
+                return GLTexture.this;
+            }
+        };
+        
+        this.asyncUploads.offer(out);
+        return out;
     }
 
     public GLTexture updateImage(
@@ -923,17 +1084,17 @@ public class GLTexture extends GLObject {
                         pbo.buffer, 0L);
             } else if (this.iData != null) {
                 GLTools.getDriverInstance().textureSetData(
-                        texture, level, 
-                        xOffset, 1, 1, 
-                        width, 1, 1, 
-                        format.value, type.value, 
+                        texture, level,
+                        xOffset, 1, 1,
+                        width, 1, 1,
+                        format.value, type.value,
                         iData);
             } else if (this.fData != null) {
                 GLTools.getDriverInstance().textureSetData(
-                        texture, level, 
-                        xOffset, 1, 1, 
-                        width, 1, 1, 
-                        format.value, type.value, 
+                        texture, level,
+                        xOffset, 1, 1,
+                        width, 1, 1,
+                        format.value, type.value,
                         fData);
             } else if (this.data != null) {
                 GLTools.getDriverInstance().textureSetData(
@@ -941,7 +1102,7 @@ public class GLTexture extends GLObject {
                         level,
                         xOffset, 1, 1,
                         width, 1, 1,
-                        format.value, type.value, 
+                        format.value, type.value,
                         data);
             } else {
                 LOGGER.warn("No data was passed for texture upload!");
@@ -1219,6 +1380,16 @@ public class GLTexture extends GLObject {
         }
     }
 
+    private void syncUpload() {
+        while (!this.asyncUploads.isEmpty()) {
+            try {
+                this.asyncUploads.poll().get();
+            } catch (InterruptedException | ExecutionException ex) {
+                throw new GLException("Unable to sync texture upload(s)!", ex);
+            }
+        }
+    }
+
     /**
      * Generates mipmaps for the GLTexture.
      *
@@ -1226,9 +1397,10 @@ public class GLTexture extends GLObject {
      * @since 15.07.08
      */
     public GLTexture generateMipmap() {
+        syncUpload();
         new GenerateMipmapTask().glRun(this.getThread());
         return this;
-    }
+    }        
 
     /**
      * A GLTask that generates mipmap levels.
@@ -1250,80 +1422,6 @@ public class GLTexture extends GLObject {
 
     }
 
-    public void setTextureBuffer(
-            final GLTextureInternalFormat internalFormat,
-            final GLBuffer buffer) {
-
-        new SetTextureBufferTask(internalFormat, buffer).glRun(this.getThread());
-    }
-
-    public final class SetPixelBuffer2DTask extends GLTask {
-
-        private final GLBuffer buffer;
-        private final int level;
-        private final int xOffset;
-        private final int yOffset;
-        private final int width;
-        private final int height;
-        private final GLTextureFormat format;
-        private final GLType type;
-
-        public SetPixelBuffer2DTask(
-                final int level,
-                final int xOffset, final int yOffset,
-                final int width, final int height,
-                final GLTextureFormat format,
-                final GLType type,
-                final GLBuffer buffer) {
-
-            this.buffer = Objects.requireNonNull(buffer);
-            this.format = Objects.requireNonNull(format);
-            this.type = Objects.requireNonNull(type);
-
-            if ((this.level = level) < 0) {
-                throw new GLException.InvalidValueException("Mipmap level cannot be less than 0!");
-            } else if ((this.xOffset = xOffset) < 0) {
-                throw new GLException.InvalidValueException("X-offset cannot be less than 0!");
-            } else if ((this.yOffset = yOffset) < 0) {
-                throw new GLException.InvalidValueException("Y-offset cannot be less than 0!");
-            } else if ((this.width = width) < 1) {
-                throw new GLException.InvalidValueException("Width cannot be less than 1!");
-            } else if ((this.height = height) < 1) {
-                throw new GLException.InvalidValueException("Height cannot be less than 1!");
-            }
-        }
-
-        @Override
-        public void run() {
-            if (!GLTexture.this.isValid()) {
-                throw new GLException.InvalidValueException("Invalid GLTexture!");
-            } else if (!this.buffer.isValid()) {
-                throw new GLException.InvalidValueException("Invalid GLBuffer!");
-            }
-
-            throw new UnsupportedOperationException("not implemented...");
-        }
-    }
-
-    public final class SetTextureBufferTask extends GLTask {
-
-        private final GLBuffer buffer;
-        private final GLTextureInternalFormat internalFormat;
-
-        public SetTextureBufferTask(
-                final GLTextureInternalFormat internalFormat,
-                final GLBuffer buffer) {
-
-            this.buffer = Objects.requireNonNull(buffer);
-            this.internalFormat = Objects.requireNonNull(internalFormat);
-        }
-
-        @Override
-        public void run() {
-            throw new UnsupportedOperationException("not yet implemented.");
-        }
-    }
-
     /**
      * Sets the texture parameters for the GLTexture object.
      *
@@ -1332,6 +1430,7 @@ public class GLTexture extends GLObject {
      * @since 15.07.08
      */
     public GLTexture setAttributes(final GLTextureParameters params) {
+        syncUpload();
         new SetAttributesTask(params).glRun(this.getThread());
         return this;
     }
@@ -1551,8 +1650,8 @@ public class GLTexture extends GLObject {
      */
     public ByteBuffer downloadImage(final int level, final GLTextureFormat format, final GLType type, final ByteBuffer buffer) {
         return new DownloadImageQuery(level, format, type, buffer).glCall(this.getThread());
-    }
-
+    }    
+    
     public void downloadImage(final int level, final GLTextureFormat format, final GLType type, final GLBuffer pbo) {
         new DownloadImageQuery(level, format, type, pbo).glCall(this.getThread());
     }
@@ -1905,6 +2004,7 @@ public class GLTexture extends GLObject {
      * @since 16.07.06
      */
     public long map() {
+        syncUpload();
         return new MapTextureQuery().glCall(this.getThread());
     }
 
