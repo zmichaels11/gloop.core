@@ -25,6 +25,7 @@
  */
 package com.longlinkislong.gloop;
 
+import com.longlinkislong.gloop.glspi.ThreadFactoryFactory;
 import java.lang.ref.WeakReference;
 import java.util.ArrayDeque;
 import java.util.Collection;
@@ -35,18 +36,23 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.ServiceConfigurationError;
+import java.util.ServiceLoader;
 import java.util.Set;
 import java.util.concurrent.Callable;
 import java.util.concurrent.CancellationException;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.concurrent.LinkedBlockingQueue;
+import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.function.BiConsumer;
+import java.util.logging.Level;
 import java.util.stream.Collectors;
 import org.lwjgl.glfw.GLFW;
 import org.slf4j.Logger;
@@ -256,7 +262,7 @@ public class GLThread implements ExecutorService {
      *
      * @since 15.07.01
      */
-    public void pushBlend() {        
+    public void pushBlend() {
         this.blendStack.push(this.currentBlend);
     }
 
@@ -266,7 +272,7 @@ public class GLThread implements ExecutorService {
      * @return the previous mode.
      * @since 15.07.01
      */
-    public GLBlending popBlend() {        
+    public GLBlending popBlend() {
         final GLBlending blend = this.blendStack.pop();
         blend.applyBlending();
         return blend;
@@ -306,7 +312,7 @@ public class GLThread implements ExecutorService {
      *
      * @since 15.07.16
      */
-    public void pushClear() {        
+    public void pushClear() {
         this.clearStack.push(this.currentClear);
     }
 
@@ -316,7 +322,7 @@ public class GLThread implements ExecutorService {
      * @return the previous clear.
      * @since 15.07.01
      */
-    public GLClear popClear() {        
+    public GLClear popClear() {
         final GLClear clear = this.clearStack.pop();
         clear.clear();
         return clear;
@@ -352,7 +358,7 @@ public class GLThread implements ExecutorService {
      * @return the previous depth test.
      * @since 15.07.01
      */
-    public GLDepthTest popDepthTest() {        
+    public GLDepthTest popDepthTest() {
         final GLDepthTest depthTest = this.depthTestStack.pop();
         depthTest.applyDepthFunc();
         return depthTest;
@@ -378,7 +384,7 @@ public class GLThread implements ExecutorService {
      *
      * @since 15.07.01
      */
-    public void pushMask() {        
+    public void pushMask() {
         this.maskStack.push(this.currentMask);
     }
 
@@ -388,7 +394,7 @@ public class GLThread implements ExecutorService {
      * @return the previous mask.
      * @since 15.07.01
      */
-    public GLMask popMask() {        
+    public GLMask popMask() {
         final GLMask mask = this.maskStack.pop();
         mask.applyMask();
         return mask;
@@ -414,7 +420,7 @@ public class GLThread implements ExecutorService {
      *
      * @since 15.07.16
      */
-    public void pushPolygonParameters() {        
+    public void pushPolygonParameters() {
         this.polygonParameterStack.push(this.currentPolygonParameters);
     }
 
@@ -424,7 +430,7 @@ public class GLThread implements ExecutorService {
      * @return the previous polygon parameters.
      * @since 15.07.16
      */
-    public GLPolygonParameters popPolygonParameters() {        
+    public GLPolygonParameters popPolygonParameters() {
         final GLPolygonParameters params = this.polygonParameterStack.pop();
         params.applyParameters();
         return params;
@@ -450,7 +456,7 @@ public class GLThread implements ExecutorService {
      *
      * @since 15.07.01
      */
-    public void pushViewport() {        
+    public void pushViewport() {
         this.viewportStack.push(this.currentViewport);
     }
 
@@ -503,15 +509,28 @@ public class GLThread implements ExecutorService {
      * @return the previous viewport.
      * @since 15.07.01
      */
-    public GLViewport popViewport() {        
+    public GLViewport popViewport() {
         final GLViewport viewport = this.viewportStack.pop();
         viewport.applyViewport();
         return viewport;
+    }    
+    private static ThreadFactory getThreadFactory() {
+        final ServiceLoader<ThreadFactoryFactory> spi = ServiceLoader.load(ThreadFactoryFactory.class);
+        
+        try {
+            for (ThreadFactoryFactory factory : spi) {
+                return factory.getThreadFactory();                
+            }
+        } catch (Throwable ex) {
+            LOGGER.warn("Unable to select custom ThreadFactoryFactory, falling back on default...", ex);            
+        }
+        
+        return Executors.defaultThreadFactory();
     }
 
     private ExecutorService initExecutor() {
         return new ThreadPoolExecutor(
-                1, 1, 0L, TimeUnit.MILLISECONDS, new LinkedBlockingQueue<>()) {
+                1, 1, 0L, TimeUnit.MILLISECONDS, new LinkedBlockingQueue<>(), getThreadFactory()) {
 
             @Override
             protected void afterExecute(final Runnable task, final Throwable ex) {
@@ -671,7 +690,7 @@ public class GLThread implements ExecutorService {
         if (Thread.currentThread() == this.internalThread) {
             throw new RuntimeException("Attempted barrier insertion on OpenGL thread!");
         }
-        
+
         return new BarrierQuery().glCall(this);
     }
 
@@ -748,7 +767,7 @@ public class GLThread implements ExecutorService {
     public class BarrierQuery extends GLQuery<Void> {
 
         @Override
-        public Void call() throws Exception {            
+        public Void call() throws Exception {
             return null;
         }
 
