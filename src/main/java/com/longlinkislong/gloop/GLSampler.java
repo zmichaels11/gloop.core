@@ -47,7 +47,7 @@ public class GLSampler extends GLObject {
     private static final Marker GL_MARKER = MarkerFactory.getMarker("GLOOP");
     private static final Logger LOGGER = LoggerFactory.getLogger("GLSampler");
 
-    private volatile transient Sampler sampler;
+    volatile transient Sampler sampler;
     private final GLTextureParameters parameters;
     private final boolean isLocked;
 
