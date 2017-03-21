@@ -59,7 +59,7 @@ public class GLFramebuffer extends GLObject {
     private static final Marker GL_MARKER = MarkerFactory.getMarker("GLOOP");
     private static final Logger LOGGER = LoggerFactory.getLogger("GLFramebuffer");
 
-    private volatile transient Framebuffer framebuffer;
+    volatile transient Framebuffer framebuffer;
     private volatile int nextColorAttachment = 36064 /* GL_COLOR_ATTACHMENT0 */;
     private final Map<String, Integer> colorAttachments = new HashMap<>(4);
     private final Map<String, WeakReference<GLObject>> attachments = new HashMap<>(4);
