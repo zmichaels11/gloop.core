@@ -58,7 +58,7 @@ public class GLProgram extends GLObject {
     private static final Marker GL_MARKER = MarkerFactory.getMarker("GLOOP");
     private static final Logger LOGGER = LoggerFactory.getLogger("GLProgram");
 
-    private transient volatile Program program;
+    transient volatile Program program;
     private final Map<String, Integer> uniforms = new HashMap<>(32);
     private String name = "";
     private final List<GLTask> buildInstructions = new ArrayList<>(0);
